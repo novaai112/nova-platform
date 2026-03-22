@@ -6,6 +6,7 @@ import {
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
   Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff
 } from 'lucide-react';
+import emailjs from '@emailjs/browser'; // <--- ADD THIS LINE
 
 const CosmicLogo = ({ className = "w-10 h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -97,6 +98,7 @@ export default function App() {
   const [isSubmitJobOpen, setIsSubmitJobOpen] = useState(false);
   const [selectedJobType, setSelectedJobType] = useState('Nozzle Analysis');
   const [editForm, setEditForm] = useState({ company: '', phone: '' });
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false); // <--- ADD THIS LINE
 
   // --- Gemini AI State --- //
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -144,18 +146,20 @@ export default function App() {
   }, []);
 
   const setupUser = (user) => {
-    const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-    setCurrentUser({
-      id: user.id,
-      name: fullName,
-      email: user.email,
-      initial: fullName.charAt(0).toUpperCase(),
-      company: user.user_metadata?.company || "Engineering Institute",
-      phone: user.user_metadata?.phone || "Not Provided",
-      joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
-    });
-    setIsLoggedIn(true);
-  };
+      const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+      setCurrentUser({
+        id: user.id,
+        name: fullName,
+        email: user.email,
+        initial: fullName.charAt(0).toUpperCase(),
+        avatar: user.user_metadata?.avatar_url || null, 
+        company: user.user_metadata?.company || "Not Provided",
+        phone: user.user_metadata?.phone || "Not Provided",
+        joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+        isApproved: user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com'
+      });
+      setIsLoggedIn(true);
+    };
 
   const fetchJobs = async () => {
     const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
@@ -384,20 +388,19 @@ export default function App() {
   };
 
   const handleEditProfile = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.updateUser({
-      data: { company: editForm.company, phone: editForm.phone }
-    });
+      e.preventDefault();
+      const { error } = await supabase.auth.updateUser({
+        data: { company: editForm.company, phone: editForm.phone }
+      });
 
-    if (error) {
-      showNotification("Failed to update profile.", "error");
-    } else {
-      setCurrentUser(prev => ({ ...prev, company: editForm.company, phone: editForm.phone }));
-      setIsEditProfileOpen(false);
-      showNotification("Profile updated successfully!");
-    }
-  };
-
+      if (error) {
+        showNotification("Failed to update profile: " + error.message, "error");
+      } else {
+        setCurrentUser(prev => ({ ...prev, company: editForm.company, phone: editForm.phone }));
+        setIsEditProfileOpen(false);
+        showNotification("Profile updated successfully!", "success");
+      }
+    };
   // --- Real Forgot Password Flow --- //
   const handleForgotEmailSubmit = async (e) => {
     e.preventDefault();
@@ -466,10 +469,40 @@ export default function App() {
   };
 
   // --- Real Dashboard Handlers --- //
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) setCurrentUser(prev => ({ ...prev, avatar: URL.createObjectURL(file) }));
-  };
+  const handleImageUpload = async (e) => {
+      const file = e.target.files[0];
+      if (!file || !currentUser.id) return;
+
+      showNotification("Uploading profile picture...", "info");
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: { avatar_url: publicUrl }
+        });
+
+        if (updateError) throw updateError;
+
+        setCurrentUser(prev => ({ ...prev, avatar: publicUrl }));
+        showNotification("Profile picture updated successfully!", "success");
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        showNotification("Error uploading picture: " + error.message, "error");
+      }
+    };
 
   const openSubmitJob = (type) => {
     setSelectedJobType(type);
@@ -478,42 +511,62 @@ export default function App() {
     setMaterialPrompt("");
     setMaterialResponse("");
   };
-
-  const handleJobSubmit = async (e) => {
-    e.preventDefault();
-    if (!currentUser.id) return;
-
-    const newJob = {
-      user_id: currentUser.id,
-      job_id_display: `NV-${1000 + jobs.length}`,
-      name: e.target.jobName.value,
-      type: selectedJobType,
-      status: 'Pending',
-      price: selectedJobType === 'Nozzle Analysis' ? 6000 : 48000
-    };
-
-    const { data: insertedJob, error } = await supabase.from('jobs').insert([newJob]).select().single();
-
-    if (error) {
-      showNotification("Error submitting job.", "error");
-    } else {
-      setIsSubmitJobOpen(false);
-      showNotification(`${selectedJobType} submitted to cloud!`, 'success');
-      fetchJobs(); 
-      
-      // Simulate real-world solving sequence in the database
-      setTimeout(async () => {
-        await supabase.from('jobs').update({ status: 'Processing' }).eq('id', insertedJob.id);
-        fetchJobs();
-        
-        setTimeout(async () => {
-          await supabase.from('jobs').update({ status: 'Completed' }).eq('id', insertedJob.id);
-          fetchJobs();
-          showNotification(`Job ${insertedJob.job_id_display} completed! Click Insights to view report.`, 'info');
-        }, 5000);
-      }, 3000);
+  const handleRequestAccess = async () => {
+    setIsRequestingAccess(true);
+    try {
+      await emailjs.send(
+        "service_jknqgty",               // <-- Add your EmailJS Service ID
+        "template_nynl6qp",              // <-- Add your EmailJS Template ID
+        {
+          user_name: currentUser.name,
+          user_email: currentUser.email
+        },
+        "ZTYpRTAZMIRlDw98k"                // <-- Add your EmailJS Public Key
+      );
+      showNotification("Access request sent to Admin successfully!", "success");
+    } catch (error) {
+      console.error("Error sending access request:", error);
+      showNotification("Failed to send request. Please try again.", "error");
+    } finally {
+      setIsRequestingAccess(false);
     }
   };
+  
+  const handleJobSubmit = async (e) => {
+      e.preventDefault();
+      if (!currentUser.id) return;
+
+      const jobName = e.target.jobName.value;
+
+      const newJob = {
+        user_id: currentUser.id,
+        job_id_display: `NV-${1000 + jobs.length}`,
+        name: jobName,
+        type: selectedJobType,
+        status: 'Pending Approval',
+        price: selectedJobType === 'Nozzle Analysis' ? 6000 : 48000
+      };
+
+      try {
+        const { data: insertedJob, error } = await supabase
+          .from('jobs')
+          .insert([newJob])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Optional: Send a second email to admin when a job is actually created
+        // emailjs.send("YOUR_SERVICE_ID", "YOUR_JOB_TEMPLATE_ID", { ... }, "YOUR_PUBLIC_KEY");
+
+        setIsSubmitJobOpen(false);
+        showNotification(`${selectedJobType} submitted! Awaiting Admin processing.`, 'success');
+        fetchJobs(); 
+      } catch (error) {
+        console.error("Database Error:", error);
+        showNotification(`Error submitting job: ${error.message}`, "error");
+      }
+    };
 
   const filteredJobs = jobFilter.startsWith('All') ? jobs : jobs.filter(j => j.type === jobFilter);
   const stats = {
@@ -578,12 +631,12 @@ export default function App() {
           </g>
         </svg>
 
-        <div className="text-reveal flex flex-col items-center">
-          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 tracking-tight drop-shadow-lg mb-2">NOVA</h1>
-          <p className="text-slate-300 text-sm font-medium tracking-widest uppercase">Initializing Platform</p>
+        <div className="flex flex-col items-center text-reveal">
+          <h1 className="mb-2 text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 drop-shadow-lg">NOVA</h1>
+          <p className="text-sm font-medium tracking-widest uppercase text-slate-300">Initializing Platform</p>
         </div>
         
-        <div className="text-reveal mt-8 w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div className="w-48 h-1 mt-8 overflow-hidden rounded-full text-reveal bg-white/10">
            <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-1/2 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full relative" style={{animation: 'loadProgress 2s ease-out infinite'}}></div>
         </div>
       </div>
@@ -594,61 +647,61 @@ export default function App() {
   // VIEW: LANDING PAGE (Home)
   // ==========================================
   const renderLanding = () => (
-    <div className="min-h-screen relative font-sans text-slate-800 scroll-smooth overflow-x-hidden pt-20">
-      <section className="relative pb-20 px-6 text-center max-w-5xl mx-auto pt-16">
-        <div className="reveal opacity-0 translate-y-10 transition-all duration-700 ease-out relative z-10">
+    <div className="relative min-h-screen pt-20 overflow-x-hidden font-sans text-slate-800 scroll-smooth">
+      <section className="relative max-w-5xl px-6 pt-16 pb-20 mx-auto text-center">
+        <div className="relative z-10 transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-sm font-semibold text-slate-700 mb-8">
             <Cpu className="w-4 h-4 text-[#3C64D6] animate-pulse" /> Advanced AI-Driven FEA Automation
           </div>
           
           <h1 className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-[#1E293B] to-[#3C64D6] tracking-tight mb-8 drop-shadow-sm">NOVA</h1>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-12">
+          <div className="flex flex-col items-center justify-center gap-4 mb-12 sm:flex-row sm:gap-6">
             <div className="glass-panel px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(60,100,214,0.2)] transition-shadow">
                <FileText className="w-6 h-6 text-blue-500" />
-               <span className="font-bold text-lg text-slate-800">Input Parameters</span>
+               <span className="text-lg font-bold text-slate-800">Input Parameters</span>
             </div>
             <ArrowRight className="w-8 h-8 text-[#3C64D6] hidden sm:block animate-[pulse_2s_ease-in-out_infinite]" />
             <div className="glass-panel px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(16,163,74,0.2)] transition-shadow">
                <FileCheck className="w-6 h-6 text-emerald-500" />
-               <span className="font-bold text-lg text-slate-800">Certified FE Report</span>
+               <span className="text-lg font-bold text-slate-800">Certified FE Report</span>
             </div>
           </div>
 
           <h2 className="text-2xl md:text-3xl font-bold text-[#3C64D6] mb-6">Automated FEA. Zero Manual Setup.</h2>
-          <p className="text-lg text-slate-700 mb-6 max-w-2xl mx-auto font-medium">Input your design specifications. Receive a fully code-compliant FEA stress report in record time directly from the cloud.</p>
+          <p className="max-w-2xl mx-auto mb-6 text-lg font-medium text-slate-700">Input your design specifications. Receive a fully code-compliant FEA stress report in record time directly from the cloud.</p>
           
-          <div className="text-sm font-semibold text-slate-600 mb-12">
+          <div className="mb-12 text-sm font-semibold text-slate-600">
              Eliminate the bottlenecks: <span className="font-normal text-slate-500">Manual Meshing | Tedious Modeling | Repetitive Iterations | Report Drafting</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-             <button onClick={handleRouteToAuth} className="glass-btn-blue text-white px-8 py-4 rounded-full font-bold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 group overflow-hidden relative">
-                <Shield className="w-5 h-5 relative z-10" /> <span className="relative z-10">Start Analysis</span>
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+             <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
+                <Shield className="relative z-10 w-5 h-5" /> <span className="relative z-10">Start Analysis</span>
              </button>
-             <button onClick={() => scrollToSection('how-it-works')} className="bg-white/50 backdrop-blur-md border border-white/50 hover:bg-white/80 text-slate-800 px-8 py-4 rounded-full font-bold shadow-sm transition-colors">
+             <button onClick={() => scrollToSection('how-it-works')} className="px-8 py-4 font-bold transition-colors border rounded-full shadow-sm bg-white/50 backdrop-blur-md border-white/50 hover:bg-white/80 text-slate-800">
                 See How It Works ↓
              </button>
           </div>
         </div>
       </section>
 
-      <section id="solution" className="py-24 px-6 relative z-10">
+      <section id="solution" className="relative z-10 px-6 py-24">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob"></div>
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-4000"></div>
 
-        <div className="max-w-5xl mx-auto reveal opacity-0 translate-y-10 transition-all duration-700 ease-out relative z-10">
-          <div className="text-center mb-16">
+        <div className="relative z-10 max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
+          <div className="mb-16 text-center">
             <span className="bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-[#3C64D6] px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase">Solutions</span>
             <h2 className="text-4xl md:text-5xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">Engineering Components</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-bl-full filter blur-xl -z-10 group-hover:scale-125 transition-transform duration-700"></div>
+                <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-blue-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
                 
-                <div className="self-start bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 mb-8 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center self-start gap-1 px-3 py-1 mb-8 text-xs font-bold border rounded-full shadow-sm bg-emerald-500/20 border-emerald-500/30 text-emerald-700 backdrop-blur-sm">
                    <CheckCircle className="w-3 h-3" /> Available Now
                 </div>
                 
@@ -667,7 +720,7 @@ export default function App() {
                 </div>
                 
                 <h3 className="text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA Suite</h3>
-                <p className="text-slate-600 text-sm mb-8 font-medium">Thick Single Convolute (Flanged & Flued)</p>
+                <p className="mb-8 text-sm font-medium text-slate-600">Thick Single Convolute (Flanged & Flued)</p>
                 
                 <div className="space-y-4 mb-8 flex-1 bg-white/40 border border-white/50 p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
                    <div className="flex items-start gap-3">
@@ -678,7 +731,7 @@ export default function App() {
                      <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
                      <span className="text-sm font-semibold text-slate-700">Phase 2: Comprehensive FEA & validation</span>
                    </div>
-                   <div className="pt-3 text-sm font-bold text-slate-800 border-t border-white/60 mt-2 drop-shadow-sm">Core Capabilities:</div>
+                   <div className="pt-3 mt-2 text-sm font-bold border-t text-slate-800 border-white/60 drop-shadow-sm">Core Capabilities:</div>
                    <div className="flex items-center gap-3">
                      <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Corroded / Uncorroded state analysis</span>
                    </div>
@@ -695,9 +748,9 @@ export default function App() {
              </div>
 
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group opacity-95">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400/20 rounded-bl-full filter blur-xl -z-10 group-hover:scale-125 transition-transform duration-700"></div>
+                <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-amber-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
                 
-                <div className="self-start bg-amber-500/20 border border-amber-500/30 text-amber-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 mb-8 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center self-start gap-1 px-3 py-1 mb-8 text-xs font-bold border rounded-full shadow-sm bg-amber-500/20 border-amber-500/30 text-amber-700 backdrop-blur-sm">
                    <Clock className="w-3 h-3" /> In Development
                 </div>
                 
@@ -714,10 +767,10 @@ export default function App() {
                   </svg>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-slate-700 mb-2 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
-                <p className="text-slate-500 text-sm mb-8 font-medium">Local Load Analysis for Vessels</p>
+                <h3 className="mb-2 text-2xl font-bold text-slate-700 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
+                <p className="mb-8 text-sm font-medium text-slate-500">Local Load Analysis for Vessels</p>
                 
-                <div className="space-y-4 mb-8 flex-1 p-6 bg-white/20 border border-white/30 rounded-2xl">
+                <div className="flex-1 p-6 mb-8 space-y-4 border bg-white/20 border-white/30 rounded-2xl">
                    <div className="flex items-start gap-3 opacity-80">
                      <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                      <span className="text-sm font-semibold text-slate-700">High-fidelity local stress evaluation</span>
@@ -737,36 +790,36 @@ export default function App() {
       </section>
 
       <section id="why-nova" className="py-24 bg-white/40 backdrop-blur-md px-6 border-y border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)]">
-        <div className="max-w-5xl mx-auto reveal opacity-0 translate-y-10 transition-all duration-700 ease-out">
-          <div className="text-center mb-16">
-            <span className="glass-panel text-slate-700 px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase">About</span>
+        <div className="max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
+          <div className="mb-16 text-center">
+            <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">About</span>
             <h2 className="text-4xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">What is NOVA?</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+          <div className="grid items-center grid-cols-1 gap-16 md:grid-cols-2">
              <div className="space-y-6">
                 <div className="flex items-center gap-5 group">
-                  <div className="w-14 h-14 glass-btn-blue text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-md transition-transform group-hover:scale-110">N</div>
-                  <div className="text-xl font-extrabold text-slate-700 tracking-wide drop-shadow-sm">Numerical</div>
+                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">N</div>
+                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Numerical</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="w-14 h-14 glass-btn-blue text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-md transition-transform group-hover:scale-110">O</div>
-                  <div className="text-xl font-extrabold text-slate-700 tracking-wide drop-shadow-sm">Optimization &</div>
+                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">O</div>
+                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Optimization &</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="w-14 h-14 glass-btn-blue text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-md transition-transform group-hover:scale-110">V</div>
-                  <div className="text-xl font-extrabold text-slate-700 tracking-wide drop-shadow-sm">Virtual</div>
+                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">V</div>
+                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Virtual</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="w-14 h-14 glass-btn-blue text-white rounded-2xl flex items-center justify-center font-bold text-2xl shadow-md transition-transform group-hover:scale-110">A</div>
-                  <div className="text-xl font-extrabold text-slate-700 tracking-wide drop-shadow-sm">Analysis</div>
+                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">A</div>
+                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Analysis</div>
                 </div>
              </div>
              <div className="glass-panel p-10 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.1)]">
-               <p className="text-lg text-slate-700 leading-relaxed mb-6 font-medium">
+               <p className="mb-6 text-lg font-medium leading-relaxed text-slate-700">
                  NOVA (Numerical Optimization & Virtual Analysis) is an advanced cloud-based engineering platform designed to democratize Finite Element Analysis (FEA). We bridge the gap between complex <strong className="text-emerald-700">ASME BPVC code requirements</strong> and streamlined, automated execution.
                </p>
-               <p className="text-lg text-slate-700 leading-relaxed font-medium">
+               <p className="text-lg font-medium leading-relaxed text-slate-700">
                  By integrating <strong className="text-[#3C64D6]">AI-driven data extraction</strong> with industry-standard solvers like ANSYS, NOVA eliminates manual modeling, reducing design validation from weeks to hours.
                </p>
              </div>
@@ -774,13 +827,13 @@ export default function App() {
         </div>
       </section>
 
-      <section id="how-it-works" className="py-24 px-6 relative z-10">
-        <div className="max-w-6xl mx-auto text-center reveal opacity-0 translate-y-10 transition-all duration-700 ease-out">
-          <span className="glass-panel text-slate-700 px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase">Methodology</span>
+      <section id="how-it-works" className="relative z-10 px-6 py-24">
+        <div className="max-w-6xl mx-auto text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
+          <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">Methodology</span>
           <h2 className="text-4xl font-extrabold text-[#1E293B] mt-6 mb-4 drop-shadow-sm">How NOVA Works</h2>
-          <p className="text-slate-600 font-medium mb-20 text-lg">A streamlined 6-step workflow that transforms your engineering data into a compliant FE report</p>
+          <p className="mb-20 text-lg font-medium text-slate-600">A streamlined 6-step workflow that transforms your engineering data into a compliant FE report</p>
 
-          <div className="relative flex flex-col md:flex-row justify-between items-center md:items-start gap-8 md:gap-4">
+          <div className="relative flex flex-col items-center justify-between gap-8 md:flex-row md:items-start md:gap-4">
              <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-gradient-to-r from-blue-300/50 via-purple-300/50 to-emerald-300/50 z-0"></div>
 
              {[
@@ -794,11 +847,11 @@ export default function App() {
                 const Icon = item.icon;
                 return (
                   <div key={idx} className="relative z-10 flex flex-col items-center max-w-[150px] group">
-                     <div className="w-20 h-20 glass-panel group-hover:bg-white/60 rounded-2xl flex items-center justify-center mb-6 relative shadow-md transition-all duration-300 group-hover:-translate-y-2">
+                     <div className="relative flex items-center justify-center w-20 h-20 mb-6 transition-all duration-300 shadow-md glass-panel group-hover:bg-white/60 rounded-2xl group-hover:-translate-y-2">
                         <Icon className="w-8 h-8 text-[#1E293B] group-hover:text-[#3C64D6] transition-colors drop-shadow-sm" />
                      </div>
                      <h4 className="font-extrabold text-slate-800 mb-2 group-hover:text-[#3C64D6] transition-colors text-center drop-shadow-sm">{item.title}</h4>
-                     <p className="text-xs text-slate-600 font-medium text-center leading-relaxed">{item.desc}</p>
+                     <p className="text-xs font-medium leading-relaxed text-center text-slate-600">{item.desc}</p>
                   </div>
                 );
              })}
@@ -806,19 +859,19 @@ export default function App() {
         </div>
       </section>
 
-      <section className="py-24 px-6 text-center reveal opacity-0 translate-y-10 transition-all duration-700 ease-out relative z-10">
+      <section className="relative z-10 px-6 py-24 text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
          <div className="glass-panel max-w-4xl mx-auto rounded-[3rem] p-16 relative overflow-hidden shadow-[0_20px_60px_rgba(60,100,214,0.15)]">
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full filter blur-[80px] -z-10"></div>
            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
-           <p className="text-slate-600 mb-10 text-lg relative z-10 font-medium">From Days to Hours. Code-Compliant. Fully Automated.</p>
-           <button onClick={handleRouteToAuth} className="glass-btn-blue px-10 py-5 rounded-full font-bold transition-all hover:scale-105 flex items-center justify-center gap-3 mx-auto relative z-10 text-lg">
+           <p className="relative z-10 mb-10 text-lg font-medium text-slate-600">From Days to Hours. Code-Compliant. Fully Automated.</p>
+           <button onClick={handleRouteToAuth} className="relative z-10 flex items-center justify-center gap-3 px-10 py-5 mx-auto text-lg font-bold transition-all rounded-full glass-btn-blue hover:scale-105">
               Access Dashboard <ArrowRight className="w-6 h-6" />
            </button>
          </div>
       </section>
 
       <footer className="glass-panel text-slate-600 py-12 px-6 relative z-10 mt-12 border-b-0 rounded-t-[3rem] shadow-[0_-8px_32px_rgba(31,38,135,0.05)]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 border-b border-slate-300/50 pb-8">
+        <div className="grid max-w-6xl grid-cols-1 gap-8 pb-8 mx-auto mb-8 border-b md:grid-cols-3 border-slate-300/50">
            <div>
               <h3 className="font-bold text-[#1E293B] text-xl mb-4 flex items-center gap-2 cursor-pointer hover:text-[#3C64D6] transition-colors" onClick={handleLogoClick}>
                 <CosmicLogo className="w-8 h-8" /> NOVA
@@ -840,13 +893,24 @@ export default function App() {
               </a>
            </div>
         </div>
-        <div className="max-w-6xl mx-auto text-sm font-medium flex justify-between items-center">
+        <div className="flex items-center justify-between max-w-6xl mx-auto text-sm font-medium">
            <p>© 2026 NOVA Intelligence. All Rights Reserved.</p>
-           <button onClick={() => window.scrollTo(0,0)} className="glass-btn-blue p-3 rounded-full text-white transition-transform hover:scale-110 shadow-md flex items-center justify-center border-none">
+           <button onClick={() => window.scrollTo(0,0)} className="flex items-center justify-center p-3 text-white transition-transform border-none rounded-full shadow-md glass-btn-blue hover:scale-110">
               <ChevronDown className="w-5 h-5 rotate-180" />
            </button>
         </div>
       </footer>
+      {/* Modern Glassmorphism WhatsApp Button */}
+      <a 
+        href="https://wa.me/919931861471?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis." 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center p-4 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-md bg-white/20 border border-white/30 hover:bg-white/30 hover:scale-110 transition-all duration-300 cursor-pointer"
+      >
+        <svg viewBox="0 0 24 24" width="32" height="32" className="text-[#25D366] drop-shadow-lg" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+      </a>
     </div>
   );
 
@@ -854,7 +918,7 @@ export default function App() {
   // VIEW: LOGIN & SIGNUP & FORGOT
   // ==========================================
   const renderAuthContainer = (children) => (
-    <div className="min-h-screen relative flex flex-col justify-center items-center p-4 z-10 pt-20">
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
            <CheckCircle className="w-5 h-5" /> {notification.message}
@@ -868,12 +932,12 @@ export default function App() {
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/30 rounded-full filter blur-[40px]"></div>
         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400/30 rounded-full filter blur-[40px]"></div>
         
-        <div className="text-center space-y-2 mb-8 relative z-10">
+        <div className="relative z-10 mb-8 space-y-2 text-center">
           <div className="flex justify-center mb-4 cursor-pointer" onClick={handleLogoClick}>
-             <CosmicLogo className="w-20 h-20 hover:scale-110 transition-transform duration-500 drop-shadow-md" />
+             <CosmicLogo className="w-20 h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
           </div>
           <h1 className="text-3xl font-extrabold text-[#1E293B] tracking-tight">NOVA 1.0</h1>
-          <p className="text-sm text-slate-600 font-semibold uppercase tracking-wider">Authentication</p>
+          <p className="text-sm font-semibold tracking-wider uppercase text-slate-600">Authentication</p>
         </div>
         <div className="relative z-10">
           {children}
@@ -884,15 +948,15 @@ export default function App() {
 
   const renderLogin = () => renderAuthContainer(
     <>
-      <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Secure Sign In</h2>
+      <h2 className="mb-6 text-xl font-bold text-center text-slate-800">Secure Sign In</h2>
       <form onSubmit={handleLogin} className="space-y-5">
         <div className="space-y-1.5">
-          <label className="text-sm font-bold text-slate-700 pl-1">Email Address</label>
+          <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
           <input type="email" value={loginEmail} onChange={(e) => { setLoginEmail(e.target.value); setAuthErrors({...authErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
-          {authErrors.email && <p className="text-red-500 text-xs font-bold pl-1 animate-in fade-in">{authErrors.email}</p>}
+          {authErrors.email && <p className="pl-1 text-xs font-bold text-red-500 animate-in fade-in">{authErrors.email}</p>}
         </div>
         <div className="space-y-1.5">
-          <div className="flex justify-between items-center pl-1 pr-1">
+          <div className="flex items-center justify-between pl-1 pr-1">
             <label className="text-sm font-bold text-slate-700">Password</label>
             <button type="button" onClick={() => { setCurrentView('forgot'); setForgotStep(1); setForgotEmail(loginEmail); setForgotCode(''); setForgotNewPwd(''); setForgotConfirmPwd(''); setForgotErrors({}); }} className="text-xs text-[#3C64D6] font-bold hover:underline focus:outline-none">Forgot password?</button>
           </div>
@@ -902,13 +966,13 @@ export default function App() {
               {showLoginPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          {authErrors.password && <p className="text-red-500 text-xs font-bold pl-1 animate-in fade-in">{authErrors.password}</p>}
+          {authErrors.password && <p className="pl-1 text-xs font-bold text-red-500 animate-in fade-in">{authErrors.password}</p>}
         </div>
         <button type="submit" disabled={isAuthLoading} className="w-full glass-btn-green py-4 rounded-xl font-bold transition-all hover:scale-[1.02] mt-6 flex justify-center items-center gap-2 text-lg shadow-lg">
           {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-5 h-5" /></>}
         </button>
       </form>
-      <div className="mt-8 text-center text-sm font-medium text-slate-600">
+      <div className="mt-8 text-sm font-medium text-center text-slate-600">
         Don't have an account? <button onClick={() => setCurrentView('signup')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign up here</button>
       </div>
     </>
@@ -916,33 +980,33 @@ export default function App() {
 
   const renderSignup = () => renderAuthContainer(
     <>
-      <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">Create New Account</h2>
+      <h2 className="mb-6 text-xl font-bold text-center text-slate-800">Create New Account</h2>
       <form onSubmit={handleSignup} className="space-y-5">
         <div className="space-y-1.5">
-          <label className="text-sm font-bold text-slate-700 pl-1">Full Name</label>
+          <label className="pl-1 text-sm font-bold text-slate-700">Full Name</label>
           <input type="text" value={signupName} onChange={(e) => { setSignupName(e.target.value); setAuthErrors({...authErrors, name: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.name ? '!border-red-500' : ''}`} required />
-          {authErrors.name && <p className="text-red-500 text-xs font-bold pl-1">{authErrors.name}</p>}
+          {authErrors.name && <p className="pl-1 text-xs font-bold text-red-500">{authErrors.name}</p>}
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-bold text-slate-700 pl-1">Email Address</label>
+          <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
           <input type="email" value={signupEmail} onChange={(e) => { setSignupEmail(e.target.value); setAuthErrors({...authErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
-          {authErrors.email && <p className="text-red-500 text-xs font-bold pl-1">{authErrors.email}</p>}
+          {authErrors.email && <p className="pl-1 text-xs font-bold text-red-500">{authErrors.email}</p>}
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-bold text-slate-700 pl-1">Password</label>
+          <label className="pl-1 text-sm font-bold text-slate-700">Password</label>
           <div className="relative">
             <input type={showSignupPwd ? "text" : "password"} value={signupPassword} onChange={(e) => { setSignupPassword(e.target.value); setAuthErrors({...authErrors, password: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${authErrors.password ? '!border-red-500' : ''}`} required />
             <button type="button" onClick={() => setShowSignupPwd(!showSignupPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
               {showSignupPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          {authErrors.password && <p className="text-red-500 text-xs font-bold pl-1 leading-tight">{authErrors.password}</p>}
+          {authErrors.password && <p className="pl-1 text-xs font-bold leading-tight text-red-500">{authErrors.password}</p>}
         </div>
         <button type="submit" disabled={isAuthLoading} className="w-full glass-btn-blue py-4 rounded-xl font-bold transition-all hover:scale-[1.02] mt-6 text-lg shadow-lg flex justify-center items-center gap-2">
           {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
         </button>
       </form>
-      <div className="mt-8 text-center text-sm font-medium text-slate-600">
+      <div className="mt-8 text-sm font-medium text-center text-slate-600">
         Already have an account? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
@@ -950,10 +1014,10 @@ export default function App() {
 
   const renderForgotPassword = () => renderAuthContainer(
     <>
-      <h2 className="text-xl font-bold text-slate-800 mb-2 text-center">
+      <h2 className="mb-2 text-xl font-bold text-center text-slate-800">
         {forgotStep === 1 ? "Reset Password" : forgotStep === 2 ? "Verify Email" : "Create New Password"}
       </h2>
-      <p className="text-center text-sm text-slate-600 font-medium mb-6 px-2">
+      <p className="px-2 mb-6 text-sm font-medium text-center text-slate-600">
         {forgotStep === 1 && "Enter your email address to request a 6-digit recovery code."}
         {forgotStep === 2 && `Please enter the 6-digit code sent to ${forgotEmail}.`}
         {forgotStep === 3 && "Please enter your new password below."}
@@ -962,9 +1026,9 @@ export default function App() {
       {forgotStep === 1 && (
         <form onSubmit={handleForgotEmailSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-slate-700 pl-1">Email Address</label>
+            <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
             <input type="email" value={forgotEmail} onChange={(e) => { setForgotEmail(e.target.value); setForgotErrors({...forgotErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${forgotErrors.email ? '!border-red-500' : ''}`} required />
-            {forgotErrors.email && <p className="text-red-500 text-xs font-bold pl-1">{forgotErrors.email}</p>}
+            {forgotErrors.email && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.email}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading} className="w-full glass-btn-blue disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
             {isForgotLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Recovery Code"}
@@ -975,9 +1039,9 @@ export default function App() {
       {forgotStep === 2 && (
         <form onSubmit={handleForgotCodeSubmit} className="space-y-5">
            <div className="space-y-1.5">
-            <label className="text-sm font-bold text-slate-700 pl-1 text-center block">Verification Code</label>
+            <label className="block pl-1 text-sm font-bold text-center text-slate-700">Verification Code</label>
             <input type="text" maxLength="6" placeholder="••••••" value={forgotCode} onChange={(e) => { setForgotCode(e.target.value.replace(/\D/g, '')); setForgotErrors({...forgotErrors, code: null}); }} className={`w-full px-4 py-4 glass-input rounded-xl text-center text-3xl tracking-[0.5em] font-extrabold text-[#3C64D6] ${forgotErrors.code ? '!border-red-500' : ''}`} required />
-            {forgotErrors.code && <p className="text-red-500 text-xs font-bold text-center mt-2">{forgotErrors.code}</p>}
+            {forgotErrors.code && <p className="mt-2 text-xs font-bold text-center text-red-500">{forgotErrors.code}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading || forgotCode.length !== 6} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
             {isForgotLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify Code"}
@@ -988,25 +1052,25 @@ export default function App() {
       {forgotStep === 3 && (
         <form onSubmit={handleForgotResetSubmit} className="space-y-5">
            <div className="space-y-1.5">
-             <label className="text-sm font-bold text-slate-700 pl-1">New Password</label>
+             <label className="pl-1 text-sm font-bold text-slate-700">New Password</label>
              <div className="relative">
                <input type={showForgotPwd.new ? "text" : "password"} value={forgotNewPwd} onChange={(e) => { setForgotNewPwd(e.target.value); setForgotErrors({...forgotErrors, new: null}); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.new ? '!border-red-500' : ''}`} />
                <button type="button" onClick={() => setShowForgotPwd({...showForgotPwd, new: !showForgotPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
                  {showForgotPwd.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                </button>
              </div>
-             {forgotErrors.new && <p className="text-red-500 text-xs font-bold pl-1 leading-tight">{forgotErrors.new}</p>}
+             {forgotErrors.new && <p className="pl-1 text-xs font-bold leading-tight text-red-500">{forgotErrors.new}</p>}
           </div>
           
           <div className="space-y-1.5">
-             <label className="text-sm font-bold text-slate-700 pl-1">Confirm Password</label>
+             <label className="pl-1 text-sm font-bold text-slate-700">Confirm Password</label>
              <div className="relative">
                <input type={showForgotPwd.confirm ? "text" : "password"} value={forgotConfirmPwd} onChange={(e) => { setForgotConfirmPwd(e.target.value); setForgotErrors({...forgotErrors, confirm: null}); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.confirm ? '!border-red-500' : ''}`} />
                <button type="button" onClick={() => setShowForgotPwd({...showForgotPwd, confirm: !showForgotPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
                  {showForgotPwd.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                </button>
              </div>
-             {forgotErrors.confirm && <p className="text-red-500 text-xs font-bold pl-1">{forgotErrors.confirm}</p>}
+             {forgotErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.confirm}</p>}
           </div>
 
           <button type="submit" disabled={isForgotLoading} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
@@ -1015,7 +1079,7 @@ export default function App() {
         </form>
       )}
 
-      <div className="mt-8 text-center text-sm font-medium text-slate-600">
+      <div className="mt-8 text-sm font-medium text-center text-slate-600">
          Remember your password? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
@@ -1028,8 +1092,8 @@ export default function App() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
       <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-        <div className="bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md p-6 flex justify-between items-center text-white border-b border-white/20">
-          <h3 className="font-extrabold flex items-center gap-3 text-xl drop-shadow-sm">
+        <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+          <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
             <Sparkles className="w-6 h-6" /> Executive Insights
           </h3>
           <button onClick={() => setIsInsightsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
@@ -1038,23 +1102,23 @@ export default function App() {
         </div>
         <div className="p-8 space-y-6">
            <div className="mb-2">
-              <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Project</h4>
+              <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
               <p className="text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
-              <span className="inline-block mt-2 bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{selectedInsightJob?.type}</span>
+              <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
            </div>
            <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
               {isInsightLoading ? (
-                 <div className="flex flex-col items-center justify-center h-full text-purple-600 space-y-4 py-8">
+                 <div className="flex flex-col items-center justify-center h-full py-8 space-y-4 text-purple-600">
                     <Loader2 className="w-10 h-10 animate-spin" />
                     <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
                  </div>
               ) : (
-                 <div className="text-sm text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
+                 <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
                     {insightResponse}
                  </div>
               )}
            </div>
-           <div className="mt-8 flex justify-end">
+           <div className="flex justify-end mt-8">
              <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
            </div>
         </div>
@@ -1063,9 +1127,9 @@ export default function App() {
   );
 
   const DashboardHeader = ({ isProfile }) => (
-    <div className="glass-panel relative z-50 text-slate-800 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center shadow-md mb-8 border-t border-white/60">
+    <div className="relative z-50 flex flex-col items-start justify-between p-6 mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
       <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center justify-center p-3 bg-white/40 border border-white/50 rounded-2xl cursor-pointer hover:bg-white/60 transition-all hover:scale-105 shadow-sm" onClick={handleLogoClick}>
+        <div className="items-center justify-center hidden p-3 transition-all border shadow-sm cursor-pointer sm:flex bg-white/40 border-white/50 rounded-2xl hover:bg-white/60 hover:scale-105" onClick={handleLogoClick}>
           <CosmicLogo className="w-10 h-10" />
         </div>
         <div>
@@ -1091,23 +1155,23 @@ export default function App() {
         </button>
       ) : (
         <div className="relative mt-4 md:mt-0 z-[60]">
-          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-3 glass-input hover:bg-white/70 p-2 pr-4 rounded-2xl transition-colors cursor-pointer text-left focus:outline-none shadow-sm border-white/80">
+          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
             <div className="bg-[#3C64D6] text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
-              {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
+              {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : currentUser.initial}
             </div>
-            <div className="hidden sm:block pr-2">
-              <div className="text-sm font-extrabold text-slate-800 leading-tight">{currentUser.name}</div>
+            <div className="hidden pr-2 sm:block">
+              <div className="text-sm font-extrabold leading-tight text-slate-800">{currentUser.name}</div>
             </div>
             <ChevronDown className={`w-4 h-4 text-slate-600 hidden sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {isDropdownOpen && (
             <div className="absolute right-0 mt-3 w-56 glass-panel rounded-2xl shadow-xl py-2 z-[100] text-slate-800 animate-in fade-in slide-in-from-top-2 border-white/80">
-              <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="w-full text-left px-5 py-3 text-sm hover:bg-white/60 transition-colors flex items-center font-bold">
+              <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
                 <User className="w-4 h-4 mr-3 text-[#3C64D6]" /> My Profile
               </button>
-              <div className="h-px bg-slate-200/50 my-1 mx-2"></div>
-              <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-sm hover:bg-red-50/50 text-red-600 transition-colors flex items-center font-bold">
+              <div className="h-px mx-2 my-1 bg-slate-200/50"></div>
+              <button onClick={handleLogout} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left text-red-600 transition-colors hover:bg-red-50/50">
                 <Lock className="w-4 h-4 mr-3 text-red-500" /> Sign Out
               </button>
             </div>
@@ -1118,44 +1182,82 @@ export default function App() {
   );
 
   const renderDashboard = () => (
-    <div className="min-h-screen relative font-sans text-slate-800 p-4 md:p-8 pt-24 z-10">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-           <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
-        </div>
-      )}
-
-      <div className="max-w-[1200px] mx-auto">
-        <DashboardHeader isProfile={false} />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1000px] mx-auto mb-10">
-          <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
-            <h3 className="text-xl font-extrabold text-slate-800 mb-6 drop-shadow-sm">Nozzle Analysis</h3>
-            <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
-              Submit New Job
-            </button>
+      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
+            <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
           </div>
-          <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] transition-all">
-            <h3 className="text-xl font-extrabold text-slate-800 mb-6 drop-shadow-sm">Bellow Analysis</h3>
-            <button onClick={() => openSubmitJob('Bellow Analysis')} className="glass-btn-blue w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
-              Submit New Job
-            </button>
-          </div>
-          <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-            <div>
-              <h3 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center justify-center gap-2 drop-shadow-sm">
-                <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
-              </h3>
-              <p className="text-xs text-slate-600 font-medium mb-6">Not sure which analysis to run? Describe your scenario.</p>
+        )}
+
+        <div className="max-w-[1200px] mx-auto">
+          <DashboardHeader isProfile={false} />
+
+          {/* --- NEW APPROVAL BANNER --- */}
+          {!currentUser.isApproved && (
+            <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
+              <div className="flex items-start gap-4">
+                <Shield className="w-8 h-8 mt-1 text-amber-600 shrink-0 sm:mt-0" />
+                <div>
+                    <h4 className="text-lg font-extrabold text-amber-800">Account Verification Required</h4>
+                    <p className="mt-1 text-sm font-medium text-amber-900">
+                      To ensure quality, you must be approved by the NOVA Admin before you can create jobs.
+                    </p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={handleRequestAccess} 
+                disabled={isRequestingAccess}
+                className="flex items-center gap-2 px-6 py-3 font-bold text-white transition-colors shadow-md bg-amber-600 hover:bg-amber-700 rounded-xl whitespace-nowrap disabled:opacity-70"
+              >
+                {isRequestingAccess ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
+                {isRequestingAccess ? 'Sending...' : 'Request Access'}
+              </button>
             </div>
-            <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
-              <Sparkles className="w-4 h-4" /> ✨ Smart Setup
-            </button>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1000px] mx-auto mb-10">
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Nozzle Analysis</h3>
+              {/* --- LOCKED BUTTON LOGIC --- */}
+              {currentUser.isApproved ? (
+                <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Locked
+                </button>
+              )}
+            </div>
+            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] transition-all">
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Bellow Analysis</h3>
+              {/* --- LOCKED BUTTON LOGIC --- */}
+              {currentUser.isApproved ? (
+                <button onClick={() => openSubmitJob('Bellow Analysis')} className="glass-btn-blue w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Locked
+                </button>
+              )}
+            </div>
+            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+              <div>
+                <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
+                  <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
+                </h3>
+                <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
+              </div>
+              <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
+                <Sparkles className="w-4 h-4" /> ✨ Smart Setup
+              </button>
+            </div>
           </div>
-        </div>
 
         <div className="glass-panel rounded-[2rem] p-8 shadow-sm mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+          <div className="flex flex-col items-center justify-between gap-4 mb-8 sm:flex-row">
             <h2 className="text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="glass-input text-[#3C64D6] text-sm rounded-xl px-5 py-2.5 outline-none font-bold cursor-pointer shadow-sm border-white/60 focus:ring-2 focus:ring-blue-500">
               <option value={`All Analysis (${jobs.length})`}>All Analysis ({jobs.length})</option>
@@ -1164,25 +1266,25 @@ export default function App() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-3xl font-extrabold text-emerald-800 mb-1">{stats.total}</div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="p-5 text-center border shadow-sm bg-emerald-500/20 border-emerald-500/30 backdrop-blur-md rounded-2xl">
+              <div className="mb-1 text-3xl font-extrabold text-emerald-800">{stats.total}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-emerald-700 opacity-90">Total</div>
             </div>
-            <div className="bg-blue-500/20 border border-blue-500/30 backdrop-blur-md rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-3xl font-extrabold text-blue-800 mb-1">{stats.completed}</div>
+            <div className="p-5 text-center border shadow-sm bg-blue-500/20 border-blue-500/30 backdrop-blur-md rounded-2xl">
+              <div className="mb-1 text-3xl font-extrabold text-blue-800">{stats.completed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-blue-700 opacity-90">Completed</div>
             </div>
-            <div className="bg-sky-500/20 border border-sky-500/30 backdrop-blur-md rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-3xl font-extrabold text-sky-800 mb-1">{stats.processing}</div>
+            <div className="p-5 text-center border shadow-sm bg-sky-500/20 border-sky-500/30 backdrop-blur-md rounded-2xl">
+              <div className="mb-1 text-3xl font-extrabold text-sky-800">{stats.processing}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-sky-700 opacity-90">Processing</div>
             </div>
-            <div className="bg-orange-500/20 border border-orange-500/30 backdrop-blur-md rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-3xl font-extrabold text-orange-800 mb-1">{stats.pending}</div>
+            <div className="p-5 text-center border shadow-sm bg-orange-500/20 border-orange-500/30 backdrop-blur-md rounded-2xl">
+              <div className="mb-1 text-3xl font-extrabold text-orange-800">{stats.pending}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-orange-700 opacity-90">Pending</div>
             </div>
-            <div className="bg-red-500/20 border border-red-500/30 backdrop-blur-md rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-3xl font-extrabold text-red-800 mb-1">{stats.failed}</div>
+            <div className="p-5 text-center border shadow-sm bg-red-500/20 border-red-500/30 backdrop-blur-md rounded-2xl">
+              <div className="mb-1 text-3xl font-extrabold text-red-800">{stats.failed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-red-700 opacity-90">Failed</div>
             </div>
           </div>
@@ -1190,33 +1292,39 @@ export default function App() {
 
         {jobs.length === 0 ? (
           <div className="glass-panel rounded-[2.5rem] py-24 px-6 text-center border-t border-l border-white/80 flex flex-col items-center justify-center">
-            <div className="mb-8 relative glass-icon-container w-24 h-24 rounded-3xl flex items-center justify-center">
+            <div className="relative flex items-center justify-center w-24 h-24 mb-8 glass-icon-container rounded-3xl">
               <Database className="w-12 h-12 text-[#3C64D6] opacity-80" />
             </div>
-            <h3 className="text-2xl font-extrabold text-slate-800 mb-3 drop-shadow-sm">No Analysis Jobs Yet</h3>
-            <p className="text-slate-600 font-medium text-sm mb-8 max-w-sm mx-auto leading-relaxed">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
-            <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
-               <Plus className="w-5 h-5 mr-2" /> Start First Job
-            </button>
+            <h3 className="mb-3 text-2xl font-extrabold text-slate-800 drop-shadow-sm">No Analysis Jobs Yet</h3>
+            <p className="max-w-sm mx-auto mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
+            {currentUser.isApproved ? (
+              <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
+                 <Plus className="w-5 h-5 mr-2" /> Start First Job
+              </button>
+            ) : (
+              <button disabled className="flex items-center px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
+                 <Lock className="w-5 h-5 mr-2" /> Account Locked
+              </button>
+            )}
           </div>
         ) : (
           <div className="glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
-             <div className="bg-white/40 backdrop-blur-md px-8 py-5 border-b border-white/50 flex justify-between items-center">
-                <h3 className="font-extrabold text-slate-800 flex items-center gap-3 text-lg drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
+             <div className="flex items-center justify-between px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
+                <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
              </div>
-             <div className="overflow-x-auto p-4">
-               <table className="w-full text-left text-sm text-slate-700 border-separate border-spacing-y-2">
+             <div className="p-4 overflow-x-auto">
+               <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
                  <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
                    <tr><th className="px-6 py-2">Job ID</th><th className="px-6 py-2">Project Name</th><th className="px-6 py-2">Type</th><th className="px-6 py-2">Date</th><th className="px-6 py-2">Status</th></tr>
                  </thead>
                  <tbody>
                    {filteredJobs.map(job => (
-                     <tr key={job.id} className="bg-white/40 hover:bg-white/60 transition-colors shadow-sm rounded-xl">
+                     <tr key={job.id} className="transition-colors shadow-sm bg-white/40 hover:bg-white/60 rounded-xl">
                        <td className="px-6 py-4 font-black text-[#3C64D6] first:rounded-l-xl">{job.job_id_display}</td>
-                       <td className="px-6 py-4 text-slate-800 font-bold">{job.name}</td>
+                       <td className="px-6 py-4 font-bold text-slate-800">{job.name}</td>
                        <td className="px-6 py-4 font-medium">{job.type}</td>
                        <td className="px-6 py-4 font-medium text-slate-500">{new Date(job.created_at).toLocaleDateString()}</td>
-                       <td className="px-6 py-4 last:rounded-r-xl flex items-center justify-between">
+                       <td className="flex items-center justify-between px-6 py-4 last:rounded-r-xl">
                           <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold border ${job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30' : 'bg-orange-500/20 text-orange-800 border-orange-500/30'}`}>
                             {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />} 
                             {job.status}
@@ -1247,19 +1355,19 @@ export default function App() {
               </div>
               <form onSubmit={handleJobSubmit} className="p-8 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-800 pl-1">Project Name</label>
+                  <label className="pl-1 text-sm font-bold text-slate-800">Project Name</label>
                   <input name="jobName" type="text" className="w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium" required autoFocus placeholder="e.g. Main Line Node 45" />
                 </div>
                 
-                <div className="border-t border-slate-300/40 pt-4 mt-2">
-                  <button type="button" onClick={() => setShowMaterialConsultant(!showMaterialConsultant)} className="text-sm font-extrabold text-purple-700 flex items-center gap-2 hover:underline">
+                <div className="pt-4 mt-2 border-t border-slate-300/40">
+                  <button type="button" onClick={() => setShowMaterialConsultant(!showMaterialConsultant)} className="flex items-center gap-2 text-sm font-extrabold text-purple-700 hover:underline">
                     <Sparkles className="w-4 h-4" /> Need AI Material Recommendations?
                   </button>
                   
                   {showMaterialConsultant && (
-                    <div className="mt-4 bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="p-4 mt-4 border bg-purple-500/10 border-purple-500/20 rounded-xl backdrop-blur-sm animate-in fade-in slide-in-from-top-2">
                       <textarea
-                        className="w-full p-3 glass-input rounded-lg text-sm font-medium h-20 resize-none focus:ring-purple-500/50 mb-3"
+                        className="w-full h-20 p-3 mb-3 text-sm font-medium rounded-lg resize-none glass-input focus:ring-purple-500/50"
                         placeholder="E.g., High pressure steam, 450°C, corrosive environment..."
                         value={materialPrompt}
                         onChange={(e) => setMaterialPrompt(e.target.value)}
@@ -1269,7 +1377,7 @@ export default function App() {
                       </button>
                       
                       {materialResponse && (
-                        <div className="mt-4 text-xs text-slate-800 font-medium leading-relaxed glass-panel p-4 rounded-lg border border-white/50 whitespace-pre-wrap shadow-sm">
+                        <div className="p-4 mt-4 text-xs font-medium leading-relaxed whitespace-pre-wrap border rounded-lg shadow-sm text-slate-800 glass-panel border-white/50">
                           {materialResponse}
                         </div>
                       )}
@@ -1280,12 +1388,12 @@ export default function App() {
                 <div className="bg-amber-500/10 border border-amber-500/20 backdrop-blur-md rounded-xl p-4 text-[13px] text-amber-900 flex items-start gap-3 shadow-sm mt-4">
                    <Shield className="w-6 h-6 text-amber-600 shrink-0 mt-0.5 drop-shadow-sm" />
                    <p className="font-medium leading-relaxed">
-                     <strong className="block mb-1 text-amber-800 font-extrabold">Owner Verification Required:</strong>
+                     <strong className="block mb-1 font-extrabold text-amber-800">Owner Verification Required:</strong>
                      Upon submission, an alert will be sent to analysis.ai.nova@gmail.com. Processing will only begin after the owner verifies your request.
                    </p>
                 </div>
 
-                <div className="pt-4 flex gap-4">
+                <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsSubmitJobOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
                   <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : 'glass-btn-blue'}`}>Submit</button>
                 </div>
@@ -1301,8 +1409,8 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAiModalOpen(false)}></div>
             <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80">
-              <div className="bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md p-6 flex justify-between items-center text-white border-b border-white/20">
-                <h3 className="font-extrabold flex items-center gap-3 text-xl drop-shadow-sm">
+              <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+                <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
                   <Sparkles className="w-6 h-6" /> AI Analysis Recommender
                 </h3>
                 <button onClick={() => setIsAiModalOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
@@ -1310,11 +1418,11 @@ export default function App() {
                 </button>
               </div>
               
-              <div className="p-8 flex-1 overflow-y-auto space-y-6">
+              <div className="flex-1 p-8 space-y-6 overflow-y-auto">
                 <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                  <p className="text-sm text-purple-900 font-bold mb-3 pl-1 drop-shadow-sm">Describe your engineering scenario below:</p>
+                  <p className="pl-1 mb-3 text-sm font-bold text-purple-900 drop-shadow-sm">Describe your engineering scenario below:</p>
                   <textarea
-                    className="w-full p-4 glass-input rounded-xl text-sm font-medium h-32 resize-none focus:ring-purple-500/50"
+                    className="w-full h-32 p-4 text-sm font-medium resize-none glass-input rounded-xl focus:ring-purple-500/50"
                     placeholder="E.g., I have a high-pressure steam pipe attached to a thin-walled cylindrical vessel. I need to know if the junction is safe."
                     value={aiSetupPrompt}
                     onChange={(e) => setAiSetupPrompt(e.target.value)}
@@ -1332,11 +1440,11 @@ export default function App() {
                 </div>
 
                 {aiSetupResponse && (
-                  <div className="glass-panel border-purple-500/30 rounded-2xl p-8 animate-in fade-in slide-in-from-bottom-4 shadow-sm bg-white/60">
-                    <h4 className="text-xs font-black text-purple-800 uppercase tracking-widest mb-4 drop-shadow-sm flex items-center gap-2">
+                  <div className="p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
+                    <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
                       <Bot className="w-4 h-4"/> AI Recommendation
                     </h4>
-                    <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed font-medium">
+                    <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
                       {aiSetupResponse}
                     </div>
                   </div>
@@ -1350,7 +1458,7 @@ export default function App() {
   );
 
   const renderProfile = () => (
-    <div className="min-h-screen relative font-sans text-slate-800 p-4 md:p-8 pt-24 z-10">
+    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
            <CheckCircle className="w-5 h-5" /> {notification.message}
@@ -1360,9 +1468,9 @@ export default function App() {
       <div className="max-w-[1200px] mx-auto">
         <DashboardHeader isProfile={true} />
 
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col gap-8 md:flex-row">
           <div className="w-full md:w-[280px] shrink-0">
-            <div className="glass-panel rounded-3xl overflow-hidden py-4 border-t border-l border-white/80 shadow-sm">
+            <div className="py-4 overflow-hidden border-t border-l shadow-sm glass-panel rounded-3xl border-white/80">
               <nav className="flex flex-col gap-1 px-3">
                 {['info', 'security', 'payment', 'help'].map((tab) => (
                   <button key={tab} onClick={() => setProfileTab(tab)} className={`text-left px-5 py-3.5 text-sm font-bold rounded-xl transition-all ${profileTab === tab ? 'bg-white/60 text-[#3C64D6] shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-white/80' : 'text-slate-600 hover:bg-white/40 border border-transparent'}`}>
@@ -1376,17 +1484,17 @@ export default function App() {
           <div className="flex-1">
             {profileTab === 'info' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                <div className="flex justify-between items-center mb-10 pb-6 border-b border-white/50">
+                <div className="flex items-center justify-between pb-6 mb-10 border-b border-white/50">
                   <h2 className="text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">Profile Information</h2>
                   <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="glass-btn-blue text-white text-sm font-bold py-2.5 px-6 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2">
                     <Settings className="w-4 h-4"/> Edit Profile
                   </button>
                 </div>
 
-                <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
-                  <div className="flex flex-col items-center space-y-4 pl-4 shrink-0">
+                <div className="flex flex-col gap-12 lg:flex-row lg:gap-20">
+                  <div className="flex flex-col items-center pl-4 space-y-4 shrink-0">
                     <div className="w-32 h-32 rounded-[2rem] glass-input flex items-center justify-center overflow-hidden relative group cursor-pointer shadow-md">
-                       {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : <div className="text-5xl font-extrabold text-[#3C64D6] drop-shadow-sm">{currentUser.initial}</div>}
+                       {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : <div className="text-5xl font-extrabold text-[#3C64D6] drop-shadow-sm">{currentUser.initial}</div>}
                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
                     </div>
                     <label className="text-[#3C64D6] text-sm font-bold hover:underline cursor-pointer bg-white/40 px-4 py-1.5 rounded-full border border-white/60 shadow-sm transition-colors hover:bg-white/60">
@@ -1396,15 +1504,15 @@ export default function App() {
                   </div>
 
                   <div className="flex-1 bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-6 text-sm">
-                      <div><div className="font-extrabold text-slate-800 mb-1 drop-shadow-sm">Full Name</div><div className="text-slate-600 font-medium">{currentUser.name}</div></div>
-                      <div><div className="font-extrabold text-slate-800 mb-1 drop-shadow-sm">Email Address</div><div className="text-slate-600 font-medium">{currentUser.email}</div></div>
-                      <div><div className="font-extrabold text-slate-800 mb-1 drop-shadow-sm">Company/Institute</div><div className="text-slate-600 font-medium">{currentUser.company || "Not Provided"}</div></div>
-                      <div><div className="font-extrabold text-slate-800 mb-1 drop-shadow-sm">Phone</div><div className="text-slate-600 font-medium">{currentUser.phone || "Not Provided"}</div></div>
-                      <div><div className="font-extrabold text-slate-800 mb-1 drop-shadow-sm">Joined On</div><div className="text-slate-600 font-medium">{currentUser.joined}</div></div>
-                      <div className="md:col-span-2 pt-4 border-t border-white/50 flex gap-4">
-                        <div><div className="font-extrabold text-slate-800 mb-2 drop-shadow-sm">Account Status</div><span className="bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">Active Pro</span></div>
-                        <div><div className="font-extrabold text-slate-800 mb-2 drop-shadow-sm">Jobs Completed</div><span className="bg-blue-500/20 text-blue-800 border border-blue-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">{stats.completed} Total</span></div>
+                    <div className="grid grid-cols-1 text-sm md:grid-cols-2 gap-y-8 gap-x-6">
+                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Full Name</div><div className="font-medium text-slate-600">{currentUser.name}</div></div>
+                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Email Address</div><div className="font-medium text-slate-600">{currentUser.email}</div></div>
+                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Company/Institute</div><div className="font-medium text-slate-600">{currentUser.company || "Not Provided"}</div></div>
+                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Phone</div><div className="font-medium text-slate-600">{currentUser.phone || "Not Provided"}</div></div>
+                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Joined On</div><div className="font-medium text-slate-600">{currentUser.joined}</div></div>
+                      <div className="flex gap-4 pt-4 border-t md:col-span-2 border-white/50">
+                        <div><div className="mb-2 font-extrabold text-slate-800 drop-shadow-sm">Account Status</div><span className="bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">Active Pro</span></div>
+                        <div><div className="mb-2 font-extrabold text-slate-800 drop-shadow-sm">Jobs Completed</div><span className="bg-blue-500/20 text-blue-800 border border-blue-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">{stats.completed} Total</span></div>
                       </div>
                     </div>
                   </div>
@@ -1414,13 +1522,13 @@ export default function App() {
 
             {profileTab === 'security' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                <div className="mb-10 pb-4 border-b border-white/50"><h2 className="text-2xl font-extrabold text-red-600 drop-shadow-sm">Security Settings</h2></div>
+                <div className="pb-4 mb-10 border-b border-white/50"><h2 className="text-2xl font-extrabold text-red-600 drop-shadow-sm">Security Settings</h2></div>
                 <div className="bg-white/40 border border-white/60 backdrop-blur-md rounded-3xl p-16 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                  <div className="w-20 h-20 bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-amber-500/30 shadow-sm backdrop-blur-sm">
+                  <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 border shadow-sm bg-amber-500/20 rounded-2xl border-amber-500/30 backdrop-blur-sm">
                      <Lock className="w-10 h-10 text-amber-600 drop-shadow-sm" />
                   </div>
-                  <h3 className="text-xl text-slate-800 font-extrabold mb-2 drop-shadow-sm">Password Management</h3>
-                  <p className="text-slate-600 text-sm mb-8 font-medium max-w-sm mx-auto">Keep your account secure by using a strong password and updating it regularly.</p>
+                  <h3 className="mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">Password Management</h3>
+                  <p className="max-w-sm mx-auto mb-8 text-sm font-medium text-slate-600">Keep your account secure by using a strong password and updating it regularly.</p>
                   <button onClick={() => setIsChangePasswordOpen(true)} className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold py-3.5 px-8 rounded-xl mx-auto flex items-center shadow-lg transition-transform hover:scale-105">
                      <Lock className="w-4 h-4 mr-2" /> Change Password
                   </button>
@@ -1431,20 +1539,20 @@ export default function App() {
             {profileTab === 'payment' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                 <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm">
-                  <h2 className="text-2xl font-extrabold text-emerald-700 mb-8 pb-4 border-b border-white/50 drop-shadow-sm">Payment Summary ({jobs.length} Jobs)</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <h2 className="pb-4 mb-8 text-2xl font-extrabold border-b text-emerald-700 border-white/50 drop-shadow-sm">Payment Summary ({jobs.length} Jobs)</h2>
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="bg-white/40 border border-red-500/30 backdrop-blur-md rounded-3xl py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="text-3xl font-extrabold text-red-600 mb-2 drop-shadow-sm">₹{paymentData.unpaid.toLocaleString()}</div>
-                       <div className="text-xs font-bold text-slate-600 uppercase tracking-widest">Unpaid</div>
+                       <div className="mb-2 text-3xl font-extrabold text-red-600 drop-shadow-sm">₹{paymentData.unpaid.toLocaleString()}</div>
+                       <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Unpaid</div>
                     </div>
                     <div className="bg-white/40 border border-emerald-500/30 backdrop-blur-md rounded-3xl py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="text-3xl font-extrabold text-emerald-600 mb-2 drop-shadow-sm">0</div>
-                       <div className="text-xs font-bold text-slate-600 uppercase tracking-widest">Paid</div>
+                       <div className="mb-2 text-3xl font-extrabold text-emerald-600 drop-shadow-sm">0</div>
+                       <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Paid</div>
                     </div>
-                    <div className="glass-btn-blue border-blue-500/50 rounded-3xl py-8 text-center shadow-lg relative overflow-hidden">
+                    <div className="relative py-8 overflow-hidden text-center shadow-lg glass-btn-blue border-blue-500/50 rounded-3xl">
                        <div className="absolute inset-0 bg-white/10"></div>
-                       <div className="text-3xl font-extrabold text-white mb-2 drop-shadow-sm relative z-10">₹{paymentData.total.toLocaleString()}</div>
-                       <div className="text-xs font-bold text-blue-100 uppercase tracking-widest relative z-10">Total</div>
+                       <div className="relative z-10 mb-2 text-3xl font-extrabold text-white drop-shadow-sm">₹{paymentData.total.toLocaleString()}</div>
+                       <div className="relative z-10 text-xs font-bold tracking-widest text-blue-100 uppercase">Total</div>
                     </div>
                   </div>
                 </div>
@@ -1454,23 +1562,23 @@ export default function App() {
             {profileTab === 'help' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
                  <h2 className="text-2xl font-extrabold text-[#0EA5E9] mb-8 pb-4 border-b border-white/50 drop-shadow-sm">Need Help?</h2>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <div className="bg-white/40 border border-sky-500/30 backdrop-blur-md p-12 text-center rounded-3xl flex flex-col justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                      <div className="w-16 h-16 bg-sky-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-sky-500/30">
+                      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 border bg-sky-500/20 rounded-2xl border-sky-500/30">
                          <Mail className="w-8 h-8 text-sky-600" />
                       </div>
-                      <h3 className="text-xl font-extrabold mb-3 text-slate-800 drop-shadow-sm">Contact Support</h3>
-                      <p className="text-slate-600 text-sm font-medium mb-6">Email us directly for technical assistance and licensing queries:</p>
-                      <a href="mailto:analysis.ai.nova@gmail.com" className="glass-btn-blue text-white font-bold transition-transform hover:scale-105 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl shadow-md mx-auto text-sm">
+                      <h3 className="mb-3 text-xl font-extrabold text-slate-800 drop-shadow-sm">Contact Support</h3>
+                      <p className="mb-6 text-sm font-medium text-slate-600">Email us directly for technical assistance and licensing queries:</p>
+                      <a href="mailto:analysis.ai.nova@gmail.com" className="inline-flex items-center justify-center gap-2 px-6 py-3 mx-auto text-sm font-bold text-white transition-transform shadow-md glass-btn-blue hover:scale-105 rounded-xl">
                         analysis.ai.nova@gmail.com
                       </a>
                     </div>
                     
                     <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-3xl flex flex-col h-[400px] shadow-[0_8px_32px_rgba(14,165,233,0.1)] overflow-hidden">
-                      <div className="glass-panel border-b border-white/50 p-4 font-extrabold text-sm flex items-center gap-3 text-slate-800 shadow-sm">
-                        <div className="bg-sky-500/20 p-2 rounded-lg border border-sky-500/30"><Bot className="w-5 h-5 text-sky-600"/></div> ✨ NOVA AI Support
+                      <div className="flex items-center gap-3 p-4 text-sm font-extrabold border-b shadow-sm glass-panel border-white/50 text-slate-800">
+                        <div className="p-2 border rounded-lg bg-sky-500/20 border-sky-500/30"><Bot className="w-5 h-5 text-sky-600"/></div> ✨ NOVA AI Support
                       </div>
-                      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-white/20">
+                      <div className="flex-1 p-5 space-y-4 overflow-y-auto bg-white/20">
                         {supportChat.map((m, i) => (
                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                               <div className={`p-3.5 rounded-2xl text-sm font-medium max-w-[85%] shadow-sm backdrop-blur-md ${m.role === 'user' ? 'bg-[#0EA5E9] text-white rounded-tr-none border border-sky-400' : 'glass-panel text-slate-800 rounded-tl-none border border-white/80'}`}>{m.text}</div>
@@ -1484,7 +1592,7 @@ export default function App() {
                           </div>
                         )}
                       </div>
-                      <form onSubmit={handleSupportSubmit} className="p-4 border-t border-white/50 bg-white/40 flex gap-3 backdrop-blur-md">
+                      <form onSubmit={handleSupportSubmit} className="flex gap-3 p-4 border-t border-white/50 bg-white/40 backdrop-blur-md">
                          <input 
                            type="text" 
                            className="flex-1 glass-input rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-[#0EA5E9] transition-all" 
@@ -1492,7 +1600,7 @@ export default function App() {
                            onChange={e => setSupportInput(e.target.value)} 
                            placeholder="Ask me anything..."
                          />
-                         <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="glass-btn-blue disabled:opacity-50 text-white p-3 rounded-xl transition-all hover:scale-105 shadow-md flex items-center justify-center"><Send className="w-5 h-5"/></button>
+                         <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="flex items-center justify-center p-3 text-white transition-all shadow-md glass-btn-blue disabled:opacity-50 rounded-xl hover:scale-105"><Send className="w-5 h-5"/></button>
                       </form>
                     </div>
                  </div>
@@ -1506,20 +1614,20 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-              <div className="p-6 bg-gradient-to-r from-blue-600/90 to-blue-500/90 text-white font-extrabold flex justify-between items-center backdrop-blur-md">
+              <div className="flex items-center justify-between p-6 font-extrabold text-white bg-gradient-to-r from-blue-600/90 to-blue-500/90 backdrop-blur-md">
                  <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Settings className="w-6 h-6"/> Edit Profile</span>
                  <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
               </div>
               <form onSubmit={handleEditProfile} className="p-8 space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-800 pl-1">Company / Institute</label>
+                  <label className="pl-1 text-sm font-bold text-slate-800">Company / Institute</label>
                   <input type="text" value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} className="w-full glass-input p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-800 pl-1">Phone Number</label>
+                  <label className="pl-1 text-sm font-bold text-slate-800">Phone Number</label>
                   <input type="tel" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full glass-input p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" required />
                 </div>
-                <div className="pt-4 flex gap-4">
+                <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors">Cancel</button>
                   <button type="submit" className="flex-1 px-4 py-3.5 glass-btn-blue text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md">Save Changes</button>
                 </div>
@@ -1550,11 +1658,11 @@ export default function App() {
                        required 
                        className={`w-full glass-input ${isPwdSuccess ? '!border-emerald-500 text-emerald-800 bg-emerald-50/50' : pwdErrors.new ? '!border-red-500' : ''} p-3.5 pr-12 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300`} 
                      />
-                     <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors">
+                     <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-slate-500 hover:text-slate-800">
                        {showPwd.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                      </button>
                    </div>
-                   {pwdErrors.new && <p className="text-red-500 text-xs font-bold pl-1 leading-tight animate-in fade-in slide-in-from-top-1">{pwdErrors.new}</p>}
+                   {pwdErrors.new && <p className="pl-1 text-xs font-bold leading-tight text-red-500 animate-in fade-in slide-in-from-top-1">{pwdErrors.new}</p>}
                 </div>
                 
                 <div className="space-y-2">
@@ -1567,14 +1675,14 @@ export default function App() {
                        required 
                        className={`w-full glass-input ${isPwdSuccess ? '!border-emerald-500 text-emerald-800 bg-emerald-50/50' : pwdErrors.confirm ? '!border-red-500' : ''} p-3.5 pr-12 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300`} 
                      />
-                     <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors">
+                     <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-slate-500 hover:text-slate-800">
                        {showForgotPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                      </button>
                    </div>
-                   {pwdErrors.confirm && <p className="text-red-500 text-xs font-bold pl-1 animate-in fade-in slide-in-from-top-1">{pwdErrors.confirm}</p>}
+                   {pwdErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">{pwdErrors.confirm}</p>}
                 </div>
 
-                <div className="pt-4 flex gap-4">
+                <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors">Cancel</button>
                   <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${isPwdSuccess ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
                     {isPwdSuccess ? 'Success!' : 'Update'}
