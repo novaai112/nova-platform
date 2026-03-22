@@ -902,7 +902,7 @@ export default function App() {
       </footer>
       {/* Modern Glassmorphism WhatsApp Button */}
       <a 
-        href="https://wa.me/919931861471?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis." 
+        href="https://wa.me/918757014303?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis." 
         target="_blank" 
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex items-center justify-center p-4 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-md bg-white/20 border border-white/30 hover:bg-white/30 hover:scale-110 transition-all duration-300 cursor-pointer"
