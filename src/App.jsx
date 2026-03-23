@@ -1234,9 +1234,11 @@ export default function App() {
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Bellow Analysis</h3>
               {/* --- LOCKED BUTTON LOGIC --- */}
               {currentUser.isApproved ? (
-                <button onClick={() => openSubmitJob('Bellow Analysis')} className="glass-btn-blue w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
+                <button 
+                  onClick={() => window.location.href = '/bellow.html'} 
+                  className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
                   Submit New Job
-                </button>
+              </button>
               ) : (
                 <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" /> Locked
