@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOVA Bellow Analysis | FEA Automation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --bg-base: #030303;
+            --bg-glow-1: #2563eb; 
+            --bg-glow-2: #059669; 
+            --bg-glow-3: #7c3aed;
+
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-highlight: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 
+                            inset 0 1px 1px rgba(255, 255, 255, 0.5), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+            
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --modal-orange: #f97316;
+            --modal-green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: default;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.6;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
+        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.4; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 60px) scale(1.1); }
+            100% { transform: translate(-30px, 40px) scale(0.9); }
+        }
+
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            width: 100%;
+            max-width: 1100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .glass-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: glass-sheen 12s infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes glass-sheen {
+            0% { left: -150%; }
+            15% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .app-header {
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+            position: relative;
+            z-index: 2;
+        }
+
+        .app-header h1 {
+            font-size: 1.25rem; font-weight: 600; letter-spacing: 2px;
+            text-transform: uppercase; color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-outline, .btn-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-main);
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 6px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 2;
+        }
+        .btn-outline:hover, .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--glass-highlight);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+        .btn-glass.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .form-body { padding: 3rem; position: relative; z-index: 2; }
+        .grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem; }
+
+        .col-title {
+            color: #ffffff; font-weight: 500; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2rem;
+            display: flex; align-items: center; gap: 0.75rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .col-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+        }
+
+        .form-group { margin-bottom: 2rem; transition: all 0.3s ease; }
+        .form-label {
+            display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;
+            color: var(--text-main); margin-bottom: 0.75rem; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
+            color: #fff; background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .glass-input, .glass-select {
+            width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 10px; font-size: 0.9rem; color: #ffffff; transition: all 0.3s ease;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 1px 2px rgba(255,255,255,0.05); cursor: pointer;
+        }
+        .glass-select option { background: #1a1a1a; color: var(--text-main); }
+        .glass-input:focus, .glass-select:focus {
+            outline: none; border-color: rgba(96, 165, 250, 0.6); background: rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        .input-addon-group {
+            display: flex; align-items: center; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 10px; transition: all 0.3s ease; overflow: hidden;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 1px 2px rgba(255,255,255,0.05);
+        }
+        .input-addon-group:focus-within { border-color: rgba(96, 165, 250, 0.6); box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 0 4px rgba(59, 130, 246, 0.2); }
+        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; }
+        .addon {
+            padding: 0 1rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;
+            background: rgba(255, 255, 255, 0.03); border-left: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%; display: flex; align-items: center;
+        }
+
+        .ref-link {
+            display: inline-block; font-size: 0.75rem; color: #60a5fa; margin-top: 0.5rem;
+            cursor: pointer; transition: all 0.3s; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+        .ref-link:hover { opacity: 1; text-shadow: 0 0 10px rgba(96, 165, 250, 0.8); color: #93c5fd; }
+
+        .status-box {
+            background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);
+            border-top: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 1.5rem;
+            text-align: center; font-size: 0.85rem; border-radius: 10px; backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2); line-height: 1.5;
+        }
+        .upset-container { display: none; animation: fadeIn 0.4s ease forwards; }
+        .upset-title { font-size: 0.8rem; color: var(--text-main); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+        
+        .upset-table {
+            width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .upset-table th, .upset-table td { padding: 0.75rem; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); }
+        .upset-table th { background: rgba(255, 255, 255, 0.05); color: #ffffff; font-size: 0.75rem; font-weight: 500; }
+        .upset-table input { width: 100%; background: transparent; border: none; color: #fff; text-align: center; font-size: 0.85rem; cursor: text; }
+        .upset-table input:focus { outline: none; color: #60a5fa; text-shadow: 0 0 8px rgba(96,165,250,0.4); }
+
+        .method-toggle { display: flex; gap: 1rem; margin-bottom: 2rem; width: 100%; justify-content: center; }
+
+        .action-area {
+            margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+        }
+
+        .ai-header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .ai-title { font-size: 0.95rem; font-weight: 600; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        .drop-zone {
+            width: 100%; max-width: 600px; border: 1px dashed rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px; padding: 3rem; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+        .drop-zone:hover { border-color: rgba(96, 165, 250, 0.6); background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.15), 0 10px 20px rgba(0,0,0,0.3); }
+        .drop-zone p { color: #e2e8f0; font-size: 0.9rem; margin-top: 1rem; }
+
+        .btn-submit {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.6) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.5);
+            color: white; padding: 1.2rem 4rem; border-radius: 12px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(29, 78, 216, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+            letter-spacing: 1px; backdrop-filter: blur(15px); margin-top: 1rem;
+        }
+        .btn-submit:hover {
+            transform: translateY(-4px); box-shadow: 0 15px 40px rgba(29, 78, 216, 0.5), inset 0 2px 2px rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.9) 0%, rgba(37, 99, 235, 0.8) 100%);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .modal-content {
+            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px; box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            width: 90%; max-width: 400px; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden; backdrop-filter: blur(40px);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        .error-modal { background: #fff; border: none; backdrop-filter: none; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .error-header { background: var(--modal-orange); color: white; padding: 1.5rem; text-align: center; font-weight: bold; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .error-body { padding: 2rem; text-align: center; color: #1e293b; font-weight: 500; font-size: 0.95rem; line-height: 1.5;}
+        .error-footer { padding: 0 2rem 2rem; display: flex; justify-content: center; }
+        .btn-error-gotit { background: #2563eb; color: white; border: none; padding: 0.6rem 2rem; width: 100%; border-radius: 6px; font-weight: 600; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 6px rgba(37,99,235,0.3); transition: background 0.2s; }
+        .btn-error-gotit:hover { background: #1d4ed8; }
+
+        .confirm-modal-content {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            width: 90%; max-width: 450px;
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .modal-overlay.active .confirm-modal-content { transform: scale(1); }
+        
+        .confirm-header-green {
+            background: linear-gradient(135deg, #2dd4bf 0%, #10b981 100%);
+            color: white; padding: 1.2rem; text-align: center; font-weight: 600; font-size: 1.05rem;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.2);
+        }
+        
+        .confirm-body-scroll { padding: 1.5rem 2rem; color: #334155; font-size: 0.9rem; max-height: 60vh; overflow-y: auto; }
+        .confirm-summary-title { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .c-section { margin-bottom: 1.2rem; }
+        .c-title { font-weight: 600; color: #475569; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; font-size: 0.85rem; }
+        .c-item { margin-bottom: 0.25rem; padding-left: 1.5rem; color: #0f172a; font-weight: 500; }
+        .c-item span { color: #64748b; font-weight: 400; }
+        .c-indent { padding-left: 1.5rem; margin-top: 0.4rem; font-size: 0.8rem; }
+        
+        .confirm-footer-actions { padding: 1rem 2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.5); }
+        .btn-cancel-gray { background: #64748b; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-cancel-gray:hover { background: #475569; }
+        .btn-confirm-submit { background: #10b981; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .btn-confirm-submit:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4); }
+
+        /* Reference Modal */
+        .ref-modal-content { background: #ffffff; border-radius: 8px; width: 90%; max-width: 700px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .ref-modal-content { transform: scale(1); }
+        .ref-header-light { text-align: center; padding: 1.2rem; color: #1e3a8a; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+        .ref-close-btn { position: absolute; top: 10px; right: 10px; background: #dc2626; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; padding-bottom: 2px; transition: background 0.2s; }
+        .ref-close-btn:hover { background: #b91c1c; }
+        .ref-body-light { padding: 0 2rem 2rem 2rem; display: flex; flex-direction: column; align-items: center; background: #ffffff; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+        .ref-caption { font-size: 1.1rem; color: #000; margin-bottom: 1.5rem; }
+        .btn-blue-solid { background: #2563eb; color: white; border: none; padding: 0.6rem 2.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.3); transition: background 0.2s; }
+        .btn-blue-solid:hover { background: #1d4ed8; }
+
+        /* Loading Overlays */
+        .processing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; color: var(--text-main); border-radius: inherit; }
+        .spinner { width: 50px; height: 50px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; box-shadow: 0 0 10px rgba(96,165,250,0.2); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .solving-modal-content { background: none; border: none; box-shadow: none; backdrop-filter: none; display: flex; flex-direction: column; align-items: center; color: white; text-align: center; }
+
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .grid-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body onload="toggleCorrosionInputs()">
+    
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="glass-container">
+        <header class="app-header">
+            <h1>NOVA Bellow Analysis</h1>
+            <a href="https://nova-analysis.vercel.app/">
+                <button class="btn-glass">← Dashboard</button>
+            </a>
+        </header>
+
+        <main class="form-body">
+            
+            <div class="method-toggle">
+                <button class="btn-glass active" id="btnMethodPdf" onclick="setInputMethod('pdf')">Upload PV Elite Report</button>
+                <button class="btn-glass" id="btnMethodManual" onclick="setInputMethod('manual')">Enter Geometry Manually</button>
+            </div>
+
+            <div class="grid-layout">
+                <div>
+                    <div class="col-title">Configuration</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">1</span> Design Code Edition *</label>
+                        <select class="glass-select" id="codeEdition">
+                            <option value="">-- Select --</option>
+                            <option value="2021">2021</option>
+                            <option value="2023">2023</option>
+                            <option value="2025" selected>2025</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">2</span> Bellow Variation *</label>
+                        <select class="glass-select" id="bellowVariation">
+                            <option value="">-- Select --</option>
+                            <option value="Flanged and Flued" selected>Flanged and Flued</option>
+                        </select>
+                        <a class="ref-link" onclick="openModal('refModal')">View Diagram Reference</a>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">3</span> Upset Cases *</label>
+                        <select class="glass-select" id="upsetSelect" onchange="toggleUpsetCases()">
+                            <option value="No" selected>No (Hydrotest Only - 2 Cases)</option>
+                            <option value="Yes">Yes (Full Matrix - 10 Cases)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="col-title">Corrosion Options</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">4</span> Shell Corrosion *</label>
+                        <select class="glass-select" id="shellCorrosion" onchange="toggleCorrosionInputs()">
+                            <option value="Yes" selected>Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">5</span> Bellow Corrosion *</label>
+                        <select class="glass-select" id="bellowCorrosion" onchange="toggleCorrosionInputs()">
+                            <option value="Yes" selected>Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="col-title">Hydrotest</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">6</span> Shell Pressure *</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="shellPressure" placeholder="0.62" step="0.01">
+                            <span class="addon">MPa</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><span class="badge">7</span> Shell Temperature *</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="shellTemp" placeholder="22">
+                            <span class="addon">°C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="col-title">Execution Matrix</div>
+                    
+                    <div id="statusEmpty" class="status-box">
+                        <b>Base Scenario Detected</b><br>
+                        Solver will calculate 2 Hydrotest Cases (Corroded & Uncorroded).
+                    </div>
+
+                    <div id="statusUpset" class="upset-container">
+                        <div class="upset-title">Shell Side Upset Conditions</div>
+                        <table class="upset-table">
+                            <thead>
+                                <tr><th>Case</th><th>P(MPa)</th><th>T(°C)</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td><input type="text" id="uc1_p" placeholder="Req"></td><td><input type="text" id="uc1_t" placeholder="Req"></td></tr>
+                                <tr><td>2</td><td><input type="text" id="uc2_p" placeholder="Req"></td><td><input type="text" id="uc2_t" placeholder="Req"></td></tr>
+                                <tr><td>3</td><td><input type="text" id="uc3_p" placeholder="Req"></td><td><input type="text" id="uc3_t" placeholder="Req"></td></tr>
+                                <tr><td>4</td><td><input type="text" id="uc4_p" placeholder="Req"></td><td><input type="text" id="uc4_t" placeholder="Req"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="manualInputArea" style="display: none; margin-top: 2rem;">
+                <div class="col-title" style="margin-bottom: 1.5rem;">Manual Geometry Specification</div>
+                <div class="grid-layout" style="gap: 1.5rem;">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Material Name</label>
+                        <input type="text" class="glass-input" id="m_mat" placeholder="e.g. SA-516">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">No. of Convolutions</label>
+                        <input type="number" class="glass-input" id="m_nc" placeholder="2" min="0.5" step="0.5" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bellow ID (dj)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_dj" placeholder="1990">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shell ID (G)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_g" placeholder="1730">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bellow Thk (to)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_to" placeholder="20">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shell Thk (ts)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_ts" placeholder="20">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="group_sca">
+                        <label class="form-label" style="color: #fbbf24;">Shell CA</label>
+                        <div class="input-addon-group" style="border-color: rgba(245, 158, 11, 0.4);">
+                            <input type="number" class="glass-input" id="m_sca" placeholder="3.0">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group_bca">
+                        <label class="form-label" style="color: #fbbf24;">Bellow CA</label>
+                        <div class="input-addon-group" style="border-color: rgba(245, 158, 11, 0.4);">
+                            <input type="number" class="glass-input" id="m_bca" placeholder="1.0">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shell S.F. (fa)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_fa" placeholder="25">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bellow S.F. (fb)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_fb" placeholder="25">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shell Knuckle Radius (ra)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_ra" placeholder="65">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bellow Knuckle Radius (rb)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_rb" placeholder="65">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shell Length (li)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_li" placeholder="50">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bellow Length (lo)</label>
+                        <div class="input-addon-group">
+                            <input type="number" class="glass-input" id="m_lo" placeholder="50">
+                            <span class="addon">mm</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="action-area">
+                
+                <div id="pdfUploadArea" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                    <div class="ai-header">
+                        <button class="btn-glass" onclick="generateSamplePDF()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Get Sample PDF</button>
+                    </div>
+                    
+                    <div class="drop-zone" onclick="document.getElementById('pdfFileInput').click()">
+                        <div class="processing-overlay" id="aiLoading">
+                            <div class="spinner"></div>
+                            <div style="color: #fff; font-size: 0.9rem; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Extracting Data via AI...</div>
+                        </div>
+                        
+                        <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="handleFile(event.target.files[0])">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color: rgba(255,255,255,0.7); margin-bottom: 1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        <p id="fileNameDisplay" style="color: #f8fafc; font-size: 1.05rem; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Click to upload PV Elite Report PDF</p>
+                    </div>
+                </div>
+
+                <button class="btn-submit" onclick="validateAndSubmit()">Initialize Simulation</button>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content error-modal">
+            <div class="error-header">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span id="errorModalTitle">Missing Information</span>
+            </div>
+            <div class="error-body" id="errorBodyText">
+                Please fill in all required fields.
+            </div>
+            <div class="error-footer">
+                <button class="btn-error-gotit" onclick="closeModal('errorModal')">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmModal">
+        <div class="confirm-modal-content">
+            <div class="confirm-header-green">
+                Confirm Execution Matrix
+            </div>
+            <div class="confirm-body-scroll">
+                <div class="confirm-summary-title">Simulation Summary</div>
+                <div id="confirmBodyDynamic"></div>
+            </div>
+            <div class="confirm-footer-actions">
+                <button class="btn-cancel-gray" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn-confirm-submit" onclick="proceedToAnalysis()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Start PyMAPDL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="solvingModal">
+        <div class="solving-modal-content">
+            <div class="spinner" style="width: 70px; height: 70px; border-width: 4px; border-top-color: #10b981;"></div>
+            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Executing PyMAPDL Solvers...</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem;">Iterating through configuration matrix and compiling Excel Report.</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="refModal">
+        <div class="ref-modal-content">
+            <button class="ref-close-btn" onclick="closeModal('refModal')">×</button>
+            <div class="ref-header-light">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                Bellow Variation Types Reference
+            </div>
+            <div class="ref-body-light">
+                <svg width="400" height="400" viewBox="0 0 450 450" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 1rem;">
+                    <defs>
+                        <pattern id="stipple" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.7" fill="#64748b" /></pattern>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#000" /></marker>
+                    </defs>
+                    <path d="M 90 50 L 140 50 L 140 65 L 180 65 A 35 35 0 0 1 215 100 L 215 260 A 25 25 0 0 0 240 285 L 280 285 L 280 265 L 330 265 L 320 275 L 330 285 L 320 295 L 330 305 L 280 305 L 280 295 L 240 295 A 35 35 0 0 1 205 260 L 205 100 A 25 25 0 0 0 180 75 L 140 75 L 140 90 L 90 90 L 80 80 L 90 70 L 80 60 Z" fill="url(#stipple)" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+                    <g stroke="#000" stroke-width="1.2" font-family="Arial, sans-serif" font-size="15" fill="#000">
+                        <line x1="90" y1="35" x2="140" y2="35" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="90" y1="30" x2="90" y2="50" /><line x1="140" y1="30" x2="140" y2="50" /><text x="107" y="28" font-weight="bold">lo</text>
+                        <line x1="60" y1="50" x2="90" y2="50" /><line x1="60" y1="90" x2="90" y2="90" />
+                        <line x1="75" y1="50" x2="75" y2="90" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <text x="50" y="75" font-weight="bold" transform="rotate(-90 50,75)">OD</text><text x="50" y="110" font-weight="bold" transform="rotate(-90 50,110)">ID</text>
+                        <text x="65" y="76" font-weight="bold" transform="rotate(-90 65,76)">to</text>
+                        <line x1="140" y1="110" x2="180" y2="110" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="140" y1="90" x2="140" y2="115" /><line x1="180" y1="75" x2="180" y2="115" /><text x="152" y="105" font-weight="bold">fb</text>
+                        <line x1="180" y1="100" x2="198" y2="82" marker-end="url(#arrow)"/>
+                        <text x="180" y="75" font-weight="bold">rb</text><circle cx="180" cy="100" r="2" fill="#000" /> 
+                        <line x1="170" y1="180" x2="205" y2="180" marker-end="url(#arrow)" /><line x1="250" y1="180" x2="215" y2="180" marker-end="url(#arrow)" /><text x="175" y="175" font-weight="bold">te</text>
+                        <line x1="240" y1="260" x2="222" y2="278" marker-end="url(#arrow)"/><text x="228" y="252" font-weight="bold">ra</text><circle cx="240" cy="260" r="2" fill="#000" />
+                        <line x1="240" y1="245" x2="280" y2="245" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="240" y1="240" x2="240" y2="295" /><line x1="280" y1="240" x2="280" y2="265" /><text x="252" y="240" font-weight="bold">fa</text>
+                        <line x1="280" y1="320" x2="330" y2="320" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="280" y1="305" x2="280" y2="325" /><line x1="330" y1="305" x2="330" y2="325" /><text x="298" y="315" font-weight="bold">li</text>
+                        <line x1="350" y1="265" x2="350" y2="305" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="330" y1="265" x2="355" y2="265" /><line x1="330" y1="305" x2="355" y2="305" /><text x="343" y="292" font-weight="bold" transform="rotate(-90 343,292)">ts</text>
+                        <line x1="350" y1="305" x2="350" y2="330" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+                        <line x1="330" y1="330" x2="355" y2="330" /><text x="343" y="325" font-weight="bold" transform="rotate(-90 343,325)">G</text>
+                    </g>
+                </svg>
+                <div class="ref-caption">Flanged and Flued</div>
+                <button class="btn-blue-solid" onclick="closeModal('refModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFileName = null;
+        let uploadedFileObj = null;
+        let currentInputMethod = 'pdf'; 
+
+        function toggleCorrosionInputs() {
+            const shellCorr = document.getElementById('shellCorrosion').value;
+            const bellowCorr = document.getElementById('bellowCorrosion').value;
+            
+            const scaGroup = document.getElementById('group_sca');
+            const bcaGroup = document.getElementById('group_bca');
+            
+            if(scaGroup) scaGroup.style.display = shellCorr === 'Yes' ? 'block' : 'none';
+            if(bcaGroup) bcaGroup.style.display = bellowCorr === 'Yes' ? 'block' : 'none';
+        }
+
+        function setInputMethod(method) {
+            currentInputMethod = method;
+            
+            document.getElementById('btnMethodPdf').classList.remove('active');
+            document.getElementById('btnMethodManual').classList.remove('active');
+            
+            if (method === 'pdf') {
+                document.getElementById('btnMethodPdf').classList.add('active');
+                document.getElementById('pdfUploadArea').style.display = 'flex';
+                document.getElementById('manualInputArea').style.display = 'none';
+            } else {
+                document.getElementById('btnMethodManual').classList.add('active');
+                document.getElementById('pdfUploadArea').style.display = 'none';
+                document.getElementById('manualInputArea').style.display = 'block';
+                toggleCorrosionInputs(); 
+            }
+        }
+
+        function toggleUpsetCases() {
+            const val = document.getElementById('upsetSelect').value;
+            document.getElementById('statusEmpty').style.display = val === 'Yes' ? 'none' : 'block';
+            document.getElementById('statusUpset').style.display = val === 'Yes' ? 'block' : 'none';
+        }
+
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(" ");
+                fullText += pageText + "\n";
+            }
+            return fullText;
+        }
+
+        async function handleFile(file) {
+            if (!file || file.type !== "application/pdf") {
+                showModal("Invalid Document", "Please upload a valid PDF report.");
+                return;
+            }
+
+            uploadedFileName = file.name;
+            uploadedFileObj = file;
+            const loader = document.getElementById('aiLoading');
+            const display = document.getElementById('fileNameDisplay');
+            loader.style.display = 'flex';
+
+            try {
+                const extractedText = await extractTextFromPDF(file);
+                
+                const endpoint = 'http://104.211.94.173:5000/api/analyze';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: extractedText })
+                });
+
+                if (!response.ok) throw new Error('Local API request failed');
+                
+                const aiData = await response.json();
+                sessionStorage.setItem('nova_extracted_data', JSON.stringify(aiData));
+
+                display.innerHTML = `<span style="color: #4ade80; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">✓ Data Extracted:</span> ${file.name}`;
+            } catch (error) {
+                console.error("AI Extraction Error:", error);
+                display.innerHTML = `<span style="color: #f87171; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">✗ Extraction Failed:</span> ${file.name}`;
+                showModal("AI Error", "Failed to extract data via API. Please ensure your Flask server is running on port 5000.");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function validateAndSubmit() {
+            const requiredFields = [
+                { id: 'codeEdition', name: 'Design Code Edition' },
+                { id: 'bellowVariation', name: 'Bellow Variation' },
+                { id: 'shellCorrosion', name: 'Shell Corrosion' },
+                { id: 'bellowCorrosion', name: 'Bellow Corrosion' },
+                { id: 'shellPressure', name: 'Shell Pressure' },
+                { id: 'shellTemp', name: 'Shell Temperature' }
+            ];
+
+            if (currentInputMethod === 'pdf') {
+                if (!uploadedFileName) {
+                    showModal("Missing Document", "Please upload the PV Elite Report PDF.");
+                    return;
+                }
+            } else {
+                const requiredManualFields = ['m_nc', 'm_dj', 'm_g', 'm_to', 'm_ts'];
+                for (let id of requiredManualFields) {
+                    if (!document.getElementById(id).value) {
+                        showModal("Missing Input", "Please fill in essential manual geometry parameters (Convolutions, Bellow ID, Shell ID, Thk).");
+                        return;
+                    }
+                }
+            }
+
+            for (let field of requiredFields) {
+                const val = document.getElementById(field.id).value;
+                if (!val) {
+                    showModal("Missing Input", `Please provide a selection/value for <b>${field.name}</b>.`);
+                    return;
+                }
+            }
+
+            const upsetSelected = document.getElementById('upsetSelect').value;
+            if (upsetSelected === 'Yes') {
+                const reqs = ['uc1_p', 'uc1_t', 'uc2_p', 'uc2_t', 'uc3_p', 'uc3_t', 'uc4_p', 'uc4_t'];
+                for (let id of reqs) {
+                    if (!document.getElementById(id).value) {
+                        showModal("Missing Input", "Please fill all required Upset Case fields.");
+                        return;
+                    }
+                }
+            }
+
+            populateConfirmationModal(upsetSelected);
+            openModal('confirmModal');
+        }
+
+        function populateConfirmationModal(upsetSelected) {
+            const numConvDisplay = currentInputMethod === 'pdf' ? "Auto-Extracted from PDF" : document.getElementById('m_nc').value;
+            const casesCalculated = upsetSelected === 'Yes' ? '10 Cases (Hydrotest + 8 Upset)' : '2 Cases (Hydrotest Only)';
+            
+            const html = `
+                <div class="c-section">
+                    <div class="c-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> Initialization Source</div>
+                    <div class="c-item"><span>Method:</span> ${currentInputMethod === 'pdf' ? 'Extracted from PV Elite PDF' : 'Manual Geometry'}</div>
+                    ${currentInputMethod === 'pdf' ? `<div class="c-item"><span>File:</span> ${uploadedFileName}</div>` : ''}
+                    <div class="c-item"><span>Code:</span> ASME ${document.getElementById('codeEdition').value}</div>
+                    <div class="c-item"><span>Convolutions:</span> ${numConvDisplay}</div>
+                </div>
+
+                <div class="c-section">
+                    <div class="c-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Execution Matrix Setup</div>
+                    <div class="c-item"><span>Execution Plan:</span> <b>${casesCalculated}</b></div>
+                    <div class="c-indent">
+                        Both Corroded (Min. Thk) and Uncorroded (Nom. Thk) states will be evaluated per condition.
+                    </div>
+                </div>
+
+                <div class="c-section">
+                    <div class="c-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Applied Variables</div>
+                    <div class="c-item"><span>Hydrotest Base:</span> ${document.getElementById('shellPressure').value} MPa, ${document.getElementById('shellTemp').value} °C</div>
+                    <div class="c-item"><span>Shell Corrosion:</span> ${document.getElementById('shellCorrosion').value}</div>
+                    <div class="c-item"><span>Bellow Corrosion:</span> ${document.getElementById('bellowCorrosion').value}</div>
+                </div>
+            `;
+            document.getElementById('confirmBodyDynamic').innerHTML = html;
+        }
+
+        async function proceedToAnalysis() {
+            closeModal('confirmModal');
+            openModal('solvingModal');
+            
+            const manualData = {
+                inputMethod: currentInputMethod,
+                codeEdition: document.getElementById('codeEdition').value,
+                bellowVariation: document.getElementById('bellowVariation').value,
+                upsetSelect: document.getElementById('upsetSelect').value,
+                shellCorrosion: document.getElementById('shellCorrosion').value,
+                bellowCorrosion: document.getElementById('bellowCorrosion').value,
+                shellPressure: document.getElementById('shellPressure').value,
+                shellTemp: document.getElementById('shellTemp').value,
+                
+                uc1_p: document.getElementById('uc1_p')?.value,
+                uc1_t: document.getElementById('uc1_t')?.value,
+                uc2_p: document.getElementById('uc2_p')?.value,
+                uc2_t: document.getElementById('uc2_t')?.value,
+                uc3_p: document.getElementById('uc3_p')?.value,
+                uc3_t: document.getElementById('uc3_t')?.value,
+                uc4_p: document.getElementById('uc4_p')?.value,
+                uc4_t: document.getElementById('uc4_t')?.value,
+                
+                geometry: currentInputMethod === 'manual' ? {
+                    material: document.getElementById('m_mat').value,
+                    num_convolutions: document.getElementById('m_nc').value,
+                    dj: document.getElementById('m_dj').value,
+                    G: document.getElementById('m_g').value,
+                    ts: document.getElementById('m_ts').value,
+                    to: document.getElementById('m_to').value,
+                    fa: document.getElementById('m_fa').value,
+                    fb: document.getElementById('m_fb').value,
+                    ra: document.getElementById('m_ra').value,
+                    rb: document.getElementById('m_rb').value,
+                    li: document.getElementById('m_li').value,
+                    lo: document.getElementById('m_lo').value,
+                    shell_ca: document.getElementById('shellCorrosion').value === 'Yes' ? document.getElementById('m_sca').value : 0.0,
+                    bellow_ca: document.getElementById('bellowCorrosion').value === 'Yes' ? document.getElementById('m_bca').value : 0.0
+                } : {}
+            };
+
+            sessionStorage.setItem('nova_manual_data', JSON.stringify(manualData));
+
+            const formData = new FormData();
+            formData.append('manual_data', JSON.stringify(manualData));
+            
+            if (currentInputMethod === 'pdf') {
+                formData.append('file', uploadedFileObj);
+            }
+
+            try {
+                const response = await fetch('http://104.211.94.173:5000/api/solve', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Server error occurred during simulation.');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Bellow_Spring_Rates_Results.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                setTimeout(() => {
+                    window.location.href = 'https://nova-analysis.vercel.app/';
+                }, 1500);
+
+            } catch (error) {
+                console.error("PyMAPDL Solver Error:", error);
+                closeModal('solvingModal');
+                showModal("Simulation Failed", error.message);
+            }
+        }
+
+        function generateSamplePDF() {
+            const a = document.createElement('a');
+            a.href = './Nova_Sample.pdf'; 
+            a.download = 'Nova_Sample.pdf';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function showModal(title, body) {
+            document.getElementById('errorModalTitle').innerHTML = title;
+            document.getElementById('errorBodyText').innerHTML = body;
+            document.getElementById('errorModal').classList.add('active');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    </script>
+</body>
+</html>
