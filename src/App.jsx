@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { supabaseJob } from './supabaseClient';
 import { 
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
