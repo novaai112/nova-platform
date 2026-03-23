@@ -749,7 +749,7 @@
             try {
                 const extractedText = await extractTextFromPDF(file);
                 
-                const endpoint = 'http://104.211.94.173:5000/api/analyze';
+                const endpoint = 'https://nova-solve-engine.centralindia.cloudapp.azure.com/api/analyze';
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -901,7 +901,7 @@
             }
 
             try {
-                const response = await fetch('http://104.211.94.173:5000/api/solve', {
+                const response = await fetch('https://nova-solve-engine.centralindia.cloudapp.azure.com/api/solve', {
                     method: 'POST',
                     body: formData
                 });
