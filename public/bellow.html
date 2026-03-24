@@ -755,7 +755,7 @@
             try {
                 const extractedText = await extractTextFromPDF(file);
                 
-                const endpoint = 'http://localhost:5000/api/analyze'; // UPDATED ENDPOINT
+                const endpoint = 'https://nonacceleratory-bethanie-nonciliate.ngrok-free.dev/api/analyze';
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -915,9 +915,8 @@
                 formData.append('file', uploadedFileObj);
             }
 
-            try {
-                // Adjust to your actual Flask backend URL if needed
-                const response = await fetch('http://localhost:5000/api/solve', {
+           try {
+                const response = await fetch('https://nonacceleratory-bethanie-nonciliate.ngrok-free.dev/api/solve', {
                     method: 'POST',
                     body: formData
                 });
