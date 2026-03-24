@@ -2,33 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOVA Bellow Analysis | FEA Automation</title>
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <title>NOVA Bellow Analysis</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <style>
         :root {
-            --bg-base: #030303;
-            --bg-glow-1: #2563eb; 
-            --bg-glow-2: #059669; 
-            --bg-glow-3: #7c3aed;
+            /* Light Theme Background Colors */
+            --bg-base: #f0f5fa;
+            --bg-glow-1: #bae6fd; 
+            --bg-glow-2: #d1fae5; 
+            --bg-glow-3: #fef08a;
 
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
-            --glass-border: rgba(255, 255, 255, 0.15);
-            --glass-highlight: rgba(255, 255, 255, 0.4);
-            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 
-                            inset 0 1px 1px rgba(255, 255, 255, 0.5), 
-                            inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+            /* Light Theme Glassmorphism */
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 100%);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
+                            inset 0 1px 1px rgba(255, 255, 255, 0.8), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.05);
             
             --primary: #3b82f6;
-            --primary-hover: #60a5fa;
+            --primary-hover: #2563eb;
             --success: #10b981;
             --warning: #f59e0b;
-            --text-main: #f8fafc;
-            --text-muted: #cbd5e1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
             --modal-orange: #f97316;
             --modal-green: #10b981;
         }
@@ -58,12 +60,12 @@
             border-radius: 50%;
             filter: blur(140px);
             z-index: -1;
-            opacity: 0.6;
+            opacity: 0.8;
             animation: float 20s infinite alternate ease-in-out;
         }
         .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
         .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
-        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.4; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
@@ -77,7 +79,7 @@
             -webkit-backdrop-filter: blur(60px);
             border: 1px solid var(--glass-border);
             border-top: 1px solid var(--glass-highlight);
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 24px;
             box-shadow: var(--glass-shadow);
             width: 100%;
@@ -90,7 +92,7 @@
             content: '';
             position: absolute;
             top: 0; left: -150%; width: 50%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0) 100%);
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
             transform: skewX(-25deg);
             animation: glass-sheen 12s infinite;
             pointer-events: none;
@@ -107,22 +109,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
             position: relative;
             z-index: 2;
         }
 
         .app-header h1 {
             font-size: 1.25rem; font-weight: 600; letter-spacing: 2px;
-            text-transform: uppercase; color: #ffffff;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            text-transform: uppercase; color: var(--text-main);
+            text-shadow: none;
         }
 
         .btn-outline, .btn-glass {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
             color: var(--text-main);
             padding: 0.6rem 1.25rem;
             border-radius: 10px;
@@ -130,152 +132,155 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
             cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 6px rgba(0,0,0,0.2);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.05);
             position: relative;
             z-index: 2;
         }
         .btn-outline:hover, .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: var(--glass-highlight);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
             transform: translateY(-2px);
         }
         .btn-glass.active {
-            background: rgba(59, 130, 246, 0.2);
+            background: rgba(59, 130, 246, 0.1);
             border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+            color: var(--primary);
         }
 
         .form-body { padding: 3rem; position: relative; z-index: 2; }
         .grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5rem; }
 
         .col-title {
-            color: #ffffff; font-weight: 500; font-size: 0.85rem;
+            color: var(--text-main); font-weight: 600; font-size: 0.85rem;
             text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2rem;
-            display: flex; align-items: center; gap: 0.75rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
         }
         .col-title::after {
             content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+            background: linear-gradient(90deg, rgba(0,0,0,0.1) 0%, transparent 100%);
         }
 
         .form-group { margin-bottom: 2rem; transition: all 0.3s ease; }
         .form-label {
-            display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;
-            color: var(--text-main); margin-bottom: 0.75rem; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; font-weight: 500;
+            color: var(--text-main); margin-bottom: 0.75rem; text-shadow: none;
         }
 
         .badge {
             display: inline-flex; align-items: center; justify-content: center;
             width: 22px; height: 22px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
-            color: #fff; background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.3);
+            color: var(--primary); background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: none;
         }
 
         .glass-input, .glass-select {
-            width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 10px; font-size: 0.9rem; color: #ffffff; transition: all 0.3s ease;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 1px 2px rgba(255,255,255,0.05); cursor: pointer;
+            width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 10px; font-size: 0.9rem; color: var(--text-main); transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
         }
-        .glass-select option { background: #1a1a1a; color: var(--text-main); }
+        .glass-select option { background: #ffffff; color: var(--text-main); }
         .glass-input:focus, .glass-select:focus {
-            outline: none; border-color: rgba(96, 165, 250, 0.6); background: rgba(255, 255, 255, 0.1);
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 0 4px rgba(59, 130, 246, 0.2);
+            outline: none; border-color: rgba(96, 165, 250, 0.8); background: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(59, 130, 246, 0.15);
         }
-        .glass-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+        .glass-input::placeholder { color: #94a3b8; }
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
 
         .input-addon-group {
-            display: flex; align-items: center; background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
+            display: flex; align-items: center; background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 10px; transition: all 0.3s ease; overflow: hidden;
-            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 1px 2px rgba(255,255,255,0.05);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
-        .input-addon-group:focus-within { border-color: rgba(96, 165, 250, 0.6); box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 0 4px rgba(59, 130, 246, 0.2); }
+        .input-addon-group:focus-within { border-color: rgba(96, 165, 250, 0.8); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(59, 130, 246, 0.15); background: #ffffff; }
         .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; }
         .addon {
             padding: 0 1rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;
-            background: rgba(255, 255, 255, 0.03); border-left: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
             height: 100%; display: flex; align-items: center;
         }
 
         .ref-link {
-            display: inline-block; font-size: 0.75rem; color: #60a5fa; margin-top: 0.5rem;
-            cursor: pointer; transition: all 0.3s; opacity: 0.9; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            display: inline-block; font-size: 0.75rem; color: #2563eb; margin-top: 0.5rem;
+            cursor: pointer; transition: all 0.3s; font-weight: 500; text-shadow: none;
         }
-        .ref-link:hover { opacity: 1; text-shadow: 0 0 10px rgba(96, 165, 250, 0.8); color: #93c5fd; }
+        .ref-link:hover { color: #1d4ed8; text-decoration: underline; }
 
         .status-box {
             background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);
-            border-top: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 1.5rem;
+            border-top: 1px solid rgba(59, 130, 246, 0.4); color: #1e3a8a; padding: 1.5rem;
             text-align: center; font-size: 0.85rem; border-radius: 10px; backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2); line-height: 1.5;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); line-height: 1.5;
         }
         .upset-container { display: none; animation: fadeIn 0.4s ease forwards; }
-        .upset-title { font-size: 0.8rem; color: var(--text-main); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+        .upset-title { font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; text-shadow: none; }
         
         .upset-table {
             width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(255, 255, 255, 0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.6); box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .upset-table th, .upset-table td { padding: 0.75rem; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05); }
-        .upset-table th { background: rgba(255, 255, 255, 0.05); color: #ffffff; font-size: 0.75rem; font-weight: 500; }
-        .upset-table input { width: 100%; background: transparent; border: none; color: #fff; text-align: center; font-size: 0.85rem; cursor: text; }
-        .upset-table input:focus { outline: none; color: #60a5fa; text-shadow: 0 0 8px rgba(96,165,250,0.4); }
+        .upset-table th, .upset-table td { padding: 0.75rem; text-align: center; border-bottom: 1px solid rgba(0, 0, 0, 0.05); border-right: 1px solid rgba(0, 0, 0, 0.05); }
+        .upset-table th { background: rgba(0, 0, 0, 0.03); color: var(--text-main); font-size: 0.75rem; font-weight: 600; }
+        .upset-table input { width: 100%; background: transparent; border: none; color: var(--text-main); text-align: center; font-size: 0.85rem; cursor: text; }
+        .upset-table input::placeholder { color: #94a3b8; }
+        .upset-table input:focus { outline: none; color: #2563eb; font-weight: 500; }
 
         .method-toggle { display: flex; gap: 1rem; margin-bottom: 2rem; width: 100%; justify-content: center; }
 
         .action-area {
-            margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(0, 0, 0, 0.08);
             display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
         }
 
         .ai-header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .ai-title { font-size: 0.95rem; font-weight: 600; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .ai-title { font-size: 0.95rem; font-weight: 600; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; text-shadow: none; }
 
         .drop-zone {
-            width: 100%; max-width: 600px; border: 1px dashed rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.02);
+            width: 100%; max-width: 600px; border: 1px dashed rgba(0, 0, 0, 0.2); background: rgba(255, 255, 255, 0.4);
             border-radius: 16px; padding: 3rem; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer; position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            cursor: pointer; position: relative; overflow: hidden; box-shadow: none;
         }
-        .drop-zone:hover { border-color: rgba(96, 165, 250, 0.6); background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.15), 0 10px 20px rgba(0,0,0,0.3); }
-        .drop-zone p { color: #e2e8f0; font-size: 0.9rem; margin-top: 1rem; }
+        .drop-zone:hover { border-color: rgba(59, 130, 246, 0.6); background: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .drop-zone p { color: var(--text-main); font-size: 0.9rem; margin-top: 1rem; font-weight: 500; text-shadow: none; }
+        .drop-zone svg { color: var(--primary) !important; filter: none !important; }
 
         .btn-submit {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.6) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.5);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
             color: white; padding: 1.2rem 4rem; border-radius: 12px; font-weight: 600; font-size: 1rem;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 30px rgba(29, 78, 216, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
             letter-spacing: 1px; backdrop-filter: blur(15px); margin-top: 1rem;
         }
         .btn-submit:hover {
-            transform: translateY(-4px); box-shadow: 0 15px 40px rgba(29, 78, 216, 0.5), inset 0 2px 2px rgba(255,255,255,0.5);
-            background: linear-gradient(135deg, rgba(96, 165, 250, 0.9) 0%, rgba(37, 99, 235, 0.8) 100%);
+            transform: translateY(-4px); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(29, 78, 216, 1) 100%);
         }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px);
             display: flex; justify-content: center; align-items: center;
             z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         
         .modal-content {
-            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); border-top: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px; box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
             width: 90%; max-width: 400px; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow: hidden; backdrop-filter: blur(40px);
+            overflow: hidden; backdrop-filter: blur(20px);
         }
         .modal-overlay.active .modal-content { transform: scale(1); }
 
-        .error-modal { background: #fff; border: none; backdrop-filter: none; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .error-modal { background: #fff; border: none; backdrop-filter: none; }
         .error-header { background: var(--modal-orange); color: white; padding: 1.5rem; text-align: center; font-weight: bold; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
         .error-body { padding: 2rem; text-align: center; color: #1e293b; font-weight: 500; font-size: 0.95rem; line-height: 1.5;}
         .error-footer { padding: 0 2rem 2rem; display: flex; justify-content: center; }
@@ -283,11 +288,11 @@
         .btn-error-gotit:hover { background: #1d4ed8; }
 
         .confirm-modal-content {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 1);
             border-radius: 16px;
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
             width: 90%; max-width: 450px;
             transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             overflow: hidden;
@@ -309,14 +314,14 @@
         .c-item span { color: #64748b; font-weight: 400; }
         .c-indent { padding-left: 1.5rem; margin-top: 0.4rem; font-size: 0.8rem; }
         
-        .confirm-footer-actions { padding: 1rem 2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.5); }
+        .confirm-footer-actions { padding: 1rem 2rem 1.5rem; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); }
         .btn-cancel-gray { background: #64748b; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-cancel-gray:hover { background: #475569; }
         .btn-confirm-submit { background: #10b981; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
         .btn-confirm-submit:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4); }
 
         /* Reference Modal */
-        .ref-modal-content { background: #ffffff; border-radius: 8px; width: 90%; max-width: 700px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .ref-modal-content { background: #ffffff; border-radius: 8px; width: 90%; max-width: 700px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .modal-overlay.active .ref-modal-content { transform: scale(1); }
         .ref-header-light { text-align: center; padding: 1.2rem; color: #1e3a8a; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
         .ref-close-btn { position: absolute; top: 10px; right: 10px; background: #dc2626; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; padding-bottom: 2px; transition: background 0.2s; }
@@ -327,11 +332,11 @@
         .btn-blue-solid:hover { background: #1d4ed8; }
 
         /* Loading Overlays */
-        .processing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; color: var(--text-main); border-radius: inherit; }
-        .spinner { width: 50px; height: 50px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #60a5fa; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; box-shadow: 0 0 10px rgba(96,165,250,0.2); }
+        .processing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; color: var(--text-main); border-radius: inherit; }
+        .spinner { width: 50px; height: 50px; border: 3px solid rgba(0, 0, 0, 0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .solving-modal-content { background: none; border: none; box-shadow: none; backdrop-filter: none; display: flex; flex-direction: column; align-items: center; color: white; text-align: center; }
+        .solving-modal-content { background: none; border: none; box-shadow: none; backdrop-filter: none; display: flex; flex-direction: column; align-items: center; color: var(--text-main); text-align: center; }
 
         @media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .grid-layout { grid-template-columns: 1fr; } }
@@ -384,8 +389,8 @@
                     <div class="form-group">
                         <label class="form-label"><span class="badge">3</span> Upset Cases *</label>
                         <select class="glass-select" id="upsetSelect" onchange="toggleUpsetCases()">
-                            <option value="No" selected>No (Hydrotest Only - 2 Cases)</option>
-                            <option value="Yes">Yes (Full Matrix - 10 Cases)</option>
+                            <option value="No" selected>No</option>
+                            <option value="Yes">Yes 4 Upset Cases</option>
                         </select>
                     </div>
                 </div>
@@ -435,7 +440,7 @@
                     
                     <div id="statusEmpty" class="status-box">
                         <b>Base Scenario Detected</b><br>
-                        Solver will calculate 2 Hydrotest Cases (Corroded & Uncorroded).
+                        Solver will calculate Hydrotest Cases (Corroded & Uncorroded).
                     </div>
 
                     <div id="statusUpset" class="upset-container">
@@ -578,17 +583,17 @@
                     <div class="drop-zone" onclick="document.getElementById('pdfFileInput').click()">
                         <div class="processing-overlay" id="aiLoading">
                             <div class="spinner"></div>
-                            <div style="color: #fff; font-size: 0.9rem; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Extracting Data via AI...</div>
+                            <div style="color: var(--text-main); font-size: 0.9rem; font-weight: 500;">Extracting Data via Nova AI...</div>
                         </div>
                         
                         <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="handleFile(event.target.files[0])">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color: rgba(255,255,255,0.7); margin-bottom: 1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="margin-bottom: 1rem;">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="12" y1="18" x2="12" y2="12"></line>
                             <line x1="9" y1="15" x2="15" y2="15"></line>
                         </svg>
-                        <p id="fileNameDisplay" style="color: #f8fafc; font-size: 1.05rem; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Click to upload PV Elite Report PDF</p>
+                        <p id="fileNameDisplay">Click to upload PV Elite Report PDF</p>
                     </div>
                 </div>
 
@@ -635,7 +640,7 @@
         <div class="solving-modal-content">
             <div class="spinner" style="width: 70px; height: 70px; border-width: 4px; border-top-color: #10b981;"></div>
             <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Executing PyMAPDL Solvers...</h2>
-            <p style="color: #cbd5e1; font-size: 0.95rem;">Iterating through configuration matrix and compiling Excel Report.</p>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Iterating through configuration matrix and compiling Excel Report.</p>
         </div>
     </div>
 
@@ -762,10 +767,10 @@
                 const aiData = await response.json();
                 sessionStorage.setItem('nova_extracted_data', JSON.stringify(aiData));
 
-                display.innerHTML = `<span style="color: #4ade80; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">✓ Data Extracted:</span> ${file.name}`;
+                display.innerHTML = `<span style="color: #10b981;">✓ Data Extracted:</span> ${file.name}`;
             } catch (error) {
                 console.error("AI Extraction Error:", error);
-                display.innerHTML = `<span style="color: #f87171; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">✗ Extraction Failed:</span> ${file.name}`;
+                display.innerHTML = `<span style="color: #ef4444;">✗ Extraction Failed:</span> ${file.name}`;
                 showModal("AI Error", "Failed to extract data via API. Please ensure your Flask server is running on port 5000.");
             } finally {
                 loader.style.display = 'none';
