@@ -206,8 +206,8 @@ export default function App() {
 
   // --- Gemini API Call --- //
   const callGeminiAPI = async (contents, systemInstructionText) => {
-    const apiKey = "AIzaSyDh5uunAqCkeVap97dqG7WoVBr5gRI0sh4"; // REMEMBER TO ADD YOUR API KEY HERE
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const payload = { contents, systemInstruction: { parts: [{ text: systemInstructionText }] } };
     const delays = [1000, 2000, 4000, 8000, 16000];
