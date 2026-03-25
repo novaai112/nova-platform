@@ -7,7 +7,7 @@ import {
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
   Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff
 } from 'lucide-react';
-import emailjs from '@emailjs/browser';
+import emailjs from '@emailjs/browser'; // <--- ADD THIS LINE
 
 const CosmicLogo = ({ className = "w-10 h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -47,6 +47,7 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
 );
 
 export default function App() {
+  // --- Global App State --- //
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
   const [currentView, setCurrentView] = useState('landing'); 
@@ -54,6 +55,7 @@ export default function App() {
   const [profileTab, setProfileTab] = useState('info'); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // --- User Authentication State --- //
   const [currentUser, setCurrentUser] = useState({
     id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: ""
   });
@@ -64,6 +66,7 @@ export default function App() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
 
+  // --- Validation & Security State --- //
   const [showLoginPwd, setShowLoginPwd] = useState(false);
   const [showSignupPwd, setShowSignupPwd] = useState(false);
   const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
@@ -73,6 +76,7 @@ export default function App() {
   const [pwdErrors, setPwdErrors] = useState({});
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
+  // --- Forgot Password State --- //
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotCode, setForgotCode] = useState("");
@@ -85,6 +89,7 @@ export default function App() {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
+  // --- Dashboard Data State --- //
   const [jobs, setJobs] = useState([]);
   const [jobFilter, setJobFilter] = useState('All Analysis');
   const [notification, setNotification] = useState(null);
@@ -94,8 +99,9 @@ export default function App() {
   const [isSubmitJobOpen, setIsSubmitJobOpen] = useState(false);
   const [selectedJobType, setSelectedJobType] = useState('Nozzle Analysis');
   const [editForm, setEditForm] = useState({ company: '', phone: '' });
-  const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+  const [isRequestingAccess, setIsRequestingAccess] = useState(false); // <--- ADD THIS LINE
 
+  // --- Gemini AI State --- //
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiSetupPrompt, setAiSetupPrompt] = useState("");
   const [aiSetupResponse, setAiSetupResponse] = useState("");
@@ -117,6 +123,7 @@ export default function App() {
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
 
+  // --- Session & Real DB Fetching --- //
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -139,20 +146,8 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Polling to update jobs real-time
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isLoggedIn) {
-        fetchJobs();
-      }
-    }, 5000); // Check for job updates every 5 seconds
-    return () => clearInterval(interval);
-  }, [isLoggedIn]);
-
   const setupUser = (user) => {
       const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-      const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
-      
       setCurrentUser({
         id: user.id,
         name: fullName,
@@ -162,11 +157,8 @@ export default function App() {
         company: user.user_metadata?.company || "Not Provided",
         phone: user.user_metadata?.phone || "Not Provided",
         joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-        isApproved: isApprovedStatus
+        isApproved: user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com'
       });
-      
-      // Save for bellow.html to use
-      localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
     };
 
@@ -175,6 +167,7 @@ export default function App() {
     if (!error && data) setJobs(data);
   };
 
+  // --- Splash Screen Effect & Triggers --- //
   useEffect(() => {
     if (showSplash) {
       const exitTimer = setTimeout(() => setIsSplashExiting(true), 3500);
@@ -193,6 +186,7 @@ export default function App() {
     window.scrollTo(0,0);
   };
 
+  // --- Helpers --- //
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 5000); 
@@ -210,6 +204,7 @@ export default function App() {
     else setCurrentView('login');
   };
 
+  // --- Gemini API Call --- //
   const callGeminiAPI = async (contents, systemInstructionText) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -230,6 +225,7 @@ export default function App() {
     }
   };
 
+  // --- Smooth Scroll Animations --- //
   useEffect(() => {
     if (currentView === 'landing' && !showSplash) {
       const observer = new IntersectionObserver((entries) => {
@@ -247,6 +243,7 @@ export default function App() {
     }
   }, [currentView, showSplash]);
 
+  // --- AI Handlers --- //
   const handleAiSetupSubmit = async () => {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
@@ -299,6 +296,7 @@ export default function App() {
     setIsMaterialLoading(false);
   };
 
+  // --- Real Auth Handlers --- //
   const handleLogin = async (e) => {
     e.preventDefault();
     let errors = {};
@@ -354,7 +352,6 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('nova_user');
     setIsDropdownOpen(false);
     setCurrentView('landing');
     showNotification("Logged out successfully.", "info");
@@ -405,7 +402,7 @@ export default function App() {
         showNotification("Profile updated successfully!", "success");
       }
     };
-
+  // --- Real Forgot Password Flow --- //
   const handleForgotEmailSubmit = async (e) => {
     e.preventDefault();
     if (!emailRegex.test(forgotEmail)) return setForgotErrors({ email: "Please enter a valid email address." });
@@ -472,6 +469,7 @@ export default function App() {
     }
   };
 
+  // --- Real Dashboard Handlers --- //
   const handleImageUpload = async (e) => {
       const file = e.target.files[0];
       if (!file || !currentUser.id) return;
@@ -514,18 +512,17 @@ export default function App() {
     setMaterialPrompt("");
     setMaterialResponse("");
   };
-
   const handleRequestAccess = async () => {
     setIsRequestingAccess(true);
     try {
       await emailjs.send(
-        "service_jknqgty",               
-        "template_nynl6qp",              
+        "service_jknqgty",               // <-- Add your EmailJS Service ID
+        "template_nynl6qp",              // <-- Add your EmailJS Template ID
         {
           user_name: currentUser.name,
           user_email: currentUser.email
         },
-        "ZTYpRTAZMIRlDw98k"                
+        "ZTYpRTAZMIRlDw98k"                // <-- Add your EmailJS Public Key
       );
       showNotification("Access request sent to Admin successfully!", "success");
     } catch (error) {
@@ -547,7 +544,7 @@ export default function App() {
         job_id_display: `NV-${1000 + jobs.length}`,
         name: jobName,
         type: selectedJobType,
-        status: 'Pending',
+        status: 'Pending Approval',
         price: selectedJobType === 'Nozzle Analysis' ? 6000 : 48000
       };
 
@@ -560,8 +557,11 @@ export default function App() {
 
         if (error) throw error;
 
+        // Optional: Send a second email to admin when a job is actually created
+        // emailjs.send("YOUR_SERVICE_ID", "YOUR_JOB_TEMPLATE_ID", { ... }, "YOUR_PUBLIC_KEY");
+
         setIsSubmitJobOpen(false);
-        showNotification(`${selectedJobType} submitted! Added to queue.`, 'success');
+        showNotification(`${selectedJobType} submitted! Awaiting Admin processing.`, 'success');
         fetchJobs(); 
       } catch (error) {
         console.error("Database Error:", error);
@@ -583,6 +583,9 @@ export default function App() {
   };
   const paymentData = calculatePayments();
 
+  // ==========================================
+  // VIEW: SPLASH SCREEN
+  // ==========================================
   const renderSplash = () => (
     <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0B1120] transition-all duration-700 ease-in-out ${isSplashExiting ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
       <div className="absolute inset-0 overflow-hidden -z-10">
@@ -641,6 +644,9 @@ export default function App() {
     </div>
   );
 
+  // ==========================================
+  // VIEW: LANDING PAGE (Home)
+  // ==========================================
   const renderLanding = () => (
     <div className="relative min-h-screen pt-20 overflow-x-hidden font-sans text-slate-800 scroll-smooth">
       <section className="relative max-w-5xl px-6 pt-16 pb-20 mx-auto text-center">
@@ -895,6 +901,7 @@ export default function App() {
            </button>
         </div>
       </footer>
+      {/* Modern Glassmorphism WhatsApp Button */}
       <a 
         href="https://wa.me/918757014303?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis." 
         target="_blank" 
@@ -908,6 +915,9 @@ export default function App() {
     </div>
   );
 
+  // ==========================================
+  // VIEW: LOGIN & SIGNUP & FORGOT
+  // ==========================================
   const renderAuthContainer = (children) => (
     <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
       {notification && (
@@ -1076,6 +1086,9 @@ export default function App() {
     </>
   );
 
+  // ==========================================
+  // VIEW: DASHBOARD & PROFILE
+  // ==========================================
   const renderInsightsModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
@@ -1128,12 +1141,8 @@ export default function App() {
               <h1 className="text-2xl font-extrabold text-[#1E293B] tracking-wide drop-shadow-sm">Welcome, {currentUser.name}!</h1>
               <div className="flex items-center text-sm mt-1.5 font-bold text-slate-600">
                 <span>NOVA Dashboard - {jobs.length} Jobs</span>
-                <span className={`ml-3 flex items-center px-2.5 py-1 rounded-full text-xs shadow-sm border ${currentUser.isApproved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-800' : 'bg-amber-500/20 border-amber-500/30 text-amber-800'}`}>
-                  {currentUser.isApproved ? ( 
-                    <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Confirmed / Online</> 
-                  ) : ( 
-                    <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Pending Owner Confirmation</> 
-                  )}
+                <span className="ml-3 flex items-center bg-emerald-500/20 border border-emerald-500/30 text-emerald-800 px-2.5 py-1 rounded-full text-xs shadow-sm">
+                  {jobs.length > 0 ? ( <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Online</> ) : ( <><AlertTriangle className="w-3.5 h-3.5 mr-1 text-amber-600" /> Offline</> )}
                 </span>
               </div>
             </>
@@ -1184,6 +1193,7 @@ export default function App() {
         <div className="max-w-[1200px] mx-auto">
           <DashboardHeader isProfile={false} />
 
+          {/* --- NEW APPROVAL BANNER --- */}
           {!currentUser.isApproved && (
             <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
               <div className="flex items-start gap-4">
@@ -1210,6 +1220,7 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1000px] mx-auto mb-10">
             <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Nozzle Analysis</h3>
+              {/* --- LOCKED BUTTON LOGIC --- */}
               {currentUser.isApproved ? (
                 <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
                   Submit New Job
@@ -1222,6 +1233,7 @@ export default function App() {
             </div>
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Bellow Analysis</h3>
+              {/* --- LOCKED BUTTON LOGIC --- */}
               {currentUser.isApproved ? (
                 <button 
                   onClick={() => window.location.href = '/bellow.html'} 
@@ -1306,7 +1318,7 @@ export default function App() {
              <div className="p-4 overflow-x-auto">
                <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
                  <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
-                   <tr><th className="px-6 py-2">Job ID</th><th className="px-6 py-2">Project Name</th><th className="px-6 py-2">Type</th><th className="px-6 py-2">Date</th><th className="px-6 py-2 text-right">Actions</th></tr>
+                   <tr><th className="px-6 py-2">Job ID</th><th className="px-6 py-2">Project Name</th><th className="px-6 py-2">Type</th><th className="px-6 py-2">Date</th><th className="px-6 py-2">Status</th></tr>
                  </thead>
                  <tbody>
                    {filteredJobs.map(job => (
@@ -1315,21 +1327,17 @@ export default function App() {
                        <td className="px-6 py-4 font-bold text-slate-800">{job.name}</td>
                        <td className="px-6 py-4 font-medium">{job.type}</td>
                        <td className="px-6 py-4 font-medium text-slate-500">{new Date(job.created_at).toLocaleDateString()}</td>
-                       <td className="px-6 py-4 flex items-center justify-end gap-3 last:rounded-r-xl">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold border ${job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' : job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' : 'bg-red-500/20 text-red-800 border-red-500/30'}`}>
+                       <td className="flex items-center justify-between px-6 py-4 last:rounded-r-xl">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold border ${job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30' : 'bg-orange-500/20 text-orange-800 border-orange-500/30'}`}>
                             {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />} 
                             {job.status}
                           </span>
                           
-                          {job.status === 'Completed' && job.excel_file_url && (
-                             <a href={job.excel_file_url} target="_blank" rel="noopener noreferrer" className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-200/50">
-                                <Download className="w-3.5 h-3.5" /> Result
-                             </a>
+                          {job.status === 'Completed' && (
+                            <button onClick={() => handleGenerateInsights(job)} className="glass-panel ml-4 px-3 py-1.5 rounded-lg text-xs font-extrabold text-purple-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-purple-200/50">
+                              <Sparkles className="w-3.5 h-3.5" /> AI Insights
+                            </button>
                           )}
-                          
-                          <button onClick={() => alert(`Details for Job ID: ${job.job_id_display}\n\nInputs:\n${JSON.stringify(job.geometry_data, null, 2)}`)} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
-                            <Eye className="w-3.5 h-3.5" /> Details
-                          </button>
                        </td>
                      </tr>
                    ))}
@@ -1339,6 +1347,7 @@ export default function App() {
           </div>
         )}
         
+        {/* Job Modal */}
         {isSubmitJobOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSubmitJobOpen(false)}></div>
@@ -1379,6 +1388,14 @@ export default function App() {
                   )}
                 </div>
 
+                <div className="bg-amber-500/10 border border-amber-500/20 backdrop-blur-md rounded-xl p-4 text-[13px] text-amber-900 flex items-start gap-3 shadow-sm mt-4">
+                   <Shield className="w-6 h-6 text-amber-600 shrink-0 mt-0.5 drop-shadow-sm" />
+                   <p className="font-medium leading-relaxed">
+                     <strong className="block mb-1 font-extrabold text-amber-800">Owner Verification Required:</strong>
+                     Upon submission, an alert will be sent to analysis.ai.nova@gmail.com. Processing will only begin after the owner verifies your request.
+                   </p>
+                </div>
+
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsSubmitJobOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
                   <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : 'glass-btn-blue'}`}>Submit</button>
@@ -1390,6 +1407,7 @@ export default function App() {
 
         {isInsightsOpen && renderInsightsModal()}
 
+        {/* AI Setup Modal */}
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAiModalOpen(false)}></div>
@@ -1594,6 +1612,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Profile Modals */}
         {isEditProfileOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
