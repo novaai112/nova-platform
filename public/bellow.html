@@ -597,7 +597,7 @@
                     </div>
                 </div>
 
-                <button class="btn-submit" onclick="validateAndSubmit()">Queue Simulation</button>
+                <button class="btn-submit" onclick="validateAndSubmit()">Initialize Simulation</button>
             </div>
         </main>
     </div>
@@ -630,7 +630,7 @@
                 <button class="btn-cancel-gray" onclick="closeModal('confirmModal')">Cancel</button>
                 <button class="btn-confirm-submit" onclick="proceedToAnalysis()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    Queue Job
+                    Start PyMAPDL
                 </button>
             </div>
         </div>
@@ -639,8 +639,8 @@
     <div class="modal-overlay" id="solvingModal">
         <div class="solving-modal-content">
             <div class="spinner" style="width: 70px; height: 70px; border-width: 4px; border-top-color: #10b981;"></div>
-            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Sending to Queue...</h2>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">Please wait while your job is registered.</p>
+            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Executing PyMAPDL Solvers...</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Iterating through configuration matrix and compiling Excel Report.</p>
         </div>
     </div>
 
@@ -860,9 +860,6 @@
             closeModal('confirmModal');
             openModal('solvingModal');
             
-            // NEW: Fetch User Data from App.jsx's LocalStorage Session
-            const userData = JSON.parse(localStorage.getItem('nova_user') || '{}');
-            
             const manualData = {
                 inputMethod: currentInputMethod,
                 codeEdition: document.getElementById('codeEdition').value,
@@ -900,22 +897,16 @@
                 } : {}
             };
 
+            sessionStorage.setItem('nova_manual_data', JSON.stringify(manualData));
+
             const formData = new FormData();
             formData.append('manual_data', JSON.stringify(manualData));
             
-            // NEW: Pass the User Credentials to Backend
-            formData.append('user_email', userData.email || '');
-            formData.append('user_id', userData.id || '');
-            
-            // Prompt user for job name
-            let jobName = prompt("Enter a Project Name for this job:", "Bellow Analysis " + new Date().toLocaleTimeString());
-            formData.append('job_name', jobName || "Bellow Analysis");
-
             if (currentInputMethod === 'pdf') {
                 formData.append('file', uploadedFileObj);
             }
 
-           try {
+            try {
                 const response = await fetch('https://nonacceleratory-bethanie-nonciliate.ngrok-free.dev/api/solve', {
                     method: 'POST',
                     body: formData
@@ -926,14 +917,22 @@
                     throw new Error(err.error || 'Server error occurred during simulation.');
                 }
 
-                const data = await response.json();
-                
-                // Alert Success and Redirect back to Dashboard
-                alert("Job queued successfully! You can track its status in the Dashboard.");
-                window.location.href = '/'; 
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Bellow_Spring_Rates_Results.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                setTimeout(() => {
+                    window.location.href = 'https://nova-analysis.vercel.app/';
+                }, 1500);
 
             } catch (error) {
-                console.error("Queueing Error:", error);
+                console.error("PyMAPDL Solver Error:", error);
                 closeModal('solvingModal');
                 showModal("Simulation Failed", error.message);
             }
