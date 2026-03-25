@@ -47,7 +47,6 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
 );
 
 export default function App() {
-  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
   const [currentView, setCurrentView] = useState('landing'); 
@@ -146,7 +145,7 @@ export default function App() {
       if (isLoggedIn) {
         fetchJobs();
       }
-    }, 5000);
+    }, 5000); // Check for job updates every 5 seconds
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
@@ -166,6 +165,7 @@ export default function App() {
         isApproved: isApprovedStatus
       });
       
+      // Save for bellow.html to use
       localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
     };
@@ -1322,12 +1322,13 @@ export default function App() {
                           </span>
                           
                           {job.status === 'Completed' && job.excel_file_url && (
-                             <a href={job.excel_file_url} target="_blank" rel="noopener noreferrer" className="glass-panel px-4 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-200/50">
+                             <a href={job.excel_file_url} target="_blank" rel="noopener noreferrer" className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-200/50">
                                 <Download className="w-3.5 h-3.5" /> Result
                              </a>
                           )}
-                          <button onClick={() => setSelectedJobDetails(job)} className="glass-panel px-4 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:text-[#3C64D6] hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50 hover:border-[#3C64D6]/30">
-                            <Eye className="w-3.5 h-3.5" /> Detail
+                          
+                          <button onClick={() => alert(`Details for Job ID: ${job.job_id_display}\n\nInputs:\n${JSON.stringify(job.geometry_data, null, 2)}`)} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
+                            <Eye className="w-3.5 h-3.5" /> Details
                           </button>
                        </td>
                      </tr>
@@ -1335,111 +1336,6 @@ export default function App() {
                  </tbody>
                </table>
              </div>
-
-             {/* --- JOB PREVIEW MODAL --- */}
-             {selectedJobDetails && (
-               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-                 {/* Backdrop */}
-                 <div 
-                   className="absolute inset-0 transition-opacity duration-300 bg-slate-900/60 backdrop-blur-sm" 
-                   onClick={() => setSelectedJobDetails(null)}
-                 ></div>
-                 
-                 {/* Modal Container */}
-                 <div className="glass-panel w-full max-w-4xl rounded-[2rem] overflow-hidden relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-white/20 animate-in zoom-in-95 flex flex-col max-h-[90vh] bg-slate-50">
-                   
-                   {/* Header */}
-                   <div className="flex items-center justify-between px-6 py-6 border-b sm:px-8 bg-slate-900 text-white shrink-0">
-                     <div className="flex items-center gap-4">
-                       <div className="flex items-center justify-center w-12 h-12 bg-blue-500/20 border border-blue-500/30 rounded-xl">
-                         <FileText className="w-6 h-6 text-blue-400" />
-                       </div>
-                       <div>
-                         <h3 className="text-xl font-extrabold tracking-tight text-white">{selectedJobDetails.name}</h3>
-                         <div className="flex items-center gap-3 mt-1.5 text-xs font-medium">
-                           <span className="px-2.5 py-1 tracking-widest text-slate-300 uppercase bg-white/10 rounded-md border border-white/10">{selectedJobDetails.job_id_display}</span>
-                           <span className="flex items-center gap-1.5 text-slate-300"><Shapes className="w-3.5 h-3.5" /> {selectedJobDetails.type}</span>
-                           <span className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1.5 border
-                             ${selectedJobDetails.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 
-                               selectedJobDetails.status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse' : 
-                               selectedJobDetails.status === 'Failed' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 
-                               'bg-orange-500/20 text-orange-400 border-orange-500/30'}`}
-                           >
-                             {selectedJobDetails.status === 'Processing' && <Loader2 className="w-3 h-3 animate-spin" />}
-                             {selectedJobDetails.status}
-                           </span>
-                         </div>
-                       </div>
-                     </div>
-                     <button onClick={() => setSelectedJobDetails(null)} className="p-2 text-slate-400 transition-colors rounded-full hover:text-white hover:bg-white/10">
-                       <X className="w-6 h-6"/>
-                     </button>
-                   </div>
-                   
-                   {/* Content Body */}
-                   <div className="flex-1 p-6 space-y-6 overflow-y-auto sm:p-8 bg-slate-50">
-                     
-                     {/* Pipeline */}
-                     <div className="p-6 bg-white border shadow-sm border-slate-200 rounded-2xl">
-                       <h4 className="flex items-center gap-2 mb-6 text-xs font-extrabold tracking-widest text-slate-500 uppercase">
-                         <Clock className="w-4 h-4 text-blue-500"/> Execution Pipeline
-                       </h4>
-                       <div className="relative flex items-center justify-between max-w-2xl mx-auto">
-                         <div className="absolute left-[10%] right-[10%] h-1 bg-slate-100 rounded-full z-0 top-1/2 -translate-y-1/2"></div>
-                         <div className={`absolute left-[10%] h-1 rounded-full z-0 top-1/2 -translate-y-1/2 transition-all duration-1000 ${selectedJobDetails.status === 'Completed' ? 'w-[80%] bg-emerald-500' : selectedJobDetails.status === 'Processing' ? 'w-[40%] bg-blue-500' : selectedJobDetails.status === 'Failed' ? 'w-[80%] bg-red-500' : 'w-[10%] bg-orange-400'}`}></div>
-                         
-                         {[
-                           { step: 'Extracted', icon: UploadCloud, active: true },
-                           { step: 'Queued', icon: Database, active: true },
-                           { step: 'Solving', icon: Cpu, active: ['Processing', 'Completed', 'Failed'].includes(selectedJobDetails.status) },
-                           { step: 'Generated', icon: CheckCircle, active: ['Completed', 'Failed'].includes(selectedJobDetails.status), error: selectedJobDetails.status === 'Failed' }
-                         ].map((s, i) => (
-                           <div key={i} className="relative z-10 flex flex-col items-center gap-2 bg-white px-2">
-                             <div className={`w-10 h-10 rounded-full flex items-center justify-center border-[3px] transition-colors ${s.active ? (s.error ? 'bg-white border-red-500 text-red-500' : selectedJobDetails.status === 'Completed' ? 'bg-emerald-500 border-emerald-500 text-white' : i===2 && selectedJobDetails.status === 'Processing' ? 'bg-white border-blue-500 text-blue-500 animate-pulse' : 'bg-blue-500 border-blue-500 text-white') : 'bg-white border-slate-200 text-slate-300'}`}>
-                               {s.error ? <XCircle className="w-5 h-5" /> : <s.icon className="w-4 h-4" />}
-                             </div>
-                             <span className={`text-[10px] font-bold uppercase tracking-wider ${s.active ? (s.error ? 'text-red-500' : 'text-slate-800') : 'text-slate-400'}`}>{s.step}</span>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-
-                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                       <div className="p-6 bg-white border shadow-sm border-slate-200 rounded-2xl">
-                         <h4 className="flex items-center gap-2 mb-4 text-xs font-extrabold tracking-widest text-slate-500 uppercase"><Settings2 className="w-4 h-4 text-purple-500"/> Configuration</h4>
-                         <div className="space-y-3">
-                           <div className="flex justify-between items-center py-2 border-b border-slate-50"><span className="text-sm font-medium text-slate-500">Material Grade</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.material || 'N/A'}</span></div>
-                           <div className="flex justify-between items-center py-2 border-b border-slate-50"><span className="text-sm font-medium text-slate-500">ASME Edition</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.ui_code_edition || 'N/A'}</span></div>
-                           <div className="flex justify-between items-center py-2 border-b border-slate-50"><span className="text-sm font-medium text-slate-500">Convolutions</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.num_convolutions || 'N/A'}</span></div>
-                           <div className="flex justify-between items-center py-2"><span className="text-sm font-medium text-slate-500">Upset Conditions</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.upset_selected || 'No'}</span></div>
-                         </div>
-                       </div>
-
-                       <div className="p-6 bg-white border shadow-sm border-slate-200 rounded-2xl">
-                         <h4 className="flex items-center gap-2 mb-4 text-xs font-extrabold tracking-widest text-slate-500 uppercase"><Shapes className="w-4 h-4 text-emerald-500"/> Geometry (mm)</h4>
-                         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                           <div className="flex flex-col py-1 border-b border-slate-50"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Bellow ID (dj)</span><span className="text-sm font-black text-blue-600">{selectedJobDetails.geometry_data?.dj || '-'}</span></div>
-                           <div className="flex flex-col py-1 border-b border-slate-50"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Shell ID (G)</span><span className="text-sm font-black text-blue-600">{selectedJobDetails.geometry_data?.G || '-'}</span></div>
-                           <div className="flex flex-col py-1 border-b border-slate-50"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Bellow Thk (to)</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.to || '-'}</span></div>
-                           <div className="flex flex-col py-1 border-b border-slate-50"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Shell Thk (ts)</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.ts || '-'}</span></div>
-                           <div className="flex flex-col py-1"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Bellow L (lo)</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.lo || '-'}</span></div>
-                           <div className="flex flex-col py-1"><span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Shell L (li)</span><span className="text-sm font-bold text-slate-800">{selectedJobDetails.geometry_data?.li || '-'}</span></div>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-
-                   {selectedJobDetails.status === 'Completed' && selectedJobDetails.excel_file_url && (
-                     <div className="px-6 py-4 bg-white border-t border-slate-200 flex justify-end shrink-0">
-                       <a href={selectedJobDetails.excel_file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white transition-all shadow-md glass-btn-blue rounded-xl hover:scale-105">
-                         <Download className="w-4 h-4" /> Result
-                       </a>
-                     </div>
-                   )}
-                 </div>
-               </div>
-             )}
-             
           </div>
         )}
         
