@@ -774,7 +774,7 @@ export default function App() {
                      <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Strict ASME compliance verification</span>
                    </div>
                 </div>
-                <button onClick={handleRouteToAuth} className="glass-btn w-full text-white py-4 rounded-2xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg">
+                <button onClick={handleRouteToAuth} className="glass-btn w-full text-black py-4 rounded-2xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg">
                    Launch Bellow Analysis <ArrowRight className="w-5 h-5" />
                 </button>
              </div>
