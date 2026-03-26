@@ -112,6 +112,10 @@ export default function App() {
   const [insightResponse, setInsightResponse] = useState("");
   const [isInsightLoading, setIsInsightLoading] = useState(false);
 
+  // New State variables for the Custom Job Details Modal
+  const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false);
+  const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+
   const [showMaterialConsultant, setShowMaterialConsultant] = useState(false);
   const [materialPrompt, setMaterialPrompt] = useState("");
   const [materialResponse, setMaterialResponse] = useState("");
@@ -860,7 +864,7 @@ export default function App() {
            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
            <p className="relative z-10 mb-10 text-lg font-medium text-slate-600">From Days to Hours. Code-Compliant. Fully Automated.</p>
            <button onClick={handleRouteToAuth} className="relative z-10 flex items-center justify-center gap-3 px-10 py-5 mx-auto text-lg font-bold transition-all rounded-full glass-btn-blue hover:scale-105">
-              Access Dashboard <ArrowRight className="w-6 h-6" />
+             Access Dashboard <ArrowRight className="w-6 h-6" />
            </button>
          </div>
       </section>
@@ -1114,6 +1118,72 @@ export default function App() {
     </div>
   );
 
+  const renderJobDetailsModal = () => {
+    if (!selectedJobDetails) return null;
+
+    const formatData = (data) => {
+      if (!data) return "No input data available.";
+      if (typeof data === 'string') return data;
+      return JSON.stringify(data, null, 2);
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
+        <div className="glass-panel w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col animate-in zoom-in-95 relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-blue-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+            <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
+              <FileText className="w-6 h-6" /> Job Details: {selectedJobDetails.job_id_display}
+            </h3>
+            <button onClick={() => setIsJobDetailsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Content Body */}
+          <div className="flex-1 p-8 space-y-6 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Project Name</h4>
+                <p className="text-lg font-extrabold text-slate-800">{selectedJobDetails.name}</p>
+              </div>
+              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Analysis Type</h4>
+                <p className="text-lg font-extrabold text-slate-800">{selectedJobDetails.type}</p>
+              </div>
+              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Status</h4>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border mt-1 ${selectedJobDetails.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : selectedJobDetails.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' : selectedJobDetails.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' : 'bg-red-500/20 text-red-800 border-red-500/30'}`}>
+                  {selectedJobDetails.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
+                  {selectedJobDetails.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white/50 border border-white/60 backdrop-blur-md rounded-2xl p-6 shadow-sm flex flex-col">
+              <h4 className="flex items-center gap-2 mb-4 text-sm font-extrabold text-slate-800 border-b border-white/50 pb-3">
+                <Database className="w-5 h-5 text-blue-600" /> Geometry Data & Inputs
+              </h4>
+              <div className="bg-slate-900/85 rounded-xl p-5 overflow-x-auto shadow-inner border border-slate-700/50">
+                <pre className="text-sm font-mono text-emerald-400">
+                  {formatData(selectedJobDetails.geometry_data)}
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end p-6 border-t bg-white/40 border-white/50 backdrop-blur-md">
+            <button onClick={() => setIsJobDetailsOpen(false)} className="glass-btn-blue text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">
+              Close Preview
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const DashboardHeader = ({ isProfile }) => (
     <div className="relative z-50 flex flex-col items-start justify-between p-6 mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
       <div className="flex items-center gap-4">
@@ -1327,7 +1397,7 @@ export default function App() {
                              </a>
                           )}
                           
-                          <button onClick={() => alert(`Details for Job ID: ${job.job_id_display}\n\nInputs:\n${JSON.stringify(job.geometry_data, null, 2)}`)} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
+                          <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
                             <Eye className="w-3.5 h-3.5" /> Details
                           </button>
                        </td>
@@ -1389,6 +1459,8 @@ export default function App() {
         )}
 
         {isInsightsOpen && renderInsightsModal()}
+        
+        {isJobDetailsOpen && renderJobDetailsModal()}
 
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
