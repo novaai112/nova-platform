@@ -1130,6 +1130,7 @@ export default function App() {
 
     const codeEdition = geom.ui_code_edition || '2025';
     const upsetSelected = geom.upset_selected === 'Yes';
+    const inputMethod = geom.inputMethod || (geom.pdfName ? 'pdf' : 'manual'); // Detect if uploaded or manual
     
     // Format fallbacks for Display
     const displayHydroP = hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A';
@@ -1209,7 +1210,7 @@ export default function App() {
                </div>
             </div>
 
-            {/* Upset Cases Card */}
+            {/* Upset Cases Card (Only displays cases if available) */}
             <div className="overflow-hidden border border-orange-100 rounded-xl">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
                   <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
@@ -1227,18 +1228,28 @@ export default function App() {
                </div>
             </div>
 
-            {/* PV Elite Report PDF Card */}
-            <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
-                  <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
-               </div>
-               <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
-                 <div className="font-bold text-slate-700">Source:</div>
-                 <div className="font-bold text-blue-600 truncate">
-                   {Object.keys(geom).length > 0 ? 'Data Extracted via Upload / Manual' : 'No Input Data'}
+            {/* PV Elite Report PDF Card (Hidden if manual) */}
+            {inputMethod === 'pdf' && (
+              <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
+                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
+                    <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
                  </div>
-               </div>
-            </div>
+                 <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
+                   <div className="font-bold text-slate-700">PDF Name:</div>
+                   <div className="font-bold text-blue-600 truncate">
+                     {geom.pdfUrl ? (
+                       <a href={geom.pdfUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1 w-max">
+                         {geom.pdfName || 'PV_Elite_Report.pdf'} <Download className="w-3 h-3" />
+                       </a>
+                     ) : (
+                       <span>{geom.pdfName || 'PV_Elite_Report.pdf'}</span>
+                     )}
+                   </div>
+                   <div className="font-bold text-slate-700">File Size:</div>
+                   <div className="font-semibold text-slate-600">{geom.pdfSize || 'N/A'}</div>
+                 </div>
+              </div>
+            )}
 
             {/* Spring Rate Results Card */}
             <div className="overflow-hidden border border-emerald-200 rounded-xl bg-emerald-50/20">
