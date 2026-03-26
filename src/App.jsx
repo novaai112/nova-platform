@@ -1124,17 +1124,32 @@ export default function App() {
     const geom = selectedJobDetails.geometry_data || {};
     const runs = Array.isArray(geom.runs) ? geom.runs : [];
     
-    // Run 0 is the Hydrotest case. Runs 1+ are upset cases
-    const hydroRun = runs.length > 0 ? runs[0] : {};
-    const upsetCases = runs.length > 1 ? runs.slice(1) : [];
+    const upsetSelected = geom.upset_selected === 'Yes';
+    
+    // Determine the Input Method explicitly:
+    // If backend doesn't explicitly save 'inputMethod', we infer it. If 'pdfName' exists, it's a PDF upload.
+    const isManual = geom.inputMethod === 'manual' || (!geom.pdfName && !geom.pdfUrl && geom.inputMethod !== 'pdf');
+    
+    // In the Python backend:
+    // If upsetSelected === 'No', runs[0] is Hydrotest.
+    // If upsetSelected === 'Yes', runs contains 4 Upset Cases. (hydro_temp is saved inside runs as T_amb)
+    let hydroRun = {};
+    let upsetCases = [];
+
+    if (upsetSelected) {
+        upsetCases = runs;
+        // The backend doesn't save hydro_p in upset cases, but it saves T_amb.
+        hydroRun = { T_amb: runs.length > 0 ? runs[0].T_amb : undefined };
+    } else {
+        hydroRun = runs.length > 0 ? runs[0] : {};
+    }
 
     const codeEdition = geom.ui_code_edition || '2025';
-    const upsetSelected = geom.upset_selected === 'Yes';
-    const inputMethod = geom.inputMethod || (geom.pdfName ? 'pdf' : 'manual'); // Detect if uploaded or manual
     
     // Format fallbacks for Display
-    const displayHydroP = hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A';
-    const displayHydroT = hydroRun.T_amb !== undefined ? `${hydroRun.T_amb} °C` : 'N/A';
+    // If it's saved in geom (frontend passing), use that. Otherwise use run data.
+    const displayHydroP = geom.shellPressure ? `${geom.shellPressure} MPa` : (hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A');
+    const displayHydroT = geom.shellTemp ? `${geom.shellTemp} °C` : (hydroRun.T_amb !== undefined ? `${hydroRun.T_amb} °C` : 'N/A');
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1211,25 +1226,27 @@ export default function App() {
             </div>
 
             {/* Upset Cases Card (Only displays cases if available) */}
-            <div className="overflow-hidden border border-orange-100 rounded-xl">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
-                  <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
-               </div>
-               <div className="p-4 space-y-3 text-xs">
-                 {upsetCases.length > 0 ? upsetCases.map((uc, idx) => (
-                   <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0">
-                     <span className="font-bold text-slate-700">Case {idx + 1}:</span>
-                     <span className="font-bold text-slate-800 w-16">{uc.P !== undefined ? `${uc.P} MPa` : 'N/A'}</span>
-                     <span className="font-bold text-slate-800 w-16 text-right">{uc.T !== undefined ? `${uc.T} °C` : 'N/A'}</span>
-                   </div>
-                 )) : (
-                   <div className="text-center font-medium text-slate-500">No Upset Cases Available</div>
-                 )}
-               </div>
-            </div>
+            {upsetSelected && (
+              <div className="overflow-hidden border border-orange-100 rounded-xl">
+                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
+                    <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
+                 </div>
+                 <div className="p-4 space-y-3 text-xs">
+                   {upsetCases.length > 0 ? upsetCases.map((uc, idx) => (
+                     <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0">
+                       <span className="font-bold text-slate-700">Case {idx + 1}:</span>
+                       <span className="font-bold text-slate-800 w-16">{uc.P !== undefined ? `${uc.P} MPa` : 'N/A'}</span>
+                       <span className="font-bold text-slate-800 w-16 text-right">{uc.T !== undefined ? `${uc.T} °C` : 'N/A'}</span>
+                     </div>
+                   )) : (
+                     <div className="text-center font-medium text-slate-500">No Upset Cases Available</div>
+                   )}
+                 </div>
+              </div>
+            )}
 
             {/* PV Elite Report PDF Card (Hidden if manual) */}
-            {inputMethod === 'pdf' && (
+            {!isManual && (
               <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
                  <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
                     <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
