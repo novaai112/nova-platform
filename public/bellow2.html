@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 2 - ANSYS FEA Input | NOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --bg-base: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        
+        body {
+            min-height: 100vh; 
+            background-color: var(--bg-base); 
+            color: var(--text-main);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 2rem; 
+            position: relative; 
+            overflow-x: hidden;
+        }
+
+        /* Ambient Animated Background Orbs */
+        .ambient-orb { 
+            position: fixed; 
+            border-radius: 50%; 
+            filter: blur(100px); 
+            mix-blend-mode: multiply; 
+            z-index: -1; 
+            animation: blob 10s infinite alternate; 
+            pointer-events: none;
+        }
+        .orb-1 { width: 50vw; height: 50vw; background: rgba(96, 165, 250, 0.2); top: -10%; left: -10%; }
+        .orb-2 { width: 60vw; height: 60vw; background: rgba(34, 211, 238, 0.2); top: 20%; right: -10%; animation-delay: 2s; }
+        .orb-3 { width: 60vw; height: 60vw; background: rgba(52, 211, 153, 0.2); bottom: -20%; left: 20%; animation-delay: 4s; }
+
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(40px, -60px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            border-radius: 2rem;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.03);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Buttons */
+        .glass-btn {
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .glass-btn::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg); transition: left 0.7s ease;
+        }
+        .glass-btn:hover::after { left: 200%; }
+        .glass-btn:hover { transform: scale(1.02); }
+
+        .glass-btn-blue {
+            background: linear-gradient(135deg, rgba(60, 100, 214, 0.85), rgba(37, 99, 235, 0.85));
+            box-shadow: 0 4px 15px rgba(60, 100, 214, 0.3);
+        }
+        .glass-btn-green {
+            background: linear-gradient(135deg, rgba(22, 163, 74, 0.85), rgba(5, 150, 105, 0.85));
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);
+        }
+        .glass-btn-red {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.85), rgba(220, 38, 38, 0.85));
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        .glass-btn-disabled {
+            background: rgba(203, 213, 225, 0.6);
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: none;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-dashboard {
+            background: white; color: var(--text-main); border: 2px solid #e2e8f0;
+            padding: 0.8rem 2rem; border-radius: 1rem; font-size: 0.9rem; font-weight: 700; 
+            cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; 
+            margin-top: 1rem; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .btn-dashboard:hover { background: #f1f5f9; transform: translateY(-2px); }
+
+        /* Layout & Components */
+        .container { width: 100%; max-width: 1000px; z-index: 2; display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2rem;}
+
+        .header-card {
+            padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .header-card h1 { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem; color: #1e293b; drop-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .header-card p { font-size: 0.9rem; font-weight: 600; color: var(--primary); }
+
+        .success-banner {
+            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 1rem; padding: 1.25rem 1.5rem; color: #065f46; font-size: 0.9rem;
+            display: flex; flex-direction: column; gap: 0.5rem; font-weight: 500;
+            backdrop-filter: blur(12px); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.05);
+        }
+
+        .upload-section { padding: 3rem; }
+
+        .upload-title { text-align: center; margin-bottom: 2.5rem; }
+        .upload-title h2 { font-size: 1.5rem; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 0.5rem; color: var(--text-main); }
+        .upload-title p { font-size: 0.95rem; font-weight: 500; color: var(--text-muted); margin-top: 0.5rem; }
+
+        .upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
+
+        .upload-box {
+            padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden; height: 180px; text-align: center;
+        }
+        .upload-box:hover {
+            background: rgba(255, 255, 255, 0.8); border-color: var(--primary);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.02), 0 0 0 3px rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+        }
+        .upload-box.uploaded {
+            border-color: var(--success); background: rgba(16, 185, 129, 0.05);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.02), 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+        
+        .box-header h3 { font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-main); }
+        .box-header p { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); line-height: 1.5; }
+        
+        .btn-upload { width: 100%; margin-top: 1rem; font-size: 0.85rem; padding: 0.7rem; border-radius: 0.75rem;}
+
+        .progress-container { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); border-radius: 1rem; padding: 1.5rem; margin-bottom: 2.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .progress-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; }
+        .progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 4px; }
+
+        .submit-area { display: flex; justify-content: center; }
+        .btn-submit { padding: 1rem 4rem; font-size: 1.1rem; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .confirm-modal {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 2rem; width: 90%; max-width: 500px; overflow: hidden;
+            transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+        .modal-overlay.active .confirm-modal { transform: scale(1); }
+        
+        .modal-header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 1.5rem; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .modal-body { padding: 2rem; color: var(--text-main); font-size: 0.95rem; }
+        .modal-section { margin-bottom: 1.5rem; background: rgba(255,255,255,0.6); padding: 1rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.8); }
+        .modal-title { font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .m-item { margin-bottom: 0.4rem; font-weight: 700; display: flex; justify-content: space-between;}
+        .m-item span { font-weight: 600; color: var(--text-muted); text-align: right;}
+        
+        .modal-footer { padding: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem; background: rgba(248, 250, 252, 0.8); border-top: 1px solid #e2e8f0; }
+        .btn-cancel { background: white; color: var(--text-main); padding: 0.8rem 1.5rem; border-radius: 0.75rem; border: 2px solid #e2e8f0; cursor: pointer; font-weight: 700; transition: all 0.2s;}
+        .btn-cancel:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        
+        .solving-modal { background: transparent; box-shadow: none; color: var(--text-main); text-align: center; display: flex; flex-direction: column; align-items: center; border: none; }
+        .solving-modal h2 { color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;}
+        .solving-modal p { color: #e2e8f0; text-shadow: 0 1px 5px rgba(0,0,0,0.5); font-weight: 500;}
+        .spinner { width: 70px; height: 70px; border: 5px solid rgba(255,255,255,0.2); border-top-color: var(--success); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        input[type="file"] { display: none; }
+        
+        /* Icons */
+        svg { flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="container">
+        <div class="glass-panel header-card">
+            <h1>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Step 2 - ANSYS FEA Input Documents
+            </h1>
+            <p>Job: 25-26/J023 | Configuration: Flanged and Flued</p>
+        </div>
+
+        <div class="success-banner">
+            <b style="display:flex; align-items:center; gap:0.5rem; color: #047857;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Step 1 Completed Successfully
+            </b>
+            <span>Spring rate calculations have been saved. Use these values to generate the required PV Elite documents below for final FEA processing.</span>
+        </div>
+
+        <div class="glass-panel upload-section">
+            <div class="upload-title">
+                <h2>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.8m8.7-1.6V21"/><path d="M16 16l-4-4-4 4"/></svg>
+                    Upload Required Documents
+                </h2>
+                <p>All three PDF documents are required for ANSYS Workbench FEA analysis</p>
+            </div>
+
+            <div class="upload-grid">
+                <div class="glass-input upload-box" id="box-design">
+                    <div class="box-header">
+                        <h3>Design Case Analysis *</h3>
+                        <p id="desc-design">Upload PDF file (Max 10MB) - Generated from PV Elite</p>
+                    </div>
+                    <button class="glass-btn glass-btn-blue btn-upload" onclick="triggerFile('design')" id="btn-design">Select PDF File</button>
+                    <input type="file" id="file-design" accept=".pdf" onchange="handleFile(event, 'design')">
+                </div>
+
+                <div class="glass-input upload-box" id="box-hydro">
+                    <div class="box-header">
+                        <h3>Hydrostatic Test Report *</h3>
+                        <p id="desc-hydro">Upload PDF file (Max 10MB) - Generated from PV Elite</p>
+                    </div>
+                    <button class="glass-btn glass-btn-blue btn-upload" onclick="triggerFile('hydro')" id="btn-hydro">Select PDF File</button>
+                    <input type="file" id="file-hydro" accept=".pdf" onchange="handleFile(event, 'hydro')">
+                </div>
+
+                <div class="glass-input upload-box" id="box-op">
+                    <div class="box-header">
+                        <h3>Operating Conditions *</h3>
+                        <p id="desc-op">Upload PDF file (Max 10MB) - Generated from PV Elite</p>
+                    </div>
+                    <button class="glass-btn glass-btn-blue btn-upload" onclick="triggerFile('op')" id="btn-op">Select PDF File</button>
+                    <input type="file" id="file-op" accept=".pdf" onchange="handleFile(event, 'op')">
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span>Upload Progress</span>
+                    <span id="progress-text" style="color: var(--primary);">0/3</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="submit-area">
+                <button class="glass-btn glass-btn-disabled btn-submit" id="mainSubmitBtn" onclick="openConfirmModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Submit Step 2 Documents
+                </button>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="https://nova-analysis.vercel.app/" class="btn-dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmModal">
+        <div class="confirm-modal">
+            <div class="modal-header">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Confirm Step 2 Submission
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <div class="modal-title">📄 Uploaded Documents Summary</div>
+                    <div class="m-item">Job ID: <span>25-26/J023</span></div>
+                    <div class="m-item">Configuration: <span>Flanged and Flued</span></div>
+                    <div class="m-item">Step: <span>2 of 2 — ANSYS FEA</span></div>
+                </div>
+                <div class="modal-section">
+                    <div class="modal-title">📁 Documents (3 of 3)</div>
+                    <div class="m-item">Design Case: <span id="m-name-design">-</span></div>
+                    <div class="m-item">Hydrostatic Test: <span id="m-name-hydro">-</span></div>
+                    <div class="m-item">Operating Conditions: <span id="m-name-op">-</span></div>
+                </div>
+                <div class="modal-section" style="margin-bottom:0;">
+                    <div class="modal-title">📊 Upload Summary</div>
+                    <div class="m-item">Total Files: <span>3</span></div>
+                    <div class="m-item">Total Size: <span id="m-total-size">-</span></div>
+                    <div class="m-item">Next Step: <span>ANSYS PyMAPDL Simulation</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="glass-btn glass-btn-green" onclick="startFEAAnalysis()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Confirm & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="solvingModal">
+        <div class="solving-modal confirm-modal" style="background: transparent; border: none; backdrop-filter: none;">
+            <div class="spinner"></div>
+            <h2>Extracting Data & Running PyMAPDL...</h2>
+            <p>Extracting Maximum Displacements (Δs) across all conditions.<br>Calculating Equivalent Von Mises Stress.</p>
+        </div>
+    </div>
+
+    <script>
+        let filesData = { design: null, hydro: null, op: null };
+        let pdfTexts = { design: "", hydro: "", op: "" };
+
+        function triggerFile(type) {
+            if(filesData[type]) {
+                // If uploaded, remove it
+                filesData[type] = null;
+                pdfTexts[type] = "";
+                document.getElementById(`file-${type}`).value = "";
+                
+                let box = document.getElementById(`box-${type}`);
+                box.classList.remove('uploaded');
+                
+                let btn = document.getElementById(`btn-${type}`);
+                btn.innerText = "Select PDF File";
+                btn.classList.remove('glass-btn-red');
+                btn.classList.add('glass-btn-blue');
+                
+                let desc = document.getElementById(`desc-${type}`);
+                desc.innerText = "Upload PDF file (Max 10MB) - Generated from PV Elite";
+                desc.style.color = "var(--text-muted)";
+                desc.style.fontWeight = "500";
+                
+                updateProgress();
+            } else {
+                document.getElementById(`file-${type}`).click();
+            }
+        }
+
+        async function extractText(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let text = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                text += content.items.map(item => item.str).join(" ") + "\n";
+            }
+            return text;
+        }
+
+        async function handleFile(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // UI Update
+            filesData[type] = file;
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            
+            let box = document.getElementById(`box-${type}`);
+            box.classList.add('uploaded');
+            
+            let btn = document.getElementById(`btn-${type}`);
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Remove`;
+            btn.classList.remove('glass-btn-blue');
+            btn.classList.add('glass-btn-red');
+            
+            let desc = document.getElementById(`desc-${type}`);
+            desc.innerText = `${file.name} (${sizeMB} MB)`;
+            desc.style.color = "var(--success)";
+            desc.style.fontWeight = "700";
+            
+            updateProgress();
+
+            // Background PDF parsing
+            try {
+                pdfTexts[type] = await extractText(file);
+            } catch (e) {
+                console.error("PDF Parsing error:", e);
+                alert(`Error reading ${file.name}. Ensure it's a valid PDF.`);
+            }
+        }
+
+        function updateProgress() {
+            let count = Object.values(filesData).filter(f => f !== null).length;
+            document.getElementById('progress-text').innerText = `${count}/3`;
+            document.getElementById('progress-fill').style.width = `${(count / 3) * 100}%`;
+
+            const submitBtn = document.getElementById('mainSubmitBtn');
+            if(count === 3) {
+                submitBtn.classList.remove('glass-btn-disabled');
+                submitBtn.classList.add('glass-btn-green');
+            } else {
+                submitBtn.classList.add('glass-btn-disabled');
+                submitBtn.classList.remove('glass-btn-green');
+            }
+        }
+
+        function openConfirmModal() {
+            let totalBytes = filesData.design.size + filesData.hydro.size + filesData.op.size;
+            let totalMB = (totalBytes / (1024*1024)).toFixed(2);
+
+            document.getElementById('m-name-design').innerText = `${(filesData.design.size/(1024*1024)).toFixed(2)} MB`;
+            document.getElementById('m-name-hydro').innerText = `${(filesData.hydro.size/(1024*1024)).toFixed(2)} MB`;
+            document.getElementById('m-name-op').innerText = `${(filesData.op.size/(1024*1024)).toFixed(2)} MB`;
+            document.getElementById('m-total-size').innerText = `${totalMB} MB`;
+
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        async function startFEAAnalysis() {
+            closeModal('confirmModal');
+            document.getElementById('solvingModal').classList.add('active');
+
+            let storedData = sessionStorage.getItem('nova_manual_data') || '{}';
+            
+            const payload = {
+                step1_data: JSON.parse(storedData),
+                pdf_texts: {
+                    design: pdfTexts.design,
+                    hydro: pdfTexts.hydro,
+                    operating: pdfTexts.op
+                }
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/solve_step2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Solver execution failed.");
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'NOVA_Step2_Stress_Results.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                setTimeout(() => {
+                    window.location.href = 'https://nova-analysis.vercel.app/';
+                }, 1500);
+
+            } catch(e) {
+                console.error(e);
+                alert("An error occurred during PyMAPDL execution. Ensure the local Flask server is running.");
+                closeModal('solvingModal');
+            }
+        }
+    </script>
+</body>
+</html>
