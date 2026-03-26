@@ -156,16 +156,36 @@ export default function App() {
     }
   }, [currentView, isLoggedIn, isInitializing]);
 
-  // Polling to update jobs real-time
+  // Silently refresh the session to check if Admin changed the user_metadata
+  const checkApprovalStatus = async () => {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (data?.session?.user) {
+      const user = data.session.user;
+      const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
+      
+      if (isApprovedStatus) {
+        setupUser(user); // This updates the UI immediately
+        showNotification("Account Approved! You can now submit analysis jobs.", "success");
+      }
+    }
+  };
+
+  // Polling to update jobs real-time AND check approval status
   useEffect(() => {
     const interval = setInterval(() => {
       if (isLoggedIn) {
         fetchJobs();
+        
+        // If the user isn't approved yet, keep checking their status in the background
+        if (!currentUser.isApproved) {
+          checkApprovalStatus();
+        }
       }
-    }, 5000); // Check for job updates every 5 seconds
+    }, 5000); // Check every 5 seconds
+    
+    // We add currentUser.isApproved to the dependencies so the interval updates when they get approved
     return () => clearInterval(interval);
-  }, [isLoggedIn]);
-
+  }, [isLoggedIn, currentUser.isApproved]);
   const setupUser = (user) => {
       const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
