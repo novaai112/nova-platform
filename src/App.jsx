@@ -49,6 +49,7 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true); 
   const [currentView, setCurrentView] = useState('landing'); 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info'); 
@@ -120,27 +121,40 @@ export default function App() {
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
 
+  // AUTH INITIALIZATION & REFRESH LOGIC
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setupUser(session.user);
         fetchJobs();
+        // Redirect to dashboard immediately if session exists on refresh
+        setCurrentView('dashboard');
       }
+      setIsInitializing(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setupUser(session.user);
         fetchJobs();
+        setCurrentView(prev => (['landing', 'login', 'signup', 'forgot'].includes(prev) ? 'dashboard' : prev));
       } else {
         setIsLoggedIn(false);
         setCurrentUser({ id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "" });
         setJobs([]);
+        setCurrentView(prev => (['dashboard', 'profile'].includes(prev) ? 'login' : prev));
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ROUTE GUARD: Redirects to login if trying to access secure views without auth
+  useEffect(() => {
+    if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
+      setCurrentView('login');
+    }
+  }, [currentView, isLoggedIn, isInitializing]);
 
   // Polling to update jobs real-time
   useEffect(() => {
