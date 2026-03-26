@@ -112,7 +112,6 @@ export default function App() {
   const [insightResponse, setInsightResponse] = useState("");
   const [isInsightLoading, setIsInsightLoading] = useState(false);
 
-  // New State variables for the Custom Job Details Modal
   const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false);
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
 
@@ -1121,64 +1120,158 @@ export default function App() {
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
-    const formatData = (data) => {
-      if (!data) return "No input data available.";
-      if (typeof data === 'string') return data;
-      return JSON.stringify(data, null, 2);
-    };
-
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
-        <div className="glass-panel w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col animate-in zoom-in-95 relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Dark Backdrop */}
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
+        
+        {/* Main Modal Container - White, rounded, scrollable */}
+        <div className="bg-white w-full max-w-[500px] h-[85vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl relative z-10 animate-in zoom-in-95">
+          
           {/* Header */}
-          <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-blue-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
-            <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
-              <FileText className="w-6 h-6" /> Job Details: {selectedJobDetails.job_id_display}
-            </h3>
-            <button onClick={() => setIsJobDetailsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
-              <X className="w-5 h-5" />
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-2">
+              <Box className="w-5 h-5 text-blue-500" />
+              <h3 className="text-base font-bold text-slate-800">Job: {selectedJobDetails.job_id_display}</h3>
+              <span className="px-2 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
+                {selectedJobDetails.type}
+              </span>
+            </div>
+            <button onClick={() => setIsJobDetailsOpen(false)} className="flex items-center justify-center w-6 h-6 text-white transition-colors bg-red-500 rounded-full hover:bg-red-600">
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Content Body */}
-          <div className="flex-1 p-8 space-y-6 overflow-y-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Project Name</h4>
-                <p className="text-lg font-extrabold text-slate-800">{selectedJobDetails.name}</p>
-              </div>
-              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Analysis Type</h4>
-                <p className="text-lg font-extrabold text-slate-800">{selectedJobDetails.type}</p>
-              </div>
-              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                <h4 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-1">Status</h4>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border mt-1 ${selectedJobDetails.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : selectedJobDetails.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' : selectedJobDetails.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' : 'bg-red-500/20 text-red-800 border-red-500/30'}`}>
-                  {selectedJobDetails.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
-                  {selectedJobDetails.status}
-                </span>
-              </div>
+          {/* Scrollable Body */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+            
+            {/* Job Details Card */}
+            <div className="overflow-hidden border border-blue-100 rounded-xl">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
+                  <Box className="w-4 h-4"/> Job Details
+               </div>
+               <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
+                 <div className="font-bold text-slate-700">Job ID:</div>
+                 <div className="font-semibold text-slate-600">{selectedJobDetails.job_id_display}</div>
+                 <div className="font-bold text-slate-700">Date:</div>
+                 <div className="font-semibold text-slate-600">{new Date(selectedJobDetails.created_at).toLocaleString()}</div>
+                 <div className="font-bold text-slate-700">Type:</div>
+                 <div className="flex items-center gap-1 font-bold text-blue-600">
+                    <Box className="w-3 h-3"/> {selectedJobDetails.type}
+                 </div>
+               </div>
             </div>
 
-            <div className="bg-white/50 border border-white/60 backdrop-blur-md rounded-2xl p-6 shadow-sm flex flex-col">
-              <h4 className="flex items-center gap-2 mb-4 text-sm font-extrabold text-slate-800 border-b border-white/50 pb-3">
-                <Database className="w-5 h-5 text-blue-600" /> Geometry Data & Inputs
-              </h4>
-              <div className="bg-slate-900/85 rounded-xl p-5 overflow-x-auto shadow-inner border border-slate-700/50">
-                <pre className="text-sm font-mono text-emerald-400">
-                  {formatData(selectedJobDetails.geometry_data)}
-                </pre>
-              </div>
+            {/* Bellow Configuration Card */}
+            <div className="overflow-hidden border border-blue-100 rounded-xl">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
+                  <Settings2 className="w-4 h-4"/> Bellow Configuration
+               </div>
+               <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
+                 <div className="font-bold text-slate-700">Design Code:</div>
+                 <div className="font-semibold text-slate-600">2025</div>
+                 <div className="font-bold text-slate-700">Bellow Variation:</div>
+                 <div className="font-semibold text-slate-600">Flanged and Flued</div>
+               </div>
             </div>
+
+            {/* Hydrotest Parameters Card */}
+            <div className="overflow-hidden border border-emerald-100 rounded-xl">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
+                  <Database className="w-4 h-4 text-purple-500"/> Hydrotest Parameters
+               </div>
+               <div className="grid grid-cols-2 p-4 text-xs gap-y-4">
+                 <div className="font-bold text-slate-700">Shell<br/>Pressure:</div>
+                 <div className="flex items-center font-bold text-slate-800">2 MPa</div>
+                 <div className="font-bold text-slate-700">Shell<br/>Temperature:</div>
+                 <div className="flex items-center font-bold text-slate-800">22 °C</div>
+                 <div className="font-bold text-slate-700">Additional<br/>Cases:</div>
+                 <div className="flex items-center">
+                   <span className="px-2 py-0.5 text-white bg-orange-500 rounded-full font-bold text-[10px]">Yes</span>
+                 </div>
+               </div>
+            </div>
+
+            {/* Upset Cases Card */}
+            <div className="overflow-hidden border border-orange-100 rounded-xl">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
+                  <Shapes className="w-4 h-4"/> Upset Cases (4)
+               </div>
+               <div className="p-4 space-y-3 text-xs">
+                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                   <span className="font-bold text-slate-700">Case 1:</span>
+                   <span className="font-bold text-slate-800 w-16">N/A0</span>
+                   <span className="font-bold text-slate-800 w-16 text-right">22 °C</span>
+                 </div>
+                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                   <span className="font-bold text-slate-700">Case 2:</span>
+                   <span className="font-bold text-slate-800 w-16">1.7 MPa</span>
+                   <span className="font-bold text-slate-800 w-16 text-right">339 °C</span>
+                 </div>
+                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                   <span className="font-bold text-slate-700">Case 3:</span>
+                   <span className="font-bold text-slate-800 w-16">1.8 MPa</span>
+                   <span className="font-bold text-slate-800 w-16 text-right">360 °C</span>
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <span className="font-bold text-slate-700">Case 4:</span>
+                   <span className="font-bold text-slate-800 w-16">1.77 MPa</span>
+                   <span className="font-bold text-slate-800 w-16 text-right">350 °C</span>
+                 </div>
+               </div>
+            </div>
+
+            {/* PV Elite Report PDF Card */}
+            <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
+                  <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
+               </div>
+               <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
+                 <div className="font-bold text-slate-700">PDF Name:</div>
+                 <div className="font-bold text-blue-600 hover:underline cursor-pointer">221_CS_CS.pdf</div>
+                 <div className="font-bold text-slate-700">File Size:</div>
+                 <div className="font-semibold text-slate-600">0.50 MB</div>
+               </div>
+            </div>
+
+            {/* Spring Rate Results Card */}
+            <div className="overflow-hidden border border-emerald-200 rounded-xl bg-emerald-50/20">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 border-b border-emerald-100">
+                  <Award className="w-4 h-4"/> Spring Rate Results
+               </div>
+               <div className="p-4 space-y-3 text-xs">
+                 <div className="grid grid-cols-[60px_1fr] gap-y-2">
+                   <div className="font-bold text-slate-700">File:</div>
+                   <div className="font-semibold text-emerald-700 break-all">{selectedJobDetails.job_id_display}_spring_rates.xlsx</div>
+                   <div className="font-bold text-slate-700">Status:</div>
+                   <div className="flex items-center gap-1 font-bold text-emerald-600">
+                     <CheckCircle className="w-3.5 h-3.5"/> Available
+                   </div>
+                 </div>
+                 <button className="w-full py-2.5 mt-2 text-xs font-bold text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-2">
+                   <Download className="w-4 h-4"/> Download Spring Rate Results
+                 </button>
+               </div>
+            </div>
+
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end p-6 border-t bg-white/40 border-white/50 backdrop-blur-md">
-            <button onClick={() => setIsJobDetailsOpen(false)} className="glass-btn-blue text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">
-              Close Preview
+          {/* Footer Actions */}
+          <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
+            <button 
+              onClick={() => setIsJobDetailsOpen(false)} 
+              className="px-6 py-2 text-sm font-bold text-blue-700 transition-colors bg-white border-2 border-blue-700 rounded-lg hover:bg-blue-50"
+            >
+              Close
+            </button>
+            <button 
+              onClick={() => { setIsJobDetailsOpen(false); showNotification("Proceeding to Step 2..."); }}
+              className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Continue to Step 2
             </button>
           </div>
+
         </div>
       </div>
     );
