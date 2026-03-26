@@ -696,7 +696,7 @@ export default function App() {
             <ArrowRight className="w-8 h-8 text-[#3C64D6] hidden sm:block animate-[pulse_2s_ease-in-out_infinite]" />
             <div className="glass-panel px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(16,163,74,0.2)] transition-shadow">
                <FileCheck className="w-6 h-6 text-emerald-500" />
-               <span className="text-lg font-bold text-slate-800">Certified FE Report</span>
+               <span className="text-lg font-bold text-slate-800">FE Report</span>
             </div>
           </div>
 
@@ -751,8 +751,8 @@ export default function App() {
                   </svg>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA Suite</h3>
-                <p className="mb-8 text-sm font-medium text-slate-600">Thick Single Convolute (Flanged & Flued)</p>
+                <h3 className="text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA</h3>
+                <p className="mb-8 text-sm font-medium text-slate-600">Thick Convolute (Flanged & Flued)</p>
                 
                 <div className="space-y-4 mb-8 flex-1 bg-white/40 border border-white/50 p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
                    <div className="flex items-start gap-3">
@@ -768,7 +768,7 @@ export default function App() {
                      <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Corroded / Uncorroded state analysis</span>
                    </div>
                    <div className="flex items-center gap-3">
-                     <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Multi-condition upset loads (up to 4)</span>
+                     <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Multi-condition upset loads</span>
                    </div>
                    <div className="flex items-center gap-3">
                      <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Strict ASME compliance verification</span>
@@ -874,7 +874,7 @@ export default function App() {
                { icon: Box, title: "Automated Meshing", desc: "Smart algorithmic grid generation" },
                { icon: GitMerge, title: "Cloud Solving", desc: "ANSYS backend computes stresses" },
                { icon: Award, title: "Code Validation", desc: "ASME Sec VIII Div 2 Part 5 checks" },
-               { icon: Download, title: "Final Report", desc: "Download certified, audit-ready PDF" }
+               { icon: Download, title: "Final Report", desc: "Download Report, audit-ready PDF" }
              ].map((item, idx) => {
                 const Icon = item.icon;
                 return (
@@ -1370,7 +1370,7 @@ export default function App() {
                 <span>NOVA Dashboard - {jobs.length} Jobs</span>
                 <span className={`ml-3 flex items-center px-2.5 py-1 rounded-full text-xs shadow-sm border ${currentUser.isApproved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-800' : 'bg-amber-500/20 border-amber-500/30 text-amber-800'}`}>
                   {currentUser.isApproved ? ( 
-                    <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Confirmed / Online</> 
+                    <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Online</> 
                   ) : ( 
                     <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Pending Owner Confirmation</> 
                   )}
@@ -1430,9 +1430,6 @@ export default function App() {
                 <Shield className="w-8 h-8 mt-1 text-amber-600 shrink-0 sm:mt-0" />
                 <div>
                     <h4 className="text-lg font-extrabold text-amber-800">Account Verification Required</h4>
-                    <p className="mt-1 text-sm font-medium text-amber-900">
-                      To ensure quality, you must be approved by the NOVA Admin before you can create jobs.
-                    </p>
                 </div>
               </div>
               
