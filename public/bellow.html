@@ -635,7 +635,21 @@
             </div>
         </div>
     </div>
-
+    <div class="modal-overlay" id="successModal">
+        <div class="confirm-modal-content" style="text-align: center; padding-bottom: 2rem; max-width: 400px;">
+            <div class="confirm-header-green" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                Analysis Request Initialized
+            </div>
+            <div style="padding: 2.5rem 2rem;">
+                <div style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.15); color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h3 style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem;">Job Queued Successfully!</h3>
+                <p style="color: #64748b; font-size: 0.95rem; line-height: 1.6;">Your FEA parameters have been sent to the NOVA solver. You can track its progress and download the final report from your dashboard.</p>
+            </div>
+            <button class="btn-submit" style="margin-top: 0; padding: 0.8rem 2.5rem; border-radius: 10px;" onclick="window.location.href = '/'">Return to Dashboard</button>
+        </div>
+    </div>
     <div class="modal-overlay" id="solvingModal">
         <div class="solving-modal-content">
             <div class="spinner" style="width: 70px; height: 70px; border-width: 4px; border-top-color: #10b981;"></div>
@@ -931,6 +945,8 @@
                 // Alert Success and Redirect back to Dashboard
                 // alert("Job queued successfully! You can track its status in the Dashboard.");
                 // window.location.href = '/'; 
+                closeModal('solvingModal');
+                openModal('successModal');
 
             } catch (error) {
                 console.error("Queueing Error:", error);
