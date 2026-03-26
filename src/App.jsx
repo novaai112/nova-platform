@@ -1120,6 +1120,10 @@ export default function App() {
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
+    // Safely extract real geometry data from the database
+    const geom = selectedJobDetails.geometry_data || {};
+    const upsetCases = Array.isArray(geom.upsetCases) ? geom.upsetCases : [];
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         {/* Dark Backdrop */}
@@ -1169,9 +1173,9 @@ export default function App() {
                </div>
                <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
                  <div className="font-bold text-slate-700">Design Code:</div>
-                 <div className="font-semibold text-slate-600">2025</div>
+                 <div className="font-semibold text-slate-600">{geom.designCode || 'N/A'}</div>
                  <div className="font-bold text-slate-700">Bellow Variation:</div>
-                 <div className="font-semibold text-slate-600">Flanged and Flued</div>
+                 <div className="font-semibold text-slate-600">{geom.bellowVariation || 'N/A'}</div>
                </div>
             </div>
 
@@ -1182,12 +1186,18 @@ export default function App() {
                </div>
                <div className="grid grid-cols-2 p-4 text-xs gap-y-4">
                  <div className="font-bold text-slate-700">Shell<br/>Pressure:</div>
-                 <div className="flex items-center font-bold text-slate-800">2 MPa</div>
+                 <div className="flex items-center font-bold text-slate-800">
+                    {geom.shellPressure ? `${geom.shellPressure} MPa` : 'N/A'}
+                 </div>
                  <div className="font-bold text-slate-700">Shell<br/>Temperature:</div>
-                 <div className="flex items-center font-bold text-slate-800">22 °C</div>
+                 <div className="flex items-center font-bold text-slate-800">
+                    {geom.shellTemp ? `${geom.shellTemp} °C` : 'N/A'}
+                 </div>
                  <div className="font-bold text-slate-700">Additional<br/>Cases:</div>
                  <div className="flex items-center">
-                   <span className="px-2 py-0.5 text-white bg-orange-500 rounded-full font-bold text-[10px]">Yes</span>
+                   <span className={`px-2 py-0.5 text-white rounded-full font-bold text-[10px] ${geom.additionalCases ? 'bg-orange-500' : 'bg-slate-400'}`}>
+                     {geom.additionalCases ? 'Yes' : 'No'}
+                   </span>
                  </div>
                </div>
             </div>
@@ -1195,29 +1205,18 @@ export default function App() {
             {/* Upset Cases Card */}
             <div className="overflow-hidden border border-orange-100 rounded-xl">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
-                  <Shapes className="w-4 h-4"/> Upset Cases (4)
+                  <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
                </div>
                <div className="p-4 space-y-3 text-xs">
-                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                   <span className="font-bold text-slate-700">Case 1:</span>
-                   <span className="font-bold text-slate-800 w-16">N/A0</span>
-                   <span className="font-bold text-slate-800 w-16 text-right">22 °C</span>
-                 </div>
-                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                   <span className="font-bold text-slate-700">Case 2:</span>
-                   <span className="font-bold text-slate-800 w-16">1.7 MPa</span>
-                   <span className="font-bold text-slate-800 w-16 text-right">339 °C</span>
-                 </div>
-                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                   <span className="font-bold text-slate-700">Case 3:</span>
-                   <span className="font-bold text-slate-800 w-16">1.8 MPa</span>
-                   <span className="font-bold text-slate-800 w-16 text-right">360 °C</span>
-                 </div>
-                 <div className="flex items-center justify-between">
-                   <span className="font-bold text-slate-700">Case 4:</span>
-                   <span className="font-bold text-slate-800 w-16">1.77 MPa</span>
-                   <span className="font-bold text-slate-800 w-16 text-right">350 °C</span>
-                 </div>
+                 {upsetCases.length > 0 ? upsetCases.map((uc, idx) => (
+                   <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0">
+                     <span className="font-bold text-slate-700">Case {idx + 1}:</span>
+                     <span className="font-bold text-slate-800 w-16">{uc.pressure || 'N/A'}</span>
+                     <span className="font-bold text-slate-800 w-16 text-right">{uc.temp || 'N/A'}</span>
+                   </div>
+                 )) : (
+                   <div className="text-center font-medium text-slate-500">No Upset Cases Available</div>
+                 )}
                </div>
             </div>
 
@@ -1228,9 +1227,11 @@ export default function App() {
                </div>
                <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
                  <div className="font-bold text-slate-700">PDF Name:</div>
-                 <div className="font-bold text-blue-600 hover:underline cursor-pointer">221_CS_CS.pdf</div>
+                 <div className="font-bold text-blue-600 truncate">
+                   {geom.pdfName || 'No PDF Uploaded'}
+                 </div>
                  <div className="font-bold text-slate-700">File Size:</div>
-                 <div className="font-semibold text-slate-600">0.50 MB</div>
+                 <div className="font-semibold text-slate-600">{geom.pdfSize || 'N/A'}</div>
                </div>
             </div>
 
@@ -1242,15 +1243,24 @@ export default function App() {
                <div className="p-4 space-y-3 text-xs">
                  <div className="grid grid-cols-[60px_1fr] gap-y-2">
                    <div className="font-bold text-slate-700">File:</div>
-                   <div className="font-semibold text-emerald-700 break-all">{selectedJobDetails.job_id_display}_spring_rates.xlsx</div>
+                   <div className="font-semibold text-emerald-700 break-all">
+                     {selectedJobDetails.excel_file_url ? `${selectedJobDetails.job_id_display}_spring_rates.xlsx` : 'Processing...'}
+                   </div>
                    <div className="font-bold text-slate-700">Status:</div>
-                   <div className="flex items-center gap-1 font-bold text-emerald-600">
-                     <CheckCircle className="w-3.5 h-3.5"/> Available
+                   <div className={`flex items-center gap-1 font-bold ${selectedJobDetails.excel_file_url ? 'text-emerald-600' : 'text-amber-500'}`}>
+                     {selectedJobDetails.excel_file_url ? <CheckCircle className="w-3.5 h-3.5"/> : <Loader2 className="w-3.5 h-3.5 animate-spin"/>} 
+                     {selectedJobDetails.excel_file_url ? 'Available' : 'Pending Calculation'}
                    </div>
                  </div>
-                 <button className="w-full py-2.5 mt-2 text-xs font-bold text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-2">
-                   <Download className="w-4 h-4"/> Download Spring Rate Results
-                 </button>
+                 {selectedJobDetails.excel_file_url ? (
+                   <a href={selectedJobDetails.excel_file_url} target="_blank" rel="noopener noreferrer" className="w-full py-2.5 mt-2 text-xs font-bold text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-2">
+                     <Download className="w-4 h-4"/> Download Spring Rate Results
+                   </a>
+                 ) : (
+                   <button disabled className="w-full py-2.5 mt-2 text-xs font-bold text-slate-500 bg-slate-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                     <Clock className="w-4 h-4"/> Awaiting Calculation
+                   </button>
+                 )}
                </div>
             </div>
 
@@ -1265,7 +1275,7 @@ export default function App() {
               Close
             </button>
             <button 
-              onClick={() => { setIsJobDetailsOpen(false); showNotification("Proceeding to Step 2..."); }}
+              onClick={() => { window.location.href = 'https://nova-analysis.vercel.app/bellow2.html'; }}
               className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
             >
               Continue to Step 2
