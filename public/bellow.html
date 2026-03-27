@@ -813,12 +813,23 @@
 
             const upsetSelected = document.getElementById('upsetSelect').value;
             if (upsetSelected === 'Yes') {
-                const reqs = ['uc1_p', 'uc1_t', 'uc2_p', 'uc2_t', 'uc3_p', 'uc3_t', 'uc4_p', 'uc4_t'];
-                for (let id of reqs) {
-                    if (!document.getElementById(id).value) {
-                        showModal("Missing Input", "Please fill all required Upset Case fields.");
-                        return;
+                let hasAtLeastOne = false;
+                for (let i = 1; i <= 4; i++) {
+                    const p = document.getElementById(`uc${i}_p`).value;
+                    const t = document.getElementById(`uc${i}_t`).value;
+                    
+                    if (p || t) { // If they typed something in this row
+                        if (!p || !t) { // Make sure they filled BOTH P and T
+                            showModal("Missing Input", `Please provide both Pressure and Temperature for Upset Case ${i}, or leave both blank to skip.`);
+                            return;
+                        }
+                        hasAtLeastOne = true;
                     }
+                }
+                
+                if (!hasAtLeastOne) {
+                    showModal("Missing Input", "You selected 'Yes' for Upset Cases. Please fill in at least one Upset Case.");
+                    return;
                 }
             }
 
