@@ -484,31 +484,23 @@
                     body: formData
                 });
 
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || "Solver execution failed.");
-                }
+                if (!response.ok) throw new Error((await response.json()).error || "Solver execution failed.");
 
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    document.getElementById('solve-title').innerText = "Job Queued Successfully!";
-                    document.getElementById('solve-desc').innerText = "You will receive an email with the PDF and Excel reports shortly.";
-                    document.querySelector('.spinner').style.display = 'none';
-                    
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 3000);
-                } else {
-                    throw new Error(result.error || "Unknown error occurred.");
-                }
+        // UI success feedback
+        document.getElementById('solve-title').innerText = "Job Queued Successfully!";
+        document.getElementById('solve-desc').innerText = "Redirecting to dashboard to track progress...";
+        document.querySelector('.spinner').style.display = 'none';
+        
+        // REDIRECT TO DASHBOARD (Exactly like Step 1)
+        setTimeout(() => { 
+            window.location.href = '/'; 
+        }, 2000);
 
-            } catch(e) {
-                console.error(e);
-                alert("Error: " + e.message);
-                closeModal('solvingModal');
-            }
-        }
+    } catch(e) {
+        alert("Error: " + e.message); 
+        closeModal('solvingModal');
+    }
+}
     </script>
 </body>
 </html>
