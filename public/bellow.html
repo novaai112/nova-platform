@@ -942,6 +942,10 @@
 
                 const data = await response.json();
                 
+                // ---- CRITICAL FIX: Save Job ID for Step 2 ----
+                localStorage.setItem('nova_job_id', data.job_id);
+                // ----------------------------------------------
+                
                 // Redirect back to Dashboard
                 window.location.href = '/'; 
 
