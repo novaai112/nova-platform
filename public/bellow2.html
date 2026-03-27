@@ -449,7 +449,17 @@
             const step1Data = JSON.parse(step1DataStr);
             step1Data.hydroPressure = step1Data.shellPressure; 
             step1Data.hydroTemp = step1Data.shellTemp;
-            
+            if (step1Data.upsetSelect === 'Yes') {
+                for (let i = 1; i <= 4; i++) {
+                    // Clean Pressure
+                    let p = (step1Data[`uc${i}_p`] || "").toString().trim();
+                    if (p === "." || p === "") step1Data[`uc${i}_p`] = "0";
+
+                    // Clean Temperature
+                    let t = (step1Data[`uc${i}_t`] || "").toString().trim();
+                    if (t === "." || t === "") step1Data[`uc${i}_t`] = "0";
+                }
+            }
             // 3. Get User Auth Data
             const userData = JSON.parse(localStorage.getItem('nova_user') || '{}');
 
