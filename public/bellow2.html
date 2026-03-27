@@ -217,7 +217,6 @@
 
         input[type="file"] { display: none; }
         
-        /* Icons */
         svg { flex-shrink: 0; }
     </style>
 </head>
@@ -300,7 +299,7 @@
         </div>
 
         <div style="text-align: center;">
-            <a href="https://nova-analysis.vercel.app/" class="btn-dashboard">
+            <a href="/" class="btn-dashboard">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Back to Dashboard
             </a>
@@ -346,20 +345,18 @@
     <div class="modal-overlay" id="solvingModal">
         <div class="solving-modal confirm-modal" style="background: transparent; border: none; backdrop-filter: none;">
             <div class="spinner"></div>
-            <h2>Extracting Data & Running PyMAPDL...</h2>
-            <p>Extracting Maximum Displacements (Δs) across all conditions.<br>Calculating Equivalent Von Mises Stress.</p>
+            <h2 id="solve-title">Sending to Queue...</h2>
+            <p id="solve-desc">Bundling PDFs and geometry data for PyMAPDL.</p>
         </div>
     </div>
 
     <script>
         let filesData = { design: null, hydro: null, op: null };
-        let pdfTexts = { design: "", hydro: "", op: "" };
 
         function triggerFile(type) {
             if(filesData[type]) {
                 // If uploaded, remove it
                 filesData[type] = null;
-                pdfTexts[type] = "";
                 document.getElementById(`file-${type}`).value = "";
                 
                 let box = document.getElementById(`box-${type}`);
@@ -381,19 +378,7 @@
             }
         }
 
-        async function extractText(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let text = "";
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                text += content.items.map(item => item.str).join(" ") + "\n";
-            }
-            return text;
-        }
-
-        async function handleFile(event, type) {
+        function handleFile(event, type) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -415,14 +400,6 @@
             desc.style.fontWeight = "700";
             
             updateProgress();
-
-            // Background PDF parsing
-            try {
-                pdfTexts[type] = await extractText(file);
-            } catch (e) {
-                console.error("PDF Parsing error:", e);
-                alert(`Error reading ${file.name}. Ensure it's a valid PDF.`);
-            }
         }
 
         function updateProgress() {
@@ -441,6 +418,8 @@
         }
 
         function openConfirmModal() {
+            if(Object.values(filesData).filter(f => f !== null).length < 3) return;
+
             let totalBytes = filesData.design.size + filesData.hydro.size + filesData.op.size;
             let totalMB = (totalBytes / (1024*1024)).toFixed(2);
 
@@ -458,42 +437,65 @@
             closeModal('confirmModal');
             document.getElementById('solvingModal').classList.add('active');
 
-            let storedData = sessionStorage.getItem('nova_manual_data') || '{}';
-            
-            const payload = {
-                step1_data: JSON.parse(storedData),
-                pdf_texts: {
-                    design: pdfTexts.design,
-                    hydro: pdfTexts.hydro,
-                    operating: pdfTexts.op
-                }
-            };
+            // 1. Retrieve the saved data from Step 1
+            const step1DataStr = localStorage.getItem('nova_step1_data');
+            if (!step1DataStr) {
+                alert("No Step 1 data found! Please ensure you ran the Spring Rate analysis first.");
+                closeModal('solvingModal');
+                return;
+            }
 
+            // 2. Map variables to match the Python Backend expectations
+            const step1Data = JSON.parse(step1DataStr);
+            step1Data.hydroPressure = step1Data.shellPressure; 
+            step1Data.hydroTemp = step1Data.shellTemp;
+            
+            // 3. Get User Auth Data
+            const userData = JSON.parse(localStorage.getItem('nova_user') || '{}');
+
+            // 4. Build FormData payload
+            const formData = new FormData();
+            formData.append('manual_data', JSON.stringify(step1Data));
+            formData.append('user_email', userData.email || '');
+            formData.append('user_id', userData.id || '');
+            
+            let jobName = prompt("Enter a Project Name for this Stress Analysis:", "Stress Analysis " + new Date().toLocaleTimeString());
+            formData.append('job_name', jobName || "Bellows Stress Analysis");
+
+            // 5. Attach the 3 Physical PDF Files
+            formData.append('design_pdf', filesData.design);
+            formData.append('hydro_pdf', filesData.hydro);
+            formData.append('operating_pdf', filesData.op);
+
+            // 6. Send to the Unified Backend via Ngrok
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/solve_step2', {
+                const response = await fetch('https://nonacceleratory-bethanie-nonciliate.ngrok-free.dev/api/solve_stress', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
 
-                if (!response.ok) throw new Error("Solver execution failed.");
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || "Solver execution failed.");
+                }
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'NOVA_Step2_Stress_Results.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                setTimeout(() => {
-                    window.location.href = 'https://nova-analysis.vercel.app/';
-                }, 1500);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('solve-title').innerText = "Job Queued Successfully!";
+                    document.getElementById('solve-desc').innerText = "You will receive an email with the PDF and Excel reports shortly.";
+                    document.querySelector('.spinner').style.display = 'none';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || "Unknown error occurred.");
+                }
 
             } catch(e) {
                 console.error(e);
-                alert("An error occurred during PyMAPDL execution. Ensure the local Flask server is running.");
+                alert("Error: " + e.message);
                 closeModal('solvingModal');
             }
         }
