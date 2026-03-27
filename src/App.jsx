@@ -1342,7 +1342,12 @@ export default function App() {
               Close
             </button>
             <button 
-              onClick={() => { window.location.href = 'https://nova-analysis.vercel.app/bellow2.html'; }}
+              onClick={() => { 
+                // Set the Job ID so Step 2 knows which job to update!
+                localStorage.setItem('nova_job_id', selectedJobDetails.id);
+                // Redirect locally (safer than hardcoding the vercel URL)
+                window.location.href = '/bellow2.html'; 
+              }}
               className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
             >
               Continue to Step 2
