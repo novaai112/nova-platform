@@ -468,6 +468,11 @@
             formData.append('manual_data', JSON.stringify(step1Data));
             formData.append('user_email', userData.email || '');
             formData.append('user_id', userData.id || '');
+
+            const savedJobId = localStorage.getItem('nova_job_id');
+            if (savedJobId) {
+                formData.append('job_id', savedJobId);
+            }
             
             let jobName = prompt("Enter a Project Name for this Stress Analysis:", "Stress Analysis " + new Date().toLocaleTimeString());
             formData.append('job_name', jobName || "Bellows Stress Analysis");
