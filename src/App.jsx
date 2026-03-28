@@ -1113,43 +1113,274 @@ export default function App() {
     </>
   );
 
-  const renderInsightsModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
-      <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-        <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
-          <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
-            <Sparkles className="w-6 h-6" /> Executive Insights
-          </h3>
-          <button onClick={() => setIsInsightsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-8 space-y-6">
-           <div className="mb-2">
-              <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
-              <p className="text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
-              <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
-           </div>
-           <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
-              {isInsightLoading ? (
-                 <div className="flex flex-col items-center justify-center h-full py-8 space-y-4 text-purple-600">
-                    <Loader2 className="w-10 h-10 animate-spin" />
-                    <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
+  const renderJobDetailsModal = () => {
+    if (!selectedJobDetails) return null;
+
+    // Distinguish between job types
+    const isBellow = selectedJobDetails.type === 'Bellow Analysis';
+    const isNozzle = selectedJobDetails.type === 'Nozzle Analysis';
+
+    // Safely extract dynamic data from the database JSON (Primarily used for Bellows)
+    const geom = selectedJobDetails.geometry_data || {};
+    const runs = Array.isArray(geom.runs) ? geom.runs : [];
+    const upsetSelected = geom.upset_selected === 'Yes';
+    const isManual = geom.inputMethod === 'manual' || (!geom.pdfName && !geom.pdfUrl && geom.inputMethod !== 'pdf');
+    
+    let hydroRun = {};
+    let upsetCases = [];
+
+    if (upsetSelected) {
+        upsetCases = runs;
+        hydroRun = { T_amb: runs.length > 0 ? runs[0].T_amb : undefined };
+    } else {
+        hydroRun = runs.length > 0 ? runs[0] : {};
+    }
+
+    const codeEdition = geom.ui_code_edition || '2025';
+    const displayHydroP = geom.shellPressure ? `${geom.shellPressure} MPa` : (hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A');
+    const displayHydroT = geom.shellTemp ? `${geom.shellTemp} °C` : (hydroRun.T_amb !== undefined ? `${hydroRun.T_amb} °C` : 'N/A');
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* Dark Backdrop */}
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
+        
+        {/* Main Modal Container - White, rounded, scrollable */}
+        <div className="bg-white w-full max-w-[500px] h-[85vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl relative z-10 animate-in zoom-in-95">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-2">
+              <Box className="w-5 h-5 text-blue-500" />
+              <h3 className="text-base font-bold text-slate-800">Job: {selectedJobDetails.job_id_display}</h3>
+              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${isNozzle ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-blue-600 bg-blue-50 border-blue-200'}`}>
+                {selectedJobDetails.type}
+              </span>
+            </div>
+            <button onClick={() => setIsJobDetailsOpen(false)} className="flex items-center justify-center w-6 h-6 text-white transition-colors bg-red-500 rounded-full hover:bg-red-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Scrollable Body */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+            
+            {/* 1. Shared Job Details Card */}
+            <div className="overflow-hidden border border-blue-100 rounded-xl">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
+                  <Box className="w-4 h-4"/> Job Details
+               </div>
+               <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
+                 <div className="font-bold text-slate-700">Job ID:</div>
+                 <div className="font-semibold text-slate-600">{selectedJobDetails.job_id_display}</div>
+                 <div className="font-bold text-slate-700">Date:</div>
+                 <div className="font-semibold text-slate-600">{new Date(selectedJobDetails.created_at).toLocaleString()}</div>
+                 <div className="font-bold text-slate-700">Type:</div>
+                 <div className={`flex items-center gap-1 font-bold ${isNozzle ? 'text-emerald-600' : 'text-blue-600'}`}>
+                    <Box className="w-3 h-3"/> {selectedJobDetails.type}
                  </div>
-              ) : (
-                 <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
-                    {insightResponse}
+               </div>
+            </div>
+
+            {/* =========================================
+                BELLOW ANALYSIS SPECIFIC CARDS 
+                ========================================= */}
+            {isBellow && (
+              <>
+                {/* Bellow Configuration Card */}
+                <div className="overflow-hidden border border-blue-100 rounded-xl">
+                   <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
+                      <Settings2 className="w-4 h-4"/> Bellow Configuration
+                   </div>
+                   <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
+                     <div className="font-bold text-slate-700">Design Code:</div>
+                     <div className="font-semibold text-slate-600">{codeEdition}</div>
+                     <div className="font-bold text-slate-700">Bellow Variation:</div>
+                     <div className="font-semibold text-slate-600">Flanged and Flued</div>
+                   </div>
+                </div>
+
+                {/* Hydrotest Parameters Card */}
+                <div className="overflow-hidden border border-emerald-100 rounded-xl">
+                   <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
+                      <Database className="w-4 h-4 text-purple-500"/> Hydrotest Parameters
+                   </div>
+                   <div className="grid grid-cols-2 p-4 text-xs gap-y-4">
+                     <div className="font-bold text-slate-700">Shell<br/>Pressure:</div>
+                     <div className="flex items-center font-bold text-slate-800">{displayHydroP}</div>
+                     <div className="font-bold text-slate-700">Shell<br/>Temperature:</div>
+                     <div className="flex items-center font-bold text-slate-800">{displayHydroT}</div>
+                     <div className="font-bold text-slate-700">Additional<br/>Cases:</div>
+                     <div className="flex items-center">
+                       <span className={`px-2 py-0.5 text-white rounded-full font-bold text-[10px] ${upsetSelected ? 'bg-orange-500' : 'bg-slate-400'}`}>
+                         {upsetSelected ? 'Yes' : 'No'}
+                       </span>
+                     </div>
+                   </div>
+                </div>
+
+                {/* Upset Cases Card */}
+                {upsetSelected && (
+                  <div className="overflow-hidden border border-orange-100 rounded-xl">
+                     <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
+                        <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
+                     </div>
+                     <div className="p-4 space-y-3 text-xs">
+                       {upsetCases.length > 0 ? upsetCases.map((uc, idx) => (
+                         <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0">
+                           <span className="font-bold text-slate-700">Case {idx + 1}:</span>
+                           <span className="font-bold text-slate-800 w-16">{uc.P !== undefined ? `${uc.P} MPa` : 'N/A'}</span>
+                           <span className="font-bold text-slate-800 w-16 text-right">{uc.T !== undefined ? `${uc.T} °C` : 'N/A'}</span>
+                         </div>
+                       )) : (
+                         <div className="text-center font-medium text-slate-500">No Upset Cases Available</div>
+                       )}
+                     </div>
+                  </div>
+                )}
+
+                {/* PV Elite Report PDF Card */}
+                {!isManual && (
+                  <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
+                     <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
+                        <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
+                     </div>
+                     <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
+                       <div className="font-bold text-slate-700">PDF Name:</div>
+                       <div className="font-bold text-blue-600 truncate">
+                         {geom.pdfUrl ? (
+                           <a href={geom.pdfUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1 w-max">
+                             {geom.pdfName || 'PV_Elite_Report.pdf'} <Download className="w-3 h-3" />
+                           </a>
+                         ) : (
+                           <span>{geom.pdfName || 'PV_Elite_Report.pdf'}</span>
+                         )}
+                       </div>
+                       <div className="font-bold text-slate-700">File Size:</div>
+                       <div className="font-semibold text-slate-600">{geom.pdfSize || 'N/A'}</div>
+                     </div>
+                  </div>
+                )}
+
+                {/* Spring Rate Results Card */}
+                <div className="overflow-hidden border border-emerald-200 rounded-xl bg-emerald-50/20">
+                   <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 border-b border-emerald-100">
+                      <Award className="w-4 h-4"/> Spring Rate Results
+                   </div>
+                   <div className="p-4 space-y-3 text-xs">
+                     <div className="grid grid-cols-[60px_1fr] gap-y-2">
+                       <div className="font-bold text-slate-700">File:</div>
+                       <div className="font-semibold text-emerald-700 break-all">
+                         {selectedJobDetails.excel_file_url ? `${selectedJobDetails.job_id_display}_spring_rates.xlsx` : 'Processing...'}
+                       </div>
+                       <div className="font-bold text-slate-700">Status:</div>
+                       <div className={`flex items-center gap-1 font-bold ${selectedJobDetails.excel_file_url ? 'text-emerald-600' : 'text-amber-500'}`}>
+                         {selectedJobDetails.excel_file_url ? <CheckCircle className="w-3.5 h-3.5"/> : <Loader2 className="w-3.5 h-3.5 animate-spin"/>} 
+                         {selectedJobDetails.excel_file_url ? 'Available' : 'Pending Calculation'}
+                       </div>
+                     </div>
+                     {selectedJobDetails.excel_file_url ? (
+                       <a href={selectedJobDetails.excel_file_url} target="_blank" rel="noopener noreferrer" className="w-full py-2.5 mt-2 text-xs font-bold text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-2">
+                         <Download className="w-4 h-4"/> Download Spring Rate Results
+                       </a>
+                     ) : (
+                       <button disabled className="w-full py-2.5 mt-2 text-xs font-bold text-slate-500 bg-slate-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                         <Clock className="w-4 h-4"/> Awaiting Calculation
+                       </button>
+                     )}
+                   </div>
+                </div>
+              </>
+            )}
+
+            {/* =========================================
+                NOZZLE ANALYSIS SPECIFIC CARDS 
+                ========================================= */}
+            {isNozzle && (
+              <div className="overflow-hidden border border-purple-200 rounded-xl bg-purple-50/20">
+                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-purple-700 border-b border-purple-100">
+                    <Brain className="w-4 h-4"/> FEA Solver Results
                  </div>
-              )}
-           </div>
-           <div className="flex justify-end mt-8">
-             <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
-           </div>
+                 <div className="grid grid-cols-[1.5fr_1fr] p-4 text-xs gap-y-4">
+                   <div className="font-bold text-slate-700">Equivalent Stress:</div>
+                   <div className="font-semibold text-slate-800">
+                      {selectedJobDetails.eqv_stress ? (
+                         <span className="px-3 py-1 text-purple-800 bg-purple-100 border border-purple-200 rounded-md shadow-sm">{selectedJobDetails.eqv_stress} MPa</span>
+                      ) : 'Processing...'}
+                   </div>
+                   <div className="font-bold text-slate-700">Total Deformation:</div>
+                   <div className="font-semibold text-slate-800">
+                      {selectedJobDetails.total_def ? (
+                         <span className="px-3 py-1 text-purple-800 bg-purple-100 border border-purple-200 rounded-md shadow-sm">{selectedJobDetails.total_def} mm</span>
+                      ) : 'Processing...'}
+                   </div>
+                 </div>
+              </div>
+            )}
+
+            {/* Shared FEA PDF Report Card (Displays for both Bellow & Nozzle) */}
+            <div className="overflow-hidden border border-red-200 rounded-xl bg-red-50/20 mt-4">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 border-b border-red-100">
+                  <FileText className="w-4 h-4"/> FEA Analysis PDF Report
+               </div>
+               <div className="p-4 space-y-3 text-xs">
+                 <div className="grid grid-cols-[60px_1fr] gap-y-2">
+                   <div className="font-bold text-slate-700">File:</div>
+                   <div className="font-semibold text-red-600 break-all">
+                     {selectedJobDetails.pdf_url ? `NOVA_Report_${selectedJobDetails.job_id_display}.pdf` : 'Generating Report & Rendering Images...'}
+                   </div>
+                   <div className="font-bold text-slate-700">Status:</div>
+                   <div className={`flex items-center gap-1 font-bold ${selectedJobDetails.pdf_url ? 'text-emerald-600' : 'text-amber-500'}`}>
+                     {selectedJobDetails.pdf_url ? <CheckCircle className="w-3.5 h-3.5"/> : <Loader2 className="w-3.5 h-3.5 animate-spin"/>} 
+                     {selectedJobDetails.pdf_url ? 'Ready for Download' : 'Awaiting Solver...'}
+                   </div>
+                 </div>
+                 
+                 {/* Action Buttons: Preview & Download */}
+                 {selectedJobDetails.pdf_url ? (
+                   <div className="flex gap-2 mt-2">
+                     <a href={selectedJobDetails.pdf_url} target="_blank" rel="noopener noreferrer" className="flex-1 py-2.5 text-xs font-bold text-red-700 transition-colors bg-white border border-red-200 rounded-lg hover:bg-red-50 flex items-center justify-center gap-2 shadow-sm">
+                       <Eye className="w-4 h-4"/> Preview Report
+                     </a>
+                     <a href={selectedJobDetails.pdf_url} download={`NOVA_Report_${selectedJobDetails.job_id_display}.pdf`} className="flex-1 py-2.5 text-xs font-bold text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 shadow-sm">
+                       <Download className="w-4 h-4"/> Download PDF
+                     </a>
+                   </div>
+                 ) : (
+                   <button disabled className="w-full py-2.5 mt-2 text-xs font-bold text-slate-500 bg-slate-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                     <Clock className="w-4 h-4"/> Email will be sent when ready
+                   </button>
+                 )}
+               </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
+            <button 
+              onClick={() => setIsJobDetailsOpen(false)} 
+              className={`px-6 py-2 text-sm font-bold transition-colors bg-white border-2 rounded-lg ${isNozzle ? 'text-emerald-700 border-emerald-700 hover:bg-emerald-50' : 'text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+            >
+              Close
+            </button>
+            {isBellow && (
+              <button 
+                onClick={() => { 
+                  // Set the Job ID so Step 2 knows which job to update
+                  localStorage.setItem('nova_job_id', selectedJobDetails.id);
+                  window.location.href = '/bellow2.html'; 
+                }}
+                className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Continue to Step 2
+              </button>
+            )}
+          </div>
+
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
