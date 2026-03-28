@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <title>NOVA Nozzle Analysis</title>
+    <style>
+        :root {
+            /* Light Theme Background Colors */
+            --bg-base: #f0f5fa;
+            --bg-glow-1: #bae6fd; 
+            --bg-glow-2: #d1fae5; 
+            --bg-glow-3: #fef08a;
+
+            /* Light Theme Glassmorphism */
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 100%);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
+                            inset 0 1px 1px rgba(255, 255, 255, 0.8), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+            
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: default;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.8;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
+        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 60px) scale(1.1); }
+            100% { transform: translate(-30px, 40px) scale(0.9); }
+        }
+
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            width: 100%;
+            max-width: 1500px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 1rem;
+        }
+
+        .glass-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: glass-sheen 12s infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes glass-sheen {
+            0% { left: -150%; }
+            15% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        .app-header {
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+            position: relative;
+            z-index: 2;
+        }
+
+        .app-header h1 {
+            font-size: 1.25rem; font-weight: 600; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--text-main);
+            text-shadow: none;
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 2;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
+            transform: translateY(-2px);
+        }
+        .btn-glass.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+            color: var(--primary);
+        }
+
+        .method-toggle { 
+            display: flex; gap: 1rem; margin-bottom: 2rem; width: 100%; justify-content: center; 
+        }
+
+        .form-body { padding: 3rem; position: relative; z-index: 2; }
+
+        /* ======== PROFESSIONAL GRID LAYOUT SYSTEM ======== */
+        .grid-layout { 
+            display: grid; 
+            grid-template-columns: repeat(5, minmax(200px, 1fr)); /* 5 distinct main columns */
+            gap: 2rem; 
+            align-items: start;
+        }
+
+        .section-wrapper { min-width: 0; }
+        
+        /* Specific Placements to match screenshot */
+        .section-project { grid-column: 1 / 2; }
+        .section-shell { grid-column: 2 / 3; }
+        .section-nozzle { grid-column: 3 / 5; } /* Nozzle spans two columns */
+        .section-meshing { grid-column: 5 / 6; }
+        .section-load { grid-column: 1 / 6; } /* Load condition spans all at bottom */
+
+        /* Inner container mechanics */
+        .fields-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .sub-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* Specific structural overrides */
+        .section-nozzle .fields-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .section-load .fields-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2rem;
+        }
+        /* ================================================ */
+
+        .col-title {
+            color: var(--text-main); font-weight: 600; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2rem;
+            display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
+        }
+        .col-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.1) 0%, transparent 100%);
+        }
+
+        .form-group { transition: all 0.3s ease; }
+        .form-group.hidden { display: none !important; }
+
+        .form-label {
+            display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; font-weight: 500;
+            color: var(--text-main); margin-bottom: 0.6rem; text-shadow: none;
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
+            color: var(--primary); background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: none;
+        }
+
+        .glass-input, .glass-select {
+            width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 10px; font-size: 0.9rem; color: var(--text-main); transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
+        }
+        .glass-select option { background: #ffffff; color: var(--text-main); }
+        .glass-input:focus, .glass-select:focus {
+            outline: none; border-color: rgba(96, 165, 250, 0.8); background: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+        .glass-input[readonly] { background: rgba(0, 0, 0, 0.05); color: #777; cursor: not-allowed; }
+
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        .input-addon-group {
+            display: flex; align-items: center; background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 10px; transition: all 0.3s ease; overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .input-addon-group:focus-within { border-color: rgba(96, 165, 250, 0.8); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(59, 130, 246, 0.15); background: #ffffff; }
+        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; }
+        .addon {
+            padding: 0 1rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 500;
+            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%; display: flex; align-items: center;
+        }
+
+        .action-area {
+            margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            color: white; padding: 1.2rem 4rem; border-radius: 12px; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+            letter-spacing: 1px; backdrop-filter: blur(15px); text-transform: uppercase;
+        }
+        .btn-submit:hover {
+            transform: translateY(-4px); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(29, 78, 216, 1) 100%);
+        }
+
+        /* Loading Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .solving-modal-content { 
+            background: none; border: none; box-shadow: none; 
+            display: flex; flex-direction: column; align-items: center; color: #fff; text-align: center; 
+        }
+        .spinner { 
+            width: 70px; height: 70px; border: 4px solid rgba(255, 255, 255, 0.2); 
+            border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive design defaults */
+        @media (max-width: 1200px) {
+            .grid-layout { grid-template-columns: repeat(2, 1fr); }
+            .section-wrapper { grid-column: span 1 !important; }
+            .section-wrapper.section-nozzle, .section-wrapper.section-load { grid-column: span 2 !important; }
+            .section-wrapper.section-load .fields-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr; }
+            .section-wrapper.section-nozzle, .section-wrapper.section-load { grid-column: span 1 !important; }
+            .section-wrapper.section-nozzle .fields-container, .section-wrapper.section-load .fields-container { grid-template-columns: 1fr; }
+        }
+
+    </style>
+</head>
+<body>
+    
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="glass-container">
+        <header class="app-header">
+            <h1 id="main_title">NOVA Nozzle Analysis</h1>
+            <a href="/" style="text-decoration: none;">
+                <button class="btn-glass" type="button">← Dashboard</button>
+            </a>
+        </header>
+
+        <form class="form-body" id="analysisForm" action="/" method="POST">
+            <input type="hidden" name="active_analysis" id="active_analysis" value="shell">
+
+            <div class="method-toggle">
+                <button type="button" class="btn-glass active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle Analysis</button>
+                <button type="button" class="btn-glass" id="btn-head" onclick="switchAnalysis('head')">Vessel Head Analysis</button>
+            </div>
+
+            <div class="grid-layout" id="form-grid">
+                </div>
+
+            <div class="action-area">
+                <button type="submit" class="btn-submit">Solve in Ansys</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" id="solvingModal">
+        <div class="solving-modal-content">
+            <div class="spinner"></div>
+            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Solution in progress...</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem;">Running Ansys MAPDL Solver in background</p>
+        </div>
+    </div>
+
+    <script>
+        const appData = {
+            "shell": [
+                {
+                    title: "1. Project",
+                    fields: [
+                        { name: "name", label: "System Name:", type: "text", value: "Nozzle Analysis" },
+                        { name: "mat_name", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
+                        { name: "pr", label: "Poisson's Ratio:", type: "number", value: "0.3" },
+                        { name: "ex", label: "Young's Modulus (MPa):", type: "number", value: "190000" },
+                        { name: "temp", label: "Material Temp. (°C):", type: "number", value: "150" }
+                    ]
+                },
+                {
+                    title: "2. Shell Design",
+                    fields: [
+                        { name: "s_od", label: "Shell OD (mm):", type: "number", value: "2000" },
+                        { name: "s_thk", label: "Shell THK (mm):", type: "number", value: "50" },
+                        { name: "s_h", label: "Shell Height (mm):", type: "number", value: "2000" },
+                        { name: "n_offset", label: "Nozzle Offset (mm):", type: "number", value: "0" }
+                    ]
+                },
+                {
+                    title: "3. Nozzle Design",
+                    fields: [
+                        { name: "n_type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
+                        { name: "n_l", label: "Nozzle Loc. (mm):", type: "number", value: "1000" },
+                        { name: "n_od", label: "Neck OD (mm):", type: "number", value: "400" },
+                        { name: "n_p", label: "Nozzle Proj. (mm):", type: "number", value: "1600" },
+                        { name: "n_thk", label: "Neck THK (mm):", type: "number", value: "60" },
+                        { name: "hub_od", label: "Hub OD (mm):", type: "number", value: "600" },
+                        { name: "hub_l", label: "Hub Length (mm):", type: "number", value: "300" },
+                        { name: "trans_l", label: "Trans. Length (mm):", type: "number", value: "200" },
+                        { name: "pad_req", label: "Pad Required:", type: "select", options: ["True", "False"], value: "False" },
+                        { name: "pad_w", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "pad_req", showIf: ["True"] },
+                        { name: "pad_thk", label: "Pad THK (mm):", type: "number", value: "25", dependsOn: "pad_req", showIf: ["True"] }
+                    ]
+                },
+                {
+                    title: "4. Meshing & BCS",
+                    fields: [
+                        { name: "b_size", label: "Body Sizing (mm):", type: "number", value: "50" },
+                        { name: "m_method", label: "Mesh Method:", type: "select", options: ["MultiZone", "Sweep", "HexDominant", "Automatic"], value: "MultiZone" },
+                        { name: "n_div", label: "Divisions:", type: "number", value: "3" },
+                        { name: "int_p", label: "Pressure (MPa):", type: "number", value: "10" },
+                        { name: "n_thrust", label: "Thrust Analysis:", type: "select", options: ["True", "False"], value: "True" }
+                    ]
+                },
+                {
+                    title: "5. Load Condition",
+                    fields: [
+                        { name: "n_load", label: "Load Location:", type: "select", options: ["Shell Nozzle Junction", "Nozzle Flange Junction"], value: "Shell Nozzle Junction" },
+                        { name: "f_l", label: "F_L (N):", type: "number", value: "50" },
+                        { name: "m_t", label: "M_T (N mm):", type: "number", value: "150" },
+                        { name: "f_c", label: "F_C (N):", type: "number", value: "80" },
+                        { name: "m_c", label: "M_C (N mm):", type: "number", value: "100" },
+                        { name: "f_p", label: "P (N):", type: "number", value: "60" },
+                        { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
+                    ]
+                }
+            ],
+
+            "head": [
+                {
+                    title: "1. Project",
+                    fields: [
+                        { name: "name", label: "System Name:", type: "text", value: "Nozzle Analysis" },
+                        { name: "mat_name", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
+                        { name: "pr", label: "Poisson's Ratio:", type: "number", value: "0.3" },
+                        { name: "ex", label: "Young's Modulus (MPa):", type: "number", value: "190000" },
+                        { name: "temp", label: "Material Temp. (°C):", type: "number", value: "150" },
+                        { name: "h_type", label: "Head Type:", type: "select", options: ["Ellipsoidal Head", "Flat Head", "Torispherical Head"], value: "Flat Head", isHeadTrigger: true }
+                    ]
+                },
+                
+                // ELLIPSOIDAL GEOMETRY
+                { title: "2. Head Design", condition: "Ellipsoidal Head", fields: [
+                    { name: "h_id", label: "Head ID (mm):", type: "number", value: "1000" },
+                    { name: "h_thk", label: "Head THK (mm):", type: "number", value: "40" },
+                    { name: "ratio", label: "a:b Ratio:", type: "number", value: "2" },
+                    { name: "sf_offset", label: "SF Offset (mm):", type: "number", value: "50" },
+                    { name: "s_thk", label: "Shell THK (mm):", type: "number", value: "50" },
+                    { name: "s_h", label: "Shell Height (mm):", type: "number", value: "100" }
+                ]},
+                { title: "3. Nozzle Design", condition: "Ellipsoidal Head", fields: [
+                    { name: "n_type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
+                    { name: "n_offset", label: "Nozzle Offset (mm):", type: "number", value: "0" },
+                    { name: "n_p", label: "Nozzle Proj. (mm):", type: "number", value: "500" },
+                    { name: "n_od", label: "Neck OD (mm):", type: "number", value: "200" },
+                    { name: "n_thk", label: "Neck THK (mm):", type: "number", value: "35" },
+                    { name: "hub_od", label: "Hub OD (mm):", type: "number", value: "300" },
+                    { name: "hub_l", label: "Hub Length (mm):", type: "number", value: "100" },
+                    { name: "trans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
+                    { name: "pad_req", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
+                    { name: "pad_w", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "pad_req", showIf: ["YES"] },
+                    { name: "pad_thk", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "pad_req", showIf: ["YES"] }
+                ]},
+                { title: "4. Meshing & BCS", condition: "Ellipsoidal Head", fields: [
+                    { name: "b_size", label: "Body Sizing Head:", type: "number", value: "10" },
+                    { name: "m_method", label: "Mesh Method Head:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
+                    { name: "n_div", label: "Divisions:", type: "number", value: "3" },
+                    { name: "nb_size", label: "Body Sizing Nozzle:", type: "number", value: "5" },
+                    { name: "nm_method", label: "Mesh Method Nozzle:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
+                    { name: "int_p", label: "Pressure (MPa):", type: "number", value: "10" },
+                    { name: "n_thrust", label: "Thrust Analysis:", type: "select", options: ["YES", "NO"], value: "YES" }
+                ]},
+                { title: "5. Load Condition", condition: "Ellipsoidal Head", fields: [
+                    { name: "n_load", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
+                    { name: "f_l", label: "F_L (N):", type: "number", value: "50" },
+                    { name: "m_t", label: "M_T (N mm):", type: "number", value: "150" },
+                    { name: "f_c", label: "F_C (N):", type: "number", value: "80" },
+                    { name: "m_c", label: "M_C (N mm):", type: "number", value: "100" },
+                    { name: "f_p", label: "P (N):", type: "number", value: "60" },
+                    { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
+                ]},
+
+                // FLAT GEOMETRY
+                { title: "2. Head Design", condition: "Flat Head", fields: [
+                    { name: "h_od", label: "Head OD (mm):", type: "number", value: "1000" },
+                    { name: "h_thk", label: "Head THK (mm):", type: "number", value: "40" },
+                    { name: "s_id", label: "Shell ID (mm):", type: "number", value: "900" },
+                    { name: "trans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
+                    { name: "s_h", label: "Shell Height (mm):", type: "number", value: "150" },
+                    { name: "s_thk", label: "Shell THK (mm):", type: "number", value: "30" }
+                ]},
+                { title: "3. Nozzle Design", condition: "Flat Head", fields: [
+                    { name: "n_type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
+                    { name: "n_offset", label: "Nozzle Offset (mm):", type: "number", value: "0" },
+                    { name: "n_p", label: "Nozzle Proj. (mm):", type: "number", value: "300" },
+                    { name: "n_od", label: "Neck OD (mm):", type: "number", value: "200" },
+                    { name: "n_thk", label: "Neck THK (mm):", type: "number", value: "35" },
+                    { name: "hub_od", label: "Hub OD (mm):", type: "number", value: "300" },
+                    { name: "hub_l", label: "Hub Length (mm):", type: "number", value: "100" },
+                    { name: "ntrans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
+                    { name: "pad_req", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
+                    { name: "pad_thk", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "pad_req", showIf: ["YES"] },
+                    { name: "pad_w", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "pad_req", showIf: ["YES"] }
+                ]},
+                { title: "4. Meshing & BCS", condition: "Flat Head", fields: [
+                    { name: "b_size", label: "Body Sizing (mm):", type: "number", value: "20" },
+                    { name: "m_method", label: "Mesh Method:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
+                    { name: "n_div", label: "Divisions:", type: "number", value: "3" },
+                    { name: "int_p", label: "Pressure (MPa):", type: "number", value: "10" },
+                    { name: "n_thrust", label: "Thrust Analysis:", type: "select", options: ["YES", "NO"], value: "YES" }
+                ]},
+                { title: "5. Load Condition", condition: "Flat Head", fields: [
+                    { name: "n_load", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
+                    { name: "f_l", label: "F_L (N):", type: "number", value: "50" },
+                    { name: "m_t", label: "M_T (N mm):", type: "number", value: "150" },
+                    { name: "f_c", label: "F_C (N):", type: "number", value: "80" },
+                    { name: "m_c", label: "M_C (N mm):", type: "number", value: "100" },
+                    { name: "f_p", label: "P (N):", type: "number", value: "60" },
+                    { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
+                ]},
+
+                // TORISPHERICAL GEOMETRY
+                { title: "2. Head Design", condition: "Torispherical Head", fields: [
+                    { name: "Head_ID (mm)", label: "Head ID (mm):", type: "number", value: "1000" },
+                    { name: "Head_THK (mm)", label: "Head THK (mm):", type: "number", value: "40" },
+                    { name: "Knuckle_radius (mm)", label: "Knuckle Rad. (mm):", type: "number", value: "60" },
+                    { name: "Straight_Flange_Offset (mm)", label: "SF Offset (mm):", type: "number", value: "50" },
+                    { name: "Shell_Height (mm)", label: "Shell Height (mm):", type: "number", value: "100" },
+                    { name: "Shell_THK (mm)", label: "Shell THK (mm):", type: "number", value: "50" }
+                ]},
+                { title: "3. Nozzle Design", condition: "Torispherical Head", fields: [
+                    { name: "Nozzle_Type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
+                    { name: "Nozzle_Offset (mm)", label: "Nozzle Offset (mm):", type: "number", value: "0" },
+                    { name: "Nozzle_Projection (mm)", label: "Nozzle Proj. (mm):", type: "number", value: "500" },
+                    { name: "Neck_OD (mm)", label: "Neck OD (mm):", type: "number", value: "200" },
+                    { name: "Neck_THK (mm)", label: "Neck THK (mm):", type: "number", value: "35" },
+                    { name: "Hub_OD (mm)", label: "Hub OD (mm):", type: "number", value: "300" },
+                    { name: "Hub_Length (mm)", label: "Hub Length (mm):", type: "number", value: "100" },
+                    { name: "Transaction_Length (mm)", label: "Trans. Length (mm):", type: "number", value: "30" }, 
+                    { name: "Pad_Requirement", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
+                    { name: "Pad_Width (mm)", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "Pad_Requirement", showIf: ["YES"] },
+                    { name: "Pad_THK (mm)", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "Pad_Requirement", showIf: ["YES"] }
+                ]},
+                { title: "4. Meshing & BCS", condition: "Torispherical Head", fields: [
+                    { name: "Body Sizing (in mm)", label: "Body Sizing (mm):", type: "number", value: "20" },
+                    { name: "Mesh Method", label: "Mesh Method:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
+                    { name: "No of division", label: "Divisions:", type: "number", value: "3" },
+                    { name: "Internal Pressure (in MPa)", label: "Pressure (MPa):", type: "number", value: "10" },
+                    { name: "Nozzle Thrust analysis", label: "Thrust Analysis:", type: "select", options: ["YES", "NO"], value: "YES" }
+                ]},
+                { title: "5. Load Condition", condition: "Torispherical Head", fields: [
+                    { name: "Nozzle Loading Location", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
+                    { name: "F_L (in N)", label: "F_L (N):", type: "number", value: "50" },
+                    { name: "M_T (in N mm)", label: "M_T (N mm):", type: "number", value: "150" },
+                    { name: "F_C (in N)", label: "F_C (N):", type: "number", value: "80" },
+                    { name: "M_C (in N mm)", label: "M_C (N mm):", type: "number", value: "100" },
+                    { name: "P (in N)", label: "P (N):", type: "number", value: "60" },
+                    { name: "M_L (in N mm)", label: "M_L (N mm):", type: "number", value: "200" }
+                ]}
+            ]
+        };
+
+        let currentAnalysis = "shell";
+
+        function switchAnalysis(type) {
+            currentAnalysis = type;
+            document.getElementById('active_analysis').value = type;
+            
+            document.getElementById('btn-shell').classList.remove('active');
+            document.getElementById('btn-head').classList.remove('active');
+            document.getElementById('btn-' + type).classList.add('active');
+
+            document.getElementById('main_title').innerText = type === "shell" ? "SHELL NOZZLE ANALYSIS" : "VESSEL HEAD ANALYSIS";
+
+            renderForm();
+        }
+
+        function parseLabelAndUnit(rawLabel) {
+            const match = rawLabel.match(/(.*?)\s*\((.*?)\):?/);
+            if (match) {
+                return { label: match[1].trim(), unit: match[2].trim() };
+            }
+            return { label: rawLabel.replace(':', '').trim(), unit: null };
+        }
+
+        function generateFieldHTML(f) {
+            if (!f) return '';
+            const dependsAttr = f.dependsOn ? `data-depends-on="${f.dependsOn}" data-show-if="${f.showIf.join(',')}"` : '';
+            const parsed = parseLabelAndUnit(f.label);
+
+            let html = `<div class="form-group" ${dependsAttr}>
+                            <label class="form-label">${parsed.label}</label>`;
+            
+            if (f.type === 'select') {
+                const onChange = f.isHeadTrigger ? `onchange="updateHeadSections()"` : `onchange="evaluateDependencies()"`;
+                html += `<select class="glass-select" name="${f.name}" id="${f.name}" ${onChange}>`;
+                f.options.forEach(opt => {
+                    const isSelected = opt === f.value ? 'selected' : '';
+                    html += `<option value="${opt}" ${isSelected}>${opt}</option>`;
+                });
+                html += `</select>`;
+            } 
+            else {
+                const isReadonly = f.readonly ? 'readonly' : '';
+                
+                if (parsed.unit) {
+                    html += `<div class="input-addon-group">
+                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>
+                                <span class="addon">${parsed.unit}</span>
+                             </div>`;
+                } else {
+                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>`;
+                }
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function mapFields(fieldsArray) {
+            return fieldsArray.map(f => f ? generateFieldHTML(f) : '').join('');
+        }
+
+        function renderForm() {
+            const grid = document.getElementById('form-grid');
+            grid.innerHTML = '';
+            
+            const sections = appData[currentAnalysis];
+
+            const getSectionKey = (title) => {
+                if (title.includes("Project")) return "project";
+                if (title.includes("Shell Design") || title.includes("Head Design")) return "shell";
+                if (title.includes("Nozzle Design")) return "nozzle";
+                if (title.includes("Meshing")) return "meshing";
+                if (title.includes("Load Condition")) return "load";
+                return "default";
+            };
+
+            sections.forEach(sec => {
+                const wrapper = document.createElement('div');
+                const sectionKey = getSectionKey(sec.title);
+                wrapper.className = `section-wrapper section-${sectionKey}`;
+                
+                if (sec.condition) {
+                    wrapper.setAttribute('data-condition', sec.condition);
+                }
+                
+                const titleMatch = sec.title.match(/^(\d+)\.\s*(.*)/);
+                const badgeNum = titleMatch ? titleMatch[1] : '?';
+                const cleanTitle = titleMatch ? titleMatch[2] : sec.title;
+
+                let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
+                html += `<div class="fields-container">`;
+
+                // Layout Sub-groups logically for Grid Mapping
+                if (sectionKey === 'nozzle') {
+                    // Split Nozzle fields across 2 columns (Index 0-4 on left, rest on right)
+                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 5)) + `</div>`;
+                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(5)) + `</div>`;
+                } else if (sectionKey === 'load') {
+                    // Split Load Condition directly underneath Column 1, 2, 3 & 4.
+                    html += `<div class="sub-col">` + mapFields([sec.fields[0], sec.fields[1]]) + `</div>`; // Under Project
+                    html += `<div class="sub-col">` + mapFields([sec.fields[2], sec.fields[3]]) + `</div>`; // Under Shell
+                    html += `<div class="sub-col">` + mapFields([sec.fields[4], sec.fields[5]]) + `</div>`; // Under Nozzle L
+                    html += `<div class="sub-col">` + mapFields([sec.fields[6]]) + `</div>`; // Under Nozzle R
+                    html += `<div class="sub-col"></div>`; // Blank spot under Meshing
+                } else {
+                    html += mapFields(sec.fields);
+                }
+
+                html += `</div>`;
+
+                wrapper.innerHTML = html;
+                grid.appendChild(wrapper);
+            });
+
+            if (currentAnalysis === 'head') {
+                updateHeadSections();
+            } else {
+                evaluateDependencies();
+            }
+        }
+
+        function updateHeadSections() {
+            const headSelect = document.querySelector('select[name="h_type"]');
+            if (!headSelect) return;
+            
+            const activeHeadType = headSelect.value;
+            
+            document.querySelectorAll('.section-wrapper[data-condition]').forEach(wrapper => {
+                if (wrapper.getAttribute('data-condition') === activeHeadType) {
+                    wrapper.style.display = 'block';
+                    wrapper.querySelectorAll('input, select').forEach(i => i.disabled = false);
+                } else {
+                    wrapper.style.display = 'none'; 
+                    wrapper.querySelectorAll('input, select').forEach(i => i.disabled = true);
+                }
+            });
+            
+            evaluateDependencies();
+        }
+
+        function evaluateDependencies() {
+            document.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
+                const targetName = group.getAttribute('data-depends-on');
+                const showConditions = group.getAttribute('data-show-if').split(',');
+                
+                let masterInput = document.querySelector(`[name="${targetName}"]`);
+                
+                if (masterInput && !masterInput.disabled) {
+                    if (showConditions.includes(masterInput.value)) {
+                        group.classList.remove('hidden');
+                    } else {
+                        group.classList.add('hidden');
+                    }
+                } else {
+                    group.classList.add('hidden');
+                }
+            });
+        }
+
+        // Handle Submission Loading State
+        document.getElementById('analysisForm').addEventListener('submit', function(e) {
+            document.getElementById('solvingModal').classList.add('active');
+        });
+
+        // Initialize application
+        renderForm();
+    </script>
+</body>
+</html>
