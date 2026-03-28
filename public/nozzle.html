@@ -155,21 +155,20 @@
         /* ======== PROFESSIONAL GRID LAYOUT SYSTEM ======== */
         .grid-layout { 
             display: grid; 
-            grid-template-columns: repeat(5, minmax(200px, 1fr)); /* 5 distinct main columns */
+            grid-template-columns: repeat(5, minmax(200px, 1fr)); 
             gap: 2rem; 
             align-items: start;
         }
 
         .section-wrapper { min-width: 0; }
         
-        /* Specific Placements to match screenshot */
+        /* Specific Placements to match optimal UI */
         .section-project { grid-column: 1 / 2; }
         .section-shell { grid-column: 2 / 3; }
-        .section-nozzle { grid-column: 3 / 5; } /* Nozzle spans two columns */
+        .section-nozzle { grid-column: 3 / 5; } 
         .section-meshing { grid-column: 5 / 6; }
-        .section-load { grid-column: 1 / 6; } /* Load condition spans all at bottom */
+        .section-load { grid-column: 1 / 6; } 
 
-        /* Inner container mechanics */
         .fields-container {
             display: flex;
             flex-direction: column;
@@ -182,7 +181,6 @@
             gap: 1.2rem;
         }
 
-        /* Specific structural overrides */
         .section-nozzle .fields-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -194,7 +192,6 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 2rem;
         }
-        /* ================================================ */
 
         .col-title {
             color: var(--text-main); font-weight: 600; font-size: 0.85rem;
@@ -301,7 +298,6 @@
             .section-wrapper.section-nozzle, .section-wrapper.section-load { grid-column: span 1 !important; }
             .section-wrapper.section-nozzle .fields-container, .section-wrapper.section-load .fields-container { grid-template-columns: 1fr; }
         }
-
     </style>
 </head>
 <body>
@@ -318,7 +314,7 @@
             </a>
         </header>
 
-        <form class="form-body" id="analysisForm" action="https://nonacceleratory-bethanie-nonciliate.ngrok-free.dev" method="POST">
+        <form class="form-body" id="analysisForm" action="/" method="POST">
             <input type="hidden" name="active_analysis" id="active_analysis" value="shell">
 
             <div class="method-toggle">
@@ -338,8 +334,8 @@
     <div class="modal-overlay" id="solvingModal">
         <div class="solving-modal-content">
             <div class="spinner"></div>
-            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Solution in progress...</h2>
-            <p style="color: #cbd5e1; font-size: 0.95rem;">Running Ansys MAPDL Solver in background</p>
+            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Sending Job to Solver...</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem;">You will be redirected to the dashboard shortly.</p>
         </div>
     </div>
 
@@ -350,6 +346,7 @@
                     title: "1. Project",
                     fields: [
                         { name: "name", label: "System Name:", type: "text", value: "Nozzle Analysis" },
+                        { name: "user_email", label: "Email for Report:", type: "email", value: "" }, // New Email Field
                         { name: "mat_name", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
                         { name: "pr", label: "Poisson's Ratio:", type: "number", value: "0.3" },
                         { name: "ex", label: "Young's Modulus (MPa):", type: "number", value: "190000" },
@@ -410,6 +407,7 @@
                     title: "1. Project",
                     fields: [
                         { name: "name", label: "System Name:", type: "text", value: "Nozzle Analysis" },
+                        { name: "user_email", label: "Email for Report:", type: "email", value: "" }, // New Email Field
                         { name: "mat_name", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
                         { name: "pr", label: "Poisson's Ratio:", type: "number", value: "0.3" },
                         { name: "ex", label: "Young's Modulus (MPa):", type: "number", value: "190000" },
@@ -632,16 +630,16 @@
 
                 // Layout Sub-groups logically for Grid Mapping
                 if (sectionKey === 'nozzle') {
-                    // Split Nozzle fields across 2 columns (Index 0-4 on left, rest on right)
+                    // Split Nozzle fields across 2 columns
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 5)) + `</div>`;
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(5)) + `</div>`;
                 } else if (sectionKey === 'load') {
-                    // Split Load Condition directly underneath Column 1, 2, 3 & 4.
-                    html += `<div class="sub-col">` + mapFields([sec.fields[0], sec.fields[1]]) + `</div>`; // Under Project
-                    html += `<div class="sub-col">` + mapFields([sec.fields[2], sec.fields[3]]) + `</div>`; // Under Shell
-                    html += `<div class="sub-col">` + mapFields([sec.fields[4], sec.fields[5]]) + `</div>`; // Under Nozzle L
-                    html += `<div class="sub-col">` + mapFields([sec.fields[6]]) + `</div>`; // Under Nozzle R
-                    html += `<div class="sub-col"></div>`; // Blank spot under Meshing
+                    // Split Load Condition directly underneath previous columns.
+                    html += `<div class="sub-col">` + mapFields([sec.fields[0], sec.fields[1]]) + `</div>`;
+                    html += `<div class="sub-col">` + mapFields([sec.fields[2], sec.fields[3]]) + `</div>`; 
+                    html += `<div class="sub-col">` + mapFields([sec.fields[4], sec.fields[5]]) + `</div>`; 
+                    html += `<div class="sub-col">` + mapFields([sec.fields[6]]) + `</div>`; 
+                    html += `<div class="sub-col"></div>`; 
                 } else {
                     html += mapFields(sec.fields);
                 }
