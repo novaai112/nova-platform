@@ -1330,7 +1330,41 @@ export default function App() {
                  )}
                </div>
             </div>
-
+            {/* NEW: FEA PDF Report Card */}
+            <div className="overflow-hidden border border-red-200 rounded-xl bg-red-50/20 mt-4">
+               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 border-b border-red-100">
+                  <FileText className="w-4 h-4"/> FEA Analysis PDF Report
+               </div>
+               <div className="p-4 space-y-3 text-xs">
+                 <div className="grid grid-cols-[60px_1fr] gap-y-2">
+                   <div className="font-bold text-slate-700">File:</div>
+                   <div className="font-semibold text-red-600 break-all">
+                     {selectedJobDetails.pdf_url ? `NOVA_Report_${selectedJobDetails.job_id_display}.pdf` : 'Generating Report & Rendering Images...'}
+                   </div>
+                   <div className="font-bold text-slate-700">Status:</div>
+                   <div className={`flex items-center gap-1 font-bold ${selectedJobDetails.pdf_url ? 'text-emerald-600' : 'text-amber-500'}`}>
+                     {selectedJobDetails.pdf_url ? <CheckCircle className="w-3.5 h-3.5"/> : <Loader2 className="w-3.5 h-3.5 animate-spin"/>} 
+                     {selectedJobDetails.pdf_url ? 'Ready for Download' : 'Awaiting Solver...'}
+                   </div>
+                 </div>
+                 
+                 {/* Action Buttons: Preview & Download */}
+                 {selectedJobDetails.pdf_url ? (
+                   <div className="flex gap-2 mt-2">
+                     <a href={selectedJobDetails.pdf_url} target="_blank" rel="noopener noreferrer" className="flex-1 py-2.5 text-xs font-bold text-red-700 transition-colors bg-white border border-red-200 rounded-lg hover:bg-red-50 flex items-center justify-center gap-2 shadow-sm">
+                       <Eye className="w-4 h-4"/> Preview Report
+                     </a>
+                     <a href={selectedJobDetails.pdf_url} download={`NOVA_Report_${selectedJobDetails.job_id_display}.pdf`} className="flex-1 py-2.5 text-xs font-bold text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 shadow-sm">
+                       <Download className="w-4 h-4"/> Download PDF
+                     </a>
+                   </div>
+                 ) : (
+                   <button disabled className="w-full py-2.5 mt-2 text-xs font-bold text-slate-500 bg-slate-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                     <Clock className="w-4 h-4"/> Email will be sent when ready
+                   </button>
+                 )}
+               </div>
+            </div>
           </div>
 
           {/* Footer Actions */}
@@ -1569,8 +1603,12 @@ export default function App() {
                                 <Download className="w-3.5 h-3.5" /> Result
                              </a>
                           )}
-                          
-                          <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
+                          {job.status === 'Completed' && job.pdf_url && (
+                             <a href={job.pdf_url} target="_blank" rel="noopener noreferrer" className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-red-600 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-red-200/50">
+                                <FileText className="w-3.5 h-3.5" /> View PDF
+                             </a>
+                          )}
+                                                    <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
                             <Eye className="w-3.5 h-3.5" /> Details
                           </button>
                        </td>
