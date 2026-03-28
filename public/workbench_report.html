@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>FEA Analysis Report - {{ params.get('name', 'System') }}</title>
+    <style>
+        :root {
+            --ansys-gold: #f2a900;
+            --ansys-dark: #1e1e1e;
+            --border-light: #dcdcdc;
+            --bg-light: #f4f6f9;
+            --text-dark: #2b2b2b;
+        }
+        
+        @page { size: A4; margin: 20mm; }
+        
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            font-size: 10pt; 
+            color: var(--text-dark); 
+            line-height: 1.4;
+            margin: 0; 
+            background-color: #eaeded;
+            padding: 20px;
+        }
+
+        .document-wrapper {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-top: 10px solid var(--ansys-dark);
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 3px solid var(--ansys-gold);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 { 
+            font-size: 28pt; 
+            margin: 0; 
+            font-weight: 900;
+            color: var(--ansys-dark);
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+        .header h1 span { color: var(--ansys-gold); }
+        .header h2 { font-size: 12pt; color: #555; margin: 5px 0 0 0; font-weight: 400; text-transform: uppercase; letter-spacing: 1px;}
+        
+        .doc-control { text-align: right; font-size: 9pt; color: #666; line-height: 1.6; }
+        .doc-control strong { color: var(--ansys-dark); }
+
+        /* Typography & Tables */
+        h3 { 
+            color: #ffffff; 
+            background-color: var(--ansys-dark);
+            font-size: 11pt; 
+            padding: 6px 12px; 
+            margin-top: 30px; 
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-left: 5px solid var(--ansys-gold);
+        }
+
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-bottom: 20px; 
+            font-size: 9.5pt; 
+        }
+
+        th, td { 
+            border: 1px solid var(--border-light); 
+            padding: 8px 12px; 
+            text-align: left; 
+            vertical-align: middle;
+        }
+
+        th { 
+            background-color: var(--bg-light); 
+            font-weight: bold; 
+            width: 45%; 
+            color: var(--ansys-dark);
+        }
+
+        .col-3 { width: 33.33%; }
+        
+        .highlight-row td { background-color: #fffcee; font-weight: bold; }
+        .result-val { color: #6bd32f; font-weight: 800; font-size: 10.5pt; }
+
+        .image-wrapper {
+            margin-top: 30px;
+            text-align: center;
+            border: 1px solid var(--border-light);
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.03);
+        }
+
+        img { max-width: 100%; height: auto; border: 1px solid #eee; }
+        .caption { margin-top: 12px; font-size: 9pt; color: #666; font-style: italic; }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-light);
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .document-wrapper { box-shadow: none; border-top: 8px solid var(--ansys-dark); width: 100%; max-width: 100%; padding: 0; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+    <div class="document-wrapper">
+        
+        <div class="header">
+            <div>
+                <h1>ANSYS <span>Mechanical</span></h1>
+                <h2>Project: {{ params.get('name', 'General System') }}</h2>
+            </div>
+            <div class="doc-control">
+                <strong>Date Generated:</strong> {{ date }}<br>
+                <strong>Solver Engine:</strong> PyMAPDL (2024 R1)<br>
+                <strong>Element Types:</strong> SOLID186 / SOLID187 / MASS21<br>
+                <strong>System Unit:</strong> Metric (mm, MPa, N, N·mm)
+            </div>
+        </div>
+
+        <h3>1. Analysis Summary</h3>
+        <table>
+            <tr>
+                <th>Analysis Type</th>
+                <td>
+                    {% if params.get('active_analysis') == 'shell' %}
+                        Shell Nozzle Junction Analysis
+                    {% else %}
+                        Vessel Head Nozzle Analysis ({{ params.get('h_type', 'Head') }})
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Material Designation</th><td>{{ params.get('mat_name', 'Carbon Steel') }}</td></tr>
+            <tr><th>Young's Modulus (EX)</th><td>{{ params.get('ex') }} MPa</td></tr>
+            <tr><th>Poisson's Ratio (PRXY)</th><td>{{ params.get('pr') }}</td></tr>
+            <tr><th>Design Temperature</th><td>{{ params.get('temp') }} °C</td></tr>
+        </table>
+
+        <h3>2. Base Vessel Geometry</h3>
+        <table>
+            {% if params.get('active_analysis') == 'shell' %}
+                <tr><th>Shell Outside Diameter (OD)</th><td>{{ params.get('s_od') }} mm</td></tr>
+                <tr><th>Shell Thickness</th><td>{{ params.get('s_thk') }} mm</td></tr>
+                <tr><th>Total Modeled Height</th><td>{{ params.get('s_h') }} mm</td></tr>
+            {% elif params.get('active_analysis') == 'head' %}
+                <tr><th>Head Geometry Type</th><td>{{ params.get('h_type') }}</td></tr>
+                {% if params.get('h_type') == 'Ellipsoidal Head' %}
+                    <tr><th>Inside Diameter (ID)</th><td>{{ params.get('h_id') }} mm</td></tr>
+                    <tr><th>Head Thickness</th><td>{{ params.get('h_thk') }} mm</td></tr>
+                    <tr><th>Aspect Ratio (a:b)</th><td>{{ params.get('ratio') }}</td></tr>
+                {% elif params.get('h_type') == 'Flat Head' %}
+                    <tr><th>Outside Diameter (OD)</th><td>{{ params.get('h_od') }} mm</td></tr>
+                    <tr><th>Head Thickness</th><td>{{ params.get('h_thk') }} mm</td></tr>
+                    <tr><th>Base Shell ID</th><td>{{ params.get('s_id') }} mm</td></tr>
+                {% elif params.get('h_type') == 'Torispherical Head' %}
+                    <tr><th>Crown Radius (Inside)</th><td>{{ params.get('h_id') }} mm</td></tr>
+                    <tr><th>Knuckle Radius</th><td>{{ params.get('knuckle_rad') }} mm</td></tr>
+                    <tr><th>Head Thickness</th><td>{{ params.get('h_thk') }} mm</td></tr>
+                {% endif %}
+                <tr><th>Straight Flange Offset</th><td>{{ params.get('sf_offset', 0) }} mm</td></tr>
+                <tr><th>Attached Shell Thickness</th><td>{{ params.get('s_thk') }} mm</td></tr>
+                <tr><th>Attached Shell Height</th><td>{{ params.get('s_h') }} mm</td></tr>
+            {% endif %}
+        </table>
+
+        <h3>3. Nozzle & Reinforcement Geometry</h3>
+        <table>
+            <tr><th>Nozzle Classification</th><td>{{ params.get('n_type', 'Straight') }}</td></tr>
+            
+            {% if params.get('active_analysis') == 'shell' %}
+                <tr><th>Nozzle Location (Elev. on Shell)</th><td>{{ params.get('n_l') }} mm</td></tr>
+            {% endif %}
+            
+            <tr><th>Nozzle Radial Offset</th><td>{{ params.get('n_offset', 0) }} mm</td></tr>
+            <tr><th>Neck Outside Diameter (OD)</th><td>{{ params.get('n_od') }} mm</td></tr>
+            <tr><th>Neck Thickness</th><td>{{ params.get('n_thk') }} mm</td></tr>
+            <tr><th>Outward Projection Length</th><td>{{ params.get('n_p') }} mm</td></tr>
+            
+            {% if params.get('n_type') == 'Barrel' %}
+                <tr class="highlight-row"><td colspan="2">Heavy Barrel / Hub Forging Details</td></tr>
+                <tr><th>Hub Outside Diameter (OD)</th><td>{{ params.get('hub_od') }} mm</td></tr>
+                <tr><th>Hub Straight Length</th><td>{{ params.get('hub_l') }} mm</td></tr>
+                <tr><th>Transition Taper Length</th><td>{{ params.get('trans_l', params.get('ntrans_l', 0)) }} mm</td></tr>
+            {% endif %}
+
+            {% set pad_req = params.get('pad_req', 'NO') | string | upper %}
+            <tr><th>Reinforcing Pad Extracted?</th><td>{{ pad_req }}</td></tr>
+            {% if pad_req in ['TRUE', 'YES'] %}
+                <tr><th>Pad Width (Annular)</th><td>{{ params.get('pad_w') }} mm</td></tr>
+                <tr><th>Pad Thickness</th><td>{{ params.get('pad_thk') }} mm</td></tr>
+            {% endif %}
+        </table>
+
+        <h3>4. Discretization & Mesh Controls</h3>
+        <table>
+            <tr>
+                <th class="col-3">Domain</th>
+                <th class="col-3">Method</th>
+                <th class="col-3">Target Size</th>
+            </tr>
+            <tr>
+                <td>Base Shell / Head Body</td>
+                <td>{{ params.get('m_method', 'Auto') }}</td>
+                <td>{{ params.get('b_size') }} mm</td>
+            </tr>
+            {% if params.get('active_analysis') == 'head' %}
+            <tr>
+                <td>Nozzle Body</td>
+                <td>{{ params.get('nm_method', params.get('m_method')) }}</td>
+                <td>{{ params.get('nb_size', params.get('b_size')) }} mm</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td colspan="2"><strong>Through-Thickness Divisions (Sweep target)</strong></td>
+                <td>{{ params.get('n_div', 3) }} elements</td>
+            </tr>
+        </table>
+
+        <div class="page-break"></div>
+
+        <h3>5. Boundary Conditions & External Loading</h3>
+        <table>
+            <tr><th>Internal Pressure (P)</th><td>{{ params.get('int_p') }} MPa</td></tr>
+            <tr><th>Apply Nozzle Thrust Force?</th><td>{{ params.get('n_thrust', 'False') | string | upper }}</td></tr>
+            <tr><th>Remote Load Application Point</th><td>{{ params.get('n_load', 'Nozzle Junction') }}</td></tr>
+            <tr class="highlight-row"><td colspan="2">Remote Flange Loads (Transferred via RBE3 constraint)</td></tr>
+            <tr><th>Radial / Axial Force (P)</th><td>{{ params.get('f_p') }} N</td></tr>
+            <tr><th>Longitudinal Shear Force (F_L)</th><td>{{ params.get('f_l') }} N</td></tr>
+            <tr><th>Circumferential Shear Force (F_C)</th><td>{{ params.get('f_c') }} N</td></tr>
+            <tr><th>Torsional Moment (M_T)</th><td>{{ params.get('m_t') }} N·mm</td></tr>
+            <tr><th>Longitudinal Moment (M_L)</th><td>{{ params.get('m_l') }} N·mm</td></tr>
+            <tr><th>Circumferential Moment (M_C)</th><td>{{ params.get('m_c') }} N·mm</td></tr>
+        </table>
+
+        <h3>6. Post-Processing Maximum Results</h3>
+        <table>
+            <tr>
+                <th style="width: 60%;">Result Output Metric</th>
+                <th style="width: 25%;">Peak Magnitude</th>
+                <th style="width: 15%;">Unit</th>
+            </tr>
+            <tr>
+                <td>Equivalent (von-Mises) Stress</td>
+                <td class="result-val">{{ results[0] }}</td>
+                <td>MPa</td>
+            </tr>
+            <tr>
+                <td>Maximum Principal Stress Sum (S1+S2+S3)</td>
+                <td class="result-val">{{ results[2] }}</td>
+                <td>MPa</td>
+            </tr>
+            <tr>
+                <td>Maximum Total Deformation</td>
+                <td class="result-val">{{ results[1] }}</td>
+                <td>mm</td>
+            </tr>
+        </table>
+        
+        <div class="footer">
+            Generated automatically via PyMAPDL Flask Integration. Validated for Ansys MAPDL 2024 R1.
+        </div>
+    </div>
+</body>
+</html>
