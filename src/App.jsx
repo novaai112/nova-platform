@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { supabaseJob } from './supabaseClient';
 import { 
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
@@ -121,13 +120,11 @@ export default function App() {
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
 
-  // AUTH INITIALIZATION & REFRESH LOGIC
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setupUser(session.user);
         fetchJobs();
-        // Redirect to dashboard immediately if session exists on refresh
         setCurrentView('dashboard');
       }
       setIsInitializing(false);
@@ -149,14 +146,12 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ROUTE GUARD: Redirects to login if trying to access secure views without auth
   useEffect(() => {
     if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
       setCurrentView('login');
     }
   }, [currentView, isLoggedIn, isInitializing]);
 
-  // Silently refresh the session to check if Admin changed the user_metadata
   const checkApprovalStatus = async () => {
     const { data, error } = await supabase.auth.refreshSession();
     if (data?.session?.user) {
@@ -164,28 +159,25 @@ export default function App() {
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
       
       if (isApprovedStatus) {
-        setupUser(user); // This updates the UI immediately
+        setupUser(user); 
         showNotification("Account Approved! You can now submit analysis jobs.", "success");
       }
     }
   };
 
-  // Polling to update jobs real-time AND check approval status
   useEffect(() => {
     const interval = setInterval(() => {
       if (isLoggedIn) {
         fetchJobs();
-        
-        // If the user isn't approved yet, keep checking their status in the background
         if (!currentUser.isApproved) {
           checkApprovalStatus();
         }
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000); 
     
-    // We add currentUser.isApproved to the dependencies so the interval updates when they get approved
     return () => clearInterval(interval);
   }, [isLoggedIn, currentUser.isApproved]);
+
   const setupUser = (user) => {
       const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
@@ -202,7 +194,6 @@ export default function App() {
         isApproved: isApprovedStatus
       });
       
-      // Save for bellow.html to use
       localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
     };
@@ -1293,31 +1284,6 @@ export default function App() {
               </>
             )}
 
-            {/* =========================================
-                NOZZLE ANALYSIS SPECIFIC CARDS 
-                ========================================= */}
-            {isNozzle && (
-              <div className="overflow-hidden border border-purple-200 rounded-xl bg-purple-50/20">
-                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-purple-700 border-b border-purple-100">
-                    <Brain className="w-4 h-4"/> FEA Solver Results
-                 </div>
-                 <div className="grid grid-cols-[1.5fr_1fr] p-4 text-xs gap-y-4">
-                   <div className="font-bold text-slate-700">Equivalent Stress:</div>
-                   <div className="font-semibold text-slate-800">
-                      {selectedJobDetails.eqv_stress ? (
-                         <span className="px-3 py-1 text-purple-800 bg-purple-100 border border-purple-200 rounded-md shadow-sm">{selectedJobDetails.eqv_stress} MPa</span>
-                      ) : 'Processing...'}
-                   </div>
-                   <div className="font-bold text-slate-700">Total Deformation:</div>
-                   <div className="font-semibold text-slate-800">
-                      {selectedJobDetails.total_def ? (
-                         <span className="px-3 py-1 text-purple-800 bg-purple-100 border border-purple-200 rounded-md shadow-sm">{selectedJobDetails.total_def} mm</span>
-                      ) : 'Processing...'}
-                   </div>
-                 </div>
-              </div>
-            )}
-
             {/* Shared FEA PDF Report Card (Displays for both Bellow & Nozzle) */}
             <div className="overflow-hidden border border-red-200 rounded-xl bg-red-50/20 mt-4">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-700 border-b border-red-100">
@@ -1357,40 +1323,39 @@ export default function App() {
 
           {/* Footer Actions */}
           <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
-  <button 
-    onClick={() => setIsJobDetailsOpen(false)} 
-    className={`px-6 py-2 text-sm font-bold transition-colors bg-white border-2 rounded-lg ${isNozzle ? 'text-emerald-700 border-emerald-700 hover:bg-emerald-50' : 'text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-  >
-    Close
-  </button>
-  
-  {/* If Bellow Pending -> Go to Step 2 */}
-  {isBellow && selectedJobDetails.status === 'Pending' && (
-    <button 
-      onClick={() => { 
-        localStorage.setItem('nova_job_id', selectedJobDetails.id);
-        window.location.href = '/bellow2.html'; 
-      }}
-      className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
-    >
-      Continue to Step 2
-    </button>
-  )}
+            <button 
+              onClick={() => setIsJobDetailsOpen(false)} 
+              className={`px-6 py-2 text-sm font-bold transition-colors bg-white border-2 rounded-lg ${isNozzle ? 'text-emerald-700 border-emerald-700 hover:bg-emerald-50' : 'text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+            >
+              Close
+            </button>
+            
+            {/* If Bellow Pending -> Go to Step 2 */}
+            {isBellow && selectedJobDetails.status === 'Pending' && (
+              <button 
+                onClick={() => { 
+                  localStorage.setItem('nova_job_id', selectedJobDetails.id);
+                  window.location.href = '/bellow2.html'; 
+                }}
+                className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Continue to Step 2
+              </button>
+            )}
 
-  {/* If Nozzle Pending -> Go to Setup */}
-  {isNozzle && selectedJobDetails.status === 'Pending' && (
-    <button 
-      onClick={() => { 
-        localStorage.setItem('nova_job_id', selectedJobDetails.id);
-        window.location.href = '/nozzle.html'; 
-      }}
-      className="px-6 py-2 text-sm font-bold text-white transition-colors bg-emerald-600 border-2 border-emerald-600 rounded-lg hover:bg-emerald-700"
-    >
-      Launch Nozzle Setup
-    </button>
-  )}
-</div>
-
+            {/* If Nozzle Pending -> Go to Setup */}
+            {isNozzle && selectedJobDetails.status === 'Pending' && (
+              <button 
+                onClick={() => { 
+                  localStorage.setItem('nova_job_id', selectedJobDetails.id);
+                  window.location.href = '/nozzle.html'; 
+                }}
+                className="px-6 py-2 text-sm font-bold text-white transition-colors bg-emerald-600 border-2 border-emerald-600 rounded-lg hover:bg-emerald-700"
+              >
+                Launch Nozzle Setup
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1610,10 +1575,10 @@ export default function App() {
                                 <FileText className="w-3.5 h-3.5" /> View PDF
                              </a>
                           )}
-                                                    <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
-                            <Eye className="w-3.5 h-3.5" /> Details
-                          </button>
-                       </td>
+                                                                                    <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
+                             <Eye className="w-3.5 h-3.5" /> Details
+                           </button>
+                        </td>
                      </tr>
                    ))}
                  </tbody>
