@@ -314,7 +314,7 @@
             </a>
         </header>
 
-        <form class="form-body" id="analysisForm" action="https://nova-analysis.vercel.app/" method="POST">
+        <form class="form-body" id="analysisForm" action="/" method="POST">
             <input type="hidden" name="active_analysis" id="active_analysis" value="shell">
 
             <div class="method-toggle">
@@ -326,7 +326,9 @@
                 </div>
 
             <div class="action-area">
-                <button type="submit" class="btn-submit">Solve in Ansys</button>
+                <a href="/" style="text-decoration: none;">
+                <button class="btn-glass" type="button">Solve in Ansys</button>
+            </a>
             </div>
         </form>
     </div>
