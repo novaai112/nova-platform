@@ -1357,25 +1357,39 @@ export default function App() {
 
           {/* Footer Actions */}
           <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
-            <button 
-              onClick={() => setIsJobDetailsOpen(false)} 
-              className={`px-6 py-2 text-sm font-bold transition-colors bg-white border-2 rounded-lg ${isNozzle ? 'text-emerald-700 border-emerald-700 hover:bg-emerald-50' : 'text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-            >
-              Close
-            </button>
-            {isBellow && (
-              <button 
-                onClick={() => { 
-                  // Set the Job ID so Step 2 knows which job to update
-                  localStorage.setItem('nova_job_id', selectedJobDetails.id);
-                  window.location.href = '/bellow2.html'; 
-                }}
-                className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
-              >
-                Continue to Step 2
-              </button>
-            )}
-          </div>
+  <button 
+    onClick={() => setIsJobDetailsOpen(false)} 
+    className={`px-6 py-2 text-sm font-bold transition-colors bg-white border-2 rounded-lg ${isNozzle ? 'text-emerald-700 border-emerald-700 hover:bg-emerald-50' : 'text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+  >
+    Close
+  </button>
+  
+  {/* If Bellow Pending -> Go to Step 2 */}
+  {isBellow && selectedJobDetails.status === 'Pending' && (
+    <button 
+      onClick={() => { 
+        localStorage.setItem('nova_job_id', selectedJobDetails.id);
+        window.location.href = '/bellow2.html'; 
+      }}
+      className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
+    >
+      Continue to Step 2
+    </button>
+  )}
+
+  {/* If Nozzle Pending -> Go to Setup */}
+  {isNozzle && selectedJobDetails.status === 'Pending' && (
+    <button 
+      onClick={() => { 
+        localStorage.setItem('nova_job_id', selectedJobDetails.id);
+        window.location.href = '/nozzle.html'; 
+      }}
+      className="px-6 py-2 text-sm font-bold text-white transition-colors bg-emerald-600 border-2 border-emerald-600 rounded-lg hover:bg-emerald-700"
+    >
+      Launch Nozzle Setup
+    </button>
+  )}
+</div>
 
         </div>
       </div>
