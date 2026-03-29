@@ -1472,11 +1472,10 @@ export default function App() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1000px] mx-auto mb-10">
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
+              <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Nozzle Analysis</h3>
               {currentUser.isApproved ? (
-                <button onClick={() => window.location.href = '/nozzle.html'} 
+                <button onClick={() => openSubmitJob('Nozzle Analysis')} 
                   className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
                   Submit New Job
                 </button>
