@@ -606,7 +606,13 @@ export default function App() {
       }
     };
 
-  const filteredJobs = jobFilter.startsWith('All') ? jobs : jobs.filter(j => j.type === jobFilter);
+  const filteredJobs = jobFilter.startsWith('All') 
+  ? jobs 
+  : jobs.filter(j => {
+      if (jobFilter === 'Bellow Analysis') return j.type.includes('Bellow');
+      if (jobFilter === 'Nozzle Analysis') return j.type.includes('Nozzle');
+      return j.type === jobFilter;
+    });
   const stats = {
     total: filteredJobs.length,
     completed: filteredJobs.filter(j => j.status === 'Completed').length,
@@ -1593,7 +1599,7 @@ export default function App() {
               <form onSubmit={handleJobSubmit} className="p-8 space-y-4">
                 <div className="space-y-2">
                   <label className="pl-1 text-sm font-bold text-slate-800">Project Name</label>
-                  <input name="jobName" type="text" className="w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium" required autoFocus placeholder="e.g. Main Line Node 45" />
+                  <input name="jobName" type="text" className="w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium" required autoFocus placeholder="e.g. Shell Nozzle Analysis" />
                 </div>
                 
                 <div className="pt-4 mt-2 border-t border-slate-300/40">
