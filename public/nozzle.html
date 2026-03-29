@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <title>NOVA Nozzle Analysis</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             /* Light Theme Background Colors */
@@ -267,24 +270,97 @@
             background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(29, 78, 216, 1) 100%);
         }
 
-        /* Loading Modal Styles */
+        /* =========================================
+           NEW MODERN BOX MODAL STYLES
+           ========================================= */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px);
             display: flex; justify-content: center; align-items: center;
-            z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         
-        .solving-modal-content { 
-            background: none; border: none; box-shadow: none; 
-            display: flex; flex-direction: column; align-items: center; color: #fff; text-align: center; 
+        .modern-box-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
         }
-        .spinner { 
-            width: 70px; height: 70px; border: 4px solid rgba(255, 255, 255, 0.2); 
-            border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; 
+
+        .modern-box-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #00C9FF 0%, #92FE9D 50%, #FF0080 100%);
+            background-size: 200% 200%;
+            animation: gradientGlow 6s ease infinite;
+            filter: blur(15px);
+            opacity: 0.8;
+            z-index: 0;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes gradientGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .modern-box {
+            position: relative;
+            background: rgba(15, 15, 15, 0.85); 
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            z-index: 1;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+            font-family: 'Plus Jakarta Sans', sans-serif; /* Applied just to the box */
+        }
+
+        .modern-box h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .modern-box p {
+            font-size: 0.95rem;
+            color: #a0a0a0;
+            margin-bottom: 40px;
+            font-weight: 400;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .btn-modern {
+            display: inline-block;
+            padding: 12px 35px;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #000000;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer;
+        }
+
+        .btn-modern:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+            background: #e0e0e0;
+        }
+
+        .btn-modern:active {
+            transform: scale(0.98);
+        }
 
         /* Responsive design defaults */
         @media (max-width: 1200px) {
@@ -326,18 +402,19 @@
                 </div>
 
             <div class="action-area">
-                <a href="https://nova-analysis.vercel.app/progress.html" style="text-decoration: none;">
-                <button class="btn-submit" type="button">Solve in Ansys</button>
-            </a>
+                <button class="btn-submit" type="button" onclick="showSolvingModal()">Solve in Ansys</button>
             </div>
         </form>
     </div>
 
     <div class="modal-overlay" id="solvingModal">
-        <div class="solving-modal-content">
-            <div class="spinner"></div>
-            <h2 style="margin-bottom: 10px; font-weight: 500; letter-spacing: 1px;">Sending Job to Solver...</h2>
-            <p style="color: #cbd5e1; font-size: 0.95rem;">You will be redirected to the dashboard shortly.</p>
+        <div class="modern-box-wrapper">
+            <div class="modern-box">
+                <h2>Solving...</h2>
+                <p>System compiling in progress. Job is being configured for Ansys.</p>
+                
+                <a href="https://nova-analysis.vercel.app/progress.html" class="btn-modern">Got it</a>
+            </div>
         </div>
     </div>
 
@@ -695,10 +772,10 @@
             });
         }
 
-        // Handle Submission Loading State
-        document.getElementById('analysisForm').addEventListener('submit', function(e) {
+        // Action to trigger the new overlay
+        function showSolvingModal() {
             document.getElementById('solvingModal').classList.add('active');
-        });
+        }
 
         // Initialize application
         renderForm();
