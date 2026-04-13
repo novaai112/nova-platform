@@ -80,7 +80,7 @@
             border-radius: 24px;
             box-shadow: var(--glass-shadow);
             width: 100%;
-            max-width: 1000px; /* Constrained width for centering */
+            max-width: 1000px;
             overflow: hidden;
             position: relative;
             margin-top: 1rem;
@@ -152,11 +152,11 @@
             position: relative; 
             z-index: 2; 
             width: 100%;
-            max-width: 850px; /* Strict center column */
-            margin: 0 auto;   /* Center aligning */
+            max-width: 850px; 
+            margin: 0 auto;   
             display: flex;
             flex-direction: column;
-            gap: 1.5rem; /* Gap between cards */
+            gap: 1.8rem; /* Increased gap between large section cards */
         }
 
         /* Inner Section Cards */
@@ -172,7 +172,7 @@
 
         .col-title {
             color: var(--text-main); font-weight: 800; font-size: 0.85rem;
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.2rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem; /* Increased bottom margin */
             display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
         }
         .col-title::after {
@@ -188,35 +188,41 @@
             box-shadow: none;
         }
 
-        /* Grid specific alignments for compact sizing */
+        /* INCREASED ROW GAPS HERE */
         .fields-container {
             display: grid;
-            gap: 1rem 1.5rem;
+            gap: 1.5rem 1.8rem; /* Increased row gap to 1.5rem (24px) */
         }
         
+        .sub-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Increased gap between stacked inputs to 1.5rem (24px) */
+        }
+
         .project-grid { grid-template-columns: repeat(2, 1fr); }
         .pwht-grid { grid-template-columns: repeat(3, 1fr); }
-        .load-grid { grid-template-columns: repeat(3, 1fr); } /* Updated to 3 Columns */
+        .load-grid { grid-template-columns: repeat(3, 1fr); } 
 
         .form-group { transition: all 0.3s ease; }
         .form-group.hidden { display: none !important; }
 
         .form-label {
             display: block; font-size: 0.7rem; font-weight: 700;
-            color: var(--text-main); margin-bottom: 0.25rem; padding-left: 0.1rem;
+            color: var(--text-main); margin-bottom: 0.4rem; padding-left: 0.1rem; /* Slightly increased bottom margin */
             text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;
         }
 
         /* MICRO & COMPACT INPUT BOXES */
         .glass-input, .glass-select {
             width: 100%; 
-            height: 32px; /* Very Compact Height */
+            height: 32px; 
             padding: 0 0.6rem; 
             background: rgba(255, 255, 255, 0.8);
             border: 1px solid rgba(0, 0, 0, 0.12); 
             border-top: 1px solid rgba(255, 255, 255, 1);
             border-radius: 6px; 
-            font-size: 0.75rem; /* Micro Font */
+            font-size: 0.75rem; 
             color: var(--text-main); 
             transition: all 0.3s ease;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
@@ -241,7 +247,7 @@
             transition: all 0.3s ease; 
             overflow: hidden;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.015);
-            height: 32px; /* Matched compact height */
+            height: 32px; 
         }
         .input-addon-group:focus-within { 
             border-color: rgba(234, 88, 12, 0.7); 
@@ -258,7 +264,7 @@
         }
 
         .action-area {
-            margin-top: 1rem; 
+            margin-top: 1.5rem; 
             display: flex; flex-direction: column; align-items: center;
             width: 100%;
         }
