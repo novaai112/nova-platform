@@ -193,10 +193,10 @@
             display: grid;
             gap: 1rem 1.5rem;
         }
-        /* Adjusted to 2 items since System Name is removed */
+        
         .project-grid { grid-template-columns: repeat(2, 1fr); }
         .pwht-grid { grid-template-columns: repeat(3, 1fr); }
-        .load-grid { grid-template-columns: repeat(4, 1fr); }
+        .load-grid { grid-template-columns: repeat(3, 1fr); } /* Updated to 3 Columns */
 
         .form-group { transition: all 0.3s ease; }
         .form-group.hidden { display: none !important; }
@@ -479,7 +479,25 @@
                 
                 // Drop inputs directly into CSS Grid handled div
                 html += `<div class="fields-container ${sec.gridClass}">`;
-                html += sec.fields.map(f => generateFieldHTML(f)).join('');
+                
+                if (sec.title.includes("Load Condition")) {
+                    // Split the 8 Load Condition inputs into 3 columns 
+                    // Col 1: items 0, 1, 2
+                    // Col 2: items 3, 4, 5
+                    // Col 3: items 6, 7
+                    html += `<div class="sub-col">` + sec.fields.slice(0, 3).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                    html += `<div class="sub-col">` + sec.fields.slice(3, 6).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                    html += `<div class="sub-col">` + sec.fields.slice(6, 8).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                } else if (sec.title.includes("PWHT Design")) {
+                    // 6 fields into 3 columns -> 2 items per column
+                    html += `<div class="sub-col">` + sec.fields.slice(0, 2).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                    html += `<div class="sub-col">` + sec.fields.slice(2, 4).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                    html += `<div class="sub-col">` + sec.fields.slice(4, 6).map(f => generateFieldHTML(f)).join('') + `</div>`;
+                } else {
+                    // Project section 
+                    html += sec.fields.map(f => generateFieldHTML(f)).join('');
+                }
+
                 html += `</div>`;
 
                 wrapper.innerHTML = html;
