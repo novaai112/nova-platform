@@ -10,22 +10,23 @@
     
     <style>
         :root {
-            /* Light Theme Background Colors - Warm/Heat Theme for PWHT */
+            /* Warm/Heat Theme for PWHT */
             --bg-base: #fff7ed;
-            --bg-glow-1: #fed7aa; /* Orange */
-            --bg-glow-2: #fca5a5; /* Red */
-            --bg-glow-3: #fef08a; /* Yellow */
+            --bg-glow-1: #fed7aa; 
+            --bg-glow-2: #fca5a5; 
+            --bg-glow-3: #fef08a; 
 
-            /* Light Theme Glassmorphism */
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 100%);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --glass-highlight: rgba(255, 255, 255, 0.9);
+            /* Glassmorphism Variables */
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.4) 100%);
+            --glass-card: rgba(255, 255, 255, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --glass-highlight: rgba(255, 255, 255, 1);
             --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
-                            inset 0 1px 1px rgba(255, 255, 255, 0.8), 
-                            inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+                            inset 0 1px 1px rgba(255, 255, 255, 0.9), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.02);
             
-            --primary: #ea580c; /* Orange 600 */
-            --primary-hover: #c2410c; /* Orange 700 */
+            --primary: #ea580c; 
+            --primary-hover: #c2410c; 
             --text-main: #1e293b;
             --text-muted: #64748b;
         }
@@ -68,27 +69,30 @@
             100% { transform: translate(-30px, 40px) scale(0.9); }
         }
 
+        /* Centered Main Container */
         .glass-container {
             background: var(--glass-bg);
             backdrop-filter: blur(60px);
             -webkit-backdrop-filter: blur(60px);
             border: 1px solid var(--glass-border);
             border-top: 1px solid var(--glass-highlight);
-            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 24px;
             box-shadow: var(--glass-shadow);
             width: 100%;
-            max-width: 1500px;
+            max-width: 1000px; /* Constrained width for centering */
             overflow: hidden;
             position: relative;
             margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
         }
 
         .glass-container::before {
             content: '';
             position: absolute;
             top: 0; left: -150%; width: 50%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
             transform: skewX(-25deg);
             animation: glass-sheen 12s infinite;
             pointer-events: none;
@@ -106,22 +110,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
             position: relative;
             z-index: 2;
         }
 
         .app-header h1 {
-            font-size: 1.2rem; font-weight: 800; letter-spacing: 2px;
+            font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
             text-transform: uppercase; color: var(--text-main);
             text-shadow: none;
         }
 
         .btn-glass {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-top: 1px solid rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 1);
             color: var(--text-main);
             padding: 0.5rem 1.2rem;
             border-radius: 8px;
@@ -130,105 +134,98 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
             cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 6px rgba(0,0,0,0.03);
             position: relative;
             z-index: 2;
         }
         .btn-glass:hover {
             background: rgba(255, 255, 255, 1);
             border-color: var(--primary);
-            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15), inset 0 1px 2px rgba(255,255,255,0.8);
+            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
             transform: translateY(-2px);
             color: var(--primary);
         }
 
-        .form-body { padding: 2.5rem 3rem; position: relative; z-index: 2; }
-
-        /* ======== PROFESSIONAL GRID LAYOUT SYSTEM ======== */
-        .grid-layout { 
-            display: grid; 
-            grid-template-columns: repeat(3, minmax(250px, 1fr)); 
-            gap: 2rem; 
-            align-items: start;
-        }
-
-        .section-wrapper { min-width: 0; }
-        
-        /* Layout Mapping */
-        .section-project { grid-column: 1 / 2; }
-        .section-pwht { grid-column: 2 / 4; }
-        .section-load { grid-column: 1 / 4; } 
-
-        .fields-container {
+        /* Centered Form Body */
+        .form-body { 
+            padding: 2.5rem; 
+            position: relative; 
+            z-index: 2; 
+            width: 100%;
+            max-width: 850px; /* Strict center column */
+            margin: 0 auto;   /* Center aligning */
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem; /* Gap between cards */
         }
 
-        .sub-col {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .section-pwht .fields-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .section-load .fields-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
+        /* Inner Section Cards */
+        .section-wrapper { 
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px);
         }
 
         .col-title {
             color: var(--text-main); font-weight: 800; font-size: 0.85rem;
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.2rem;
             display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
         }
         .col-title::after {
             content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(234, 88, 12, 0.2) 0%, transparent 100%);
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.25) 0%, transparent 100%);
         }
+
+        .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 5px; font-size: 0.7rem; font-weight: 800;
+            color: var(--primary); background: rgba(234, 88, 12, 0.12);
+            border: 1px solid rgba(234, 88, 12, 0.2);
+            box-shadow: none;
+        }
+
+        /* Grid specific alignments for compact sizing */
+        .fields-container {
+            display: grid;
+            gap: 1rem 1.5rem;
+        }
+        /* Adjusted to 2 items since System Name is removed */
+        .project-grid { grid-template-columns: repeat(2, 1fr); }
+        .pwht-grid { grid-template-columns: repeat(3, 1fr); }
+        .load-grid { grid-template-columns: repeat(4, 1fr); }
 
         .form-group { transition: all 0.3s ease; }
         .form-group.hidden { display: none !important; }
 
         .form-label {
-            display: block; font-size: 0.75rem; font-weight: 700;
-            color: var(--text-main); margin-bottom: 0.3rem; padding-left: 0.2rem;
-            text-shadow: none;
+            display: block; font-size: 0.7rem; font-weight: 700;
+            color: var(--text-main); margin-bottom: 0.25rem; padding-left: 0.1rem;
+            text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;
         }
 
-        .badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 22px; height: 22px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;
-            color: var(--primary); background: rgba(234, 88, 12, 0.1);
-            border: 1px solid rgba(234, 88, 12, 0.2);
-            box-shadow: none;
-        }
-
-        /* COMPACT INPUT BOXES */
+        /* MICRO & COMPACT INPUT BOXES */
         .glass-input, .glass-select {
             width: 100%; 
-            height: 36px; /* Reduced Height */
-            padding: 0.4rem 0.75rem; /* Reduced Padding */
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1); 
-            border-top: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 8px; 
-            font-size: 0.8rem; /* Smaller Font */
+            height: 32px; /* Very Compact Height */
+            padding: 0 0.6rem; 
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 6px; 
+            font-size: 0.75rem; /* Micro Font */
             color: var(--text-main); 
             transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
             cursor: pointer; 
             font-weight: 600;
         }
-        .glass-select option { background: #ffffff; color: var(--text-main); }
+        .glass-select option { background: #ffffff; color: var(--text-main); font-size: 0.75rem; }
         .glass-input:focus, .glass-select:focus {
-            outline: none; border-color: rgba(234, 88, 12, 0.6); background: #ffffff;
+            outline: none; border-color: rgba(234, 88, 12, 0.7); background: #ffffff;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(234, 88, 12, 0.15);
         }
 
@@ -237,17 +234,17 @@
 
         .input-addon-group {
             display: flex; align-items: center; 
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1); 
-            border-top: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 8px; 
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 6px; 
             transition: all 0.3s ease; 
             overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-            height: 36px; /* Matched compact height */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015);
+            height: 32px; /* Matched compact height */
         }
         .input-addon-group:focus-within { 
-            border-color: rgba(234, 88, 12, 0.6); 
+            border-color: rgba(234, 88, 12, 0.7); 
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(234, 88, 12, 0.15); 
             background: #ffffff; 
         }
@@ -255,31 +252,32 @@
             border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
         }
         .addon {
-            padding: 0 0.75rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
-            background: rgba(0, 0, 0, 0.04); border-left: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 0 0.5rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 800;
+            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
             height: 100%; display: flex; align-items: center; white-space: nowrap;
         }
 
         .action-area {
-            margin-top: 2.5rem; padding-top: 2.5rem; border-top: 1px solid rgba(0, 0, 0, 0.08);
-            display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+            margin-top: 1rem; 
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%;
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, rgba(234, 88, 12, 0.9) 0%, rgba(194, 65, 12, 0.9) 100%);
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.95) 0%, rgba(194, 65, 12, 0.95) 100%);
             border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
-            color: white; padding: 1rem 4rem; border-radius: 10px; font-weight: 800; font-size: 0.95rem;
+            color: white; padding: 0.9rem 4rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 25px rgba(234, 88, 12, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 10px 20px rgba(234, 88, 12, 0.25), inset 0 1px 0 rgba(255,255,255,0.4);
             letter-spacing: 1.5px; backdrop-filter: blur(15px); text-transform: uppercase;
         }
         .btn-submit:hover {
-            transform: translateY(-3px); box-shadow: 0 15px 35px rgba(234, 88, 12, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
+            transform: translateY(-2px); box-shadow: 0 15px 25px rgba(234, 88, 12, 0.35), inset 0 2px 2px rgba(255,255,255,0.5);
             background: linear-gradient(135deg, rgba(234, 88, 12, 1) 0%, rgba(154, 52, 18, 1) 100%);
         }
 
         /* =========================================
-           NEW MODERN BOX MODAL STYLES
+           MODERN BOX MODAL STYLES
            ========================================= */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -327,56 +325,26 @@
             box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
         }
 
-        .modern-box h2 {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 8px;
-            letter-spacing: -1px;
-        }
-
-        .modern-box p {
-            font-size: 0.9rem;
-            color: #a0a0a0;
-            margin-bottom: 40px;
-            font-weight: 600;
-        }
-
+        .modern-box h2 { font-size: 2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; letter-spacing: -1px; }
+        .modern-box p { font-size: 0.9rem; color: #a0a0a0; margin-bottom: 40px; font-weight: 600; }
+        
         .btn-modern {
-            display: inline-block;
-            padding: 10px 30px;
-            border-radius: 10px;
-            background: #ffffff;
-            color: #000000;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
-            cursor: pointer;
+            display: inline-block; padding: 10px 30px; border-radius: 8px; background: #ffffff;
+            color: #000000; text-decoration: none; font-weight: 700; font-size: 0.85rem;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); cursor: pointer;
         }
-
-        .btn-modern:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
-            background: #e0e0e0;
-        }
-
-        .btn-modern:active {
-            transform: scale(0.98);
-        }
+        .btn-modern:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3); background: #e0e0e0; }
+        .btn-modern:active { transform: scale(0.98); }
 
         /* Responsive design defaults */
-        @media (max-width: 1200px) {
-            .grid-layout { grid-template-columns: repeat(2, 1fr); }
-            .section-wrapper { grid-column: span 1 !important; }
-            .section-wrapper.section-pwht, .section-wrapper.section-load { grid-column: span 2 !important; }
-            .section-wrapper.section-load .fields-container { grid-template-columns: repeat(2, 1fr); }
+        @media (max-width: 900px) {
+            .project-grid { grid-template-columns: 1fr; }
+            .pwht-grid { grid-template-columns: repeat(2, 1fr); }
+            .load-grid { grid-template-columns: repeat(2, 1fr); }
         }
-        @media (max-width: 768px) {
-            .grid-layout { grid-template-columns: 1fr; }
-            .section-wrapper.section-pwht, .section-wrapper.section-load { grid-column: span 1 !important; }
-            .section-wrapper.section-pwht .fields-container, .section-wrapper.section-load .fields-container { grid-template-columns: 1fr; }
+        @media (max-width: 600px) {
+            .pwht-grid, .load-grid { grid-template-columns: 1fr; }
+            .form-body { padding: 1.5rem; }
         }
     </style>
 </head>
@@ -397,7 +365,7 @@
         <form class="form-body" id="analysisForm" action="/" method="POST">
             <input type="hidden" name="active_analysis" id="active_analysis" value="pwht">
 
-            <div class="grid-layout" id="form-grid">
+            <div id="form-content" style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
                 </div>
 
             <div class="action-area">
@@ -421,6 +389,7 @@
             "pwht": [
                 {
                     title: "1. Project",
+                    gridClass: "project-grid",
                     fields: [
                         { name: "component", label: "Component:", type: "select", options: ["Shell to Shell", "Shell to Head", "Shell to Shell with Tubesheet", "Shell to Cone"], value: "Shell to Shell" },
                         { name: "mat_name", label: "Material Name:", type: "text", value: "SA-516-GR-70" }
@@ -428,6 +397,7 @@
                 },
                 {
                     title: "2. PWHT Design",
+                    gridClass: "pwht-grid",
                     fields: [
                         { name: "shell_id", label: "Shell ID (mm):", type: "number", value: "1000" },
                         { name: "shell_thk", label: "Shell THK (mm):", type: "number", value: "25" },
@@ -439,6 +409,7 @@
                 },
                 {
                     title: "3. Load Condition",
+                    gridClass: "load-grid",
                     fields: [
                         { name: "amb_temp", label: "Ambient Temp. (°C):", type: "number", value: "30" },
                         { name: "heat_rate_amb", label: "Heating Rate (from Ambient) (°C/hr):", type: "number", value: "30" },
@@ -463,10 +434,9 @@
 
         function generateFieldHTML(f) {
             if (!f) return '';
-            const dependsAttr = f.dependsOn ? `data-depends-on="${f.dependsOn}" data-show-if="${f.showIf.join(',')}"` : '';
             const parsed = parseLabelAndUnit(f.label);
 
-            let html = `<div class="form-group" ${dependsAttr}>
+            let html = `<div class="form-group">
                             <label class="form-label">${parsed.label}</label>`;
             
             if (f.type === 'select') {
@@ -478,68 +448,42 @@
                 html += `</select>`;
             } 
             else {
-                const isReadonly = f.readonly ? 'readonly' : '';
-                
                 if (parsed.unit) {
                     html += `<div class="input-addon-group">
-                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>
+                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}">
                                 <span class="addon">${parsed.unit}</span>
                              </div>`;
                 } else {
-                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>`;
+                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}">`;
                 }
             }
             html += `</div>`;
             return html;
         }
 
-        function mapFields(fieldsArray) {
-            return fieldsArray.map(f => f ? generateFieldHTML(f) : '').join('');
-        }
-
         function renderForm() {
-            const grid = document.getElementById('form-grid');
-            grid.innerHTML = '';
+            const contentDiv = document.getElementById('form-content');
+            contentDiv.innerHTML = '';
             
             const sections = appData["pwht"];
 
-            const getSectionKey = (title) => {
-                if (title.includes("Project")) return "project";
-                if (title.includes("PWHT Design")) return "pwht";
-                if (title.includes("Load Condition")) return "load";
-                return "default";
-            };
-
             sections.forEach(sec => {
                 const wrapper = document.createElement('div');
-                const sectionKey = getSectionKey(sec.title);
-                wrapper.className = `section-wrapper section-${sectionKey}`;
+                wrapper.className = `section-wrapper`;
                 
                 const titleMatch = sec.title.match(/^(\d+)\.\s*(.*)/);
                 const badgeNum = titleMatch ? titleMatch[1] : '?';
                 const cleanTitle = titleMatch ? titleMatch[2] : sec.title;
 
                 let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
-                html += `<div class="fields-container">`;
-
-                if (sectionKey === 'pwht') {
-                    // Split PWHT design into 2 columns
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 3)) + `</div>`;
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(3)) + `</div>`;
-                } else if (sectionKey === 'load') {
-                    // Split Load Condition into 4 columns to perfectly fit the parameters
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 2)) + `</div>`;
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(2, 4)) + `</div>`; 
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(4, 6)) + `</div>`; 
-                    html += `<div class="sub-col">` + mapFields(sec.fields.slice(6, 8)) + `</div>`; 
-                } else {
-                    html += mapFields(sec.fields);
-                }
-
+                
+                // Drop inputs directly into CSS Grid handled div
+                html += `<div class="fields-container ${sec.gridClass}">`;
+                html += sec.fields.map(f => generateFieldHTML(f)).join('');
                 html += `</div>`;
 
                 wrapper.innerHTML = html;
-                grid.appendChild(wrapper);
+                contentDiv.appendChild(wrapper);
             });
         }
 
