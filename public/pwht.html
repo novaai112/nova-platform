@@ -6,7 +6,7 @@
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <title>NOVA PWHT Analysis</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -26,8 +26,6 @@
             
             --primary: #ea580c; /* Orange 600 */
             --primary-hover: #c2410c; /* Orange 700 */
-            --success: #10b981;
-            --warning: #f59e0b;
             --text-main: #1e293b;
             --text-muted: #64748b;
         }
@@ -36,7 +34,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             cursor: default;
         }
 
@@ -104,7 +102,7 @@
         }
 
         .app-header {
-            padding: 1.5rem 2.5rem;
+            padding: 1.25rem 2.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -115,7 +113,7 @@
         }
 
         .app-header h1 {
-            font-size: 1.25rem; font-weight: 800; letter-spacing: 2px;
+            font-size: 1.2rem; font-weight: 800; letter-spacing: 2px;
             text-transform: uppercase; color: var(--text-main);
             text-shadow: none;
         }
@@ -125,10 +123,10 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-top: 1px solid rgba(255, 255, 255, 0.9);
             color: var(--text-main);
-            padding: 0.6rem 1.25rem;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
             cursor: pointer;
@@ -144,13 +142,13 @@
             color: var(--primary);
         }
 
-        .form-body { padding: 3rem; position: relative; z-index: 2; }
+        .form-body { padding: 2.5rem 3rem; position: relative; z-index: 2; }
 
         /* ======== PROFESSIONAL GRID LAYOUT SYSTEM ======== */
         .grid-layout { 
             display: grid; 
             grid-template-columns: repeat(3, minmax(250px, 1fr)); 
-            gap: 2.5rem; 
+            gap: 2rem; 
             align-items: start;
         }
 
@@ -164,30 +162,30 @@
         .fields-container {
             display: flex;
             flex-direction: column;
-            gap: 1.2rem;
+            gap: 1rem;
         }
 
         .sub-col {
             display: flex;
             flex-direction: column;
-            gap: 1.2rem;
+            gap: 1rem;
         }
 
         .section-pwht .fields-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
+            gap: 2rem;
         }
 
         .section-load .fields-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 2.5rem;
+            gap: 2rem;
         }
 
         .col-title {
-            color: var(--text-main); font-weight: 700; font-size: 0.9rem;
-            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2rem;
+            color: var(--text-main); font-weight: 800; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem;
             display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
         }
         .col-title::after {
@@ -199,66 +197,84 @@
         .form-group.hidden { display: none !important; }
 
         .form-label {
-            display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; font-weight: 600;
-            color: var(--text-main); margin-bottom: 0.6rem; text-shadow: none;
+            display: block; font-size: 0.75rem; font-weight: 700;
+            color: var(--text-main); margin-bottom: 0.3rem; padding-left: 0.2rem;
+            text-shadow: none;
         }
 
         .badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 24px; height: 24px; border-radius: 6px; font-size: 0.8rem; font-weight: 800;
+            width: 22px; height: 22px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;
             color: var(--primary); background: rgba(234, 88, 12, 0.1);
             border: 1px solid rgba(234, 88, 12, 0.2);
             box-shadow: none;
         }
 
+        /* COMPACT INPUT BOXES */
         .glass-input, .glass-select {
-            width: 100%; padding: 0.85rem 1rem; background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 10px; font-size: 0.9rem; color: var(--text-main); transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; font-weight: 500;
+            width: 100%; 
+            height: 36px; /* Reduced Height */
+            padding: 0.4rem 0.75rem; /* Reduced Padding */
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.1); 
+            border-top: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 8px; 
+            font-size: 0.8rem; /* Smaller Font */
+            color: var(--text-main); 
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); 
+            cursor: pointer; 
+            font-weight: 600;
         }
         .glass-select option { background: #ffffff; color: var(--text-main); }
         .glass-input:focus, .glass-select:focus {
             outline: none; border-color: rgba(234, 88, 12, 0.6); background: #ffffff;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(234, 88, 12, 0.15);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(234, 88, 12, 0.15);
         }
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
 
         .input-addon-group {
-            display: flex; align-items: center; background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 10px; transition: all 0.3s ease; overflow: hidden;
+            display: flex; align-items: center; 
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.1); 
+            border-top: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            overflow: hidden;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            height: 36px; /* Matched compact height */
         }
         .input-addon-group:focus-within { 
             border-color: rgba(234, 88, 12, 0.6); 
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px rgba(234, 88, 12, 0.15); 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(234, 88, 12, 0.15); 
             background: #ffffff; 
         }
-        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; }
+        .input-addon-group .glass-input { 
+            border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
+        }
         .addon {
-            padding: 0 1rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700;
+            padding: 0 0.75rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
             background: rgba(0, 0, 0, 0.04); border-left: 1px solid rgba(0, 0, 0, 0.1);
             height: 100%; display: flex; align-items: center; white-space: nowrap;
         }
 
         .action-area {
-            margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(0, 0, 0, 0.08);
+            margin-top: 2.5rem; padding-top: 2.5rem; border-top: 1px solid rgba(0, 0, 0, 0.08);
             display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
         }
 
         .btn-submit {
             background: linear-gradient(135deg, rgba(234, 88, 12, 0.9) 0%, rgba(194, 65, 12, 0.9) 100%);
             border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
-            color: white; padding: 1.2rem 4rem; border-radius: 12px; font-weight: 700; font-size: 1rem;
+            color: white; padding: 1rem 4rem; border-radius: 10px; font-weight: 800; font-size: 0.95rem;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 10px 25px rgba(234, 88, 12, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
             letter-spacing: 1.5px; backdrop-filter: blur(15px); text-transform: uppercase;
         }
         .btn-submit:hover {
-            transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 88, 12, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
+            transform: translateY(-3px); box-shadow: 0 15px 35px rgba(234, 88, 12, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
             background: linear-gradient(135deg, rgba(234, 88, 12, 1) 0%, rgba(154, 52, 18, 1) 100%);
         }
 
@@ -309,11 +325,10 @@
             border: 1px solid rgba(255, 255, 255, 0.15); 
             z-index: 1;
             box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
-            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .modern-box h2 {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 8px;
@@ -321,21 +336,21 @@
         }
 
         .modern-box p {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #a0a0a0;
             margin-bottom: 40px;
-            font-weight: 400;
+            font-weight: 600;
         }
 
         .btn-modern {
             display: inline-block;
-            padding: 12px 35px;
-            border-radius: 12px;
+            padding: 10px 30px;
+            border-radius: 10px;
             background: #ffffff;
             color: #000000;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
             cursor: pointer;
@@ -407,7 +422,6 @@
                 {
                     title: "1. Project",
                     fields: [
-                        { name: "name", label: "System Name:", type: "text", value: "Local PWHT Analysis" },
                         { name: "component", label: "Component:", type: "select", options: ["Shell to Shell", "Shell to Head", "Shell to Shell with Tubesheet", "Shell to Cone"], value: "Shell to Shell" },
                         { name: "mat_name", label: "Material Name:", type: "text", value: "SA-516-GR-70" }
                     ]
@@ -439,9 +453,7 @@
             ]
         };
 
-        // Advanced regex to parse labels and units perfectly, handling multiple parenthesis
         function parseLabelAndUnit(rawLabel) {
-            // Match up to the final parenthesis for unit extraction
             const match = rawLabel.match(/(.*)\(([^)]+)\):?$/);
             if (match) {
                 return { label: match[1].trim(), unit: match[2].trim() };
@@ -510,19 +522,17 @@
                 let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
                 html += `<div class="fields-container">`;
 
-                // Sub-group handling for clean grid layouts
                 if (sectionKey === 'pwht') {
-                    // Split PWHT design (6 fields) into 2 logical columns (3 fields each)
+                    // Split PWHT design into 2 columns
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 3)) + `</div>`;
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(3)) + `</div>`;
                 } else if (sectionKey === 'load') {
-                    // Split Load Condition (8 fields) into 4 logical columns (2 fields each) for horizontal flow
+                    // Split Load Condition into 4 columns to perfectly fit the parameters
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 2)) + `</div>`;
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(2, 4)) + `</div>`; 
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(4, 6)) + `</div>`; 
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(6, 8)) + `</div>`; 
                 } else {
-                    // Project section
                     html += mapFields(sec.fields);
                 }
 
@@ -533,12 +543,11 @@
             });
         }
 
-        // Action to trigger the overlay modal
         function showSolvingModal() {
             document.getElementById('solvingModal').classList.add('active');
         }
 
-        // Initialize application on load
+        // Initialize application
         renderForm();
     </script>
 </body>
