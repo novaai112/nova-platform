@@ -5,7 +5,7 @@ import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -127,7 +127,6 @@ export default function App() {
       if (session) {
         setupUser(session.user);
         fetchJobs();
-        // Redirect to dashboard immediately if session exists on refresh
         setCurrentView('dashboard');
       }
       setIsInitializing(false);
@@ -149,14 +148,13 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ROUTE GUARD: Redirects to login if trying to access secure views without auth
+  // ROUTE GUARD
   useEffect(() => {
     if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
       setCurrentView('login');
     }
   }, [currentView, isLoggedIn, isInitializing]);
 
-  // Silently refresh the session to check if Admin changed the user_metadata
   const checkApprovalStatus = async () => {
     const { data, error } = await supabase.auth.refreshSession();
     if (data?.session?.user) {
@@ -164,28 +162,25 @@ export default function App() {
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
       
       if (isApprovedStatus) {
-        setupUser(user); // This updates the UI immediately
+        setupUser(user); 
         showNotification("Account Approved! You can now submit analysis jobs.", "success");
       }
     }
   };
 
-  // Polling to update jobs real-time AND check approval status
   useEffect(() => {
     const interval = setInterval(() => {
       if (isLoggedIn) {
         fetchJobs();
-        
-        // If the user isn't approved yet, keep checking their status in the background
         if (!currentUser.isApproved) {
           checkApprovalStatus();
         }
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000); 
     
-    // We add currentUser.isApproved to the dependencies so the interval updates when they get approved
     return () => clearInterval(interval);
   }, [isLoggedIn, currentUser.isApproved]);
+
   const setupUser = (user) => {
       const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
@@ -202,7 +197,6 @@ export default function App() {
         isApproved: isApprovedStatus
       });
       
-      // Save for bellow.html to use
       localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
     };
@@ -288,7 +282,7 @@ export default function App() {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
     setAiSetupResponse("");
-    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle or Bellow analysis based on scenario. Format with bullet points.";
+    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow, or Local PWHT analysis based on scenario. Format with bullet points.";
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: aiSetupPrompt }] }], systemInstruction);
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
@@ -585,7 +579,7 @@ export default function App() {
         name: jobName,
         type: selectedJobType,
         status: 'Pending',
-        price: selectedJobType === 'Nozzle Analysis' ? 6000 : 48000
+        price: selectedJobType === 'Nozzle Analysis' ? 6000 : selectedJobType === 'Bellow Analysis' ? 48000 : 15000 
       };
 
       try {
@@ -611,8 +605,10 @@ export default function App() {
   : jobs.filter(j => {
       if (jobFilter === 'Bellow Analysis') return j.type.includes('Bellow');
       if (jobFilter === 'Nozzle Analysis') return j.type.includes('Nozzle');
+      if (jobFilter === 'Local PWHT') return j.type.includes('PWHT');
       return j.type === jobFilter;
     });
+
   const stats = {
     total: filteredJobs.length,
     completed: filteredJobs.filter(j => j.status === 'Completed').length,
@@ -620,6 +616,7 @@ export default function App() {
     pending: filteredJobs.filter(j => j.status === 'Pending').length,
     failed: filteredJobs.filter(j => j.status === 'Failed').length,
   };
+
   const calculatePayments = () => {
     let subtotal = jobs.reduce((acc, job) => acc + Number(job.price), 0);
     return { unpaid: subtotal * 1.18, paid: 0, total: subtotal * 1.18 };
@@ -1160,25 +1157,18 @@ export default function App() {
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
-    // Safely extract dynamic data from the database JSON
     const geom = selectedJobDetails.geometry_data || {};
     const runs = Array.isArray(geom.runs) ? geom.runs : [];
     
     const upsetSelected = geom.upset_selected === 'Yes';
     
-    // Determine the Input Method explicitly:
-    // If backend doesn't explicitly save 'inputMethod', we infer it. If 'pdfName' exists, it's a PDF upload.
     const isManual = geom.inputMethod === 'manual' || (!geom.pdfName && !geom.pdfUrl && geom.inputMethod !== 'pdf');
     
-    // In the Python backend:
-    // If upsetSelected === 'No', runs[0] is Hydrotest.
-    // If upsetSelected === 'Yes', runs contains 4 Upset Cases. (hydro_temp is saved inside runs as T_amb)
     let hydroRun = {};
     let upsetCases = [];
 
     if (upsetSelected) {
         upsetCases = runs;
-        // The backend doesn't save hydro_p in upset cases, but it saves T_amb.
         hydroRun = { T_amb: runs.length > 0 ? runs[0].T_amb : undefined };
     } else {
         hydroRun = runs.length > 0 ? runs[0] : {};
@@ -1186,8 +1176,6 @@ export default function App() {
 
     const codeEdition = geom.ui_code_edition || '2025';
     
-    // Format fallbacks for Display
-    // If it's saved in geom (frontend passing), use that. Otherwise use run data.
     const displayHydroP = geom.shellPressure ? `${geom.shellPressure} MPa` : (hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A');
     const displayHydroT = geom.shellTemp ? `${geom.shellTemp} °C` : (hydroRun.T_amb !== undefined ? `${hydroRun.T_amb} °C` : 'N/A');
 
@@ -1349,9 +1337,7 @@ export default function App() {
             </button>
             <button 
               onClick={() => { 
-                // Set the Job ID so Step 2 knows which job to update!
                 localStorage.setItem('nova_job_id', selectedJobDetails.id);
-                // Redirect locally (safer than hardcoding the vercel URL)
                 window.location.href = '/bellow2.html'; 
               }}
               className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
@@ -1455,7 +1441,7 @@ export default function App() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[1000px] mx-auto mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1100px] mx-auto mb-10">
             <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Nozzle Analysis</h3>
               {currentUser.isApproved ? (
@@ -1469,6 +1455,7 @@ export default function App() {
                 </button>
               )}
             </div>
+            
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Bellow Analysis</h3>
               {currentUser.isApproved ? (
@@ -1483,6 +1470,24 @@ export default function App() {
                 </button>
               )}
             </div>
+
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
+              </h3>
+              {currentUser.isApproved ? (
+                <button 
+                  onClick={() => window.location.href = 'https://nova-analysis.vercel.app/pwht.html'} 
+                  className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Locked
+                </button>
+              )}
+            </div>
+
             <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
               <div>
                 <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
@@ -1503,6 +1508,7 @@ export default function App() {
               <option value={`All Analysis (${jobs.length})`}>All Analysis ({jobs.length})</option>
               <option value="Nozzle Analysis">Nozzle Analysis</option>
               <option value="Bellow Analysis">Bellow Analysis</option>
+              <option value="Local PWHT">Local PWHT</option>
             </select>
           </div>
 
@@ -1592,7 +1598,7 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSubmitJobOpen(false)}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden animate-in zoom-in-95 relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-              <div className={`p-6 text-white font-extrabold flex justify-between items-center bg-gradient-to-r ${selectedJobType === 'Nozzle Analysis' ? 'from-emerald-600/90 to-emerald-500/90' : 'from-blue-600/90 to-blue-500/90'} backdrop-blur-md`}>
+              <div className={`p-6 text-white font-extrabold flex justify-between items-center bg-gradient-to-r ${selectedJobType === 'Nozzle Analysis' ? 'from-emerald-600/90 to-emerald-500/90' : selectedJobType === 'Local PWHT' ? 'from-orange-600/90 to-orange-500/90' : 'from-blue-600/90 to-blue-500/90'} backdrop-blur-md`}>
                 <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Plus className="w-6 h-6" /> New {selectedJobType}</span>
                 <button onClick={() => setIsSubmitJobOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5" /></button>
               </div>
@@ -1630,7 +1636,7 @@ export default function App() {
 
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsSubmitJobOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
-                  <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : 'glass-btn-blue'}`}>Submit</button>
+                  <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : selectedJobType === 'Local PWHT' ? 'glass-btn-orange' : 'glass-btn-blue'}`}>Submit</button>
                 </div>
               </form>
             </div>
@@ -1986,7 +1992,15 @@ export default function App() {
           position: relative;
           overflow: hidden;
         }
-        .glass-btn-blue::after, .glass-btn-green::after {
+        .glass-btn-orange {
+          background: linear-gradient(135deg, rgba(234, 88, 12, 0.85), rgba(194, 65, 12, 0.85));
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        .glass-btn-blue::after, .glass-btn-green::after, .glass-btn-orange::after {
           content: '';
           position: absolute;
           top: 0; left: -100%;
@@ -1995,7 +2009,7 @@ export default function App() {
           transform: skewX(-20deg);
           transition: left 0.7s ease;
         }
-        .glass-btn-blue:hover::after, .glass-btn-green:hover::after {
+        .glass-btn-blue:hover::after, .glass-btn-green:hover::after, .glass-btn-orange:hover::after {
           left: 200%;
         }
       `}</style>
