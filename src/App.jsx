@@ -1487,7 +1487,22 @@ export default function App() {
                 </button>
               )}
             </div>
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+            
+
+            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+              <div>
+                <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
+                  <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
+                </h3>
+                <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
+              </div>
+              <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
+                <Sparkles className="w-4 h-4" /> ✨ Smart Setup
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
                 <Flame className="w-6 h-6 text-orange-500" /> ASME Plus
               </h3>
@@ -1503,19 +1518,6 @@ export default function App() {
                 </button>
               )}
             </div>
-
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-              <div>
-                <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
-                  <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
-                </h3>
-                <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
-              </div>
-              <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
-                <Sparkles className="w-4 h-4" /> ✨ Smart Setup
-              </button>
-            </div>
-          </div>
 
         <div className="glass-panel rounded-[2rem] p-8 shadow-sm mb-8">
           <div className="flex flex-col items-center justify-between gap-4 mb-8 sm:flex-row">
