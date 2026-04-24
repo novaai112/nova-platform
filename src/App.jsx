@@ -1495,7 +1495,7 @@ export default function App() {
               {currentUser.isApproved ? (
                 <button 
                   onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
-                  className="glass-btn-emerald w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                  className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
                   Submit New Job
                 </button>
               ) : (
