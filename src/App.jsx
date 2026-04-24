@@ -1487,6 +1487,22 @@ export default function App() {
                 </button>
               )}
             </div>
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Flame className="w-6 h-6 text-orange-500" /> ASME Plus
+              </h3>
+              {currentUser.isApproved ? (
+                <button 
+                  onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
+                  className="glass-btn-cyan w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Locked
+                </button>
+              )}
+            </div>
 
             <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
               <div>
