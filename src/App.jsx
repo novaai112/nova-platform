@@ -1488,22 +1488,29 @@ export default function App() {
               )}
             </div>
             
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
-              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                <Flame className="w-6 h-6 text-orange-500" /> ASME Plus
-              </h3>
-              {currentUser.isApproved ? (
-                <button 
-                  onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
-                  className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
-                  Add Material
-                </button>
-              ) : (
-                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                  <Lock className="w-4 h-4" /> Locked
-                </button>
-              )}
-            </div>
+            <div className="bg-white border border-gray-300 rounded-md p-6 text-center shadow-sm flex flex-col justify-center">
+            <h3 className="mb-5 text-lg font-bold text-gray-800 flex flex-col items-center gap-2">
+              <Flame className="w-6 h-6 text-orange-600" /> 
+              ASME Plus
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
+                className="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-semibold text-sm py-2.5 px-4 rounded border border-orange-700 transition-colors duration-150 shadow-sm"
+              >
+                Add Material
+              </button>
+            ) : (
+              <button 
+                disabled 
+                className="w-full bg-gray-100 text-gray-500 font-semibold text-sm py-2.5 px-4 rounded border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Lock className="w-4 h-4 text-gray-400" /> 
+                Locked
+              </button>
+            )}
+          </div>
             
 
             <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
