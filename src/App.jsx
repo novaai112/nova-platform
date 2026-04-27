@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { supabaseJob } from './supabaseClient';
-import { 
+import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff,  Database, Flame
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -1488,26 +1488,20 @@ export default function App() {
               )}
             </div>
             
-            <div className="bg-white border border-gray-300 rounded-md p-6 text-center shadow-sm flex flex-col justify-center">
-            <h3 className="mb-5 text-lg font-bold text-gray-800 flex flex-col items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-600" /> 
-              ASME Plus
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Database className="w-6 h-6 text-orange-500" /> ASME Materials
             </h3>
             
             {currentUser.isApproved ? (
               <button 
                 onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
-                className="w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-semibold text-sm py-2.5 px-4 rounded border border-orange-700 transition-colors duration-150 shadow-sm"
-              >
-                Add Material
+                className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                Open Database
               </button>
             ) : (
-              <button 
-                disabled 
-                className="w-full bg-gray-100 text-gray-500 font-semibold text-sm py-2.5 px-4 rounded border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Lock className="w-4 h-4 text-gray-400" /> 
-                Locked
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
               </button>
             )}
           </div>
