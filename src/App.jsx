@@ -5,7 +5,7 @@ import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame, Waves
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -1456,21 +1456,23 @@ export default function App() {
               )}
             </div>
             
-            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.15)] transition-all">
-              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Bellow Analysis</h3>
-              {currentUser.isApproved ? (
-                <button 
-                  onClick={() => window.location.href = '/bellow.html'} 
-                  className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
-                  Submit New Job
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = '/bellow.html'} 
+                className="glass-btn-green w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                Submit New Job
               </button>
-              ) : (
-                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                  <Lock className="w-4 h-4" /> Locked
-                </button>
-              )}
-            </div>
-
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
             <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
                 <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
