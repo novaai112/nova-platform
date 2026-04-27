@@ -1441,23 +1441,20 @@ export default function App() {
             </div>
           )}
 
-          <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
-          <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-            <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
-          </h3>
-          
-          {currentUser.isApproved ? (
-            <button 
-              onClick={() => window.location.href = '/nozzle.html'} 
-              className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
-              Submit New Job
-            </button>
-          ) : (
-            <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-              <Lock className="w-4 h-4" /> Locked
-            </button>
-          )}
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1100px] mx-auto mb-10">
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,163,74,0.15)] transition-all">
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm">Nozzle Analysis</h3>
+              {currentUser.isApproved ? (
+                <button onClick={() => window.location.href = '/nozzle.html'} 
+                  className="glass-btn-green w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Locked
+                </button>
+              )}
+            </div>
             
             <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
