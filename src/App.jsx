@@ -5,7 +5,7 @@ import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff,  Database, Flame
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
