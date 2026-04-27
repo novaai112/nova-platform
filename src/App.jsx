@@ -1488,15 +1488,15 @@ export default function App() {
               )}
             </div>
             
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Database className="w-6 h-6 text-orange-500" /> ASME Materials
+              <Database className="w-6 h-6 text-blue-600" /> ASME Materials
             </h3>
             
             {currentUser.isApproved ? (
               <button 
                 onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
-                className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
                 Open Database
               </button>
             ) : (
