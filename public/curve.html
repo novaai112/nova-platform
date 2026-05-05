@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
     <title>NOVA Stress-Strain Curve Generator</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js for Professional Graphing -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
-            /* Light Professional Theme */
-            --bg-base: #f8fafc;
+            /* Light Professional Glassmorphic Theme */
+            --bg-base: #f1f5f9;
             --bg-glow-1: #bae6fd; 
             --bg-glow-2: #e0e7ff; 
             --bg-glow-3: #fef08a; 
 
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.45) 100%);
-            --glass-card: rgba(255, 255, 255, 0.6);
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
             --glass-border: rgba(255, 255, 255, 0.8);
             --glass-highlight: rgba(255, 255, 255, 1);
-            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
+            --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), 
                             inset 0 1px 1px rgba(255, 255, 255, 0.9), 
                             inset 0 -1px 2px rgba(0, 0, 0, 0.02);
             
             --primary: #2563eb; 
-            --primary-hover: #1d4ed8; 
-            --text-main: #1e293b;
+            --primary-hover: #1d4ed8;
+            --accent: #ea580c; 
+            --text-main: #0f172a;
             --text-muted: #64748b;
         }
 
@@ -45,30 +46,31 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2rem;
+            padding: 3rem 2rem;
             position: relative;
             overflow-x: hidden;
         }
 
         /* Ambient Background Animations */
         .ambient-orb {
-            position: fixed;
+            position: absolute;
             border-radius: 50%;
-            filter: blur(140px);
+            filter: blur(150px);
             z-index: -1;
-            opacity: 0.8;
+            opacity: 0.7;
             animation: float 20s infinite alternate ease-in-out;
         }
-        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
-        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
-        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
+        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -10vh; left: -15vw; }
+        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -10vh; right: -10vw; animation-delay: -5s; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 30vh; left: 30vw; animation-delay: -10s; opacity: 0.5; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(40px, 60px) scale(1.1); }
-            100% { transform: translate(-30px, 40px) scale(0.9); }
+            50% { transform: translate(30px, 50px) scale(1.05); }
+            100% { transform: translate(-20px, 30px) scale(0.95); }
         }
 
+        /* Main Glass Container - Fluid Height */
         .glass-container {
             background: var(--glass-bg);
             backdrop-filter: blur(40px);
@@ -76,11 +78,11 @@
             border: 1px solid var(--glass-border);
             border-top: 1px solid var(--glass-highlight);
             border-left: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
+            border-radius: 24px;
             box-shadow: var(--glass-shadow);
             width: 100%;
             max-width: 1400px;
-            overflow: hidden;
+            overflow: visible; /* Changed to visible to support sticky children */
             position: relative;
             display: flex;
             flex-direction: column;
@@ -88,16 +90,17 @@
         }
 
         .app-header {
-            padding: 1.25rem 2.5rem;
+            padding: 1.5rem 2.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%);
+            border-radius: 24px 24px 0 0;
         }
 
         .app-header h1 {
-            font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
+            font-size: 1.25rem; font-weight: 800; letter-spacing: 2px;
             text-transform: uppercase; color: var(--text-main);
         }
 
@@ -106,9 +109,9 @@
             border: 1px solid rgba(0, 0, 0, 0.08);
             border-top: 1px solid rgba(255, 255, 255, 1);
             color: var(--text-main);
-            padding: 0.5rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
             font-weight: 700;
             transition: all 0.3s;
             cursor: pointer;
@@ -122,50 +125,55 @@
             box-shadow: 0 6px 15px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
         }
 
-        /* 2-Column Layout */
+        /* 2-Column Layout - Perfectly Proportioned */
         .workspace {
             display: grid;
-            grid-template-columns: 400px 1fr;
-            min-height: 700px;
+            grid-template-columns: 450px 1fr;
+            align-items: start; /* Crucial for sticky right panel */
         }
 
-        /* Left Panel - Scrollable Form */
+        /* Left Panel - Stretches Naturally, No Scrollbar */
         .left-panel {
-            padding: 2rem;
+            padding: 2.5rem;
             border-right: 1px solid rgba(0,0,0,0.06);
-            background: rgba(255,255,255,0.4);
-            overflow-y: auto;
-            max-height: 800px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 0 0 0 24px;
         }
 
-        /* Right Panel - Chart */
+        /* Right Panel - Sticky to stay in view */
         .right-panel {
             padding: 2.5rem;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            background: rgba(255,255,255,0.2);
-            position: relative;
+            position: sticky;
+            top: 2rem; /* Sticks 2rem from the top of the viewport */
+            height: calc(100vh - 4rem); /* Takes full view height minus padding */
+            max-height: 850px;
         }
 
         .chart-container {
             width: 100%;
             height: 100%;
-            max-height: 700px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
             border: 1px solid rgba(0,0,0,0.05);
             border-top: 1px solid rgba(255,255,255,1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #curveChart {
+            flex-grow: 1;
+            width: 100%;
         }
 
         /* Form Elements */
         .col-title {
             color: var(--text-main); font-weight: 800; font-size: 0.85rem;
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.8rem;
             display: flex; align-items: center; gap: 0.75rem;
         }
         .col-title::after {
@@ -173,25 +181,29 @@
             background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%);
         }
 
-        .form-group { margin-bottom: 1.2rem; transition: all 0.3s ease; opacity: 1; }
+        .form-group { margin-bottom: 1.4rem; transition: all 0.3s ease; opacity: 1; }
+        
+        /* Strictly Hide Elements */
         .form-group.hidden, .dynamic-group.hidden { 
             display: none !important; 
             opacity: 0;
             pointer-events: none;
+            margin: 0;
+            padding: 0;
         }
 
         .form-label {
             display: block; font-size: 0.75rem; font-weight: 700;
-            color: var(--text-main); margin-bottom: 0.4rem; padding-left: 0.1rem;
+            color: var(--text-main); margin-bottom: 0.5rem; padding-left: 0.2rem;
             text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;
         }
 
         .glass-input, .glass-select {
-            width: 100%; height: 36px; padding: 0 0.8rem; 
+            width: 100%; height: 40px; padding: 0 1rem; 
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.12); 
             border-top: 1px solid rgba(255, 255, 255, 1);
-            border-radius: 8px; font-size: 0.85rem; color: var(--text-main); 
+            border-radius: 8px; font-size: 0.9rem; color: var(--text-main); 
             transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
             font-weight: 600;
         }
@@ -205,7 +217,7 @@
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid rgba(0, 0, 0, 0.12); 
             border-top: 1px solid rgba(255, 255, 255, 1);
-            border-radius: 8px; overflow: hidden; height: 36px; 
+            border-radius: 8px; overflow: hidden; height: 40px; 
         }
         .input-addon-group:focus-within { 
             border-color: rgba(37, 99, 235, 0.7); 
@@ -215,26 +227,26 @@
             border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
         }
         .addon {
-            padding: 0 0.75rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
+            padding: 0 1rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 800;
             background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
             height: 100%; display: flex; align-items: center;
         }
 
-        /* Compact Generator Button */
+        /* Compact, Centered Generator Button */
         .btn-submit {
             background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%);
             border: 1px solid rgba(255, 255, 255, 0.4); 
             border-top: 1px solid rgba(255, 255, 255, 0.8);
             color: white; 
-            padding: 0.75rem 1.5rem; 
-            border-radius: 8px; 
+            padding: 0.8rem 2rem; 
+            border-radius: 10px; 
             font-weight: 800; 
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             cursor: pointer; 
             transition: all 0.3s; 
             width: 100%; 
-            max-width: 250px; /* Small, proportionate size */
-            margin: 2rem auto 0 auto; /* Centered */
+            max-width: 220px; /* Small, proportionate size */
+            margin: 2.5rem auto 0 auto; /* Centered with top margin */
             display: block;
             box-shadow: 0 8px 15px rgba(37, 99, 235, 0.25); 
             text-transform: uppercase; 
@@ -242,32 +254,25 @@
         }
         .btn-submit:hover {
             transform: translateY(-2px); 
-            box-shadow: 0 12px 20px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.35);
         }
 
         .result-box {
             background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 1rem; border-radius: 8px; margin-top: 1.5rem; color: #065f46;
-            font-size: 0.85rem; font-weight: 700; display: none; text-align: center;
+            padding: 1.2rem; border-radius: 10px; margin-top: 1.5rem; color: #065f46;
+            font-size: 0.9rem; font-weight: 700; display: none; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
 
-        /* Custom Scrollbar for Left Panel */
-        .left-panel::-webkit-scrollbar { width: 6px; }
-        .left-panel::-webkit-scrollbar-track { background: transparent; }
-        .left-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-        .left-panel::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
-
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
             .workspace { grid-template-columns: 1fr; }
-            .left-panel { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); max-height: unset; overflow-y: visible; }
-            .right-panel { padding: 1.5rem; }
-            .chart-container { padding: 1rem; }
+            .left-panel { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); border-radius: 0; }
+            .right-panel { position: relative; height: 600px; top: 0; padding: 2.5rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Animated Ambient Background -->
     <div class="ambient-orb orb-1"></div>
     <div class="ambient-orb orb-2"></div>
     <div class="ambient-orb orb-3"></div>
@@ -280,7 +285,7 @@
 
         <div class="workspace">
             
-            <!-- Left Side: User Input Panel -->
+            <!-- Left Side: User Input Panel (Stretches fluidly, no scroll) -->
             <div class="left-panel">
                 <div class="col-title">Base Parameters</div>
                 
@@ -309,7 +314,7 @@
 
                 <!-- Dynamic Group: True Stress -->
                 <div id="group_true" class="dynamic-group">
-                    <div class="col-title" style="margin-top: 2rem;">True Curve Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">True Curve Variables</div>
                     <div class="form-group">
                         <label class="form-label">Yield Stress (σy)</label>
                         <div class="input-addon-group"><input type="number" class="glass-input" id="t_ys" value="195"><span class="addon">MPa</span></div>
@@ -334,7 +339,7 @@
 
                 <!-- Dynamic Group: Cyclic -->
                 <div id="group_cyclic" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2rem;">Cyclic Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Cyclic Variables</div>
                     <div class="form-group">
                         <label class="form-label">Type of Cyclic Curve</label>
                         <select class="glass-select" id="c_type">
@@ -370,7 +375,7 @@
 
                 <!-- Dynamic Group: Isochronous -->
                 <div id="group_iso" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2rem;">Isochronous Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Isochronous Variables</div>
                     <div class="form-group">
                         <label class="form-label">Material Category</label>
                         <select class="glass-select" id="i_matcat">
@@ -422,7 +427,7 @@
                         <div class="input-addon-group"><input type="number" class="glass-input" id="i_fp" value="0.2" step="0.01"><span class="addon">µ</span></div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Curve Fitting Factor (m₂)</label>
+                        <label class="form-label">Factor of Curve Fitting Exponent (m₂)</label>
                         <input type="number" class="glass-input" id="i_fcfe" value="0.6" step="0.01">
                     </div>
                     <div class="form-group">
@@ -441,7 +446,7 @@
 
                 <!-- Dynamic Group: Tangent Modulus -->
                 <div id="group_tangent" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2rem;">Tangent Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Tangent Variables</div>
                     <div class="form-group">
                         <label class="form-label">Yield Stress (σy)</label>
                         <div class="input-addon-group"><input type="number" class="glass-input" id="tm_ys" value="195"><span class="addon">MPa</span></div>
@@ -469,7 +474,7 @@
                 <div id="resultBox" class="result-box"></div>
             </div>
 
-            <!-- Right Side: Professional Chart Area -->
+            <!-- Right Side: Professional Sticky Chart Area -->
             <div class="right-panel">
                 <div class="chart-container">
                     <canvas id="curveChart"></canvas>
@@ -483,25 +488,22 @@
         // Store Chart Instance
         let myChart = null;
 
-        // UI Logic to Strictly Hide/Show Groups
+        // Strict Toggle Logic: Hide non-selected completely
         function toggleGroups() {
-            // Force hide all dynamic groups
             document.querySelectorAll('.dynamic-group').forEach(el => {
                 el.classList.add('hidden');
             });
             
-            // Un-hide the explicitly selected group
             const type = document.getElementById('curve_type').value;
             if (type === 'True') document.getElementById('group_true').classList.remove('hidden');
             if (type === 'Cyclic') document.getElementById('group_cyclic').classList.remove('hidden');
             if (type === 'Isochronous') document.getElementById('group_iso').classList.remove('hidden');
             if (type === 'Tangent') document.getElementById('group_tangent').classList.remove('hidden');
             
-            // Hide result box if parameters change
             document.getElementById('resultBox').style.display = 'none';
         }
 
-        // Initialize groups correctly on load
+        // Run on mount
         window.addEventListener('DOMContentLoaded', () => {
             toggleGroups();
             renderChart([], [], 'Stress-Strain Curve (Awaiting Generation)');
@@ -574,6 +576,7 @@
 
             let stress = [];
             let p_strain = [];
+            const num = 500; // Increased resolution for smoother curve
 
             if (curveType === "Tangent") {
                 const ys = parseFloat(document.getElementById('tm_ys').value);
@@ -607,7 +610,6 @@
 
                 let tanmod = Math.abs(1 / ((1/elast) + d1 + d2 + d3 + d4));
 
-                // Plotting Bilinear line for Tangent Modulus representation
                 stress = [0, ys, uts];
                 p_strain = [0, 0, (uts - ys) / tanmod]; 
                 
@@ -617,7 +619,6 @@
 
             } else {
                 let ys, elast, uts, fitt, fact, R, m2, true_uts;
-                const num = 250;
                 let raw_stress = [];
                 let raw_pstrain = [];
 
@@ -791,14 +792,30 @@
                 }
             }
 
-            renderChart(p_strain, stress, `${curveType} Stress-Strain Curve for ${materialName} at ${tempVal}°C`);
+            renderChart(p_strain, stress, `${curveType} Stress-Strain Curve for ${materialName} at ${tempVal}°C`, curveType === "Tangent");
         }
 
-        // Render Professional Chart using Chart.js
-        function renderChart(xData, yData, title) {
-            const ctx = document.getElementById('curveChart').getContext('2d');
+        // Render Professional Enhanced Chart
+        function renderChart(xData, yData, title, isTangent = false) {
+            const canvas = document.getElementById('curveChart');
+            const ctx = canvas.getContext('2d');
             
             if (myChart) myChart.destroy();
+
+            // Create beautiful gradient fill
+            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement.clientHeight || 400);
+            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.4)');
+            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
+
+            // Highlight special points (Yield and UTS)
+            let pointColors = yData.map((y, i) => {
+                if (y === Math.max(...yData) || i === 1) return '#ea580c';
+                return 'transparent';
+            });
+            let pointRadii = yData.map((y, i) => {
+                if (y === Math.max(...yData) || i === 1) return 5;
+                return 0;
+            });
 
             myChart = new Chart(ctx, {
                 type: 'line',
@@ -808,12 +825,14 @@
                         label: 'Stress (MPa)',
                         data: yData,
                         borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        backgroundColor: gradient,
                         borderWidth: 3,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: pointColors,
+                        pointRadius: pointRadii,
+                        pointHoverRadius: 7,
                         fill: true,
-                        tension: 0.2
+                        tension: isTangent ? 0 : 0.4 // Smooth bezier curve unless Tangent
                     }]
                 },
                 options: {
@@ -825,13 +844,16 @@
                             display: true,
                             text: title,
                             font: { family: 'Plus Jakarta Sans', size: 16, weight: 'bold' },
-                            color: '#1e293b',
-                            padding: { bottom: 20 }
+                            color: '#0f172a',
+                            padding: { bottom: 25 }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                            titleFont: { family: 'Plus Jakarta Sans' },
-                            bodyFont: { family: 'Plus Jakarta Sans' },
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 13 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 14, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
                             callbacks: {
                                 label: function(context) {
                                     return `Stress: ${context.parsed.y.toFixed(2)} MPa`;
@@ -845,21 +867,20 @@
                     scales: {
                         x: {
                             type: 'linear',
-                            title: { display: true, text: 'Plastic Strain (mm/mm)', font: { family: 'Plus Jakarta Sans', size: 14, weight: '600' }, color: '#64748b' },
-                            grid: { color: 'rgba(0,0,0,0.05)' },
-                            ticks: { color: '#64748b' }
+                            title: { display: true, text: 'Plastic Strain (mm/mm)', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
+                            grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } }
                         },
                         y: {
-                            title: { display: true, text: 'Stress (MPa)', font: { family: 'Plus Jakarta Sans', size: 14, weight: '600' }, color: '#64748b' },
-                            grid: { color: 'rgba(0,0,0,0.05)' },
-                            ticks: { color: '#64748b' },
+                            title: { display: true, text: 'Stress (MPa)', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
+                            grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } },
                             beginAtZero: true
                         }
                     }
                 }
             });
         }
-
     </script>
 </body>
 </html>
