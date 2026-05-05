@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <title>NOVA Stress-Strain Curve Generator</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for Professional Graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-base: #f8fafc;
+            --bg-glow-1: #bae6fd; 
+            --bg-glow-2: #e0e7ff; 
+            --bg-glow-3: #fef08a; 
+
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.4) 100%);
+            --glass-card: rgba(255, 255, 255, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --glass-highlight: rgba(255, 255, 255, 1);
+            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
+                            inset 0 1px 1px rgba(255, 255, 255, 0.9), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.02);
+            
+            --primary: #2563eb; 
+            --primary-hover: #1d4ed8; 
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.8;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
+        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 60px) scale(1.1); }
+            100% { transform: translate(-30px, 40px) scale(0.9); }
+        }
+
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            width: 100%;
+            max-width: 1400px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .app-header {
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+        }
+
+        .app-header h1 {
+            font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--text-main);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            color: var(--text-main);
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 6px rgba(0,0,0,0.03);
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* 2-Column Split Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            min-height: 700px;
+        }
+
+        .left-panel {
+            padding: 2rem;
+            border-right: 1px solid rgba(0,0,0,0.06);
+            background: rgba(255,255,255,0.3);
+            overflow-y: auto;
+            max-height: 800px;
+        }
+
+        .right-panel {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background: rgba(255,255,255,0.5);
+            position: relative;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 100%;
+            max-height: 600px;
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .col-title {
+            color: var(--text-main); font-weight: 800; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .col-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%);
+        }
+
+        .form-group { margin-bottom: 1.2rem; transition: all 0.3s ease; }
+        .form-group.hidden { display: none !important; }
+
+        .form-label {
+            display: block; font-size: 0.75rem; font-weight: 700;
+            color: var(--text-main); margin-bottom: 0.4rem; padding-left: 0.1rem;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .glass-input, .glass-select {
+            width: 100%; height: 36px; padding: 0 0.8rem; 
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 8px; font-size: 0.85rem; color: var(--text-main); 
+            transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
+            font-weight: 600;
+        }
+        .glass-input:focus, .glass-select:focus {
+            outline: none; border-color: rgba(37, 99, 235, 0.7); background: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .input-addon-group {
+            display: flex; align-items: center; 
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 8px; overflow: hidden; height: 36px; 
+        }
+        .input-addon-group:focus-within { 
+            border-color: rgba(37, 99, 235, 0.7); 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15); 
+        }
+        .input-addon-group .glass-input { 
+            border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
+        }
+        .addon {
+            padding: 0 0.75rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
+            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%; display: flex; align-items: center;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            color: white; padding: 0.9rem 100%; border-radius: 8px; font-weight: 800; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 1.5rem;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25); text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px); box-shadow: 0 15px 25px rgba(37, 99, 235, 0.35);
+        }
+
+        .result-box {
+            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 1rem; border-radius: 8px; margin-top: 1rem; color: #065f46;
+            font-size: 0.85rem; font-weight: 700; display: none;
+        }
+
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: 1fr; }
+            .left-panel { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); max-height: unset; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="glass-container">
+        <header class="app-header">
+            <h1>NOVA Stress-Strain Generator</h1>
+            <button class="btn-glass" onclick="window.location.reload()">Reset Setup</button>
+        </header>
+
+        <div class="workspace">
+            <!-- Left Side: Variables -->
+            <div class="left-panel">
+                <div class="col-title">Base Parameters</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Curve Material Name</label>
+                    <input type="text" class="glass-input" id="mat_name" value="SA-516-Gr-60">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Temperature</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="temperature" value="200">
+                        <span class="addon">°C</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Type of Stress-Strain Curve</label>
+                    <select class="glass-select" id="curve_type" onchange="toggleGroups()">
+                        <option value="True">True Stress-Strain Curve</option>
+                        <option value="Cyclic">Cyclic Stress-Strain Curve</option>
+                        <option value="Isochronous">Isochronous Stress-Strain Curve</option>
+                        <option value="Tangent">Tangent Modulus Stress-Strain Curve</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Group: True Stress -->
+                <div id="group_true" class="dynamic-group">
+                    <div class="col-title" style="margin-top: 2rem;">True Curve Variables</div>
+                    <div class="form-group">
+                        <label class="form-label">Yield Stress (σy)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="t_ys" value="195"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ultimate Tensile Stress (σuts)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="t_uts" value="415"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modulus of Elasticity (Ey)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="t_e" value="195"><span class="addon">GPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fitting Parameter (εp)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="t_fp" value="0.2" step="0.01"><span class="addon">µ</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Factor of Curve Fitting Exponent (m₂)</label>
+                        <input type="number" class="glass-input" id="t_fcfe" value="0.6" step="0.01">
+                    </div>
+                </div>
+
+                <!-- Dynamic Group: Cyclic -->
+                <div id="group_cyclic" class="dynamic-group hidden">
+                    <div class="col-title" style="margin-top: 2rem;">Cyclic Curve Variables</div>
+                    <div class="form-group">
+                        <label class="form-label">Type of Cyclic Curve</label>
+                        <select class="glass-select" id="c_type">
+                            <option value="Amplitude">Strain Amplitude</option>
+                            <option value="Range">Strain Range</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Yield Stress (σy)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="c_ys" value="195"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ultimate Tensile Stress (σuts)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="c_uts" value="415"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modulus of Elasticity (Ey)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="c_e" value="195"><span class="addon">GPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cyclic Strain Hardening Exponent</label>
+                        <input type="number" class="glass-input" id="c_she" value="0.134" step="0.001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cyclic Strength Coeff.</label>
+                        <input type="number" class="glass-input" id="c_csc" value="105.6" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Factor of Curve Fitting Exponent</label>
+                        <input type="number" class="glass-input" id="c_fcfe" value="0.6" step="0.01">
+                    </div>
+                </div>
+
+                <!-- Dynamic Group: Isochronous -->
+                <div id="group_iso" class="dynamic-group hidden">
+                    <div class="col-title" style="margin-top: 2rem;">Isochronous Variables</div>
+                    <div class="form-group">
+                        <label class="form-label">Material Category</label>
+                        <select class="glass-select" id="i_matcat">
+                            <option value="Carbon steel(σuts≤379MPa)" selected>Carbon steel(σuts≤379MPa)</option>
+                            <option value="Carbon steel(σuts=413MPa)">Carbon steel(σuts=413MPa)</option>
+                            <option value="Carbon steel(σuts=448MPa)">Carbon steel(σuts=448MPa)</option>
+                            <option value="Carbon steel(σuts=483MPa)">Carbon steel(σuts=483MPa)</option>
+                            <option value="Carbon steel(σuts≥517MPa)">Carbon steel(σuts≥517MPa)</option>
+                            <option value="C-0.5Mo">C–0.5Mo</option>
+                            <option value="1.25Cr-0.5Mo(N&T)">1.25Cr–0.5Mo(N&T)</option>
+                            <option value="1.25Cr-0.5Mo(Annealed)">1.25Cr–0.5Mo(Annealed)</option>
+                            <option value="2.25Cr-1Mo(N&T)">2.25Cr–1Mo(N&T)</option>
+                            <option value="2.25Cr-1Mo(Annealed)">2.25Cr–1Mo(Annealed)</option>
+                            <option value="2.25Cr-1Mo(Q&T)">2.25Cr–1Mo(Q&T)</option>
+                            <option value="2.25Cr-1Mo-V">2.25Cr–1Mo-V</option>
+                            <option value="5Cr-0.5Mo">5Cr–0.5Mo</option>
+                            <option value="9Cr-1Mo">9Cr–1Mo</option>
+                            <option value="9Cr-1Mo-V">9Cr–1Mo–V</option>
+                            <option value="12Cr">12Cr</option>
+                            <option value="Types 304 and 304H">Types 304 and 304H</option>
+                            <option value="Types 316 and 316H">Types 316 and 316H</option>
+                            <option value="Type 321">Type 321</option>
+                            <option value="Type 321H">Type 321H</option>
+                            <option value="Type 347">Type 347</option>
+                            <option value="Type 347H">Type 347H</option>
+                            <option value="Alloy 800">Alloy 800</option>
+                            <option value="Alloy 800H">Alloy 800H</option>
+                            <option value="Alloy 800HT">Alloy 800HT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Yield Stress (σy)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_ys" value="195"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ultimate Tensile Stress (σuts)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_uts" value="415"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modulus of Elasticity (Ey)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_e" value="195"><span class="addon">GPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Point (%)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_ep" value="2"><span class="addon">%</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fitting Parameter (εp)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_fp" value="0.2" step="0.01"><span class="addon">µ</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Factor of Curve Fitting Exponent (m₂)</label>
+                        <input type="number" class="glass-input" id="i_fcfe" value="0.6" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Creep Strain Rate (Δ_Ω^sr)</label>
+                        <input type="number" class="glass-input" id="i_csr" value="-0.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Creep Ductility (Δ_Ω^cd)</label>
+                        <input type="number" class="glass-input" id="i_cd" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Time (Hrs)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="i_time" value="100"><span class="addon">Hrs</span></div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Group: Tangent Modulus -->
+                <div id="group_tangent" class="dynamic-group hidden">
+                    <div class="col-title" style="margin-top: 2rem;">Tangent Modulus Variables</div>
+                    <div class="form-group">
+                        <label class="form-label">Yield Stress (σy)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="tm_ys" value="195"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ultimate Tensile Stress (σuts)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="tm_uts" value="415"><span class="addon">MPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modulus of Elasticity (Ey)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="tm_e" value="195"><span class="addon">GPa</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fitting Parameter (εp)</label>
+                        <div class="input-addon-group"><input type="number" class="glass-input" id="tm_fp" value="0.2" step="0.01"><span class="addon">µ</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Factor of Curve Fitting Exponent</label>
+                        <input type="number" class="glass-input" id="tm_fcfe" value="0.6" step="0.01">
+                    </div>
+                </div>
+
+                <button class="btn-submit" onclick="generateCurve()">Generate Curve</button>
+                <div id="resultBox" class="result-box"></div>
+            </div>
+
+            <!-- Right Side: Chart -->
+            <div class="right-panel">
+                <div class="chart-container">
+                    <canvas id="curveChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store Chart Instance
+        let myChart = null;
+
+        // UI Toggles
+        function toggleGroups() {
+            document.querySelectorAll('.dynamic-group').forEach(el => el.classList.add('hidden'));
+            const type = document.getElementById('curve_type').value;
+            if (type === 'True') document.getElementById('group_true').classList.remove('hidden');
+            if (type === 'Cyclic') document.getElementById('group_cyclic').classList.remove('hidden');
+            if (type === 'Isochronous') document.getElementById('group_iso').classList.remove('hidden');
+            if (type === 'Tangent') document.getElementById('group_tangent').classList.remove('hidden');
+            
+            document.getElementById('resultBox').style.display = 'none';
+        }
+
+        // Isochronous Material Parameters Lookup
+        function getOmegaParameters(material) {
+            let p = { A0:0.0, A1:0.0, A2:0.0, A3:0.0, A4:0.0, B0:0.0, B1:0.0, B2:0.0, B3:0.0, B4:0.0 };
+            const mat = material.replace("&amp;", "&").trim();
+
+            if (mat.includes("379") && mat.includes("Carbon")) {
+                p = {A0: -16.0, A1: 20410.67, A2: -388.827, A3: -544.7574, A4: -254.3703, B0: -1.0, B1: 1490.383, B2: 680.4895, B3: -543.968, B4: 97.21306};
+            } else if (mat.includes("413") && mat.includes("Carbon")) {
+                p = {A0: -16.0, A1: 20446.47, A2: -416.6975, A3: -541.5552, A4: -234.6082, B0: -1.0, B1: 1600.815, B2: 511.5982, B3: -447.6203, B4: 79.94735};
+            } else if (mat.includes("448") && mat.includes("Carbon")) {
+                p = {A0: -16.0, A1: 20483.34, A2: -446.7459, A3: -536.9449, A4: -215.1184, B0: -1.0, B1: 1712.316, B2: 340.4734, B3: -349.8646, B4: 62.40938};
+            } else if (mat.includes("483") && mat.includes("Carbon")) {
+                p = {A0: -16.0, A1: 20521.59, A2: -479.4071, A3: -530.8094, A4: -195.9077, B0: -1.0, B1: 1825.205, B2: 166.7357, B3: -250.5836, B4: 44.59233};
+            } else if (mat.includes("517") && mat.includes("Carbon")) {
+                p = {A0: -16.0, A1: 20561.4, A2: -514.9966, A3: -522.9561, A4: -177.0129, B0: -1.0, B1: 1939.644, B2: -9.930231, B3: -149.5848, B4: 26.45936};
+            } else if (mat.includes("C") && mat.includes("0.5Mo") && !mat.includes("Cr")) {
+                p = {A0: -19.5, A1: 72225.994, A2: -67342.772, A3: 29513.586, A4: -4444.444, B0: -1.3, B1: -844.556, B2: 7647.419, B3: -5295.063, B4: 1111.111};
+            } else if (mat.includes("1.25") && mat.includes("N&T")) {
+                p = {A0: -23.35, A1: 78573.68, A2: -84539.684, A3: 45002.826, A4: -8216.667, B0: -4.4, B1: 34513.656, B2: -53539.661, B3: 31180.205, B4: -5905.556};
+            } else if (mat.includes("1.25") && mat.includes("Annealed")) {
+                p = {A0: -23.5, A1: 31207.07, A2: -1322.206, A3: -919.459, A4: -213.333, B0: -2.65, B1: 1992.72, B2: 2790.216, B3: -1271.435, B4: 92.222};
+            } else if (mat.includes("2.25") && mat.includes("N&T")) {
+                p = {A0: -21.56, A1: 35380.252, A2: -4736.24, A3: -736.539, A4: -41.033, B0: -1.12, B1: 1781.266, B2: 3115.806, B3: -2796.219, B4: 631.189};
+            } else if (mat.includes("2.25") && mat.includes("Annealed")) {
+                p = {A0: -21.86, A1: 31477.07, A2: -2468.902, A3: -905.361, A4: -110.722, B0: -1.85, B1: 5027.509, B2: -1125.445, B3: -149.319, B4: 31.222};
+            } else if (mat.includes("2.25") && mat.includes("Q&T")) {
+                p = {A0: -21.56, A1: 35397.52, A2: -4760.427, A3: -756.862, A4: -40.117, B0: -1.12, B1: 1798.534, B2: 3091.619, B3: -2789.542, B4: 632.106};
+            } else if (mat.includes("2.25") && mat.includes("-V")) {
+                p = {A0: -25.0, A1: 29117.17, A2: -202.661, A3: 628.984, A4: 650.711, B0: -2.52, B1: 3205.108, B2: 355.458, B3: -538.837, B4: 163.814};
+            } else if (mat.includes("5Cr")) {
+                p = {A0: 22.4, A1: 31476.822, A2: -2468.85, A3: -905.403, A4: -110.706, B0: -1.4, B1: 3408.189, B2: -772.302, B3: -2.026, B4: 49.683};
+            } else if (mat.includes("9Cr") && mat.includes("-V")) {
+                p = {A0: -34.0, A1: 41345.225, A2: -49.107, A3: -305.413, A4: -636.761, B0: -2.0, B1: 4322.741, B2: -25.212, B3: -536.401, B4: 114.011};
+            } else if (mat.includes("9Cr")) {
+                p = {A0: -22.55, A1: 31244.705, A2: -2468.179, A3: -757.951, A4: -78.111, B0: -2.05, B1: 4171.728, B2: -630.067, B3: -155.446, B4: 46.566};
+            } else if (mat.includes("12Cr")) {
+                p = {A0: -30.29, A1: 54722.48, A2: -32175.19, A3: 16309.74, A4: 3268.889, B0: -3.29, B1: 965.868, B2: 4831.865, B3: -2217.482, B4: 266.667};
+            } else if (mat.includes("304")) {
+                p = {A0: -19.17, A1: 37917.404, A2: -12389.369, A3: 4112.12, A4: -936.222, B0: -3.4, B1: 10521.296, B2: -7444.834, B3: 3266.587, B4: -552.0};
+            } else if (mat.includes("316")) {
+                p = {A0: -18.9, A1: 42100.704, A2: -14280.229, A3: 2521.626, A4: -148.424, B0: -4.163, B1: 17663.885, B2: -12055.19, B3: 2857.364, B4: -37.424};
+            } else if (mat.includes("321H")) {
+                p = {A0: -18.4, A1: 31820.393, A2: -6787.544, A3: 2491.705, A4: -716.667, B0: -3.4, B1: 8202.508, B2: -3889.4, B3: 1595.902, B4: -272.222};
+            } else if (mat.includes("321")) {
+                p = {A0: -19.0, A1: 31820.393, A2: -6787.544, A3: 2491.705, A4: -716.667, B0: -3.4, B1: 8202.508, B2: -3889.4, B3: 1595.902, B4: -272.222};
+            } else if (mat.includes("347H")) {
+                p = {A0: -17.7, A1: 29285.061, A2: -4806.587, A3: 1854.193, A4: -626.667, B0: -3.65, B1: 5856.415, B2: -234.09, B3: -195.309, B4: 55.556};
+            } else if (mat.includes("347")) {
+                p = {A0: -18.3, A1: 29285.061, A2: -4806.587, A3: 1854.193, A4: -626.667, B0: -3.5, B1: 5856.415, B2: -234.09, B3: -195.309, B4: 55.556};
+            } else if (mat.includes("800HT")) {
+                p = {A0: -20.25, A1: 39620.306, A2: -7884.749, A3: 23.068, A4: -0.023, B0: -3.4, B1: 9058.896, B2: -4046.733, B3: 749.26, B4: 45.789};
+            } else if (mat.includes("800H")) {
+                p = {A0: -18.8, A1: 39901.744, A2: -13133.314, A3: 3265.527, A4: -551.667, B0: -3.6, B1: 10520.571, B2: -7443.314, B3: 3265.527, B4: -551.667};
+            } else if (mat.includes("800")) {
+                p = {A0: -19.4, A1: 39901.744, A2: -13133.314, A3: 3265.527, A4: -551.667, B0: -3.6, B1: 10520.571, B2: -7443.314, B3: 3265.527, B4: -551.667};
+            }
+            return p;
+        }
+
+        // Logic Processor
+        function generateCurve() {
+            const curveType = document.getElementById('curve_type').value;
+            const tempVal = parseFloat(document.getElementById('temperature').value);
+            const materialName = document.getElementById('mat_name').value;
+
+            let stress = [];
+            let p_strain = [];
+
+            if (curveType === "Tangent") {
+                const ys = parseFloat(document.getElementById('tm_ys').value);
+                const elast = parseFloat(document.getElementById('tm_e').value) * 1000.0;
+                const uts = parseFloat(document.getElementById('tm_uts').value);
+                const fitt = parseFloat(document.getElementById('tm_fp').value);
+                const fact = parseFloat(document.getElementById('tm_fcfe').value);
+
+                let R = ys / uts;
+                let eys = 0.002;
+                let K = 1.5 * Math.pow(R, 1.5) - 0.5 * Math.pow(R, 2.5) - Math.pow(R, 3.5);
+                let a = Math.log(R) + (fitt - eys);
+                let b = Math.log(Math.log(1 + fitt) / Math.log(1 + eys));
+                if (b === 0) b = 1e-6;
+                let m1 = a / b;
+                let m2 = fact * (1 - R);
+
+                let A1 = ys * (1 + eys) / Math.pow(Math.log(1 + eys), m1);
+                let A2 = uts;
+                if (m2 > 0) A2 = uts * Math.exp(m2) / Math.pow(m2, m2);
+
+                let truestress = ys;
+                let H1 = K * (uts - ys);
+                let H2 = 2 * (truestress - (ys + K * (uts - ys)));
+                let H = H1 !== 0 ? H2 / H1 : 0;
+
+                let d1 = Math.pow(truestress, (1/m1)-1) / (2 * m1 * Math.pow(A1, 1/m1));
+                let d2 = ((Math.pow(truestress, 1/m1) * (2/(K*(uts-ys))) * (1 - Math.pow(Math.tanh(H), 2))) + ((Math.pow(truestress, (1/m1)-1) * Math.tanh(H)) / m1)) / (-2 * Math.pow(A1, 1/m1));
+                let d3 = Math.pow(truestress, (1/m2)-1) / (2 * m2 * Math.pow(A2, 1/m2));
+                let d4 = ((Math.pow(truestress, 1/m2) * (2/(K*(uts-ys))) * (1 - Math.pow(Math.tanh(H), 2))) + ((Math.pow(truestress, (1/m2)-1) * Math.tanh(H)) / m2)) / (2 * Math.pow(A2, 1/m2));
+
+                let tanmod = Math.abs(1 / ((1/elast) + d1 + d2 + d3 + d4));
+
+                // Plotting Bilinear line for Tangent Modulus representation
+                stress = [0, ys, uts];
+                p_strain = [0, 0, (uts - ys) / tanmod]; 
+                
+                const rb = document.getElementById('resultBox');
+                rb.style.display = 'block';
+                rb.innerHTML = `Calculated Tangent Modulus: ${tanmod.toFixed(2)} MPa<br>Yield Stress: ${ys} MPa`;
+
+            } else {
+                let ys, elast, uts, fitt, fact, R, m2, true_uts;
+                const num = 250;
+                let raw_stress = [];
+                let raw_pstrain = [];
+
+                if (curveType === "True") {
+                    ys = parseFloat(document.getElementById('t_ys').value);
+                    elast = parseFloat(document.getElementById('t_e').value) * 1000.0;
+                    uts = parseFloat(document.getElementById('t_uts').value);
+                    fitt = parseFloat(document.getElementById('t_fp').value);
+                    fact = parseFloat(document.getElementById('t_fcfe').value);
+
+                    R = ys / uts;
+                    let eys = 0.002;
+                    let K = 1.5 * Math.pow(R, 1.5) - 0.5 * Math.pow(R, 2.5) - Math.pow(R, 3.5);
+                    let H1 = K * (uts - ys);
+                    let a = Math.log(R) + (fitt - eys);
+                    let b = Math.log(Math.log(1 + fitt) / Math.log(1 + eys));
+                    if (b === 0) b = 1e-6;
+                    let m1 = a / b;
+                    m2 = fact * (1 - R);
+
+                    let A1_param = ys * (1 + eys) / Math.pow(Math.log(1 + eys), m1);
+                    let A2_param = uts;
+                    if(m2 > 0) A2_param = uts * Math.exp(m2) / Math.pow(m2, m2);
+                    true_uts = uts * Math.exp(m2);
+
+                    for (let i = 0; i <= num; i++) {
+                        let pts = ys + (i/num) * (true_uts - ys);
+                        let H2 = 2 * (pts - (ys + K * (uts - ys)));
+                        let H = H1 !== 0 ? H2 / H1 : 0;
+                        let e3 = Math.max(0, pts / A2_param);
+                        let e2 = m2 !== 0 ? Math.pow(e3, 1 / m2) : 0;
+                        let e4 = Math.max(0, pts / A1_param);
+                        let e1 = m1 !== 0 ? Math.pow(e4, 1 / m1) : 0;
+                        
+                        let y1 = e1 * 0.5 * (1 - Math.tanh(H));
+                        let y2 = e2 * 0.5 * (1 + Math.tanh(H));
+                        let et = (pts / elast) + y1 + y2;
+                        let ps = Math.max(0, et - (pts / elast));
+                        
+                        raw_stress.push(pts);
+                        raw_pstrain.push(ps);
+                    }
+                } 
+                else if (curveType === "Cyclic") {
+                    ys = parseFloat(document.getElementById('c_ys').value);
+                    elast = parseFloat(document.getElementById('c_e').value) * 1000.0;
+                    uts = parseFloat(document.getElementById('c_uts').value);
+                    let she = parseFloat(document.getElementById('c_she').value);
+                    let csc = parseFloat(document.getElementById('c_csc').value);
+                    fact = parseFloat(document.getElementById('c_fcfe').value);
+                    let cType = document.getElementById('c_type').value;
+
+                    R = ys / uts;
+                    m2 = fact * (1 - R);
+                    true_uts = uts * Math.exp(m2);
+
+                    for (let i = 0; i <= num; i++) {
+                        let pts = ys + (i/num) * (true_uts - ys);
+                        let ps = 0.0;
+                        if (cType === "Amplitude") {
+                            let eta = (pts/elast) + Math.pow(pts/csc, 1/she);
+                            ps = Math.max(0, eta - (pts/elast));
+                        } else {
+                            let er = (pts/elast) + 2 * Math.pow(pts/(2*csc), 1/she);
+                            ps = Math.max(0, er - (pts/elast));
+                        }
+                        raw_stress.push(pts);
+                        raw_pstrain.push(ps);
+                    }
+                }
+                else if (curveType === "Isochronous") {
+                    ys = parseFloat(document.getElementById('i_ys').value);
+                    elast = parseFloat(document.getElementById('i_e').value) * 1000.0;
+                    uts = parseFloat(document.getElementById('i_uts').value);
+                    let ep = parseFloat(document.getElementById('i_ep').value);
+                    fitt = parseFloat(document.getElementById('i_fp').value);
+                    fact = parseFloat(document.getElementById('i_fcfe').value);
+                    let csr = parseFloat(document.getElementById('i_csr').value);
+                    let cduc = parseFloat(document.getElementById('i_cd').value);
+                    let time = parseFloat(document.getElementById('i_time').value);
+                    let matcat = document.getElementById('i_matcat').value;
+
+                    R = ys / uts;
+                    m2 = fact * (1 - R);
+                    let eys = 0.002;
+                    true_uts = uts * Math.exp(m2);
+                    let strain_limit = ep / 100.0;
+
+                    let o = getOmegaParameters(matcat);
+                    let K = 1.5 * Math.pow(R, 1.5) - 0.5 * Math.pow(R, 2.5) - Math.pow(R, 3.5);
+                    let H1 = K * (uts - ys);
+                    let a = Math.log(R) + (fitt - eys);
+                    let b = Math.log(Math.log(1 + fitt) / Math.log(1 + eys));
+                    if (b === 0) b = 1e-6;
+                    let m1 = a / b;
+
+                    let A1_param = ys * (1 + eys) / Math.pow(Math.log(1 + eys), m1);
+                    let A2_param = uts;
+                    if(m2 > 0) A2_param = uts * Math.exp(m2) / Math.pow(m2, m2);
+
+                    for (let i = 0; i <= num; i++) {
+                        let pts = ys + (i/num) * (true_uts - ys);
+                        if(pts <= 0) pts = 1e-6;
+                        let H2 = 2 * (pts - (ys + K * (uts - ys)));
+                        
+                        let sl = Math.log10(pts);
+                        let omega_p2 = (o.B1 + o.B2*sl + o.B3*sl*sl + o.B4*sl*sl*sl) / (273 + tempVal);
+                        let omega = Math.pow(10, o.B0 + cduc + omega_p2);
+                        
+                        let eco_p2 = (o.A1 + o.A2*sl + o.A3*sl*sl + o.A4*sl*sl*sl) / (273 + tempVal);
+                        let eco = Math.pow(10, -(o.A0 + csr + eco_p2));
+                        
+                        let term = 1 - (eco * omega * time);
+                        if (term <= 1e-9) break;
+                        let ec = (-Math.log(term)) / omega;
+
+                        let H = H1 !== 0 ? H2 / H1 : 0;
+                        let e3 = Math.max(0, pts / A2_param);
+                        let e2 = m2 !== 0 ? Math.pow(e3, 1 / m2) : 0;
+                        let e4 = Math.max(0, pts / A1_param);
+                        let e1 = m1 !== 0 ? Math.pow(e4, 1 / m1) : 0;
+                        
+                        let y1 = e1 * 0.5 * (1 - Math.tanh(H));
+                        let y2 = e2 * 0.5 * (1 + Math.tanh(H));
+                        let et = (pts / elast) + y1 + y2 + ec;
+
+                        if (et >= strain_limit) {
+                            raw_stress.push(pts);
+                            raw_pstrain.push(Math.max(0, et - (pts/elast)));
+                            break;
+                        }
+
+                        raw_stress.push(pts);
+                        raw_pstrain.push(Math.max(0, et - (pts/elast)));
+                    }
+                }
+
+                // Filtering Monotonic Data
+                stress.push(ys);
+                p_strain.push(0.0);
+                for (let i=0; i<raw_stress.length; i++) {
+                    let s = raw_stress[i];
+                    let ps = raw_pstrain[i];
+                    if (s <= ys) continue;
+                    let last_ps = p_strain[p_strain.length - 1];
+                    let last_s = stress[stress.length - 1];
+
+                    if (ps > last_ps) {
+                        stress.push(s);
+                        p_strain.push(ps);
+                    } else if (s > last_s && ps <= last_ps) {
+                        p_strain.push(last_ps + 1.0e-7);
+                        stress.push(s);
+                    }
+                }
+
+                // Append Smooth Plateau
+                let final_target = 0.0;
+                if (curveType === "Isochronous") {
+                    final_target = p_strain[p_strain.length - 1] || 0.0;
+                } else {
+                    if (p_strain.length >= 2) {
+                        final_target = p_strain[p_strain.length - 1] + (p_strain[p_strain.length - 1] - p_strain[p_strain.length - 2]);
+                    } else if (p_strain.length === 1) {
+                        final_target = p_strain[p_strain.length - 1] * 1.05;
+                    }
+                }
+                if (final_target > p_strain[p_strain.length - 1]) {
+                    stress.push(stress[stress.length - 1]);
+                    p_strain.push(final_target);
+                }
+            }
+
+            renderChart(p_strain, stress, `${curveType} Stress-Strain Curve for ${materialName} at ${tempVal}°C`);
+        }
+
+        // Render Professional Chart
+        function renderChart(xData, yData, title) {
+            const ctx = document.getElementById('curveChart').getContext('2d');
+            
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xData,
+                    datasets: [{
+                        label: 'Stress (MPa)',
+                        data: yData,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: title,
+                            font: { family: 'Plus Jakarta Sans', size: 16, weight: 'bold' },
+                            color: '#1e293b',
+                            padding: { bottom: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                            titleFont: { family: 'Plus Jakarta Sans' },
+                            bodyFont: { family: 'Plus Jakarta Sans' },
+                            callbacks: {
+                                label: function(context) {
+                                    return `Stress: ${context.parsed.y.toFixed(2)} MPa`;
+                                },
+                                title: function(context) {
+                                    return `Strain: ${Number(context[0].label).toExponential(4)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Plastic Strain (mm/mm)', font: { family: 'Plus Jakarta Sans', size: 14, weight: '600' }, color: '#64748b' },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { color: '#64748b' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Stress (MPa)', font: { family: 'Plus Jakarta Sans', size: 14, weight: '600' }, color: '#64748b' },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { color: '#64748b' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Empty Chart Layout
+        window.onload = () => {
+            renderChart([], [], 'Stress-Strain Curve (Awaiting Generation)');
+        };
+
+    </script>
+</body>
+</html>
