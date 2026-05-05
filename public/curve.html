@@ -12,7 +12,7 @@
     
     <style>
         :root {
-            /* Light Professional Glassmorphic Theme */
+            /* Light Professional Glassmorphic Theme with Orange Accents */
             --bg-base: #f1f5f9;
             --bg-glow-1: #bae6fd; 
             --bg-glow-2: #e0e7ff; 
@@ -26,7 +26,6 @@
                             inset 0 -1px 2px rgba(0, 0, 0, 0.02);
             
             --primary: #2563eb; 
-            --primary-hover: #1d4ed8;
             --accent: #ea580c; 
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -70,7 +69,7 @@
             100% { transform: translate(-20px, 30px) scale(0.95); }
         }
 
-        /* Main Glass Container - Fluid Height */
+        /* Main Glass Container - Fluid and Proportionate Layout */
         .glass-container {
             background: var(--glass-bg);
             backdrop-filter: blur(40px);
@@ -82,11 +81,12 @@
             box-shadow: var(--glass-shadow);
             width: 100%;
             max-width: 1400px;
-            overflow: visible; /* Changed to visible to support sticky children */
+            overflow: visible; /* Supports sticky children without inner scrollbars */
             position: relative;
             display: flex;
             flex-direction: column;
             z-index: 10;
+            margin-top: 2rem;
         }
 
         .app-header {
@@ -119,20 +119,20 @@
         }
         .btn-glass:hover {
             background: rgba(255, 255, 255, 1);
-            border-color: var(--primary);
-            color: var(--primary);
+            border-color: var(--accent);
+            color: var(--accent);
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
+            box-shadow: 0 6px 15px rgba(234, 88, 12, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
         }
 
-        /* 2-Column Layout - Perfectly Proportioned */
+        /* 2-Column Split Layout - Proportionate and Fluid */
         .workspace {
             display: grid;
             grid-template-columns: 450px 1fr;
-            align-items: start; /* Crucial for sticky right panel */
+            align-items: start;
         }
 
-        /* Left Panel - Stretches Naturally, No Scrollbar */
+        /* Left Panel - Stretches Naturally based on selected variables, No Inner Scrollbar */
         .left-panel {
             padding: 2.5rem;
             border-right: 1px solid rgba(0,0,0,0.06);
@@ -140,14 +140,14 @@
             border-radius: 0 0 0 24px;
         }
 
-        /* Right Panel - Sticky to stay in view */
+        /* Right Panel - Sticky to remain in view */
         .right-panel {
             padding: 2.5rem;
             display: flex;
             flex-direction: column;
             position: sticky;
-            top: 2rem; /* Sticks 2rem from the top of the viewport */
-            height: calc(100vh - 4rem); /* Takes full view height minus padding */
+            top: 2rem;
+            height: calc(100vh - 4rem); /* Proportional viewport heightminus padding */
             max-height: 850px;
         }
 
@@ -170,7 +170,7 @@
             width: 100%;
         }
 
-        /* Form Elements */
+        /* Form Elements and Property List */
         .col-title {
             color: var(--text-main); font-weight: 800; font-size: 0.85rem;
             text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.8rem;
@@ -178,12 +178,12 @@
         }
         .col-title::after {
             content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%);
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.25) 0%, transparent 100%);
         }
 
         .form-group { margin-bottom: 1.4rem; transition: all 0.3s ease; opacity: 1; }
         
-        /* Strictly Hide Elements */
+        /* Strictly Hide Elements based on selected group */
         .form-group.hidden, .dynamic-group.hidden { 
             display: none !important; 
             opacity: 0;
@@ -232,9 +232,9 @@
             height: 100%; display: flex; align-items: center;
         }
 
-        /* Compact, Centered Generator Button */
+        /* Compact, Centered Generate Button - Website Proportioned Sizing */
         .btn-submit {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%);
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.95) 0%, rgba(194, 65, 12, 0.95) 100%);
             border: 1px solid rgba(255, 255, 255, 0.4); 
             border-top: 1px solid rgba(255, 255, 255, 0.8);
             color: white; 
@@ -245,16 +245,16 @@
             cursor: pointer; 
             transition: all 0.3s; 
             width: 100%; 
-            max-width: 220px; /* Small, proportionate size */
-            margin: 2.5rem auto 0 auto; /* Centered with top margin */
+            max-width: 220px; /* Small, proportionately small suited to website size */
+            margin: 2.5rem auto 0 auto; /* Centered, small suit on website size */
             display: block;
-            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.25); 
+            box-shadow: 0 8px 15px rgba(234, 88, 12, 0.25); 
             text-transform: uppercase; 
             letter-spacing: 1px;
         }
         .btn-submit:hover {
             transform: translateY(-2px); 
-            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 12px 25px rgba(234, 88, 12, 0.35);
         }
 
         .result-box {
@@ -273,6 +273,7 @@
 </head>
 <body>
 
+    <!-- Fluid and Fluid Length Glassial Background -->
     <div class="ambient-orb orb-1"></div>
     <div class="ambient-orb orb-2"></div>
     <div class="ambient-orb orb-3"></div>
@@ -285,9 +286,9 @@
 
         <div class="workspace">
             
-            <!-- Left Side: User Input Panel (Stretches fluidly, no scroll) -->
+            <!-- Left Side: User Input Panel (Stretches fluidly based on variables, no scrollbar) -->
             <div class="left-panel">
-                <div class="col-title">Base Parameters</div>
+                <div class="col-title">Step 1: Base Parameters</div>
                 
                 <div class="form-group">
                     <label class="form-label">Curve Material Name</label>
@@ -314,7 +315,7 @@
 
                 <!-- Dynamic Group: True Stress -->
                 <div id="group_true" class="dynamic-group">
-                    <div class="col-title" style="margin-top: 2.5rem;">True Curve Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Step 2: Dynamic Variables (Monotonic)</div>
                     <div class="form-group">
                         <label class="form-label">Yield Stress (σy)</label>
                         <div class="input-addon-group"><input type="number" class="glass-input" id="t_ys" value="195"><span class="addon">MPa</span></div>
@@ -339,7 +340,7 @@
 
                 <!-- Dynamic Group: Cyclic -->
                 <div id="group_cyclic" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2.5rem;">Cyclic Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Step 2: Dynamic Variables (Cyclic)</div>
                     <div class="form-group">
                         <label class="form-label">Type of Cyclic Curve</label>
                         <select class="glass-select" id="c_type">
@@ -360,11 +361,11 @@
                         <div class="input-addon-group"><input type="number" class="glass-input" id="c_e" value="195"><span class="addon">GPa</span></div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Strain Hardening Exponent</label>
+                        <label class="form-label">Strain Hardening Exponent (ncss)</label>
                         <input type="number" class="glass-input" id="c_she" value="0.134" step="0.001">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Cyclic Strength Coeff.</label>
+                        <label class="form-label">Cyclic Strength Coeff. (Kcss)</label>
                         <input type="number" class="glass-input" id="c_csc" value="105.6" step="0.1">
                     </div>
                     <div class="form-group">
@@ -375,7 +376,7 @@
 
                 <!-- Dynamic Group: Isochronous -->
                 <div id="group_iso" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2.5rem;">Isochronous Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Step 2: Dynamic Variables (Isochronous)</div>
                     <div class="form-group">
                         <label class="form-label">Material Category</label>
                         <select class="glass-select" id="i_matcat">
@@ -446,7 +447,7 @@
 
                 <!-- Dynamic Group: Tangent Modulus -->
                 <div id="group_tangent" class="dynamic-group hidden">
-                    <div class="col-title" style="margin-top: 2.5rem;">Tangent Variables</div>
+                    <div class="col-title" style="margin-top: 2.5rem;">Step 2: Dynamic Variables (Tangent)</div>
                     <div class="form-group">
                         <label class="form-label">Yield Stress (σy)</label>
                         <div class="input-addon-group"><input type="number" class="glass-input" id="tm_ys" value="195"><span class="addon">MPa</span></div>
@@ -464,12 +465,12 @@
                         <div class="input-addon-group"><input type="number" class="glass-input" id="tm_fp" value="0.2" step="0.01"><span class="addon">µ</span></div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Curve Fitting Factor</label>
+                        <label class="form-label">Curve Fitting Factor (m₂)</label>
                         <input type="number" class="glass-input" id="tm_fcfe" value="0.6" step="0.01">
                     </div>
                 </div>
 
-                <!-- Compact, Centered Generate Button -->
+                <!-- Compact, Centered Generate Button (Website proportioned sizing) -->
                 <button class="btn-submit" onclick="generateCurve()">Generate Curve</button>
                 <div id="resultBox" class="result-box"></div>
             </div>
@@ -488,28 +489,31 @@
         // Store Chart Instance
         let myChart = null;
 
-        // Strict Toggle Logic: Hide non-selected completely
+        // UI Toggle Logic: Hide non-selected dynamically
         function toggleGroups() {
+            // Hide all groups completely
             document.querySelectorAll('.dynamic-group').forEach(el => {
                 el.classList.add('hidden');
             });
             
+            // Show only neccessary selected variables
             const type = document.getElementById('curve_type').value;
             if (type === 'True') document.getElementById('group_true').classList.remove('hidden');
             if (type === 'Cyclic') document.getElementById('group_cyclic').classList.remove('hidden');
             if (type === 'Isochronous') document.getElementById('group_iso').classList.remove('hidden');
             if (type === 'Tangent') document.getElementById('group_tangent').classList.remove('hidden');
             
+            // Hide result box when setup changes
             document.getElementById('resultBox').style.display = 'none';
         }
 
         // Run on mount
         window.addEventListener('DOMContentLoaded', () => {
             toggleGroups();
-            renderChart([], [], 'Stress-Strain Curve (Awaiting Generation)');
+            renderChart([], [], 'UNIAXIAL TENSILE TEST DATA READOUT - AWAITING DATA');
         });
 
-        // Isochronous Material Parameters Lookup
+        // Isochronous Material Parameters Lookup (Translated from main.py)
         function getOmegaParameters(material) {
             let p = { A0:0.0, A1:0.0, A2:0.0, A3:0.0, A4:0.0, B0:0.0, B1:0.0, B2:0.0, B3:0.0, B4:0.0 };
             const mat = material.replace("&amp;", "&").trim();
@@ -568,7 +572,7 @@
             return p;
         }
 
-        // Logic Processor for Chart Data Generation
+        // Logic Processor (Translated engineering logic from Main.py)
         function generateCurve() {
             const curveType = document.getElementById('curve_type').value;
             const tempVal = parseFloat(document.getElementById('temperature').value);
@@ -576,7 +580,7 @@
 
             let stress = [];
             let p_strain = [];
-            const num = 500; // Increased resolution for smoother curve
+            const numPoints = 800; // Enhanced resolution for perfectly smooth curve
 
             if (curveType === "Tangent") {
                 const ys = parseFloat(document.getElementById('tm_ys').value);
@@ -610,6 +614,7 @@
 
                 let tanmod = Math.abs(1 / ((1/elast) + d1 + d2 + d3 + d4));
 
+                // Plotting Bilinear line for Tangent Modulus representation
                 stress = [0, ys, uts];
                 p_strain = [0, 0, (uts - ys) / tanmod]; 
                 
@@ -644,8 +649,8 @@
                     if(m2 > 0) A2_param = uts * Math.exp(m2) / Math.pow(m2, m2);
                     true_uts = uts * Math.exp(m2);
 
-                    for (let i = 0; i <= num; i++) {
-                        let pts = ys + (i/num) * (true_uts - ys);
+                    for (let i = 0; i <= numPoints; i++) {
+                        let pts = ys + (i/numPoints) * (true_uts - ys);
                         let H2 = 2 * (pts - (ys + K * (uts - ys)));
                         let H = H1 !== 0 ? H2 / H1 : 0;
                         let e3 = Math.max(0, pts / A2_param);
@@ -675,8 +680,8 @@
                     m2 = fact * (1 - R);
                     true_uts = uts * Math.exp(m2);
 
-                    for (let i = 0; i <= num; i++) {
-                        let pts = ys + (i/num) * (true_uts - ys);
+                    for (let i = 0; i <= numPoints; i++) {
+                        let pts = ys + (i/numPoints) * (true_uts - ys);
                         let ps = 0.0;
                         if (cType === "Amplitude") {
                             let eta = (pts/elast) + Math.pow(pts/csc, 1/she);
@@ -719,8 +724,8 @@
                     let A2_param = uts;
                     if(m2 > 0) A2_param = uts * Math.exp(m2) / Math.pow(m2, m2);
 
-                    for (let i = 0; i <= num; i++) {
-                        let pts = ys + (i/num) * (true_uts - ys);
+                    for (let i = 0; i <= numPoints; i++) {
+                        let pts = ys + (i/numPoints) * (true_uts - ys);
                         if(pts <= 0) pts = 1e-6;
                         let H2 = 2 * (pts - (ys + K * (uts - ys)));
                         
@@ -756,7 +761,7 @@
                     }
                 }
 
-                // Filtering Monotonic Data ensuring strict ascent
+                // Filtering Monotonic Data ensuring strict ascent for Chart.js
                 stress.push(ys);
                 p_strain.push(0.0);
                 for (let i=0; i<raw_stress.length; i++) {
@@ -770,12 +775,12 @@
                         stress.push(s);
                         p_strain.push(ps);
                     } else if (s > last_s && ps <= last_ps) {
-                        p_strain.push(last_ps + 1.0e-7);
+                        p_strain.push(last_ps + 1.0e-8);
                         stress.push(s);
                     }
                 }
 
-                // Append Smooth Plateau endpoint
+                // Append Smooth Plateau endpoint based on Main.py logic
                 let final_target = 0.0;
                 if (curveType === "Isochronous") {
                     final_target = p_strain[p_strain.length - 1] || 0.0;
@@ -792,28 +797,29 @@
                 }
             }
 
-            renderChart(p_strain, stress, `${curveType} Stress-Strain Curve for ${materialName} at ${tempVal}°C`, curveType === "Tangent");
+            renderChart(p_strain, stress, `${curveType} Stress-Strain Readout: ${materialName} @ ${tempVal}°C`, curveType === "Tangent");
         }
 
-        // Render Professional Enhanced Chart
-        function renderChart(xData, yData, title, isTangent = false) {
+        // Render Professional Enhanced Sticky Chart
+        function renderChart(xData, yData, title, isBilinear = false) {
             const canvas = document.getElementById('curveChart');
             const ctx = canvas.getContext('2d');
             
             if (myChart) myChart.destroy();
 
-            // Create beautiful gradient fill
-            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement.clientHeight || 400);
-            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.4)');
-            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
+            // Create beautiful gradient fill for an enhanced curve
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); // Primary blue
+            gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)'); // Transparent
 
-            // Highlight special points (Yield and UTS)
+            // Find key points for markers (Yield and UTS)
+            const maxY = Math.max(...yData);
             let pointColors = yData.map((y, i) => {
-                if (y === Math.max(...yData) || i === 1) return '#ea580c';
+                if (y === maxY || i === 1) return '#ea580c'; // Accent Orange for key points
                 return 'transparent';
             });
             let pointRadii = yData.map((y, i) => {
-                if (y === Math.max(...yData) || i === 1) return 5;
+                if (y === maxY || i === 1) return 5;
                 return 0;
             });
 
@@ -824,20 +830,21 @@
                     datasets: [{
                         label: 'Stress (MPa)',
                         data: yData,
-                        borderColor: '#2563eb',
+                        borderColor: '#2563eb', // Primary Blue
                         backgroundColor: gradient,
-                        borderWidth: 3,
+                        borderWidth: isBilinear ? 3 : 2.5,
                         pointBackgroundColor: pointColors,
                         pointBorderColor: pointColors,
                         pointRadius: pointRadii,
                         pointHoverRadius: 7,
                         fill: true,
-                        tension: isTangent ? 0 : 0.4 // Smooth bezier curve unless Tangent
+                        tension: isBilinear ? 0 : 0.35 // Perfectly smooth unless Tangent/Bilinear
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: { top: 10 } },
                     plugins: {
                         legend: { display: false },
                         title: {
@@ -859,6 +866,7 @@
                                     return `Stress: ${context.parsed.y.toFixed(2)} MPa`;
                                 },
                                 title: function(context) {
+                                    // Use raw numerical label for precise tooltip display
                                     return `Strain: ${Number(context[0].label).toExponential(4)}`;
                                 }
                             }
@@ -867,12 +875,12 @@
                     scales: {
                         x: {
                             type: 'linear',
-                            title: { display: true, text: 'Plastic Strain (mm/mm)', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
+                            title: { display: true, text: 'Plastic Strain [mm mm^-1]', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
                             grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] },
                             ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } }
                         },
                         y: {
-                            title: { display: true, text: 'Stress (MPa)', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
+                            title: { display: true, text: 'Stress [MPa]', font: { family: 'Plus Jakarta Sans', size: 13, weight: '700' }, color: '#64748b' },
                             grid: { color: 'rgba(0,0,0,0.04)', borderDash: [5, 5] },
                             ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } },
                             beginAtZero: true
@@ -881,6 +889,7 @@
                 }
             });
         }
+
     </script>
 </body>
 </html>
