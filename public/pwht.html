@@ -204,7 +204,7 @@
         .pwht-grid { grid-template-columns: repeat(3, 1fr); }
         .load-grid { grid-template-columns: repeat(3, 1fr); } 
 
-        .form-group { transition: all 0.3s ease; }
+        .form-group { transition: all 0.3s ease; position: relative; }
         .form-group.hidden { display: none !important; }
 
         .form-label {
@@ -226,7 +226,7 @@
             color: var(--text-main); 
             transition: all 0.3s ease;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
-            cursor: pointer; 
+            cursor: text; 
             font-weight: 600;
         }
         .glass-select option { background: #ffffff; color: var(--text-main); font-size: 0.75rem; }
@@ -342,6 +342,39 @@
         .btn-modern:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3); background: #e0e0e0; }
         .btn-modern:active { transform: scale(0.98); }
 
+        /* MATERIAL AUTOCOMPLETE STYLES */
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover {
+            background: rgba(234, 88, 12, 0.1);
+            color: var(--primary);
+            padding-left: 20px;
+        }
+
         /* Responsive design defaults */
         @media (max-width: 900px) {
             .project-grid { grid-template-columns: 1fr; }
@@ -372,7 +405,8 @@
             <input type="hidden" name="active_analysis" id="active_analysis" value="pwht">
 
             <div id="form-content" style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
-                </div>
+                <!-- Content dynamically injected here -->
+            </div>
 
             <div class="action-area">
                 <button class="btn-submit" type="button" onclick="showSolvingModal()">Solve in Ansys</button>
@@ -442,7 +476,7 @@
             if (!f) return '';
             const parsed = parseLabelAndUnit(f.label);
 
-            let html = `<div class="form-group">
+            let html = `<div class="form-group" style="position: relative;">
                             <label class="form-label">${parsed.label}</label>`;
             
             if (f.type === 'select') {
@@ -454,13 +488,16 @@
                 html += `</select>`;
             } 
             else {
+                const isMatName = (f.name === "mat_name");
+                const matEvents = isMatName ? `autocomplete="off" oninput="handleMaterialSearch(this)"` : '';
+
                 if (parsed.unit) {
                     html += `<div class="input-addon-group">
-                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}">
+                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>
                                 <span class="addon">${parsed.unit}</span>
                              </div>`;
                 } else {
-                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}">`;
+                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>`;
                 }
             }
             html += `</div>`;
@@ -483,24 +520,17 @@
 
                 let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
                 
-                // Drop inputs directly into CSS Grid handled div
                 html += `<div class="fields-container ${sec.gridClass}">`;
                 
                 if (sec.title.includes("Load Condition")) {
-                    // Split the 8 Load Condition inputs into 3 columns 
-                    // Col 1: items 0, 1, 2
-                    // Col 2: items 3, 4, 5
-                    // Col 3: items 6, 7
                     html += `<div class="sub-col">` + sec.fields.slice(0, 3).map(f => generateFieldHTML(f)).join('') + `</div>`;
                     html += `<div class="sub-col">` + sec.fields.slice(3, 6).map(f => generateFieldHTML(f)).join('') + `</div>`;
                     html += `<div class="sub-col">` + sec.fields.slice(6, 8).map(f => generateFieldHTML(f)).join('') + `</div>`;
                 } else if (sec.title.includes("PWHT Design")) {
-                    // 6 fields into 3 columns -> 2 items per column
                     html += `<div class="sub-col">` + sec.fields.slice(0, 2).map(f => generateFieldHTML(f)).join('') + `</div>`;
                     html += `<div class="sub-col">` + sec.fields.slice(2, 4).map(f => generateFieldHTML(f)).join('') + `</div>`;
                     html += `<div class="sub-col">` + sec.fields.slice(4, 6).map(f => generateFieldHTML(f)).join('') + `</div>`;
                 } else {
-                    // Project section 
                     html += sec.fields.map(f => generateFieldHTML(f)).join('');
                 }
 
@@ -514,6 +544,75 @@
         function showSolvingModal() {
             document.getElementById('solvingModal').classList.add('active');
         }
+
+        // ==========================================
+        // MATERIAL AUTOCOMPLETE SYSTEM
+        // ==========================================
+        let materialNamesList = [];
+
+        // Fetch materials from material.json on page load[cite: 1]
+        fetch('/material.json')
+            .then(res => res.json())
+            .then(data => {
+                // Extract just the material names from the list
+                materialNamesList = data.map(mat => mat.Name);
+            })
+            .catch(err => console.error("Could not load material.json", err));
+
+        // Function called on every keystroke inside 'mat_name' field
+        function handleMaterialSearch(inputElem) {
+            let formGroup = inputElem.closest('.form-group');
+            let suggestionBox = formGroup.querySelector('.autocomplete-list');
+            
+            // Create the suggestion dropdown box if it doesn't exist yet
+            if (!suggestionBox) {
+                suggestionBox = document.createElement('div');
+                suggestionBox.className = 'autocomplete-list';
+                formGroup.appendChild(suggestionBox);
+            }
+
+            // Normalize typed query (ignoring case, spaces, and dashes)[cite: 1]
+            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
+            
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Filter by character similarity and strictly cut list down to 2 results[cite: 1]
+            const matches = materialNamesList.filter(name => 
+                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
+            ).slice(0, 2); 
+
+            // Render matching options
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(match => 
+                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
+                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">🔥</span> ${match}
+                    </div>`
+                ).join('');
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Apply selected option back to the input
+        function selectMaterial(name, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (inputElem) {
+                inputElem.value = name;
+                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
+                if (suggestionBox) suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside the input container
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
+            }
+        });
 
         // Initialize application
         renderForm();
