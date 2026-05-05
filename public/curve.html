@@ -652,6 +652,8 @@
                         let y1 = e1 * 0.5 * (1 - Math.tanh(H));
                         let y2 = e2 * 0.5 * (1 + Math.tanh(H));
                         let et = (pts / elast) + y1 + y2;
+                        
+                        // Strict fix for non-negative values
                         let ps = Math.max(0, et - (pts / elast));
                         
                         raw_stress.push(pts);
@@ -883,7 +885,8 @@
                                 stepSize: xStep,
                                 maxRotation: 0
                             },
-                            min: - (xStep / 2), // Small axis gap before start
+                            // FIX: Start exactly at 0 to explicitly prevent negative strain axis values
+                            min: 0.0, 
                             max: maxX + (xStep / 2) // Small axis gap after end
                         },
                         y: {
