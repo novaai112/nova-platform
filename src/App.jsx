@@ -1538,7 +1538,7 @@ export default function App() {
             
             {currentUser.isApproved ? (
               <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/cad-agent.html'} /* Update this URL */
+                onClick={() => window.location.href = 'https://swcad-ai.vercel.app/chat'} /* Update this URL */
                 className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
                 Launch Agent
               </button>
