@@ -273,7 +273,7 @@
             transition: all 0.3s; 
             width: 100%; 
             max-width: 240px;
-            display: none; /* Hidden until generated */
+            display: none; 
             box-shadow: 0 8px 15px rgba(16, 185, 129, 0.25); 
             text-transform: uppercase; 
             letter-spacing: 1px;
@@ -294,6 +294,39 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.02); width: 100%; max-width: 240px;
         }
 
+        /* AUTOCOMPLETE STYLES */
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding-left: 20px;
+        }
+
         @media (max-width: 1024px) {
             .workspace { grid-template-columns: 1fr; }
             .left-panel { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.06); border-radius: 0; }
@@ -309,7 +342,7 @@
 
     <div class="glass-container">
         <header class="app-header">
-            <h1>NOVA Stress-Strain Curve Generator</h1>
+            <h1>NOVA Stress-Strain Generator</h1>
             <button class="btn-glass" onclick="window.location.reload()">Reset Setup</button>
         </header>
 
@@ -319,9 +352,9 @@
             <div class="left-panel">
                 <div class="col-title">Step 1: Base Parameters</div>
                 
-                <div class="form-group">
+                <div class="form-group" style="position: relative;">
                     <label class="form-label">Curve Material Name</label>
-                    <input type="text" class="glass-input" id="mat_name" value="SA-516-Gr-60">
+                    <input type="text" class="glass-input" id="mat_name" value="SA-516-Gr-60" autocomplete="off" oninput="handleMaterialSearch(this)">
                 </div>
 
                 <div class="form-group">
@@ -543,6 +576,68 @@
         window.addEventListener('DOMContentLoaded', () => {
             toggleGroups();
             renderChart([], [], 'Stress-Strain Curve (Awaiting Generation)');
+        });
+
+        // ==========================================
+        // MATERIAL AUTOCOMPLETE SYSTEM
+        // ==========================================
+        let materialNamesList = [];
+
+        // Fetch materials from material.json on page load[cite: 1]
+        fetch('/material.json')
+            .then(res => res.json())
+            .then(data => {
+                materialNamesList = data.map(mat => mat.Name);
+            })
+            .catch(err => console.error("Could not load material.json", err));
+
+        function handleMaterialSearch(inputElem) {
+            let formGroup = inputElem.closest('.form-group');
+            let suggestionBox = formGroup.querySelector('.autocomplete-list');
+            
+            if (!suggestionBox) {
+                suggestionBox = document.createElement('div');
+                suggestionBox.className = 'autocomplete-list';
+                formGroup.appendChild(suggestionBox);
+            }
+
+            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
+            
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Filter by character similarity and strictly limit to 2 results[cite: 1]
+            const matches = materialNamesList.filter(name => 
+                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
+            ).slice(0, 2); 
+
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(match => 
+                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
+                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">📈</span> ${match}
+                    </div>`
+                ).join('');
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        function selectMaterial(name, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (inputElem) {
+                inputElem.value = name;
+                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
+                if (suggestionBox) suggestionBox.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
+            }
         });
 
         // Isochronous Material Parameters Lookup
@@ -1086,7 +1181,7 @@
             
             if (myChart) myChart.destroy();
 
-            // Strictly remove the first point (typically [0, yield]) for drawing so graph starts strictly at second point
+            // Strictly remove the first [0,0] / Yield point to start plotting from the 2nd point onwards
             let renderX = xData;
             let renderY = yData;
             if (renderX.length > 1) {
@@ -1094,7 +1189,7 @@
                 renderY = renderY.slice(1);
             }
 
-            // Match Engineering Dark Red Color from Reference Image
+            // Match Engineering Dark Red Color
             const curveColor = '#9e0000'; 
 
             // Calculate precise grid boundaries providing small visual gaps before start
@@ -1122,7 +1217,7 @@
                         pointRadius: 2.5, // Multi point scatter visible
                         pointBackgroundColor: curveColor,
                         pointHoverRadius: 6,
-                        fill: false, // No gradient fill 
+                        fill: false, 
                         tension: 0 // Straight hard engineering lines between points
                     }]
                 },
