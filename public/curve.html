@@ -27,6 +27,8 @@
             
             --primary: #2563eb; 
             --accent: #ea580c; 
+            --success: #10b981;
+            --success-hover: #059669;
             --text-main: #0f172a;
             --text-muted: #64748b;
         }
@@ -69,7 +71,7 @@
             100% { transform: translate(-20px, 30px) scale(0.95); }
         }
 
-        /* Main Glass Container - Fluid and Proportionate Layout */
+        /* Main Glass Container */
         .glass-container {
             background: var(--glass-bg);
             backdrop-filter: blur(40px);
@@ -125,14 +127,13 @@
             box-shadow: 0 6px 15px rgba(234, 88, 12, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
         }
 
-        /* 2-Column Split Layout - Proportionate and Fluid */
+        /* 2-Column Split Layout */
         .workspace {
             display: grid;
             grid-template-columns: 450px 1fr;
             align-items: start;
         }
 
-        /* Left Panel - Stretches Naturally based on selected variables */
         .left-panel {
             padding: 2.5rem;
             border-right: 1px solid rgba(0,0,0,0.06);
@@ -140,7 +141,6 @@
             border-radius: 0 0 0 24px;
         }
 
-        /* Right Panel - Sticky to remain in view */
         .right-panel {
             padding: 2.5rem;
             display: flex;
@@ -154,7 +154,7 @@
         .chart-container {
             width: 100%;
             height: 100%;
-            background: #ffffff; /* Solid white for clear engineering grid */
+            background: #ffffff; 
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 10px 40px rgba(0,0,0,0.06);
@@ -168,7 +168,6 @@
             width: 100%;
         }
 
-        /* Form Elements */
         .col-title {
             color: var(--text-main); font-weight: 800; font-size: 0.85rem;
             text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.8rem;
@@ -229,7 +228,15 @@
             height: 100%; display: flex; align-items: center;
         }
 
-        /* Compact, Centered Generator Button */
+        /* Action Buttons Area */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 2.5rem;
+        }
+
         .btn-submit {
             background: linear-gradient(135deg, rgba(234, 88, 12, 0.95) 0%, rgba(194, 65, 12, 0.95) 100%);
             border: 1px solid rgba(255, 255, 255, 0.4); 
@@ -242,8 +249,7 @@
             cursor: pointer; 
             transition: all 0.3s; 
             width: 100%; 
-            max-width: 220px;
-            margin: 2.5rem auto 0 auto;
+            max-width: 240px;
             display: block;
             box-shadow: 0 8px 15px rgba(234, 88, 12, 0.25); 
             text-transform: uppercase; 
@@ -254,11 +260,38 @@
             box-shadow: 0 12px 25px rgba(234, 88, 12, 0.35);
         }
 
+        .btn-export {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4); 
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            color: white; 
+            padding: 0.8rem 2rem; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            font-size: 0.9rem;
+            cursor: pointer; 
+            transition: all 0.3s; 
+            width: 100%; 
+            max-width: 240px;
+            display: none; /* Hidden until generated */
+            box-shadow: 0 8px 15px rgba(16, 185, 129, 0.25); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+        .btn-export:hover {
+            transform: translateY(-2px); 
+            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.35);
+        }
+        .btn-export svg {
+            vertical-align: text-bottom;
+            margin-right: 6px;
+        }
+
         .result-box {
             background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 1.2rem; border-radius: 10px; margin-top: 1.5rem; color: #065f46;
+            padding: 1.2rem; border-radius: 10px; margin-top: 0.5rem; color: #065f46;
             font-size: 0.9rem; font-weight: 700; display: none; text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); width: 100%; max-width: 240px;
         }
 
         @media (max-width: 1024px) {
@@ -466,9 +499,14 @@
                     </div>
                 </div>
 
-                <!-- Compact, Centered Generate Button -->
-                <button class="btn-submit" onclick="generateCurve()">Generate Curve</button>
-                <div id="resultBox" class="result-box"></div>
+                <div class="action-buttons">
+                    <button class="btn-submit" onclick="generateCurve()">Generate Curve</button>
+                    <div id="resultBox" class="result-box"></div>
+                    <button class="btn-export" id="btnExport" onclick="exportToAnsys()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export to Ansys
+                    </button>
+                </div>
             </div>
 
             <!-- Right Side: Professional Sticky Chart Area -->
@@ -482,8 +520,9 @@
     </div>
 
     <script>
-        // Store Chart Instance
+        // Store Chart Instance & Export Data
         let myChart = null;
+        window.exportedCurveData = null;
 
         // Strict Toggle Logic: Hide non-selected completely
         function toggleGroups() {
@@ -498,6 +537,7 @@
             if (type === 'Tangent') document.getElementById('group_tangent').classList.remove('hidden');
             
             document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('btnExport').style.display = 'none';
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -572,6 +612,8 @@
 
             let stress = [];
             let p_strain = [];
+            let calculated_tanmod = null;
+            let yield_stress = null;
             const numPoints = 250; 
 
             if (curveType === "Tangent") {
@@ -581,6 +623,7 @@
                 const fitt = parseFloat(document.getElementById('tm_fp').value);
                 const fact = parseFloat(document.getElementById('tm_fcfe').value);
 
+                yield_stress = ys;
                 let R = ys / uts;
                 let eys = 0.002;
                 let K = 1.5 * Math.pow(R, 1.5) - 0.5 * Math.pow(R, 2.5) - Math.pow(R, 3.5);
@@ -604,14 +647,14 @@
                 let d3 = Math.pow(truestress, (1/m2)-1) / (2 * m2 * Math.pow(A2, 1/m2));
                 let d4 = ((Math.pow(truestress, 1/m2) * (2/(K*(uts-ys))) * (1 - Math.pow(Math.tanh(H), 2))) + ((Math.pow(truestress, (1/m2)-1) * Math.tanh(H)) / m2)) / (2 * Math.pow(A2, 1/m2));
 
-                let tanmod = Math.abs(1 / ((1/elast) + d1 + d2 + d3 + d4));
+                calculated_tanmod = Math.abs(1 / ((1/elast) + d1 + d2 + d3 + d4));
 
-                stress = [0, ys, uts];
-                p_strain = [0, 0, (uts - ys) / tanmod]; 
+                stress = [ys, uts];
+                p_strain = [0, (uts - ys) / calculated_tanmod]; 
                 
                 const rb = document.getElementById('resultBox');
                 rb.style.display = 'block';
-                rb.innerHTML = `Calculated Tangent Modulus: ${tanmod.toFixed(2)} MPa<br>Yield Stress: ${ys} MPa`;
+                rb.innerHTML = `Calculated Tangent Modulus: ${calculated_tanmod.toFixed(2)} MPa<br>Yield Stress: ${ys} MPa`;
 
             } else {
                 let ys, elast, uts, fitt, fact, R, m2, true_uts;
@@ -625,6 +668,7 @@
                     fitt = parseFloat(document.getElementById('t_fp').value);
                     fact = parseFloat(document.getElementById('t_fcfe').value);
 
+                    yield_stress = ys;
                     R = ys / uts;
                     let eys = 0.002;
                     let K = 1.5 * Math.pow(R, 1.5) - 0.5 * Math.pow(R, 2.5) - Math.pow(R, 3.5);
@@ -653,7 +697,6 @@
                         let y2 = e2 * 0.5 * (1 + Math.tanh(H));
                         let et = (pts / elast) + y1 + y2;
                         
-                        // Strict fix for non-negative values
                         let ps = Math.max(0, et - (pts / elast));
                         
                         raw_stress.push(pts);
@@ -669,6 +712,7 @@
                     fact = parseFloat(document.getElementById('c_fcfe').value);
                     let cType = document.getElementById('c_type').value;
 
+                    yield_stress = ys;
                     R = ys / uts;
                     m2 = fact * (1 - R);
                     true_uts = uts * Math.exp(m2);
@@ -699,6 +743,7 @@
                     let time = parseFloat(document.getElementById('i_time').value);
                     let matcat = document.getElementById('i_matcat').value;
 
+                    yield_stress = ys;
                     R = ys / uts;
                     m2 = fact * (1 - R);
                     let eys = 0.002;
@@ -754,7 +799,7 @@
                     }
                 }
 
-                // Filter Monotonic Data
+                // Filter Monotonic Data (First point is yield stress at 0 strain)
                 stress.push(ys);
                 p_strain.push(0.0);
                 for (let i=0; i<raw_stress.length; i++) {
@@ -789,7 +834,249 @@
                 }
             }
 
+            // Save globally for export
+            window.exportedCurveData = {
+                curveType: curveType,
+                materialName: materialName,
+                temperature: tempVal,
+                stress: stress,
+                p_strain: p_strain,
+                tanmod: calculated_tanmod,
+                ys: yield_stress
+            };
+
+            // Show export button
+            document.getElementById('btnExport').style.display = 'block';
+
             renderChart(p_strain, stress, `${curveType} Stress-Strain Curve`);
+        }
+
+        // Generate and Download Ansys XML
+        function exportToAnsys() {
+            if (!window.exportedCurveData) return;
+            const data = window.exportedCurveData;
+            
+            let xmlString = "";
+
+            if (data.curveType === "Tangent") {
+                xmlString = `<?xml version="1.0" encoding="utf-8"?>
+<EngineeringData version="23.1.0.230" versiondate="11/28/2022 8:19:00 AM">
+<Notes> </Notes>
+<Materials>
+<MatML_Doc>
+<Material>
+<BulkDetails>
+<Name>${data.materialName}</Name>
+<PropertyData property="pr0">
+<Data format="string">-</Data>
+<ParameterValue parameter="pa0" format="float">
+<Data>182</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa1" format="float">
+<Data>229</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa2" format="float">
+<Data>228</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa3" format="string">
+<Data>Appearance</Data>
+</ParameterValue>
+</PropertyData>
+<PropertyData property="pr1">
+<Data format="string">-</Data>
+<Qualifier name="Definition">Bilinear</Qualifier>
+<Qualifier name="Table">Plastic</Qualifier>
+<Qualifier name="Active Table">Plastic</Qualifier>
+<ParameterValue parameter="pa4" format="float">
+<Data>${data.ys}</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa5" format="float">
+<Data>${data.tanmod}</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa6" format="float">
+<Data>${data.temperature}</Data>
+<Qualifier name="Variable Type">Independent</Qualifier>
+</ParameterValue>
+</PropertyData>
+</BulkDetails>
+</Material>
+<Metadata>
+<ParameterDetails id="pa0">
+<Name>Red</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa1">
+<Name>Green</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa2">
+<Name>Blue</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa3">
+<Name>Material Property</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa4">
+<Name>Yield Strength</Name>
+<Units name="Stress">
+<Unit>
+<Name>MPa</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<ParameterDetails id="pa5">
+<Name>Tangent Modulus</Name>
+<Units name="Stress">
+<Unit>
+<Name>MPa</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<ParameterDetails id="pa6">
+<Name>Temperature</Name>
+<Units name="Temperature">
+<Unit>
+<Name>C</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<PropertyDetails id="pr0">
+<Unitless/>
+<Name>Color</Name>
+</PropertyDetails>
+<PropertyDetails id="pr1">
+<Unitless/>
+<Name>Isotropic Hardening</Name>
+</PropertyDetails>
+</Metadata>
+</MatML_Doc>
+</Materials>
+</EngineeringData>`;
+            } else {
+                // Multilinear format (True, Cyclic, Isochronous)
+                const stressStr = data.stress.join(",");
+                const strainStr = data.p_strain.join(",");
+                const tempStr = new Array(data.stress.length).fill(data.temperature).join(",");
+                const depStr = new Array(data.stress.length).fill("Dependent").join(",");
+                const indStr = new Array(data.stress.length).fill("Independent").join(",");
+
+                xmlString = `<?xml version="1.0" encoding="utf-8"?>
+<EngineeringData version="22.1.0.0" versiondate="11/28/2022 8:19:00 AM">
+<Notes> </Notes>
+<Materials>
+<MatML_Doc>
+<Material>
+<BulkDetails>
+<Name>${data.materialName}</Name>
+<PropertyData property="pr0">
+<Data format="string">-</Data>
+<ParameterValue parameter="pa0" format="float">
+<Data>155</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa1" format="float">
+<Data>244</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa2" format="float">
+<Data>255</Data>
+<Qualifier name="Variable Type">Dependent</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa3" format="string">
+<Data>Appearance</Data>
+</ParameterValue>
+</PropertyData>
+<PropertyData property="pr1">
+<Data format="string">-</Data>
+<Qualifier name="Definition">Multilinear</Qualifier>
+<ParameterValue parameter="pa4" format="float">
+<Data>${stressStr}</Data>
+<Qualifier name="Variable Type">${depStr}</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa5" format="float">
+<Data>${strainStr}</Data>
+<Qualifier name="Variable Type">${indStr}</Qualifier>
+</ParameterValue>
+<ParameterValue parameter="pa6" format="float">
+<Data>${tempStr}</Data>
+<Qualifier name="Variable Type">${indStr}</Qualifier>
+</ParameterValue>
+</PropertyData>
+</BulkDetails>
+</Material>
+<Metadata>
+<ParameterDetails id="pa0">
+<Name>Red</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa1">
+<Name>Green</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa2">
+<Name>Blue</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa3">
+<Name>Material Property</Name>
+<Unitless/>
+</ParameterDetails>
+<ParameterDetails id="pa4">
+<Name>Stress</Name>
+<Units name="Stress">
+<Unit>
+<Name>MPa</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<ParameterDetails id="pa5">
+<Name>Plastic Strain</Name>
+<Units name="Strain">
+<Unit>
+<Name>mm</Name>
+</Unit>
+<Unit power="-1">
+<Name>mm</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<ParameterDetails id="pa6">
+<Name>Temperature</Name>
+<Units name="Temperature">
+<Unit>
+<Name>C</Name>
+</Unit>
+</Units>
+</ParameterDetails>
+<PropertyDetails id="pr0">
+<Unitless/>
+<Name>Color</Name>
+</PropertyDetails>
+<PropertyDetails id="pr1">
+<Unitless/>
+<Name>Isotropic Hardening</Name>
+</PropertyDetails>
+</Metadata>
+</MatML_Doc>
+</Materials>
+</EngineeringData>`;
+            }
+
+            const blob = new Blob([xmlString], { type: "application/xml" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${data.materialName}_Curve.xml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // Render Professional Engineering Chart (Mimicking Ansys Output)
@@ -799,7 +1086,7 @@
             
             if (myChart) myChart.destroy();
 
-            // Strictly remove the first [0,0] / Yield point to start plotting from the 2nd point onwards
+            // Strictly remove the first point (typically [0, yield]) for drawing so graph starts strictly at second point
             let renderX = xData;
             let renderY = yData;
             if (renderX.length > 1) {
