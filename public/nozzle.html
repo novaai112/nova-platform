@@ -165,7 +165,6 @@
 
         .section-wrapper { min-width: 0; }
         
-        /* Specific Placements to match optimal UI */
         .section-project { grid-column: 1 / 2; }
         .section-shell { grid-column: 2 / 3; }
         .section-nozzle { grid-column: 3 / 5; } 
@@ -206,7 +205,7 @@
             background: linear-gradient(90deg, rgba(0,0,0,0.1) 0%, transparent 100%);
         }
 
-        .form-group { transition: all 0.3s ease; }
+        .form-group { transition: all 0.3s ease; position: relative; }
         .form-group.hidden { display: none !important; }
 
         .form-label {
@@ -226,7 +225,7 @@
             width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.6);
             border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 10px; font-size: 0.9rem; color: var(--text-main); transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: text;
         }
         .glass-select option { background: #ffffff; color: var(--text-main); }
         .glass-input:focus, .glass-select:focus {
@@ -270,9 +269,7 @@
             background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(29, 78, 216, 1) 100%);
         }
 
-        /* =========================================
-           NEW MODERN BOX MODAL STYLES
-           ========================================= */
+        /* NEW MODERN BOX MODAL STYLES */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px);
@@ -281,85 +278,63 @@
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         
-        .modern-box-wrapper {
-            position: relative;
-            width: 90%;
-            max-width: 400px;
-        }
-
+        .modern-box-wrapper { position: relative; width: 90%; max-width: 400px; }
         .modern-box-wrapper::before {
-            content: "";
-            position: absolute;
-            inset: -4px;
-            border-radius: 28px;
+            content: ""; position: absolute; inset: -4px; border-radius: 28px;
             background: linear-gradient(135deg, #00C9FF 0%, #92FE9D 50%, #FF0080 100%);
-            background-size: 200% 200%;
-            animation: gradientGlow 6s ease infinite;
-            filter: blur(15px);
-            opacity: 0.8;
-            z-index: 0;
+            background-size: 200% 200%; animation: gradientGlow 6s ease infinite;
+            filter: blur(15px); opacity: 0.8; z-index: 0;
         }
-
-        @keyframes gradientGlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        @keyframes gradientGlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         .modern-box {
-            position: relative;
-            background: rgba(15, 15, 15, 0.85); 
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border-radius: 24px;
-            padding: 50px 40px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            z-index: 1;
-            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
-            font-family: 'Plus Jakarta Sans', sans-serif; /* Applied just to the box */
+            position: relative; background: rgba(15, 15, 15, 0.85); 
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-radius: 24px; padding: 50px 40px; text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15); z-index: 1;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05); font-family: 'Plus Jakarta Sans', sans-serif;
         }
-
-        .modern-box h2 {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 8px;
-            letter-spacing: -1px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        .modern-box p {
-            font-size: 0.95rem;
-            color: #a0a0a0;
-            margin-bottom: 40px;
-            font-weight: 400;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
+        .modern-box h2 { font-size: 2.2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; letter-spacing: -1px; }
+        .modern-box p { font-size: 0.95rem; color: #a0a0a0; margin-bottom: 40px; font-weight: 400; }
         .btn-modern {
-            display: inline-block;
-            padding: 12px 35px;
-            border-radius: 12px;
-            background: #ffffff;
-            color: #000000;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: inline-block; padding: 12px 35px; border-radius: 12px; background: #ffffff; color: #000000;
+            text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); cursor: pointer;
+        }
+        .btn-modern:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3); background: #e0e0e0; }
+        .btn-modern:active { transform: scale(0.98); }
+
+        /* MATERIAL AUTOCOMPLETE STYLES */
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 15px;
             cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
         }
-
-        .btn-modern:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
-            background: #e0e0e0;
-        }
-
-        .btn-modern:active {
-            transform: scale(0.98);
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            padding-left: 20px;
         }
 
         /* Responsive design defaults */
@@ -399,7 +374,8 @@
             </div>
 
             <div class="grid-layout" id="form-grid">
-                </div>
+                <!-- Dynamically generated fields will be injected here -->
+            </div>
 
             <div class="action-area">
                 <button class="btn-submit" type="button" onclick="showSolvingModal()">Solve in Ansys</button>
@@ -486,7 +462,6 @@
                         { name: "h_type", label: "Head Type:", type: "select", options: ["Ellipsoidal Head", "Flat Head", "Torispherical Head"], value: "Flat Head", isHeadTrigger: true }
                     ]
                 },
-                
                 // ELLIPSOIDAL GEOMETRY
                 { title: "2. Head Design", condition: "Ellipsoidal Head", fields: [
                     { name: "h_id", label: "Head ID (mm):", type: "number", value: "1000" },
@@ -527,7 +502,6 @@
                     { name: "f_p", label: "P (N):", type: "number", value: "60" },
                     { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
                 ]},
-
                 // FLAT GEOMETRY
                 { title: "2. Head Design", condition: "Flat Head", fields: [
                     { name: "h_od", label: "Head OD (mm):", type: "number", value: "1000" },
@@ -566,7 +540,6 @@
                     { name: "f_p", label: "P (N):", type: "number", value: "60" },
                     { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
                 ]},
-
                 // TORISPHERICAL GEOMETRY
                 { title: "2. Head Design", condition: "Torispherical Head", fields: [
                     { name: "Head_ID (mm)", label: "Head ID (mm):", type: "number", value: "1000" },
@@ -636,7 +609,8 @@
             const dependsAttr = f.dependsOn ? `data-depends-on="${f.dependsOn}" data-show-if="${f.showIf.join(',')}"` : '';
             const parsed = parseLabelAndUnit(f.label);
 
-            let html = `<div class="form-group" ${dependsAttr}>
+            // Added style="position:relative;" to form-group so dropdown list anchors to it properly
+            let html = `<div class="form-group" ${dependsAttr} style="position: relative;">
                             <label class="form-label">${parsed.label}</label>`;
             
             if (f.type === 'select') {
@@ -651,13 +625,17 @@
             else {
                 const isReadonly = f.readonly ? 'readonly' : '';
                 
+                // Add extra attributes for the Autocomplete Feature purely for "mat_name"
+                const isMatName = (f.name === "mat_name");
+                const matEvents = isMatName ? `autocomplete="off" oninput="handleMaterialSearch(this)"` : '';
+
                 if (parsed.unit) {
                     html += `<div class="input-addon-group">
-                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>
+                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly} ${matEvents}>
                                 <span class="addon">${parsed.unit}</span>
                              </div>`;
                 } else {
-                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly}>`;
+                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${isReadonly} ${matEvents}>`;
                 }
             }
             html += `</div>`;
@@ -699,13 +677,10 @@
                 let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
                 html += `<div class="fields-container">`;
 
-                // Layout Sub-groups logically for Grid Mapping
                 if (sectionKey === 'nozzle') {
-                    // Split Nozzle fields across 2 columns
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(0, 5)) + `</div>`;
                     html += `<div class="sub-col">` + mapFields(sec.fields.slice(5)) + `</div>`;
                 } else if (sectionKey === 'load') {
-                    // Split Load Condition directly underneath previous columns.
                     html += `<div class="sub-col">` + mapFields([sec.fields[0], sec.fields[1]]) + `</div>`;
                     html += `<div class="sub-col">` + mapFields([sec.fields[2], sec.fields[3]]) + `</div>`; 
                     html += `<div class="sub-col">` + mapFields([sec.fields[4], sec.fields[5]]) + `</div>`; 
@@ -766,10 +741,78 @@
             });
         }
 
-        // Action to trigger the new overlay
         function showSolvingModal() {
             document.getElementById('solvingModal').classList.add('active');
         }
+
+        // ==========================================
+        // MATERIAL AUTOCOMPLETE SYSTEM
+        // ==========================================
+        let materialNamesList = [];
+
+        // Fetch materials from material.json on page load[cite: 1]
+        fetch('/material.json')
+            .then(res => res.json())
+            .then(data => {
+                // Extract just the material names from the list
+                materialNamesList = data.map(mat => mat.Name);
+            })
+            .catch(err => console.error("Could not load material.json", err));
+
+        // Function called on every keystroke inside 'mat_name' field
+        function handleMaterialSearch(inputElem) {
+            let formGroup = inputElem.closest('.form-group');
+            let suggestionBox = formGroup.querySelector('.autocomplete-list');
+            
+            // Create the suggestion dropdown box if it doesn't exist yet
+            if (!suggestionBox) {
+                suggestionBox = document.createElement('div');
+                suggestionBox.className = 'autocomplete-list';
+                formGroup.appendChild(suggestionBox);
+            }
+
+            // Normalize typed query (ignoring case, spaces, and dashes)[cite: 1]
+            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
+            
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Filter by character similarity and strictly cut list down to 2 results[cite: 1]
+            const matches = materialNamesList.filter(name => 
+                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
+            ).slice(0, 2); 
+
+            // Render matching options
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(match => 
+                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
+                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">⚡</span> ${match}
+                    </div>`
+                ).join('');
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Apply selected option back to the input
+        function selectMaterial(name, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (inputElem) {
+                inputElem.value = name;
+                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
+                if (suggestionBox) suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside the input container
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
+            }
+        });
 
         // Initialize application
         renderForm();
