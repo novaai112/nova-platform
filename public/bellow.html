@@ -180,7 +180,7 @@
             width: 100%; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.6);
             border: 1px solid rgba(0, 0, 0, 0.1); border-top: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 10px; font-size: 0.9rem; color: var(--text-main); transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); cursor: text;
         }
         .glass-select option { background: #ffffff; color: var(--text-main); }
         .glass-input:focus, .glass-select:focus {
@@ -338,6 +338,39 @@
         
         .solving-modal-content { background: none; border: none; box-shadow: none; backdrop-filter: none; display: flex; flex-direction: column; align-items: center; color: var(--text-main); text-align: center; }
 
+        /* MATERIAL AUTOCOMPLETE STYLES */
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            padding-left: 20px;
+        }
+
         @media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .grid-layout { grid-template-columns: 1fr; } }
     </style>
@@ -464,9 +497,9 @@
                 <div class="col-title" style="margin-bottom: 1.5rem;">Manual Geometry Specification</div>
                 <div class="grid-layout" style="gap: 1.5rem;">
                     
-                    <div class="form-group">
+                    <div class="form-group" style="position: relative;">
                         <label class="form-label">Material Name</label>
-                        <input type="text" class="glass-input" id="m_mat" placeholder="e.g. SA-516">
+                        <input type="text" class="glass-input" id="m_mat" placeholder="e.g. SA-516" autocomplete="off" oninput="handleMaterialSearch(this)">
                     </div>
 
                     <div class="form-group">
@@ -974,6 +1007,75 @@
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // ==========================================
+        // MATERIAL AUTOCOMPLETE SYSTEM
+        // ==========================================
+        let materialNamesList = [];
+
+        // Fetch materials from material.json on page load[cite: 1]
+        fetch('/material.json')
+            .then(res => res.json())
+            .then(data => {
+                // Extract just the material names from the list
+                materialNamesList = data.map(mat => mat.Name);
+            })
+            .catch(err => console.error("Could not load material.json", err));
+
+        // Function called on every keystroke inside 'm_mat' field
+        function handleMaterialSearch(inputElem) {
+            let formGroup = inputElem.closest('.form-group');
+            let suggestionBox = formGroup.querySelector('.autocomplete-list');
+            
+            // Create the suggestion dropdown box if it doesn't exist yet
+            if (!suggestionBox) {
+                suggestionBox = document.createElement('div');
+                suggestionBox.className = 'autocomplete-list';
+                formGroup.appendChild(suggestionBox);
+            }
+
+            // Normalize typed query (ignoring case, spaces, and dashes)[cite: 1]
+            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
+            
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Filter by character similarity and strictly cut list down to 2 results[cite: 1]
+            const matches = materialNamesList.filter(name => 
+                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
+            ).slice(0, 2); 
+
+            // Render matching options
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(match => 
+                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
+                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">⚙️</span> ${match}
+                    </div>`
+                ).join('');
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Apply selected option back to the input
+        function selectMaterial(name, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (inputElem) {
+                inputElem.value = name;
+                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
+                if (suggestionBox) suggestionBox.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking outside the input container
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
+            }
+        });
     </script>
 </body>
 </html>
