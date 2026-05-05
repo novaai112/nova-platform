@@ -582,7 +582,7 @@
             // Filter by character similarity and strictly cut list down to 2 results[cite: 1]
             const matches = materialNamesList.filter(name => 
                 name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
-            ).slice(0, 2); 
+            ).slice(0, 1); 
 
             // Render matching options
             if (matches.length > 0) {
