@@ -797,35 +797,44 @@
             
             if (myChart) myChart.destroy();
 
-            // Match ANSYS Dark Red Color
+            // Strictly remove the first [0,0] / Yield point to start plotting from the 2nd point onwards
+            let renderX = xData;
+            let renderY = yData;
+            if (renderX.length > 1) {
+                renderX = renderX.slice(1);
+                renderY = renderY.slice(1);
+            }
+
+            // Match Engineering Dark Red Color from Reference Image
             const curveColor = '#9e0000'; 
 
-            // Calculate grid stepping and bounds with small gaps
-            const minY = yData.length > 0 ? Math.max(0, Math.floor(Math.min(...yData) / 10) * 10 - 10) : 0;
-            const maxY = yData.length > 0 ? Math.ceil(Math.max(...yData) / 10) * 10 + 10 : 100;
+            // Calculate precise grid boundaries providing small visual gaps before start
+            const minY = renderY.length > 0 ? Math.max(0, Math.floor(Math.min(...renderY) / 10) * 10 - 10) : 0;
+            const maxY = renderY.length > 0 ? Math.ceil(Math.max(...renderY) / 10) * 10 + 10 : 100;
             
-            const maxX = xData.length > 0 ? Math.max(...xData) : 1;
-            // Target ~30 grid lines on X axis to make it look like dense engineering grid paper
-            let xStep = parseFloat((maxX / 30).toPrecision(1)); 
-            if (xStep === 0) xStep = 0.01;
+            const maxX = renderX.length > 0 ? Math.max(...renderX) : 1;
+            
+            // Push for 60 slices to create dense, small rectangular box grids
+            let xStep = parseFloat((maxX / 60).toPrecision(1)); 
+            if (xStep === 0) xStep = 0.005;
 
             const tempVal = document.getElementById('temperature').value;
 
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: xData,
+                    labels: renderX,
                     datasets: [{
                         label: `Temperature : ${tempVal} [C]`,
-                        data: yData,
+                        data: renderY,
                         borderColor: curveColor,
                         backgroundColor: curveColor,
                         borderWidth: 1.5,
-                        pointRadius: 2.5, // Multi point show (dots visible)
+                        pointRadius: 2.5, // Multi point scatter visible
                         pointBackgroundColor: curveColor,
                         pointHoverRadius: 6,
-                        fill: false, // No background fill for precise look
-                        tension: 0 // Straight lines between points exactly like ANSYS
+                        fill: false, // No gradient fill 
+                        tension: 0 // Straight hard engineering lines between points
                     }]
                 },
                 options: {
@@ -846,7 +855,7 @@
                                 font: { family: 'Arial', size: 11, weight: 'normal' }
                             }
                         },
-                        title: { display: false }, // Removed to maximize graph area
+                        title: { display: false }, 
                         tooltip: {
                             backgroundColor: 'rgba(255, 255, 255, 0.95)',
                             titleColor: '#000',
@@ -864,7 +873,7 @@
                             type: 'linear',
                             title: { display: true, text: 'Plastic Strain [mm mm^-1]', font: { family: 'Arial', size: 11, weight: 'bold' }, color: '#000' },
                             grid: { 
-                                color: 'rgba(0,0,0,0.15)', // Darker grid lines for box effect
+                                color: 'rgba(0,0,0,0.15)', // Dense grid lines
                                 lineWidth: 0.5,
                                 drawTicks: true,
                             },
@@ -874,19 +883,19 @@
                                 stepSize: xStep,
                                 maxRotation: 0
                             },
-                            min: - (xStep / 2), // Small gap before start
-                            max: maxX + (xStep / 2) // Small gap after end
+                            min: - (xStep / 2), // Small axis gap before start
+                            max: maxX + (xStep / 2) // Small axis gap after end
                         },
                         y: {
                             title: { display: true, text: 'Stress [MPa]', font: { family: 'Arial', size: 11, weight: 'bold' }, color: '#000' },
                             grid: { 
-                                color: 'rgba(0,0,0,0.15)', // Darker grid lines
+                                color: 'rgba(0,0,0,0.15)', 
                                 lineWidth: 0.5,
                             },
                             ticks: { 
                                 color: '#000', 
                                 font: { family: 'Arial', size: 10 },
-                                stepSize: 10 // Dense grid spacing on Y axis
+                                stepSize: 10 // Strict 10MPa jump for rect blocks
                             },
                             min: minY,
                             max: maxY
