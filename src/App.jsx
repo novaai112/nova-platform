@@ -5,7 +5,7 @@ import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -1504,6 +1504,24 @@ export default function App() {
                 onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
                 className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
                 Open Database
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+
+            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/curve.html'} 
+                className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
+                Open Generator
               </button>
             ) : (
               <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
