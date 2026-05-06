@@ -4,7 +4,7 @@ import { supabaseJob } from './supabaseClient';
 import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
-  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, 
+  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,
   Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
@@ -282,7 +282,7 @@ export default function App() {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
     setAiSetupResponse("");
-    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow, or Local PWHT analysis based on scenario. Format with bullet points.";
+    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow, Flange, or Local PWHT analysis based on scenario. Format with bullet points.";
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: aiSetupPrompt }] }], systemInstruction);
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
@@ -605,6 +605,7 @@ export default function App() {
   : jobs.filter(j => {
       if (jobFilter === 'Bellow Analysis') return j.type.includes('Bellow');
       if (jobFilter === 'Nozzle Analysis') return j.type.includes('Nozzle');
+      if (jobFilter === 'Flange Analysis') return j.type.includes('Flange');
       if (jobFilter === 'Local PWHT') return j.type.includes('PWHT');
       return j.type === jobFilter;
     });
@@ -1477,6 +1478,25 @@ export default function App() {
               </button>
             )}
           </div>
+
+            <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/flange.html'} /* Update this URL */
+                className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+            
             <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
                 <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
@@ -1572,6 +1592,7 @@ export default function App() {
               <option value={`All Analysis (${jobs.length})`}>All Analysis ({jobs.length})</option>
               <option value="Nozzle Analysis">Nozzle Analysis</option>
               <option value="Bellow Analysis">Bellow Analysis</option>
+              <option value="Flange Analysis">Flange Analysis</option>
               <option value="Local PWHT">Local PWHT</option>
             </select>
           </div>
