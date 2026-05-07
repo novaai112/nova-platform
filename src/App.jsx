@@ -1524,7 +1524,7 @@ export default function App() {
               <button 
                 onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} /* Updated URL */
                 className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
-                Run Analysis
+                Submit New Job
               </button>
             ) : (
               <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
