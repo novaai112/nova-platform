@@ -282,7 +282,7 @@ export default function App() {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
     setAiSetupResponse("");
-    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow, Flange, or Local PWHT analysis based on scenario. Format with bullet points.";
+    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow,Saddle, Flange, or Local PWHT analysis based on scenario. Format with bullet points.";
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: aiSetupPrompt }] }], systemInstruction);
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
@@ -606,6 +606,7 @@ export default function App() {
       if (jobFilter === 'Bellow Analysis') return j.type.includes('Bellow');
       if (jobFilter === 'Nozzle Analysis') return j.type.includes('Nozzle');
       if (jobFilter === 'Flange Analysis') return j.type.includes('Flange');
+      if (jobFilter === 'Saddle Analysis') return j.type.includes('Saddle');
       if (jobFilter === 'Local PWHT') return j.type.includes('PWHT');
       return j.type === jobFilter;
     });
@@ -1611,6 +1612,7 @@ export default function App() {
               <option value="Nozzle Analysis">Nozzle Analysis</option>
               <option value="Bellow Analysis">Bellow Analysis</option>
               <option value="Flange Analysis">Flange Analysis</option>
+              <option value="Saddle Analysis">Saddle Analysis</option>
               <option value="Local PWHT">Local PWHT</option>
             </select>
           </div>
