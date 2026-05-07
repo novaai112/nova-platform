@@ -1513,6 +1513,24 @@ export default function App() {
                 </button>
               )}
             </div>
+
+            <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} /* Updated URL */
+                className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
+                Run Analysis
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
             
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
