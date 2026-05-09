@@ -3,9 +3,9 @@ import { supabase } from './supabaseClient';
 import { supabaseJob } from './supabaseClient';
 import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, Link,
-  Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell,Target,
-  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,CircleDot,
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart
+  Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell, Target,
+  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed, CircleDot,
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame, Cylinder, Waves, LineChart
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -54,6 +54,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info'); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isWorkspaceFolderOpen, setIsWorkspaceFolderOpen] = useState(false);
   
   const [currentUser, setCurrentUser] = useState({
     id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: ""
@@ -121,7 +122,6 @@ export default function App() {
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
 
-  // AUTH INITIALIZATION & REFRESH LOGIC
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -148,7 +148,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ROUTE GUARD
   useEffect(() => {
     if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
       setCurrentView('login');
@@ -637,21 +636,6 @@ export default function App() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-600/30 rounded-full mix-blend-screen filter blur-[120px] animate-blob animation-delay-2000"></div>
       </div>
 
-      <style>{`
-        .path-draw { stroke-dasharray: 220; stroke-dashoffset: 220; animation: draw 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        .path-draw-delayed { stroke-dasharray: 220; stroke-dashoffset: 220; animation: draw 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards; }
-        .fill-fade { opacity: 0; animation: fadeFill 1.5s ease-in-out 1s forwards; }
-        .star-pop { opacity: 0; transform: scale(0); transform-origin: center; animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.6s forwards; }
-        .text-reveal { opacity: 0; transform: translateY(20px); animation: textUp 1s ease-out 1.2s forwards; }
-        .glass-panel-splash { opacity: 0; animation: glassFade 1s ease-out forwards; }
-        @keyframes draw { to { stroke-dashoffset: 0; } }
-        @keyframes fadeFill { to { opacity: 0.8; } }
-        @keyframes pop { to { opacity: 0.9; transform: scale(1); } }
-        @keyframes textUp { to { opacity: 1; transform: translateY(0); } }
-        @keyframes glassFade { to { opacity: 1; } }
-        @keyframes loadProgress { 0% { width: 0%; left: 0%; } 50% { width: 100%; left: 0%; } 100% { width: 0%; left: 100%; } }
-      `}</style>
-      
       <div className="glass-panel-splash relative flex flex-col items-center justify-center p-12 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(60,100,214,0.3)]">
         <svg className="w-32 h-32 mb-6 drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -1188,13 +1172,10 @@ export default function App() {
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        {/* Dark Backdrop */}
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
         
-        {/* Main Modal Container - White, rounded, scrollable */}
         <div className="bg-white w-full max-w-[500px] h-[85vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl relative z-10 animate-in zoom-in-95">
           
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <Box className="w-5 h-5 text-blue-500" />
@@ -1208,10 +1189,8 @@ export default function App() {
             </button>
           </div>
 
-          {/* Scrollable Body */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
             
-            {/* Job Details Card */}
             <div className="overflow-hidden border border-blue-100 rounded-xl">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
                   <Box className="w-4 h-4"/> Job Details
@@ -1228,7 +1207,6 @@ export default function App() {
                </div>
             </div>
 
-            {/* Bellow Configuration Card */}
             <div className="overflow-hidden border border-blue-100 rounded-xl">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
                   <Settings2 className="w-4 h-4"/> Bellow Configuration
@@ -1241,7 +1219,6 @@ export default function App() {
                </div>
             </div>
 
-            {/* Hydrotest Parameters Card */}
             <div className="overflow-hidden border border-emerald-100 rounded-xl">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
                   <Database className="w-4 h-4 text-purple-500"/> Hydrotest Parameters
@@ -1260,7 +1237,6 @@ export default function App() {
                </div>
             </div>
 
-            {/* Upset Cases Card (Only displays cases if available) */}
             {upsetSelected && (
               <div className="overflow-hidden border border-orange-100 rounded-xl">
                  <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
@@ -1280,7 +1256,6 @@ export default function App() {
               </div>
             )}
 
-            {/* PV Elite Report PDF Card (Hidden if manual) */}
             {!isManual && (
               <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
                  <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
@@ -1303,7 +1278,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Spring Rate Results Card */}
             <div className="overflow-hidden border border-emerald-200 rounded-xl bg-emerald-50/20">
                <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 border-b border-emerald-100">
                   <Award className="w-4 h-4"/> Spring Rate Results
@@ -1334,7 +1308,6 @@ export default function App() {
 
           </div>
 
-          {/* Footer Actions */}
           <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
             <button 
               onClick={() => setIsJobDetailsOpen(false)} 
@@ -1492,7 +1465,7 @@ export default function App() {
             
             {currentUser.isApproved ? (
               <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/flange.html'} /* Update this URL */
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/flange.html'} 
                 className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
                 Submit New Job
               </button>
@@ -1520,115 +1493,26 @@ export default function App() {
               )}
             </div>
 
-            <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} /* Updated URL */
-                className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
+            {/* Folder Component for Specialized Analysis */}
+            <div className="glass-panel border-blue-500/30 bg-blue-50/50 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.2)] transition-all cursor-pointer group" onClick={() => setIsWorkspaceFolderOpen(true)}>
+                <div className="mx-auto mb-6 bg-white/40 border border-white/60 backdrop-blur-md shadow-inner group-hover:scale-105 transition-transform" style={{ width: '84px', height: '84px', borderRadius: '24px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '4px', padding: '12px' }}>
+                    <div className="bg-rose-500/80 rounded flex items-center justify-center"><Cylinder className="w-3 h-3 text-white"/></div>
+                    <div className="bg-orange-500/80 rounded flex items-center justify-center"><Flame className="w-3 h-3 text-white"/></div>
+                    <div className="bg-purple-500/80 rounded flex items-center justify-center"><CircleDot className="w-3 h-3 text-white"/></div>
+                    <div className="bg-emerald-500/80 rounded flex items-center justify-center"><Target className="w-3 h-3 text-white"/></div>
+                    <div className="bg-cyan-500/80 rounded flex items-center justify-center"><Link className="w-3 h-3 text-white"/></div>
+                    <div className="bg-sky-500/80 rounded flex items-center justify-center"><Dumbbell className="w-3 h-3 text-white"/></div>
+                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
+                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
+                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
+                </div>
+                <h3 className="mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">Specialized Workspace</h3>
+                <p className="text-sm font-medium text-slate-600 mb-6">6 Advanced Analysis Tools</p>
+                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform group-hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                    Open Folder <ArrowRight className="w-4 h-4" />
+                </button>
+            </div>
 
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} /* Updated URL */
-                className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <CircleDot className="w-6 h-6 text-purple-600" /> Vessel Stiffener Ring Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} /* Updated URL */
-                className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-            
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Target className="w-6 h-6 text-emerald-600" /> 2D Axisymmetric Tubesheet Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} /* Updated URL */
-                className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Link className="w-6 h-6 text-cyan-600" /> Lifting Lug WRC Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} /* Updated URL */
-                className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion WRC Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} /* Updated URL */
-                className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Database className="w-6 h-6 text-blue-600" /> ASME Materials
@@ -1673,7 +1557,7 @@ export default function App() {
             
             {currentUser.isApproved ? (
               <button 
-                onClick={() => window.location.href = 'https://swcad-ai.vercel.app/chat'} /* Update this URL */
+                onClick={() => window.location.href = 'https://swcad-ai.vercel.app/chat'} 
                 className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
                 Launch Agent
               </button>
@@ -1901,6 +1785,113 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Workspace Folder Overlay Popup */}
+        <div className={`folder-overlay ${isWorkspaceFolderOpen ? 'active' : ''}`} onClick={(e) => {
+            if(e.target.classList.contains('folder-overlay')) setIsWorkspaceFolderOpen(false);
+        }}>
+          <div className="folder-content-box ultra-glass bg-[#0f172a]/80 border-white/10" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-8 px-2 md:px-6">
+               <h2 className="text-2xl md:text-3xl font-extrabold text-white drop-shadow-md tracking-wide">Specialized Workspace</h2>
+               <button onClick={() => setIsWorkspaceFolderOpen(false)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors shadow-sm"><X className="w-6 h-6"/></button>
+            </div>
+            
+            <div className="app-grid px-2 md:px-6 pb-6">
+              
+              {/* Tool 1: Saddle Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-500/20 to-rose-600/5 border border-rose-500/30 shadow-[0_0_15px_rgba(225,29,72,0.3)] group-hover:scale-110 transition-transform">
+                    <Cylinder className="w-7 h-7 md:w-8 md:h-8 text-rose-400" />
+                  </div>
+                  Saddle Analysis
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} className="glow-btn bg-rose-600/80 hover:bg-rose-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+              {/* Tool 2: Hot Box Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/5 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.3)] group-hover:scale-110 transition-transform">
+                    <Flame className="w-7 h-7 md:w-8 md:h-8 text-orange-400" />
+                  </div>
+                  Hot Box Analysis
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} className="glow-btn bg-orange-600/80 hover:bg-orange-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+              {/* Tool 3: Vessel Stiffener Ring Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:scale-110 transition-transform">
+                    <CircleDot className="w-7 h-7 md:w-8 md:h-8 text-purple-400" />
+                  </div>
+                  Vessel Stiffener Ring
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} className="glow-btn bg-purple-600/80 hover:bg-purple-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+              {/* Tool 4: 2D Axisymmetric Tubesheet Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)] group-hover:scale-110 transition-transform">
+                    <Target className="w-7 h-7 md:w-8 md:h-8 text-emerald-400" />
+                  </div>
+                  2D Tubesheet Analysis
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} className="glow-btn bg-emerald-600/80 hover:bg-emerald-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+              {/* Tool 5: Lifting Lug WRC Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/5 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.3)] group-hover:scale-110 transition-transform">
+                    <Link className="w-7 h-7 md:w-8 md:h-8 text-cyan-400" />
+                  </div>
+                  Lifting Lug WRC
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} className="glow-btn bg-cyan-600/80 hover:bg-cyan-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+              {/* Tool 6: Trunnion WRC Analysis */}
+              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
+                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-500/20 to-sky-600/5 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.3)] group-hover:scale-110 transition-transform">
+                    <Dumbbell className="w-7 h-7 md:w-8 md:h-8 text-sky-400" />
+                  </div>
+                  Trunnion WRC
+                </h3>
+                {currentUser.isApproved ? (
+                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} className="glow-btn bg-sky-600/80 hover:bg-sky-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
+                ) : (
+                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -2217,6 +2208,64 @@ export default function App() {
         }
         .glass-btn-blue:hover::after, .glass-btn-green:hover::after, .glass-btn-orange:hover::after {
           left: 200%;
+        }
+
+        .ultra-glass {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-top: 1px solid rgba(255, 255, 255, 0.3);
+          border-left: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .card-glass {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .card-glass:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: translateY(-4px);
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+        .folder-overlay {
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+          background-color: #020617; 
+          background-image: 
+            radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.3) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, rgba(236, 72, 153, 0.3) 0px, transparent 50%);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 1000;
+        }
+        .folder-overlay.active { opacity: 1; pointer-events: all; }
+        .folder-content-box {
+          display: flex; flex-direction: column;
+          transform: scale(0.9) translateY(20px); opacity: 0;
+          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+        }
+        .folder-overlay.active .folder-content-box { transform: scale(1) translateY(0); opacity: 1; }
+        .app-grid { display: grid; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .app-grid::-webkit-scrollbar { display: none; }
+        .glow-btn { position: relative; overflow: hidden; }
+        .glow-btn::before {
+          content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+          background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+          transform: skewX(-20deg); transition: 0.5s;
+        }
+        .card-glass:hover .glow-btn::before { left: 150%; }
+        @media (max-width: 767px) {
+          .folder-content-box { width: 92%; max-width: 420px; max-height: 85vh; border-radius: 40px; padding: 30px 20px; }
+          .app-grid { grid-template-columns: 1fr; gap: 16px; padding: 4px; }
+        }
+        @media (min-width: 768px) {
+          .folder-content-box { width: 90%; max-width: 1100px; border-radius: 48px; padding: 40px; }
+          .app-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 10px; }
         }
       `}</style>
       
