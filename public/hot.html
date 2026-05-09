@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <title>NOVA Hot Box Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #f0f4f8;
+            --bg-glow-1: #cbd5e1; 
+            --bg-glow-2: #93c5fd; 
+            --bg-glow-3: #c4b5fd; 
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.45) 100%);
+            --glass-card: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-highlight: rgba(255, 255, 255, 1);
+            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), 
+                            inset 0 1px 1px rgba(255, 255, 255, 0.9), 
+                            inset 0 -1px 2px rgba(0, 0, 0, 0.02);
+            --primary: #2563eb; 
+            --primary-hover: #1e40af; 
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: default;
+        }
+        body {
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.8;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
+        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
+        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 60px) scale(1.1); }
+            100% { transform: translate(-30px, 40px) scale(0.9); }
+        }
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            width: 100%;
+            max-width: 1100px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .glass-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: glass-sheen 12s infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @keyframes glass-sheen {
+            0% { left: -150%; }
+            15% { left: 200%; }
+            100% { left: 200%; }
+        }
+        .app-header {
+            padding: 1.25rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+            position: relative;
+            z-index: 2;
+        }
+        .app-header h1 {
+            font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--text-main);
+            text-shadow: none;
+        }
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            color: var(--text-main);
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 6px rgba(0,0,0,0.03);
+            position: relative;
+            z-index: 2;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
+            transform: translateY(-2px);
+            color: var(--primary);
+        }
+        .form-body { 
+            padding: 2.5rem; 
+            position: relative; 
+            z-index: 2; 
+            width: 100%;
+            max-width: 950px; 
+            margin: 0 auto;   
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem; 
+        }
+        .section-wrapper { 
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
+            backdrop-filter: blur(20px);
+        }
+        .col-title {
+            color: var(--text-main); font-weight: 800; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem; 
+            display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
+        }
+        .col-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%);
+        }
+        .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 5px; font-size: 0.7rem; font-weight: 800;
+            color: var(--primary); background: rgba(37, 99, 235, 0.12);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            box-shadow: none;
+        }
+        .fields-container {
+            display: grid;
+            gap: 1.5rem 1.8rem; 
+        }
+        .project-grid { grid-template-columns: repeat(3, 1fr); }
+        .geometry-grid { grid-template-columns: repeat(4, 1fr); }
+        .mesh-grid { grid-template-columns: repeat(3, 1fr); } 
+        .form-group { transition: all 0.3s ease; position: relative; }
+        .form-group.hidden { display: none !important; }
+        .form-label {
+            display: block; font-size: 0.7rem; font-weight: 700;
+            color: var(--text-main); margin-bottom: 0.4rem; padding-left: 0.1rem; 
+            text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;
+        }
+        .glass-input, .glass-select {
+            width: 100%; 
+            height: 34px; 
+            padding: 0 0.8rem; 
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            color: var(--text-main); 
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
+            cursor: text; 
+            font-weight: 600;
+        }
+        .glass-select option { background: #ffffff; color: var(--text-main); font-size: 0.8rem; }
+        .glass-input:focus, .glass-select:focus {
+            outline: none; border-color: rgba(37, 99, 235, 0.7); background: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .input-addon-group {
+            display: flex; align-items: center; 
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.12); 
+            border-top: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 6px; 
+            transition: all 0.3s ease; 
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015);
+            height: 34px; 
+        }
+        .input-addon-group:focus-within { 
+            border-color: rgba(37, 99, 235, 0.7); 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15); 
+            background: #ffffff; 
+        }
+        .input-addon-group .glass-input { 
+            border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
+        }
+        .addon {
+            padding: 0 0.6rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
+            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
+            height: 100%; display: flex; align-items: center; white-space: nowrap;
+        }
+        .action-area {
+            margin-top: 1.5rem; 
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
+            color: white; padding: 0.9rem 4rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255,255,255,0.4);
+            letter-spacing: 1.5px; backdrop-filter: blur(15px); text-transform: uppercase;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px); box-shadow: 0 15px 25px rgba(37, 99, 235, 0.35), inset 0 2px 2px rgba(255,255,255,0.5);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(30, 64, 175, 1) 100%);
+        }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modern-box-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+        }
+        .modern-box-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #4f46e5 100%);
+            background-size: 200% 200%;
+            animation: gradientGlow 6s ease infinite;
+            filter: blur(15px);
+            opacity: 0.8;
+            z-index: 0;
+        }
+        @keyframes gradientGlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .modern-box {
+            position: relative;
+            background: rgba(15, 15, 15, 0.85); 
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 50px 40px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            z-index: 1;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+        .modern-box h2 { font-size: 2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; letter-spacing: -1px; }
+        .modern-box p { font-size: 0.9rem; color: #a0a0a0; margin-bottom: 40px; font-weight: 600; }
+        .btn-modern {
+            display: inline-block; padding: 10px 30px; border-radius: 8px; background: #ffffff;
+            color: #000000; text-decoration: none; font-weight: 700; font-size: 0.85rem;
+            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); cursor: pointer;
+        }
+        .btn-modern:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3); background: #e0e0e0; }
+        .btn-modern:active { transform: scale(0.98); }
+        .autocomplete-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            padding-left: 20px;
+        }
+        @media (max-width: 900px) {
+            .geometry-grid { grid-template-columns: repeat(2, 1fr); }
+            .project-grid, .mesh-grid, .load-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .geometry-grid, .project-grid, .mesh-grid, .load-grid { grid-template-columns: 1fr; }
+            .form-body { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="glass-container">
+        <header class="app-header">
+            <h1 id="main_title">NOVA HOT BOX ANALYSIS</h1>
+            <a href="/" style="text-decoration: none;">
+                <button class="btn-glass" type="button">← Dashboard</button>
+            </a>
+        </header>
+
+        <form class="form-body" id="analysisForm" action="/" method="POST">
+            <input type="hidden" name="active_analysis" id="active_analysis" value="hot_box">
+
+            <div id="form-content" style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
+            </div>
+
+            <div class="action-area">
+                <button class="btn-submit" type="button" onclick="showSolvingModal()">Solve in Ansys</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-overlay" id="solvingModal">
+        <div class="modern-box-wrapper">
+            <div class="modern-box">
+                <p>Backend System in Development Phase</p>
+                <a href="/" class="btn-modern">Got it</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const appData = {
+            "hot_box": [
+                {
+                    title: "1. Project",
+                    gridClass: "project-grid",
+                    fields: [
+                        { name: "head_mat", label: "Head Material:", type: "text", value: "SA-516 70" },
+                        { name: "skirt_mat", label: "Skirt Material:", type: "text", value: "SA-36" },
+                        { name: "insul_mat", label: "Insulation Material:", type: "text", value: "Mineral Wool" },
+                        { name: "head_type", label: "Head Type:", type: "select", options: ["Flat Head", "Torispherical Head", "Ellipsoidal Head"], value: "Torispherical Head" },
+                        { name: "d_temp", label: "Design Temp.:", type: "number", value: "250", unit: "°C" },
+                        { name: "amb_temp", label: "Ambient Temp.:", type: "number", value: "25", unit: "°C" }
+                    ]
+                },
+                {
+                    title: "2. Geometry",
+                    gridClass: "geometry-grid",
+                    fields: [
+                        { name: "head_id", label: "Head ID:", type: "number", value: "2000", unit: "mm" },
+                        { name: "head_thk", label: "Head THK:", type: "number", value: "20", unit: "mm" },
+                        { name: "skirt_id", label: "Skirt ID:", type: "number", value: "2000", unit: "mm" },
+                        { name: "skirt_thk", label: "Skirt THK:", type: "number", value: "20", unit: "mm" },
+                        { name: "skirt_length", label: "Skirt Length:", type: "number", value: "1500", unit: "mm" },
+                        { name: "knuckle_rad", label: "Knuckle Rad.:", type: "number", value: "200", unit: "mm", dependsOn: "head_type", showIf: ["Torispherical Head"] },
+                        { name: "ab_ratio", label: "a:b Ratio:", type: "number", value: "2", dependsOn: "head_type", showIf: ["Ellipsoidal Head"] },
+                        { name: "ins_supp_width", label: "Insulation Support Width:", type: "number", value: "100", unit: "mm" },
+                        { name: "ins_supp_thk", label: "Insulation Support THK:", type: "number", value: "10", unit: "mm" },
+                        { name: "ins_supp_loc", label: "Insulation Support Location:", type: "number", value: "500", unit: "mm" }
+                    ]
+                },
+                {
+                    title: "3. Meshing & BCs",
+                    gridClass: "mesh-grid",
+                    fields: [
+                        { name: "global_mesh", label: "Global Body Sizing:", type: "number", value: "50", unit: "mm" },
+                        { name: "no_div", label: "No. of Division:", type: "number", value: "3" },
+                        { name: "junc_refine", label: "Junction Refinement:", type: "number", value: "10", unit: "mm" },
+                        { name: "int_press", label: "Internal Pressure:", type: "number", value: "2", unit: "MPa" },
+                        { name: "fluid_temp", label: "Fluid Temp.:", type: "number", value: "180", unit: "°C" },
+                        { name: "film_coeff", label: "Film Coefficient Connection:", type: "number", value: "25", unit: "W/m²K" },
+                        { name: "rad_emiss", label: "Radiation Emissivity:", type: "number", value: "0.8" }
+                    ]
+                }
+            ]
+        };
+
+        function parseLabelAndUnit(rawLabel) {
+            const match = rawLabel.match(/(.*)\(([^)]+)\):?$/);
+            if (match) {
+                return { label: match[1].trim(), unit: match[2].trim() };
+            }
+            return { label: rawLabel.replace(':', '').trim(), unit: null };
+        }
+
+        function generateFieldHTML(f) {
+            if (!f) return '';
+            
+            let labelText = f.label;
+            let unitText = f.unit || null;
+
+            if (!unitText) {
+                const parsed = parseLabelAndUnit(f.label);
+                labelText = parsed.label;
+                unitText = parsed.unit;
+            }
+
+            const dependsAttr = f.dependsOn ? `data-depends-on="${f.dependsOn}" data-show-if="${f.showIf.join(',')}"` : '';
+
+            let html = `<div class="form-group" style="position: relative;" ${dependsAttr}>
+                            <label class="form-label">${labelText}</label>`;
+            
+            if (f.type === 'select') {
+                const onChange = f.name === 'head_type' ? 'onchange="evaluateDependencies()"' : '';
+                html += `<select class="glass-select" name="${f.name}" id="${f.name}" ${onChange}>`;
+                f.options.forEach(opt => {
+                    const isSelected = opt === f.value ? 'selected' : '';
+                    html += `<option value="${opt}" ${isSelected}>${opt}</option>`;
+                });
+                html += `</select>`;
+            } 
+            else {
+                const isMatName = f.name.includes("mat");
+                const matEvents = isMatName ? `autocomplete="off" oninput="handleMaterialSearch(this)"` : '';
+
+                if (unitText) {
+                    html += `<div class="input-addon-group">
+                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>
+                                <span class="addon">${unitText}</span>
+                             </div>`;
+                } else {
+                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>`;
+                }
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function renderForm() {
+            const contentDiv = document.getElementById('form-content');
+            contentDiv.innerHTML = '';
+            
+            const sections = appData["hot_box"];
+
+            sections.forEach(sec => {
+                const wrapper = document.createElement('div');
+                wrapper.className = `section-wrapper`;
+                
+                const titleMatch = sec.title.match(/^(\d+)\.\s*(.*)/);
+                const badgeNum = titleMatch ? titleMatch[1] : '?';
+                const cleanTitle = titleMatch ? titleMatch[2] : sec.title;
+
+                let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
+                
+                html += `<div class="fields-container ${sec.gridClass}">`;
+                html += sec.fields.map(f => generateFieldHTML(f)).join('');
+                html += `</div>`;
+
+                wrapper.innerHTML = html;
+                contentDiv.appendChild(wrapper);
+            });
+
+            evaluateDependencies();
+        }
+
+        function evaluateDependencies() {
+            document.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
+                const targetName = group.getAttribute('data-depends-on');
+                const showConditions = group.getAttribute('data-show-if').split(',');
+                const masterInput = document.querySelector(`[name="${targetName}"]`);
+                
+                if (masterInput) {
+                    if (showConditions.includes(masterInput.value)) {
+                        group.classList.remove('hidden');
+                    } else {
+                        group.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function showSolvingModal() {
+            document.getElementById('solvingModal').classList.add('active');
+        }
+
+        let materialNamesList = [];
+
+        fetch('/material.json')
+            .then(res => res.json())
+            .then(data => {
+                materialNamesList = data.map(mat => mat.Name);
+            })
+            .catch(err => console.error("Could not load material.json", err));
+
+        function handleMaterialSearch(inputElem) {
+            let formGroup = inputElem.closest('.form-group');
+            let suggestionBox = formGroup.querySelector('.autocomplete-list');
+            
+            if (!suggestionBox) {
+                suggestionBox = document.createElement('div');
+                suggestionBox.className = 'autocomplete-list';
+                formGroup.appendChild(suggestionBox);
+            }
+
+            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
+            
+            if (!query) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            const matches = materialNamesList.filter(name => 
+                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
+            ).slice(0, 2); 
+
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(match => 
+                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
+                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">🔩</span> ${match}
+                    </div>`
+                ).join('');
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        function selectMaterial(name, inputId) {
+            const inputElem = document.getElementById(inputId);
+            if (inputElem) {
+                inputElem.value = name;
+                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
+                if (suggestionBox) suggestionBox.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
+            }
+        });
+
+        renderForm();
+    </script>
+</body>
+</html>
