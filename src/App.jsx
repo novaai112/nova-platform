@@ -1558,7 +1558,7 @@ export default function App() {
 
             <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <CircleDot className="w-6 h-6 text-purple-600" /> Vessel Stiffener Ring Analysis
+              <CircleDot className="w-6 h-6 text-purple-600" />Stiffener Analysis
             </h3>
             
             {currentUser.isApproved ? (
@@ -1576,7 +1576,7 @@ export default function App() {
             
             <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Target className="w-6 h-6 text-emerald-600" /> 2D Axisymmetric Tubesheet Analysis
+              <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
             </h3>
             
             {currentUser.isApproved ? (
@@ -1594,7 +1594,7 @@ export default function App() {
 
             <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Link className="w-6 h-6 text-cyan-600" /> Lifting Lug WRC Analysis
+              <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
             </h3>
             
             {currentUser.isApproved ? (
@@ -1612,7 +1612,7 @@ export default function App() {
 
             <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion WRC Analysis
+              <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
             </h3>
             
             {currentUser.isApproved ? (
