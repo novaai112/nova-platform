@@ -1493,26 +1493,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Folder Component for Specialized Analysis */}
-            <div className="glass-panel border-blue-500/30 bg-blue-50/50 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(59,130,246,0.2)] transition-all cursor-pointer group" onClick={() => setIsWorkspaceFolderOpen(true)}>
-                <div className="mx-auto mb-6 bg-white/40 border border-white/60 backdrop-blur-md shadow-inner group-hover:scale-105 transition-transform" style={{ width: '84px', height: '84px', borderRadius: '24px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '4px', padding: '12px' }}>
-                    <div className="bg-rose-500/80 rounded flex items-center justify-center"><Cylinder className="w-3 h-3 text-white"/></div>
-                    <div className="bg-orange-500/80 rounded flex items-center justify-center"><Flame className="w-3 h-3 text-white"/></div>
-                    <div className="bg-purple-500/80 rounded flex items-center justify-center"><CircleDot className="w-3 h-3 text-white"/></div>
-                    <div className="bg-emerald-500/80 rounded flex items-center justify-center"><Target className="w-3 h-3 text-white"/></div>
-                    <div className="bg-cyan-500/80 rounded flex items-center justify-center"><Link className="w-3 h-3 text-white"/></div>
-                    <div className="bg-sky-500/80 rounded flex items-center justify-center"><Dumbbell className="w-3 h-3 text-white"/></div>
-                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
-                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
-                    <div className="bg-slate-400/50 rounded shadow-inner"></div>
-                </div>
-                <h3 className="mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">Specialized Workspace</h3>
-                <p className="text-sm font-medium text-slate-600 mb-6">6 Advanced Analysis Tools</p>
-                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform group-hover:scale-105 shadow-md flex items-center justify-center gap-2">
-                    Open Folder <ArrowRight className="w-4 h-4" />
-                </button>
-            </div>
-
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Database className="w-6 h-6 text-blue-600" /> ASME Materials
@@ -1549,7 +1529,6 @@ export default function App() {
             )}
           </div>
 
-
             <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Box className="w-6 h-6 text-teal-600" /> CAD AI
@@ -1568,7 +1547,6 @@ export default function App() {
             )}
           </div>
             
-
             <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
               <div>
                 <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
@@ -1578,6 +1556,23 @@ export default function App() {
               </div>
               <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
                 <Sparkles className="w-4 h-4" /> ✨ Smart Setup
+              </button>
+            </div>
+
+            <div className="glass-panel border-slate-500/20 bg-slate-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(100,116,139,0.15)] transition-all cursor-pointer group" onClick={() => setIsWorkspaceFolderOpen(true)}>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <div className="grid grid-cols-3 gap-1 p-1.5 bg-white/60 border border-white/60 rounded-xl shadow-sm">
+                  <Cylinder className="w-3 h-3 text-rose-500"/>
+                  <Flame className="w-3 h-3 text-orange-500"/>
+                  <CircleDot className="w-3 h-3 text-purple-500"/>
+                  <Target className="w-3 h-3 text-emerald-500"/>
+                  <Link className="w-3 h-3 text-cyan-500"/>
+                  <Dumbbell className="w-3 h-3 text-sky-500"/>
+                </div>
+                More Analysis
+              </h3>
+              <button className="bg-slate-700 hover:bg-slate-800 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-slate-600/25 flex items-center justify-center gap-2">
+                Open Folder <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1786,111 +1781,103 @@ export default function App() {
           </div>
         )}
 
-        {/* Workspace Folder Overlay Popup */}
-        <div className={`folder-overlay ${isWorkspaceFolderOpen ? 'active' : ''}`} onClick={(e) => {
-            if(e.target.classList.contains('folder-overlay')) setIsWorkspaceFolderOpen(false);
-        }}>
-          <div className="folder-content-box ultra-glass bg-[#0f172a]/80 border-white/10" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-8 px-2 md:px-6">
-               <h2 className="text-2xl md:text-3xl font-extrabold text-white drop-shadow-md tracking-wide">Specialized Workspace</h2>
-               <button onClick={() => setIsWorkspaceFolderOpen(false)} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors shadow-sm"><X className="w-6 h-6"/></button>
-            </div>
-            
-            <div className="app-grid px-2 md:px-6 pb-6">
+        {isWorkspaceFolderOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsWorkspaceFolderOpen(false)}></div>
+            <div className="glass-panel w-full max-w-6xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80">
+              <div className="flex items-center justify-between p-6 border-b bg-white/40 backdrop-blur-md border-white/50 text-slate-800">
+                <h2 className="text-2xl md:text-3xl font-extrabold drop-shadow-sm tracking-wide">More Analysis Tools</h2>
+                <button onClick={() => setIsWorkspaceFolderOpen(false)} className="hover:bg-white/60 p-1.5 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
               
-              {/* Tool 1: Saddle Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-500/20 to-rose-600/5 border border-rose-500/30 shadow-[0_0_15px_rgba(225,29,72,0.3)] group-hover:scale-110 transition-transform">
-                    <Cylinder className="w-7 h-7 md:w-8 md:h-8 text-rose-400" />
+              <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-white/20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  
+                  {/* Tool 1: Saddle Analysis */}
+                  <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <Cylinder className="w-6 h-6 text-rose-500" />
+                      Saddle Analysis
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  Saddle Analysis
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} className="glow-btn bg-rose-600/80 hover:bg-rose-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
-              {/* Tool 2: Hot Box Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/5 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.3)] group-hover:scale-110 transition-transform">
-                    <Flame className="w-7 h-7 md:w-8 md:h-8 text-orange-400" />
+                  {/* Tool 2: Hot Box Analysis */}
+                  <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <Flame className="w-6 h-6 text-orange-500" />
+                      Hot Box Analysis
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  Hot Box Analysis
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} className="glow-btn bg-orange-600/80 hover:bg-orange-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
-              {/* Tool 3: Vessel Stiffener Ring Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:scale-110 transition-transform">
-                    <CircleDot className="w-7 h-7 md:w-8 md:h-8 text-purple-400" />
+                  {/* Tool 3: Vessel Stiffener Ring Analysis */}
+                  <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <CircleDot className="w-6 h-6 text-purple-500" />
+                      Vessel Stiffener Ring
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  Vessel Stiffener Ring
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} className="glow-btn bg-purple-600/80 hover:bg-purple-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
-              {/* Tool 4: 2D Axisymmetric Tubesheet Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)] group-hover:scale-110 transition-transform">
-                    <Target className="w-7 h-7 md:w-8 md:h-8 text-emerald-400" />
+                  {/* Tool 4: 2D Axisymmetric Tubesheet Analysis */}
+                  <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <Target className="w-6 h-6 text-emerald-500" />
+                      2D Tubesheet Analysis
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  2D Tubesheet Analysis
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} className="glow-btn bg-emerald-600/80 hover:bg-emerald-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
-              {/* Tool 5: Lifting Lug WRC Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/5 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.3)] group-hover:scale-110 transition-transform">
-                    <Link className="w-7 h-7 md:w-8 md:h-8 text-cyan-400" />
+                  {/* Tool 5: Lifting Lug WRC Analysis */}
+                  <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <Link className="w-6 h-6 text-cyan-500" />
+                      Lifting Lug WRC
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  Lifting Lug WRC
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} className="glow-btn bg-cyan-600/80 hover:bg-cyan-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
-              {/* Tool 6: Trunnion WRC Analysis */}
-              <div className="card-glass rounded-[2rem] p-6 text-center flex flex-col justify-center border-white/10 bg-white/5 hover:bg-white/10 transition-all group">
-                <h3 className="mb-6 text-lg md:text-xl font-medium text-white flex flex-col items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-500/20 to-sky-600/5 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.3)] group-hover:scale-110 transition-transform">
-                    <Dumbbell className="w-7 h-7 md:w-8 md:h-8 text-sky-400" />
+                  {/* Tool 6: Trunnion WRC Analysis */}
+                  <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
+                    <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                      <Dumbbell className="w-6 h-6 text-sky-500" />
+                      Trunnion WRC
+                    </h3>
+                    {currentUser.isApproved ? (
+                        <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">Submit New Job</button>
+                    ) : (
+                        <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"><Lock className="w-4 h-4"/> Locked</button>
+                    )}
                   </div>
-                  Trunnion WRC
-                </h3>
-                {currentUser.isApproved ? (
-                    <button onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} className="glow-btn bg-sky-600/80 hover:bg-sky-500 border border-white/10 w-full py-3.5 rounded-xl font-bold text-white transition-all mt-auto backdrop-blur-md shadow-lg">Submit New Job</button>
-                ) : (
-                    <button disabled className="bg-slate-700/50 text-slate-400 border border-white/5 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2 mt-auto"><Lock className="w-4 h-4"/> Locked</button>
-                )}
-              </div>
 
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>
@@ -2208,64 +2195,6 @@ export default function App() {
         }
         .glass-btn-blue:hover::after, .glass-btn-green:hover::after, .glass-btn-orange:hover::after {
           left: 200%;
-        }
-
-        .ultra-glass {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-top: 1px solid rgba(255, 255, 255, 0.3);
-          border-left: 1px solid rgba(255, 255, 255, 0.3);
-          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-        .card-glass {
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .card-glass:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
-          transform: translateY(-4px);
-          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-        }
-        .folder-overlay {
-          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-          background-color: #020617; 
-          background-image: 
-            radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.3) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, rgba(236, 72, 153, 0.3) 0px, transparent 50%);
-          display: flex; flex-direction: column; align-items: center; justify-content: center;
-          opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 1000;
-        }
-        .folder-overlay.active { opacity: 1; pointer-events: all; }
-        .folder-content-box {
-          display: flex; flex-direction: column;
-          transform: scale(0.9) translateY(20px); opacity: 0;
-          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
-        }
-        .folder-overlay.active .folder-content-box { transform: scale(1) translateY(0); opacity: 1; }
-        .app-grid { display: grid; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
-        .app-grid::-webkit-scrollbar { display: none; }
-        .glow-btn { position: relative; overflow: hidden; }
-        .glow-btn::before {
-          content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-          background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
-          transform: skewX(-20deg); transition: 0.5s;
-        }
-        .card-glass:hover .glow-btn::before { left: 150%; }
-        @media (max-width: 767px) {
-          .folder-content-box { width: 92%; max-width: 420px; max-height: 85vh; border-radius: 40px; padding: 30px 20px; }
-          .app-grid { grid-template-columns: 1fr; gap: 16px; padding: 4px; }
-        }
-        @media (min-width: 768px) {
-          .folder-content-box { width: 90%; max-width: 1100px; border-radius: 48px; padding: 40px; }
-          .app-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 10px; }
         }
       `}</style>
       
