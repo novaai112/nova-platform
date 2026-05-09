@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { supabaseJob } from './supabaseClient';
 import {
-  ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, 
-  Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, 
-  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,
+  ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, Link,
+  Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell,Target,
+  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,CircleDot,
   Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
@@ -282,7 +282,7 @@ export default function App() {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
     setAiSetupResponse("");
-    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow,Saddle, Flange, or Local PWHT analysis based on scenario. Format with bullet points.";
+    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow,Saddle, Flange,Hot Box, Lifting Lug WRC, Trunnion WRC, Vessel Stiffener Ring, 2D Axisymetric Tubesheet or Local PWHT analysis based on scenario. Format with bullet points.";
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: aiSetupPrompt }] }], systemInstruction);
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
@@ -608,6 +608,11 @@ export default function App() {
       if (jobFilter === 'Flange Analysis') return j.type.includes('Flange');
       if (jobFilter === 'Saddle Analysis') return j.type.includes('Saddle');
       if (jobFilter === 'Local PWHT') return j.type.includes('PWHT');
+      if (jobFilter === 'Hot Box Analysis') return j.type.includes('Hot Box');
+      if (jobFilter === 'Vessel Stiffener Ring Analysis') return j.type.includes('Vessel Stiffener');
+      if (jobFilter === 'Lifting Lug WRC Analysis') return j.type.includes('Lifting Lug WRC');
+      if (jobFilter === 'Trunnion WRC Analysis') return j.type.includes('Trunnion WRC');
+      if (jobFilter === '2D Axisymetric Tubesheet Analysis') return j.type.includes('2D Axisymetric Tubesheet');
       return j.type === jobFilter;
     });
 
@@ -1532,6 +1537,97 @@ export default function App() {
               </button>
             )}
           </div>
+
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} /* Updated URL */
+                className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+
+            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <CircleDot className="w-6 h-6 text-purple-600" /> Vessel Stiffener Ring Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} /* Updated URL */
+                className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+            
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Target className="w-6 h-6 text-emerald-600" /> 2D Axisymmetric Tubesheet Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} /* Updated URL */
+                className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+
+            <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Link className="w-6 h-6 text-cyan-600" /> Lifting Lug WRC Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} /* Updated URL */
+                className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+
+            <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion WRC Analysis
+            </h3>
+            
+            {currentUser.isApproved ? (
+              <button 
+                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} /* Updated URL */
+                className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
+                Submit New Job
+              </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Locked
+              </button>
+            )}
+          </div>
+
             
             <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
@@ -1614,6 +1710,11 @@ export default function App() {
               <option value="Flange Analysis">Flange Analysis</option>
               <option value="Saddle Analysis">Saddle Analysis</option>
               <option value="Local PWHT">Local PWHT</option>
+              <option value="Hot Box Analysis">Hot Box Analysis</option>
+              <option value="Vessel Stiffener Ring Analysis">Vessel Stiffener Ring Analysis</option>
+              <option value="Lifting Lug WRC Analysis">Lifting Lug WRC Analysis</option>
+              <option value="Trunnion WRC Analysis">Trunnion WRC Analysis</option>
+              <option value="2D Axisymetric Tubesheet Analysis">2D Axisymetric Tubesheet Analysis</option>
             </select>
           </div>
 
