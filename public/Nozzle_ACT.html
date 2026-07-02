@@ -372,11 +372,11 @@
             "shell": [
                 { title: "1. Project", fields: [
                     { name: "TypeOfAnalysis", label: "Type Of Analysis:", type: "select", options: ["Elastic Analysis", "Limit-Load Analysis", "E-P Analysis" , "Local E-P Analysis"], value: "Elastic Analysis" },
-                    { name: "AnalysisFolder", label: "Analysis Folder:", type: "text", value: "D:\\Test\\Check1" }
-                    { name: "MaterialName", label: "Shell Material:", type: "text", value: "SA-516-GR-70" ,options:["other material"]},
-                    { name: "OtherMaterialName", label: "Other Material Name:", type: "text", value: "", dependsOn: "mat_name", showIf: ["other material"] },
-                    { name: "YoungsModulus", label: "Young's Modulus:", type: "number", value: "", dependsOn: "mat_name", showIf: ["other material"] },
-                    { name: "PoissonsRatio", label: "Poisson's Ratio:", type: "number", value: "", dependsOn: "mat_name", showIf: ["other material"] },
+                    { name: "AnalysisFolder", label: "Analysis Folder:", type: "text", value: "D:\\Test\\Check1" },
+                    { name: "MaterialName", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
+                    { name: "OtherMaterialName", label: "Other Material Name:", type: "text", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
+                    { name: "YoungsModulus", label: "Young's Modulus:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
+                    { name: "PoissonsRatio", label: "Poisson's Ratio:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
                     { name: "YieldStress", label: "Yield Stress:", type: "number", value: "", dependsOn: "TypeOfAnalysis", showIf: ["Limit-Load Analysis", "E-P Analysis" , "Local E-P Analysis"] },
                     { name: "UltimateTensileStrength", label: "Ultimate Tensile Strength:", type: "number", value: "", dependsOn: "TypeOfAnalysis", showIf: ["E-P Analysis" , "Local E-P Analysis"] },
                     { name: "DesignTemp", label: "Material Temp. (°C):", type: "number", value: "150" },
@@ -399,8 +399,8 @@
                     { name: "HubLength", label: "Hub Length (mm):", type: "number", value: "150" },
                     { name: "TransitionLength", label: "Trans. Length (mm):", type: "number", value: "75" },
                     { name: "Pad", label: "Pad Required:", type: "select", options: ["Yes", "No"], value: "No" },
-                    { name: "PadWidth", label: "Pad Width (mm):", type: "number", value: "17", dependsOn: "pad_req", showIf: ["Yes"] },
-                    { name: "PadTHK", label: "Pad THK (mm):", type: "number", value: "7", dependsOn: "pad_req", showIf: ["Yes"] }
+                    { name: "PadWidth", label: "Pad Width (mm):", type: "number", value: "17", dependsOn: "Pad", showIf: ["Yes"] },
+                    { name: "PadTHK", label: "Pad THK (mm):", type: "number", value: "7", dependsOn: "Pad", showIf: ["Yes"] }
                 ]},
                 { title: "4. Meshing & BCS", fields: [
                     { name: "GlobalBodySizing", label: "Body Sizing (mm):", type: "number", value: "30" },
@@ -416,124 +416,6 @@
                     { name: "MC", label: "M_C (N mm):", type: "number", value: "10000" },
                     { name: "Fa", label: "P (N):", type: "number", value: "1200" },
                     { name: "ML", label: "M_L (N mm):", type: "number", value: "20000" }
-                ]}
-            ],
-            "head": [
-                { title: "1. Project", fields: [
-                    { name: "AnalysisFolder", label: "Analysis Folder:", type: "text", value: "D:\\Test\\Check1" },
-                    { name: "TypeOfAnalysis", label: "Type Of Analysis:", type: "select", options: ["Elastic Analysis", "Limit-Load Analysis", "Plastic Analysis"], value: "Elastic Analysis" },
-                    { name: "name", label: "System Name:", type: "text", value: "Nozzle Analysis" },
-                    { name: "mat_name", label: "Shell Material:", type: "text", value: "SA-516-GR-70" },
-                    { name: "temp", label: "Material Temp. (°C):", type: "number", value: "150" },
-                    { name: "h_type", label: "Head Type:", type: "select", options: ["Ellipsoidal Head", "Flat Head", "Torispherical Head"], value: "Flat Head", isHeadTrigger: true }
-                ]},
-                { title: "2. Head Design", condition: "Ellipsoidal Head", fields: [
-                    { name: "h_id", label: "Head ID (mm):", type: "number", value: "1000" },
-                    { name: "h_thk", label: "Head THK (mm):", type: "number", value: "40" },
-                    { name: "ratio", label: "a:b Ratio:", type: "number", value: "2" },
-                    { name: "sf_offset", label: "SF Offset (mm):", type: "number", value: "50" },
-                    { name: "s_thk", label: "Shell THK (mm):", type: "number", value: "50" },
-                    { name: "s_h", label: "Shell Height (mm):", type: "number", value: "100" }
-                ]},
-                { title: "3. Nozzle Design", condition: "Ellipsoidal Head", fields: [
-                    { name: "n_type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
-                    { name: "n_offset", label: "Nozzle Offset (mm):", type: "number", value: "0" },
-                    { name: "n_p", label: "Nozzle Proj. (mm):", type: "number", value: "500" },
-                    { name: "n_od", label: "Neck OD (mm):", type: "number", value: "200" },
-                    { name: "n_thk", label: "Neck THK (mm):", type: "number", value: "35" },
-                    { name: "hub_od", label: "Hub OD (mm):", type: "number", value: "300" },
-                    { name: "hub_l", label: "Hub Length (mm):", type: "number", value: "100" },
-                    { name: "trans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
-                    { name: "pad_req", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
-                    { name: "pad_w", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "pad_req", showIf: ["YES"] },
-                    { name: "pad_thk", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "pad_req", showIf: ["YES"] }
-                ]},
-                { title: "4. Meshing & BCS", condition: "Ellipsoidal Head", fields: [
-                    { name: "b_size", label: "Body Sizing Head:", type: "number", value: "10" },
-                    { name: "m_method", label: "Mesh Method Head:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
-                    { name: "n_div", label: "Divisions:", type: "number", value: "3" },
-                    { name: "int_p", label: "Pressure (MPa):", type: "number", value: "10" }
-                ]},
-                { title: "5. Load Condition", condition: "Ellipsoidal Head", fields: [
-                    { name: "n_load", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
-                    { name: "f_l", label: "F_L (N):", type: "number", value: "50" },
-                    { name: "m_t", label: "M_T (N mm):", type: "number", value: "150" },
-                    { name: "f_c", label: "F_C (N):", type: "number", value: "80" },
-                    { name: "m_c", label: "M_C (N mm):", type: "number", value: "100" },
-                    { name: "f_p", label: "P (N):", type: "number", value: "60" },
-                    { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
-                ]},
-                { title: "2. Head Design", condition: "Flat Head", fields: [
-                    { name: "h_od", label: "Head OD (mm):", type: "number", value: "1000" },
-                    { name: "h_thk", label: "Head THK (mm):", type: "number", value: "40" },
-                    { name: "s_id", label: "Shell ID (mm):", type: "number", value: "900" },
-                    { name: "trans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
-                    { name: "s_h", label: "Shell Height (mm):", type: "number", value: "150" },
-                    { name: "s_thk", label: "Shell THK (mm):", type: "number", value: "30" }
-                ]},
-                { title: "3. Nozzle Design", condition: "Flat Head", fields: [
-                    { name: "n_type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
-                    { name: "n_offset", label: "Nozzle Offset (mm):", type: "number", value: "0" },
-                    { name: "n_p", label: "Nozzle Proj. (mm):", type: "number", value: "300" },
-                    { name: "n_od", label: "Neck OD (mm):", type: "number", value: "200" },
-                    { name: "n_thk", label: "Neck THK (mm):", type: "number", value: "35" },
-                    { name: "hub_od", label: "Hub OD (mm):", type: "number", value: "300" },
-                    { name: "hub_l", label: "Hub Length (mm):", type: "number", value: "100" },
-                    { name: "ntrans_l", label: "Trans. Length (mm):", type: "number", value: "30" },
-                    { name: "pad_req", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
-                    { name: "pad_thk", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "pad_req", showIf: ["YES"] },
-                    { name: "pad_w", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "pad_req", showIf: ["YES"] }
-                ]},
-                { title: "4. Meshing & BCS", condition: "Flat Head", fields: [
-                    { name: "b_size", label: "Body Sizing (mm):", type: "number", value: "20" },
-                    { name: "m_method", label: "Mesh Method:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
-                    { name: "n_div", label: "Divisions:", type: "number", value: "3" },
-                    { name: "int_p", label: "Pressure (MPa):", type: "number", value: "10" }
-                ]},
-                { title: "5. Load Condition", condition: "Flat Head", fields: [
-                    { name: "n_load", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
-                    { name: "f_l", label: "F_L (N):", type: "number", value: "50" },
-                    { name: "m_t", label: "M_T (N mm):", type: "number", value: "150" },
-                    { name: "f_c", label: "F_C (N):", type: "number", value: "80" },
-                    { name: "m_c", label: "M_C (N mm):", type: "number", value: "100" },
-                    { name: "f_p", label: "P (N):", type: "number", value: "60" },
-                    { name: "m_l", label: "M_L (N mm):", type: "number", value: "200" }
-                ]},
-                { title: "2. Head Design", condition: "Torispherical Head", fields: [
-                    { name: "Head_ID", label: "Head ID (mm):", type: "number", value: "1000" },
-                    { name: "Head_THK", label: "Head THK (mm):", type: "number", value: "40" },
-                    { name: "Knuckle_radius", label: "Knuckle Rad. (mm):", type: "number", value: "60" },
-                    { name: "Straight_Flange_Offset", label: "SF Offset (mm):", type: "number", value: "50" },
-                    { name: "Shell_Height", label: "Shell Height (mm):", type: "number", value: "100" },
-                    { name: "Shell_THK", label: "Shell THK (mm):", type: "number", value: "50" }
-                ]},
-                { title: "3. Nozzle Design", condition: "Torispherical Head", fields: [
-                    { name: "Nozzle_Type", label: "Nozzle Type:", type: "select", options: ["Straight", "Barrel"], value: "Straight" },
-                    { name: "Nozzle_Offset", label: "Nozzle Offset (mm):", type: "number", value: "0" },
-                    { name: "Nozzle_Projection", label: "Nozzle Proj. (mm):", type: "number", value: "500" },
-                    { name: "Neck_OD", label: "Neck OD (mm):", type: "number", value: "200" },
-                    { name: "Neck_THK", label: "Neck THK (mm):", type: "number", value: "35" },
-                    { name: "Hub_OD", label: "Hub OD (mm):", type: "number", value: "300" },
-                    { name: "Hub_Length", label: "Hub Length (mm):", type: "number", value: "100" },
-                    { name: "Transaction_Length", label: "Trans. Length (mm):", type: "number", value: "30" }, 
-                    { name: "Pad_Requirement", label: "Pad Requirement:", type: "select", options: ["YES", "NO"], value: "NO" },
-                    { name: "Pad_Width", label: "Pad Width (mm):", type: "number", value: "75", dependsOn: "Pad_Requirement", showIf: ["YES"] },
-                    { name: "Pad_THK", label: "Pad THK (mm):", type: "number", value: "20", dependsOn: "Pad_Requirement", showIf: ["YES"] }
-                ]},
-                { title: "4. Meshing & BCS", condition: "Torispherical Head", fields: [
-                    { name: "BodySizing", label: "Body Sizing (mm):", type: "number", value: "20" },
-                    { name: "MeshMethod", label: "Mesh Method:", type: "select", options: ["MultiZone", "Sweep", "HexDominant"], value: "MultiZone" },
-                    { name: "NoOfDivision", label: "Divisions:", type: "number", value: "3" },
-                    { name: "InternalPressure", label: "Pressure (MPa):", type: "number", value: "10" }
-                ]},
-                { title: "5. Load Condition", condition: "Torispherical Head", fields: [
-                    { name: "NozzleLoadingLocation", label: "Load Location:", type: "select", options: ["Head Nozzle Junction", "Nozzle Flange Junction"], value: "Head Nozzle Junction" },
-                    { name: "F_L", label: "F_L (N):", type: "number", value: "50" },
-                    { name: "M_T", label: "M_T (N mm):", type: "number", value: "150" },
-                    { name: "F_C", label: "F_C (N):", type: "number", value: "80" },
-                    { name: "M_C", label: "M_C (N mm):", type: "number", value: "100" },
-                    { name: "P_N", label: "P (N):", type: "number", value: "60" },
-                    { name: "M_L", label: "M_L (N mm):", type: "number", value: "200" }
                 ]}
             ]
         };
@@ -596,7 +478,7 @@
                 html += `</select>`;
             } else {
                 const isReadonly = f.readonly ? 'readonly' : '';
-                const isMatName = (f.name === "mat_name");
+                const isMatName = (f.name === "MaterialName");
                 const matEvents = isMatName ? `autocomplete="off" oninput="handleMaterialSearch(this, ${index})"` : '';
                 
                 if (parsed.unit) {
@@ -618,6 +500,11 @@
             masterGrid.innerHTML = '';
             const numAnalyses = parseInt(document.getElementById('numAnalyses').value) || 1;
             const sections = appData[currentAnalysis];
+
+            if (!sections) {
+                masterGrid.innerHTML = `<p style="text-align:center; color:#ef4444; padding:2rem;">No field definitions exist yet for "${currentAnalysis}" analysis. Add an "${currentAnalysis}" entry to appData to enable this form.</p>`;
+                return;
+            }
 
             const getSectionKey = (title) => {
                 if (title.includes("Project")) return "project";
