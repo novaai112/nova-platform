@@ -1456,7 +1456,7 @@ export default function App() {
             
             {currentUser.isApproved ? (
               <button 
-                onClick={() => window.location.href = '/nozzle.html'} 
+                onClick={() => window.location.href = '/Nozzle_ACT.html'} 
                 className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
                 Submit New Job
               </button>
