@@ -712,17 +712,25 @@
         async function searchJobs() {
             const query = document.getElementById('searchInput').value.trim();
             const resultsDiv = document.getElementById('jobResults');
+            
             if(!query) {
                 resultsDiv.innerHTML = '<p style="color:#ef4444;">Please enter a valid Job ID or License Key.</p>';
                 return;
             }
+            
             resultsDiv.innerHTML = '<p>Searching cloud repository...</p>';
+            
             try {
-                let url = `${API_URL}?select=id,status,result_url,created_at&or=(id.eq.${query},license_key.eq.${query})&order=created_at.desc`;
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
+                
+                const filterCondition = isUUID ? `id.eq.${query}` : `license_key.eq.${query}`;
+                let url = `${API_URL}?select=id,status,result_url,created_at&${filterCondition}&order=created_at.desc`;
+                
                 let res = await fetch(url, {
                     method: "GET",
                     headers: { "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` }
                 });
+                
                 if(res.ok) {
                     let data = await res.json();
                     if(data.length === 0) {
@@ -745,9 +753,12 @@
                     });
                     resultsDiv.innerHTML = html;
                 } else {
+                    // Log the error for debugging purposes if it fails again
+                    console.error("Supabase Error Status:", res.status);
                     resultsDiv.innerHTML = '<p style="color:#ef4444;">Error retrieving jobs.</p>';
                 }
             } catch(e) {
+                console.error("Network Error:", e);
                 resultsDiv.innerHTML = '<p style="color:#ef4444;">Connection error.</p>';
             }
         }
