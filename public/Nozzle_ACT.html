@@ -373,7 +373,7 @@
                 { title: "1. Project", fields: [
                     { name: "TypeOfAnalysis", label: "Type Of Analysis:", type: "select", options: ["Elastic Analysis", "Limit-Load Analysis", "E-P Analysis" , "Local E-P Analysis"], value: "Elastic Analysis" },
                     { name: "AnalysisFolder", label: "Analysis Folder:", type: "text", value: "D:\\Test\\Check1" },
-                    { name: "MaterialName", label: "Shell Material:", type: "text", options: ["SA-516-GR-60", "other material"], value: "SA-516-GR-70" },
+                    { name: "MaterialName", label: "Shell Material:", type: "text",value: "SA-516-GR-70" },
                     { name: "OtherMaterialName", label: "Other Material Name:", type: "text", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
                     { name: "YoungsModulus", label: "Young's Modulus:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
                     { name: "PoissonsRatio", label: "Poisson's Ratio:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
