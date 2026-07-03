@@ -377,9 +377,8 @@
                     { name: "OtherMaterialName", label: "Other Material Name:", type: "text", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
                     { name: "YoungsModulus", label: "Young's Modulus:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
                     { name: "PoissonsRatio", label: "Poisson's Ratio:", type: "number", value: "", dependsOn: "MaterialName", showIf: ["other material"] },
-                    { name: "YieldStress", label: "Yield Stress:", type: "number", value: "", dependsOn: "TypeOfAnalysis", showIf: ["Limit-Load Analysis", "E-P Analysis" , "Local E-P Analysis"] },
-                    { name: "UltimateTensileStrength", label: "Ultimate Tensile Strength:", type: "number", value: "", dependsOn: "TypeOfAnalysis", showIf: ["E-P Analysis" , "Local E-P Analysis"] },
-                    { name: "DesignTemp", label: "Material Temp. (°C):", type: "number", value: "150" },
+                    { name: "YieldStress", label: "Yield Stress:", type: "number", value: "0", dependsOn: "TypeOfAnalysis", showIf: ["Limit-Load Analysis", "E-P Analysis" , "Local E-P Analysis"] },
+                    { name: "UltimateTensileStrength", label: "Ultimate Tensile Strength:", type: "number", value: "0", dependsOn: "TypeOfAnalysis", showIf: ["E-P Analysis" , "Local E-P Analysis"] },
                     { name: "CorrosionAllowance", label: "Corrosion Allowance (mm):", type: "number", value: "1.5" },
                     { name: "AllowableStress", label: "Allowable Stress:", type: "number", value: "138", dependsOn: "TypeOfAnalysis", showIf: ["Elastic Analysis"] }
                 ]},
@@ -575,18 +574,36 @@
 
         function evaluateDependencies(index) {
             const block = document.getElementById(`analysis-block-${index}`);
+            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${index}`)?.value || "";
+            const materialName = document.getElementById(`MaterialName_${index}`)?.value.toLowerCase().trim() || "";
+            const isOtherMat = materialName === "other material";
+
             block.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
                 const targetName = group.getAttribute('data-depends-on');
                 const showConditions = group.getAttribute('data-show-if').split(',');
                 let masterInput = document.getElementById(targetName);
-                if (masterInput && !masterInput.disabled && showConditions.includes(masterInput.value)) {
+                
+                let shouldShow = false;
+                const inputName = group.querySelector('input, select')?.name.replace(`_${index}`, '');
+                
+                // Custom complex logic for Material + Analysis Type
+                if (inputName === "YieldStress") {
+                    shouldShow = isOtherMat && ["Limit-Load Analysis", "E-P Analysis", "Local E-P Analysis"].includes(typeOfAnalysis);
+                } else if (inputName === "UltimateTensileStrength") {
+                    shouldShow = isOtherMat && ["E-P Analysis", "Local E-P Analysis"].includes(typeOfAnalysis);
+                } else if (masterInput && !masterInput.disabled && showConditions.includes(masterInput.value.toLowerCase().trim())) {
+                    // Standard logic for other fields
+                    shouldShow = true;
+                }
+
+                if (shouldShow) {
                     group.classList.remove('hidden');
                     group.querySelectorAll('input, select').forEach(i => i.disabled = false);
                 } else {
                     group.classList.add('hidden');
                     group.querySelectorAll('input, select').forEach(i => {
                         i.disabled = true;
-                        i.value = "";
+                        i.value = "0"; // Correctly send 0 when hidden to prevent missing value errors
                     });
                 }
             });
