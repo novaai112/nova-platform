@@ -364,7 +364,9 @@
     </div>
 
     <script>
-
+        const API_URL = "https://mkmkhkuhzprlnjzcouei.supabase.co/rest/v1/ansys_jobs";
+        const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rbWtoa3VoenBybG5qemNvdWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4OTk1NTEsImV4cCI6MjA5ODQ3NTU1MX0.lFC60895V5YplDhcHwmAEqN2LjRNttc8_AW_faWP-fY";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycby-oOC4MImsnlW5VgehlD7OPe0uNGy35m0jbExMiKqvORC6FLRUpmYE3BbL3fdqD0BQ/exec";
         const appData = {
             "shell": [
                 { title: "1. Project", fields: [
@@ -431,29 +433,13 @@
 
         async function verifyLicense(licenseKey, macAddress) {
             try {
-                let res = await fetch('/api/verify_license', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ licenseKey, macAddress })
-                });
-                
-                // Catch 404 or 500 errors from the Vercel backend before parsing JSON
-                if (!res.ok) {
-                    const textError = await res.text();
-                    console.error("Backend Error:", res.status, textError);
-                    alert("Backend Error: " + res.status + " (Check F12 Console)");
-                    return false;
-                }
-
-                let data = await res.json();
-                
-                if (data.result && data.result.includes('"status":"success"')) return true;
-                
-                alert("License Verification Failed: " + (data.result || "Unknown Error"));
+                let res = await fetch(`${GAS_URL}?action=verify&license_key=${licenseKey}&mac_address=${macAddress}`);
+                let text = await res.text();
+                if (text.includes('"status":"success"')) return true;
+                alert("License Verification Failed: " + text);
                 return false;
             } catch (e) {
-                console.error("Critical Connection Error:", e);
-                alert("Server Connection Error. Check F12 Console for details.");
+                alert("Server Connection Error");
                 return false;
             }
         }
@@ -596,7 +582,6 @@
                 const targetName = group.getAttribute('data-depends-on');
                 const showConditions = group.getAttribute('data-show-if').split(',');
                 
-                // PROACTIVE FIX: Added `_${index}` so it successfully finds the dropdown element
                 let masterInput = document.getElementById(`${targetName}_${index}`);
                 
                 let shouldShow = false;
@@ -702,16 +687,21 @@
 
             btn.innerText = "Uploading to Cloud...";
             try {
-                let res = await fetch('/api/submit_job', {
+                let res = await fetch(API_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": API_KEY,
+                        "Authorization": `Bearer ${API_KEY}`,
+                        "Prefer": "return=representation"
+                    },
                     body: JSON.stringify({
-                        payloadArr: payloadArr,
-                        licenseKey: licenseKey,
-                        macAddress: macAddress
+                        json_payload: payloadArr,
+                        status: "pending",
+                        license_key: licenseKey,
+                        mac_address: macAddress
                     })
                 });
-                
                 if(res.ok) {
                     let data = await res.json();
                     alert("Simulation successfully submitted!\nJob ID: " + data[0].id + "\nUse the Check Status button to track progress.");
@@ -721,11 +711,9 @@
             } catch(e) {
                 alert("Network Error during submission.");
             }
-            
             btn.innerText = "Submit Analysis to Cloud";
             btn.disabled = false;
         }
-
         function openSearchModal() {
             document.getElementById('searchModal').classList.add('active');
             let savedKey = localStorage.getItem("NOVA_LicenseKey");
@@ -751,10 +739,12 @@
             try {
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
                 
-                let res = await fetch('/api/search_jobs', {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query: query, isUUID: isUUID })
+                const filterCondition = isUUID ? `id.eq.${query}` : `license_key.eq.${query}`;
+                let url = `${API_URL}?select=id,status,result_url,created_at&${filterCondition}&order=created_at.desc`;
+                
+                let res = await fetch(url, {
+                    method: "GET",
+                    headers: { "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` }
                 });
                 
                 if(res.ok) {
@@ -779,7 +769,7 @@
                     });
                     resultsDiv.innerHTML = html;
                 } else {
-                    console.error("Server Error Status:", res.status);
+                    console.error("Supabase Error Status:", res.status);
                     resultsDiv.innerHTML = '<p style="color:#ef4444;">Error retrieving jobs.</p>';
                 }
             } catch(e) {
