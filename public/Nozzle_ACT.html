@@ -436,6 +436,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ licenseKey, macAddress })
                 });
+                
+                // Catch 404 or 500 errors from the Vercel backend before parsing JSON
+                if (!res.ok) {
+                    const textError = await res.text();
+                    console.error("Backend Error:", res.status, textError);
+                    alert("Backend Error: " + res.status + " (Check F12 Console)");
+                    return false;
+                }
+
                 let data = await res.json();
                 
                 if (data.result && data.result.includes('"status":"success"')) return true;
@@ -443,7 +452,8 @@
                 alert("License Verification Failed: " + (data.result || "Unknown Error"));
                 return false;
             } catch (e) {
-                alert("Server Connection Error");
+                console.error("Critical Connection Error:", e);
+                alert("Server Connection Error. Check F12 Console for details.");
                 return false;
             }
         }
