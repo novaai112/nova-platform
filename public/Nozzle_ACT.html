@@ -585,10 +585,13 @@
             block.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
                 const targetName = group.getAttribute('data-depends-on');
                 const showConditions = group.getAttribute('data-show-if').split(',');
-                let masterInput = document.getElementById(targetName);
+                
+                // PROACTIVE FIX: Added `_${index}` so it successfully finds the dropdown element
+                let masterInput = document.getElementById(`${targetName}_${index}`);
                 
                 let shouldShow = false;
                 const inputName = group.querySelector('input, select')?.name.replace(`_${index}`, '');
+                
                 if (inputName === "YieldStress") {
                     shouldShow = isOtherMat && ["Limit-Load Analysis", "E-P Analysis", "Local E-P Analysis"].includes(typeOfAnalysis);
                 } else if (inputName === "UltimateTensileStrength") {
@@ -708,7 +711,7 @@
             } catch(e) {
                 alert("Network Error during submission.");
             }
-            }
+            
             btn.innerText = "Submit Analysis to Cloud";
             btn.disabled = false;
         }
