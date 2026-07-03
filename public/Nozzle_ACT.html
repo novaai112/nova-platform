@@ -581,12 +581,10 @@
             block.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
                 const targetName = group.getAttribute('data-depends-on');
                 const showConditions = group.getAttribute('data-show-if').split(',');
-                
-                let masterInput = document.getElementById(`${targetName}_${index}`);
+                let masterInput = document.getElementById(targetName);
                 
                 let shouldShow = false;
                 const inputName = group.querySelector('input, select')?.name.replace(`_${index}`, '');
-                
                 if (inputName === "YieldStress") {
                     shouldShow = isOtherMat && ["Limit-Load Analysis", "E-P Analysis", "Local E-P Analysis"].includes(typeOfAnalysis);
                 } else if (inputName === "UltimateTensileStrength") {
@@ -603,7 +601,7 @@
                     group.classList.add('hidden');
                     group.querySelectorAll('input, select').forEach(i => {
                         i.disabled = true;
-                        i.value = "0";
+                        i.value = "0"; 
                     });
                 }
             });
