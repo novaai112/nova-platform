@@ -8,11 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Premium Dark Theme */
-            --bg-base: #020617; /* Slate 950 */
-            --bg-glow-1: #0284c7; /* Sky 600 */
-            --bg-glow-2: #4338ca; /* Indigo 700 */
-            --bg-glow-3: #0f766e; /* Teal 700 */
+            --bg-base: #020617;
+            --bg-glow-1: #0284c7;
+            --bg-glow-2: #4338ca;
+            --bg-glow-3: #0f766e;
             --card-bg: rgba(15, 23, 42, 0.6);
             --card-border: rgba(255, 255, 255, 0.05);
             --card-highlight: rgba(255, 255, 255, 0.1);
@@ -33,12 +32,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
-            cursor: none !important; /* Hide default cursor for custom cursor */
-        }
-        
-        /* Allow text cursor on inputs for usability */
-        input[type="text"], input[type="number"] {
-            cursor: text !important;
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -55,25 +48,14 @@
             position: relative;
         }
 
-        /* Custom Cursor */
-        .cursor-dot {
-            position: fixed; top: 0; left: 0; width: 6px; height: 6px;
-            background-color: var(--accent); border-radius: 50%;
-            transform: translate(-50%, -50%); pointer-events: none; z-index: 10000;
-        }
-        .cursor-outline {
-            position: fixed; top: 0; left: 0; width: 24px; height: 24px;
-            border: 2px solid var(--accent); border-radius: 50%;
-            transform: translate(-50%, -50%); pointer-events: none; z-index: 9999;
-            transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
-        }
-        .cursor-outline.hover {
-            width: 40px; height: 40px;
-            background-color: rgba(56, 189, 248, 0.1);
-            border-color: #7dd3fc;
+        input[type="text"], input[type="number"], .glass-input {
+            cursor: text;
         }
 
-        /* Ambient Orbs */
+        button, .btn-glass, .btn-submit, select, .glass-select, .slider, .autocomplete-item, .close-modal, label.switch {
+            cursor: pointer;
+        }
+
         .ambient-orb {
             position: fixed; border-radius: 50%; filter: blur(130px);
             z-index: -1; opacity: 0.4; animation: float 25s infinite alternate ease-in-out;
@@ -89,7 +71,6 @@
             100% { transform: translate(-20px, 30px) scale(0.9); }
         }
 
-        /* Floating Navbar */
         .app-header-container {
             padding: 1.25rem 2rem 0 2rem;
             z-index: 100;
@@ -346,10 +327,6 @@
     </style>
 </head>
 <body>
-    <!-- Custom Cursor Elements -->
-    <div class="cursor-dot" id="cursorDot"></div>
-    <div class="cursor-outline" id="cursorOutline"></div>
-
     <div class="ambient-orb orb-1"></div>
     <div class="ambient-orb orb-2"></div>
     <div class="ambient-orb orb-3"></div>
@@ -382,7 +359,6 @@
 
     <div class="main-workspace">
         <form id="forms-container">
-            <!-- Dynamic Content Injected Here -->
         </form>
     </div>
 
@@ -403,33 +379,6 @@
     </div>
 
     <script>
-        // Custom Cursor Logic
-        const cursorDot = document.getElementById('cursorDot');
-        const cursorOutline = document.getElementById('cursorOutline');
-
-        window.addEventListener('mousemove', function(e) {
-            const posX = e.clientX;
-            const posY = e.clientY;
-            
-            cursorDot.style.left = `${posX}px`;
-            cursorDot.style.top = `${posY}px`;
-            
-            cursorOutline.animate({
-                left: `${posX}px`,
-                top: `${posY}px`
-            }, { duration: 400, fill: "forwards" });
-        });
-
-        window.addEventListener('mouseover', e => {
-            const isHoverable = e.target.closest('button, a, select, .autocomplete-item, .slider, input[type="checkbox"]');
-            if(isHoverable) {
-                cursorOutline.classList.add('hover');
-            } else {
-                cursorOutline.classList.remove('hover');
-            }
-        });
-
-        // App Logic
         const API_URL = "https://mkmkhkuhzprlnjzcouei.supabase.co/rest/v1/ansys_jobs";
         const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rbWtoa3VoenBybG5qemNvdWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4OTk1NTEsImV4cCI6MjA5ODQ3NTU1MX0.lFC60895V5YplDhcHwmAEqN2LjRNttc8_AW_faWP-fY";
         
@@ -458,7 +407,6 @@
                 </div>` : ''}
                 <div class="dashboard-grid">
                     
-                    <!-- 1. Project & Conditions -->
                     <div class="glass-card">
                         <div class="card-header">1. Project & Conditions</div>
                         <div class="card-body">
@@ -523,7 +471,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Materials -->
                     <div class="glass-card">
                         <div class="card-header">2. Materials</div>
                         <div class="card-body">
@@ -634,7 +581,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Geometry Details -->
                     <div class="glass-card">
                         <div class="card-header">3. Geometry Details</div>
                         <div class="card-body">
@@ -687,7 +633,6 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="775"><span class="addon">mm</span></div></div>
                             </div>
                             
-                            <!-- SRN Specific Fields -->
                             <div class="form-group hidden" id="grp_HubOD_${i}">
                                 <label class="form-label">Hub OD</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD_${i}" id="HubOD_${i}" value="250"><span class="addon">mm</span></div></div>
@@ -701,7 +646,6 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength_${i}" id="TransitionLength_${i}" value="75"><span class="addon">mm</span></div></div>
                             </div>
 
-                            <!-- Pad Fields -->
                             <div class="form-group hidden" id="grp_PadWidth_${i}">
                                 <label class="form-label">Pad Width</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth_${i}" id="PadWidth_${i}" value="17"><span class="addon">mm</span></div></div>
@@ -713,7 +657,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Meshing & Loads -->
                     <div class="glass-card">
                         <div class="card-header">4. Meshing & Loads</div>
                         <div class="card-body">
@@ -810,22 +753,18 @@
             const padReq = document.getElementById(`PadRequired_${i}`).value;
             const nozzleType = document.getElementById(`TypeOfNozzle_${i}`).value;
 
-            // Analysis Type Logic
             toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
 
-            // Operating Conditions
             const showThermal = opCondition === 'Yes';
             toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
             toggleVisibility(`grp_NozzleIdHTC_${i}`, showThermal);
             toggleVisibility(`grp_OutsideHTC_${i}`, showThermal);
             
-            // SRN Logic
             const isSRN = nozzleType === 'SRN';
             toggleVisibility(`grp_HubOD_${i}`, isSRN);
             toggleVisibility(`grp_HubLength_${i}`, isSRN);
             toggleVisibility(`grp_TransitionLength_${i}`, isSRN);
 
-            // Material Logic
             const handleMaterialGroup = (prefix, isActive) => {
                 if(!isActive) {
                     toggleVisibility(`grp_${prefix}Material_${i}`, false);
