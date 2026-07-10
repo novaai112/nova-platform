@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="/favicon.jpg">
-    <title>NOVA Nozzle Analysis - Professional Interface</title>
+    <title>NOVA Nozzle Analysis - Enterprise Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #050914;
-            --bg-glow-1: #2563eb; 
-            --bg-glow-2: #7c3aed; 
-            --bg-glow-3: #059669;
-            --card-bg: rgba(13, 18, 30, 0.65);
-            --card-border: rgba(255, 255, 255, 0.06);
-            --card-highlight: rgba(255, 255, 255, 0.1);
+            --bg-base: #060913;
+            --bg-glow-1: #1e3a8a;
+            --bg-glow-2: #312e81;
+            --bg-glow-3: #064e3b;
+            --card-bg: rgba(15, 20, 35, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-highlight: rgba(255, 255, 255, 0.12);
             --primary: #3b82f6;
             --primary-hover: #2563eb;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --input-bg: rgba(0, 0, 0, 0.4);
-            --input-border: rgba(255, 255, 255, 0.12);
+            --input-bg: rgba(6, 9, 19, 0.6);
+            --input-border: rgba(255, 255, 255, 0.15);
+            --input-focus: rgba(59, 130, 246, 0.5);
         }
         * {
             box-sizing: border-box;
@@ -30,7 +31,7 @@
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
         }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
         
@@ -47,20 +48,20 @@
         .ambient-orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(140px);
+            filter: blur(120px);
             z-index: -1;
-            opacity: 0.4;
-            animation: float 25s infinite alternate ease-in-out;
+            opacity: 0.5;
+            animation: float 20s infinite alternate ease-in-out;
             pointer-events: none;
         }
-        .orb-1 { width: 45vw; height: 45vw; background: var(--bg-glow-1); top: -10vh; left: -10vw; }
-        .orb-2 { width: 35vw; height: 35vw; background: var(--bg-glow-2); bottom: -10vh; right: -5vw; animation-delay: -5s; }
-        .orb-3 { width: 30vw; height: 30vw; background: var(--bg-glow-3); top: 30vh; left: 40vw; animation-delay: -10s; opacity: 0.2; }
+        .orb-1 { width: 40vw; height: 40vw; background: var(--bg-glow-1); top: -10vh; left: -10vw; }
+        .orb-2 { width: 30vw; height: 30vw; background: var(--bg-glow-2); bottom: -10vh; right: 10vw; animation-delay: -5s; }
+        .orb-3 { width: 35vw; height: 35vw; background: var(--bg-glow-3); top: 20vh; left: 40vw; animation-delay: -10s; opacity: 0.3; }
         
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, 50px) scale(1.05); }
-            100% { transform: translate(-20px, 30px) scale(0.95); }
+            50% { transform: translate(20px, 40px) scale(1.05); }
+            100% { transform: translate(-15px, 20px) scale(0.95); }
         }
 
         .app-header {
@@ -68,78 +69,79 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(5, 9, 20, 0.85);
+            background: rgba(6, 9, 19, 0.85);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--card-border);
             z-index: 100;
         }
         
         .app-header h1 {
-            font-size: 1.2rem; font-weight: 800; letter-spacing: 1.5px;
-            background: linear-gradient(to right, #60a5fa, #c084fc);
+            font-size: 1.25rem; font-weight: 800; letter-spacing: 1px;
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        .header-controls { display: flex; gap: 1rem; align-items: center; }
+        .header-controls { display: flex; gap: 0.75rem; align-items: center; }
         
         .btn-glass {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--card-border);
             color: var(--text-main);
-            padding: 0.4rem 1rem;
-            border-radius: 6px;
-            font-size: 0.8rem; font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .btn-glass:hover {
             background: rgba(255, 255, 255, 0.08);
-            border-color: var(--primary);
+            border-color: rgba(255, 255, 255, 0.2);
         }
         .btn-glass.active {
             background: rgba(59, 130, 246, 0.15);
             border-color: var(--primary);
             color: #60a5fa;
+            box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1);
         }
 
         .main-workspace {
             flex: 1;
             overflow-y: auto;
-            padding: 1.5rem;
+            padding: 1.5rem 2rem;
             display: flex;
             justify-content: center;
         }
 
         .dashboard-grid {
             width: 100%;
-            max-width: 1800px;
+            max-width: 1700px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
             gap: 1.25rem;
             align-content: start;
-            padding-bottom: 100px;
+            padding-bottom: 120px;
         }
 
         .glass-card {
             background: var(--card-bg);
-            backdrop-filter: blur(25px);
+            backdrop-filter: blur(15px);
             border: 1px solid var(--card-border);
             border-top: 1px solid var(--card-highlight);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .card-header {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #e2e8f0;
-            background: rgba(255,255,255,0.03);
-            padding: 0.75rem 1.25rem;
+            background: rgba(255,255,255,0.02);
+            padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--card-border);
             display: flex;
             align-items: center;
@@ -157,66 +159,66 @@
         }
 
         .card-body {
-            padding: 1rem 1.25rem;
+            padding: 1.25rem;
             display: flex;
             flex-direction: column;
+            gap: 0.75rem;
         }
 
         .section-label {
             font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 1rem 0 0.5rem 0;
+            font-weight: 800;
+            color: #60a5fa;
+            margin: 0.5rem 0 0.25rem 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+            padding-bottom: 0.25rem;
         }
         .section-label:first-child { margin-top: 0; }
 
         .form-group {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            gap: 10px;
             position: relative;
+            transition: opacity 0.2s ease;
         }
-        .form-group:last-child { border-bottom: none; }
         .form-group.hidden { display: none !important; }
         
         .form-label {
-            flex: 1;
+            flex: 0 0 40%;
             font-size: 0.8rem;
             font-weight: 500;
             color: var(--text-muted);
-            padding-right: 10px;
+            line-height: 1.2;
         }
 
         .input-control {
-            flex: 0 0 140px;
+            flex: 1;
             position: relative;
         }
 
         .glass-input, .glass-select {
             width: 100%;
-            padding: 4px 8px;
+            padding: 0.6rem 0.8rem;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 0.85rem;
             color: var(--text-main);
             transition: all 0.2s ease;
             outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        .glass-select option { background: #0b1120; color: var(--text-main); }
+        .glass-select option { background: #0f1423; color: var(--text-main); }
         
         .glass-input:focus, .glass-select:focus {
             border-color: var(--primary);
-            background: rgba(15, 23, 42, 0.95);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background: rgba(15, 20, 35, 0.9);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 3px var(--input-focus);
         }
-        
-        .glass-input[readonly] { background: rgba(0, 0, 0, 0.6); color: #64748b; cursor: not-allowed; }
         
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
@@ -226,70 +228,70 @@
             align-items: center;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
-            border-radius: 4px;
+            border-radius: 6px;
             transition: all 0.2s ease;
             overflow: hidden;
         }
         .input-addon-group:focus-within {
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 3px var(--input-focus);
         }
-        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; }
+        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; padding-right: 4px; }
         .addon {
-            padding: 0 6px; color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
-            background: rgba(255,255,255,0.05); height: 100%; display: flex; align-items: center;
+            padding: 0 8px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
+            background: rgba(255,255,255,0.03); height: 100%; display: flex; align-items: center;
             border-left: 1px solid var(--input-border);
         }
 
+        .autocomplete-list {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: rgba(15, 20, 35, 0.98); backdrop-filter: blur(15px);
+            border: 1px solid var(--primary); border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; display: none;
+            max-height: 200px; overflow-y: auto;
+        }
+        .autocomplete-item {
+            padding: 10px 12px; cursor: pointer; color: var(--text-main); font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;
+        }
+        .autocomplete-item:hover { background: rgba(59,130,246,0.2); color: #60a5fa; padding-left: 16px; }
+
         .sticky-footer {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 1rem 2rem; background: rgba(5, 9, 20, 0.9);
+            padding: 1.25rem 2rem; background: rgba(6, 9, 19, 0.9);
             backdrop-filter: blur(20px); border-top: 1px solid var(--card-border);
             display: flex; justify-content: center; z-index: 100;
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
-            border: 1px solid rgba(255,255,255,0.1); border-top: 1px solid rgba(255,255,255,0.3);
-            color: white; padding: 0.75rem 4rem; border-radius: 8px;
-            font-weight: 700; font-size: 0.9rem; cursor: pointer;
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            border: 1px solid rgba(255,255,255,0.15); border-top: 1px solid rgba(255,255,255,0.3);
+            color: white; padding: 0.85rem 4rem; border-radius: 10px;
+            font-weight: 700; font-size: 1rem; cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            letter-spacing: 1px; text-transform: uppercase;
-            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.2);
+            letter-spacing: 1.5px; text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
         }
         .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(37, 99, 235, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
             background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
         }
 
-        .autocomplete-list {
-            position: absolute; top: calc(100% + 2px); left: 0; right: 0;
-            background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(10px);
-            border: 1px solid var(--card-border); border-radius: 4px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000; display: none; overflow: hidden;
-            width: 200px;
-            right: 0; left: auto;
-        }
-        .autocomplete-item {
-            padding: 8px 12px; cursor: pointer; color: var(--text-main); font-size: 0.8rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;
-        }
-        .autocomplete-item:hover { background: rgba(59,130,246,0.2); color: #60a5fa; padding-left: 16px; }
-
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(15px);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);
             display: flex; justify-content: center; align-items: center;
             z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         .modal-box {
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 12px; padding: 2rem; width: 90%; max-width: 600px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative;
+            border-radius: 14px; padding: 2.5rem; width: 90%; max-width: 600px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6); position: relative;
         }
-        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 1.75rem; cursor: pointer; transition: color 0.2s; }
+        .close-modal:hover { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -313,11 +315,11 @@
             <div class="glass-card">
                 <div class="card-header">1. Project & Conditions</div>
                 <div class="card-body">
-                    <div class="form-group">
+                    <div class="form-group" id="grp_AnalysisFolder">
                         <label class="form-label">Analysis Folder</label>
                         <div class="input-control"><input type="text" class="glass-input" name="AnalysisFolder" id="AnalysisFolder" value="D:\Test\Check1"></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_TypeOfAnalysis">
                         <label class="form-label">Type Of Analysis</label>
                         <div class="input-control">
                             <select class="glass-select" name="TypeOfAnalysis" id="TypeOfAnalysis" onchange="evaluateDependencies()">
@@ -328,7 +330,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="TypeOfAnalysis" data-show-if="Limit-Load Analysis">
+                    <div class="form-group hidden" id="grp_LimitLoadModel">
                         <label class="form-label">Material Model</label>
                         <div class="input-control">
                             <select class="glass-select" name="LimitLoadModel" id="LimitLoadModel">
@@ -337,13 +339,13 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_DesignTemp">
                         <label class="form-label">Design Temp</label>
                         <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp" id="DesignTemp" value="150" onchange="recalculateAllMaterials()"><span class="addon">°C</span></div>
+                            <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp" id="DesignTemp" value="150"><span class="addon">°C</span></div>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_InternalPressure">
                         <label class="form-label">Internal Pressure</label>
                         <div class="input-control">
                             <div class="input-addon-group"><input type="number" class="glass-input" name="InternalPressure" id="InternalPressure" value="10"><span class="addon">MPa</span></div>
@@ -351,8 +353,8 @@
                     </div>
 
                     <div class="section-label">Operating Conditions</div>
-                    <div class="form-group">
-                        <label class="form-label">Thermal Analysis Reqd?</label>
+                    <div class="form-group" id="grp_OperatingCondition">
+                        <label class="form-label">Thermal Analysis?</label>
                         <div class="input-control">
                             <select class="glass-select" name="OperatingCondition" id="OperatingCondition" onchange="evaluateDependencies()">
                                 <option value="No">No</option>
@@ -360,15 +362,15 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="OperatingCondition" data-show-if="Yes">
-                        <label class="form-label">Shell ID HTC @ Bulk Temp</label>
+                    <div class="form-group hidden" id="grp_ShellIdHTC">
+                        <label class="form-label">Shell ID HTC</label>
                         <div class="input-control"><input type="number" class="glass-input" name="ShellIdHTC" id="ShellIdHTC" value="100"></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="OperatingCondition" data-show-if="Yes">
-                        <label class="form-label">Nozzle ID HTC @ Bulk Temp</label>
+                    <div class="form-group hidden" id="grp_NozzleIdHTC">
+                        <label class="form-label">Nozzle ID HTC</label>
                         <div class="input-control"><input type="number" class="glass-input" name="NozzleIdHTC" id="NozzleIdHTC" value="120"></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="OperatingCondition" data-show-if="Yes">
+                    <div class="form-group hidden" id="grp_OutsideHTC">
                         <label class="form-label">Outside Surface HTC</label>
                         <div class="input-control"><input type="number" class="glass-input" name="OutsideHTC" id="OutsideHTC" value="10"></div>
                     </div>
@@ -379,59 +381,71 @@
                 <div class="card-header">2. Materials</div>
                 <div class="card-body">
                     <div class="section-label">Shell Material</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_ShellMaterial">
                         <label class="form-label">Material Name</label>
                         <div class="input-control">
                             <input type="text" class="glass-input" name="ShellMaterial" id="ShellMaterial" value="SA-516-GR-70" autocomplete="off" oninput="searchMaterial(this)" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies()">
                         </div>
                     </div>
-                    <div class="form-group" data-depends-on="TypeOfAnalysis" data-show-if="Elastic Analysis">
+                    <div class="form-group hidden" id="grp_ShellOtherName">
+                        <label class="form-label">Custom Name</label>
+                        <div class="input-control"><input type="text" class="glass-input" name="ShellOtherName" id="ShellOtherName" value="Custom_Material"></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_ShellYM">
+                        <label class="form-label">Young's Modulus</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellYM" id="ShellYM" value="200000"><span class="addon">MPa</span></div></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_ShellPR">
+                        <label class="form-label">Poisson's Ratio</label>
+                        <div class="input-control"><input type="number" class="glass-input" name="ShellPR" id="ShellPR" value="0.3"></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_ShellAllowable">
                         <label class="form-label">Allowable Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="ShellAllowable" id="ShellAllowable" value="138"><span class="addon">MPa</span></div>
-                        </div>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellAllowable" id="ShellAllowable" value="138"><span class="addon">MPa</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="TypeOfAnalysis" data-show-if="Limit-Load Analysis,E-P Analysis,Local E-P Analysis">
+                    <div class="form-group hidden" id="grp_ShellYield">
                         <label class="form-label">Yield Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="ShellYield" id="ShellYield" value="260"><span class="addon">MPa</span></div>
-                        </div>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellYield" id="ShellYield" value="260"><span class="addon">MPa</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="TypeOfAnalysis" data-show-if="E-P Analysis,Local E-P Analysis">
-                        <label class="form-label">Ultimate Tensile Strength</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="ShellUTS" id="ShellUTS" value="485"><span class="addon">MPa</span></div>
-                        </div>
+                    <div class="form-group hidden" id="grp_ShellUTS">
+                        <label class="form-label">Ult. Tensile Str.</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellUTS" id="ShellUTS" value="485"><span class="addon">MPa</span></div></div>
                     </div>
 
                     <div class="section-label">Nozzle Material</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleMaterial">
                         <label class="form-label">Material Name</label>
                         <div class="input-control">
                             <input type="text" class="glass-input" name="NozzleMaterial" id="NozzleMaterial" value="SA-106-GR-B" autocomplete="off" oninput="searchMaterial(this)" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies()">
                         </div>
                     </div>
-                    <div class="form-group" data-depends-on="TypeOfAnalysis" data-show-if="Elastic Analysis">
+                    <div class="form-group hidden" id="grp_NozzleOtherName">
+                        <label class="form-label">Custom Name</label>
+                        <div class="input-control"><input type="text" class="glass-input" name="NozzleOtherName" id="NozzleOtherName" value="Custom_Material"></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_NozzleYM">
+                        <label class="form-label">Young's Modulus</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYM" id="NozzleYM" value="200000"><span class="addon">MPa</span></div></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_NozzlePR">
+                        <label class="form-label">Poisson's Ratio</label>
+                        <div class="input-control"><input type="number" class="glass-input" name="NozzlePR" id="NozzlePR" value="0.3"></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_NozzleAllowable">
                         <label class="form-label">Allowable Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="NozzleAllowable" id="NozzleAllowable" value="118"><span class="addon">MPa</span></div>
-                        </div>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleAllowable" id="NozzleAllowable" value="118"><span class="addon">MPa</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="TypeOfAnalysis" data-show-if="Limit-Load Analysis,E-P Analysis,Local E-P Analysis">
+                    <div class="form-group hidden" id="grp_NozzleYield">
                         <label class="form-label">Yield Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYield" id="NozzleYield" value="240"><span class="addon">MPa</span></div>
-                        </div>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYield" id="NozzleYield" value="240"><span class="addon">MPa</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="TypeOfAnalysis" data-show-if="E-P Analysis,Local E-P Analysis">
-                        <label class="form-label">Ultimate Tensile Strength</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="NozzleUTS" id="NozzleUTS" value="415"><span class="addon">MPa</span></div>
-                        </div>
+                    <div class="form-group hidden" id="grp_NozzleUTS">
+                        <label class="form-label">Ult. Tensile Str.</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleUTS" id="NozzleUTS" value="415"><span class="addon">MPa</span></div></div>
                     </div>
 
                     <div class="section-label">Pad Material</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_PadRequired">
                         <label class="form-label">Pad Required</label>
                         <div class="input-control">
                             <select class="glass-select" name="PadRequired" id="PadRequired" onchange="evaluateDependencies()">
@@ -440,23 +454,35 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="PadRequired" data-show-if="Yes">
+                    <div class="form-group hidden" id="grp_PadMaterial">
                         <label class="form-label">Material Name</label>
                         <div class="input-control">
                             <input type="text" class="glass-input" name="PadMaterial" id="PadMaterial" value="SA-516-GR-70" autocomplete="off" oninput="searchMaterial(this)" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies()">
                         </div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="PadRequired" data-show-if="Yes">
-                        <label class="form-label">Allowable Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="PadAllowable" id="PadAllowable" value="138"><span class="addon">MPa</span></div>
-                        </div>
+                    <div class="form-group hidden" id="grp_PadOtherName">
+                        <label class="form-label">Custom Name</label>
+                        <div class="input-control"><input type="text" class="glass-input" name="PadOtherName" id="PadOtherName" value="Custom_Material"></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="PadRequired" data-show-if="Yes">
+                    <div class="form-group hidden" id="grp_PadYM">
+                        <label class="form-label">Young's Modulus</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadYM" id="PadYM" value="200000"><span class="addon">MPa</span></div></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_PadPR">
+                        <label class="form-label">Poisson's Ratio</label>
+                        <div class="input-control"><input type="number" class="glass-input" name="PadPR" id="PadPR" value="0.3"></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_PadAllowable">
+                        <label class="form-label">Allowable Stress</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadAllowable" id="PadAllowable" value="138"><span class="addon">MPa</span></div></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_PadYield">
                         <label class="form-label">Yield Stress</label>
-                        <div class="input-control">
-                            <div class="input-addon-group"><input type="number" class="glass-input" name="PadYield" id="PadYield" value="260"><span class="addon">MPa</span></div>
-                        </div>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadYield" id="PadYield" value="260"><span class="addon">MPa</span></div></div>
+                    </div>
+                    <div class="form-group hidden" id="grp_PadUTS">
+                        <label class="form-label">Ult. Tensile Str.</label>
+                        <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadUTS" id="PadUTS" value="485"><span class="addon">MPa</span></div></div>
                     </div>
                 </div>
             </div>
@@ -465,29 +491,29 @@
                 <div class="card-header">3. Geometry Details</div>
                 <div class="card-body">
                     <div class="section-label">Shell Geometry</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_ShellOD">
                         <label class="form-label">Shell OD</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellOD" id="ShellOD" value="1000"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_ShellTHK">
                         <label class="form-label">Shell THK</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellTHK" id="ShellTHK" value="25"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_ShellHeight">
                         <label class="form-label">Shell Height</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellHeight" id="ShellHeight" value="1000"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleOffset">
                         <label class="form-label">Nozzle Offset</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOffset" id="NozzleOffset" value="0"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_CorrosionAllowance">
                         <label class="form-label">Corrosion Allowance</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="CorrosionAllowance" id="CorrosionAllowance" value="1.5"><span class="addon">mm</span></div></div>
                     </div>
 
                     <div class="section-label">Nozzle & Pad Geometry</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_TypeOfNozzle">
                         <label class="form-label">Nozzle Type</label>
                         <div class="input-control">
                             <select class="glass-select" name="TypeOfNozzle" id="TypeOfNozzle">
@@ -496,39 +522,39 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleHeight">
                         <label class="form-label">Nozzle Loc. (Height)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleHeight" id="NozzleHeight" value="500"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleOD">
                         <label class="form-label">Neck OD</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOD" id="NozzleOD" value="150"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleTHK">
                         <label class="form-label">Neck THK</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleTHK" id="NozzleTHK" value="15"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleProjection">
                         <label class="form-label">Nozzle Projection</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection" id="NozzleProjection" value="775"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_HubOD">
                         <label class="form-label">Hub OD</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD" id="HubOD" value="250"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_HubLength">
                         <label class="form-label">Hub Length</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubLength" id="HubLength" value="150"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_TransitionLength">
                         <label class="form-label">Transition Length</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength" id="TransitionLength" value="75"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="PadRequired" data-show-if="Yes">
+                    <div class="form-group hidden" id="grp_PadWidth">
                         <label class="form-label">Pad Width</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth" id="PadWidth" value="17"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group hidden" data-depends-on="PadRequired" data-show-if="Yes">
+                    <div class="form-group hidden" id="grp_PadTHK">
                         <label class="form-label">Pad THK</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadTHK" id="PadTHK" value="7"><span class="addon">mm</span></div></div>
                     </div>
@@ -539,11 +565,11 @@
                 <div class="card-header">4. Meshing & Loads</div>
                 <div class="card-body">
                     <div class="section-label">Meshing Configuration</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_GlobalBodySizing">
                         <label class="form-label">Global Body Sizing</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="GlobalBodySizing" id="GlobalBodySizing" value="30"><span class="addon">mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_MeshMethod">
                         <label class="form-label">Mesh Method</label>
                         <div class="input-control">
                             <select class="glass-select" name="MeshMethod" id="MeshMethod">
@@ -554,13 +580,13 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_EdgeDivision">
                         <label class="form-label">Edge Divisions</label>
                         <div class="input-control"><input type="number" class="glass-input" name="EdgeDivision" id="EdgeDivision" value="3"></div>
                     </div>
 
                     <div class="section-label">Loading Conditions</div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_NozzleLoadingLocation">
                         <label class="form-label">Load Location</label>
                         <div class="input-control">
                             <select class="glass-select" name="NozzleLoadingLocation" id="NozzleLoadingLocation">
@@ -569,27 +595,27 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_FL">
                         <label class="form-label">F_L (Longitudinal)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FL" id="FL" value="1000"><span class="addon">N</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_MT">
                         <label class="form-label">M_T (Torsional)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MT" id="MT" value="10000"><span class="addon">N mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_FC">
                         <label class="form-label">F_C (Circumferential)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FC" id="FC" value="1000"><span class="addon">N</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_MC">
                         <label class="form-label">M_C (Circumferential)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MC" id="MC" value="10000"><span class="addon">N mm</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_Fa">
                         <label class="form-label">P (Axial / Fa)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Fa" id="Fa" value="1200"><span class="addon">N</span></div></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="grp_ML">
                         <label class="form-label">M_L (Longitudinal)</label>
                         <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ML" id="ML" value="20000"><span class="addon">N mm</span></div></div>
                     </div>
@@ -606,8 +632,8 @@
     <div class="modal-overlay" id="searchModal">
         <div class="modal-box">
             <button class="close-modal" onclick="closeSearchModal()">&times;</button>
-            <h2 style="margin-bottom:20px; font-weight:800; color:#60a5fa; font-size:1.2rem;">Job Repository</h2>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <h2 style="margin-bottom:1.5rem; font-weight:800; color:#60a5fa; font-size:1.2rem;">Job Repository</h2>
+            <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
                 <input type="text" id="searchInput" class="glass-input" placeholder="Enter Job ID or License Key...">
                 <button class="btn-glass" style="padding: 0 1.5rem;" onclick="searchJobs()">Search</button>
             </div>
@@ -622,43 +648,63 @@
         let currentAnalysis = "shell";
         let materialLibrary = [];
 
-        function evaluateDependencies() {
-            document.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
-                const depName = group.getAttribute('data-depends-on');
-                const showVals = group.getAttribute('data-show-if').split(',').map(s => s.trim());
-                const masterEl = document.getElementById(depName);
-                
-                if (masterEl && !masterEl.closest('.form-group.hidden')) {
-                    if (showVals.includes(masterEl.value)) {
-                        group.classList.remove('hidden');
-                    } else {
-                        group.classList.add('hidden');
-                    }
-                } else {
-                    group.classList.add('hidden');
-                }
-            });
-            document.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
-                const depName = group.getAttribute('data-depends-on');
-                const showVals = group.getAttribute('data-show-if').split(',').map(s => s.trim());
-                const masterEl = document.getElementById(depName);
-                if (masterEl && !masterEl.closest('.form-group.hidden') && showVals.includes(masterEl.value)) {
-                    group.classList.remove('hidden');
-                }
-            });
-            
-            const elasticOnly = document.getElementById('TypeOfAnalysis').value === 'Elastic Analysis';
-            if (elasticOnly) {
-                if(document.getElementById('PadRequired').value === 'Yes') {
-                    document.getElementById('PadAllowable').closest('.form-group').classList.remove('hidden');
-                    document.getElementById('PadYield').closest('.form-group').classList.add('hidden');
-                }
-            } else {
-                if(document.getElementById('PadRequired').value === 'Yes') {
-                    document.getElementById('PadAllowable').closest('.form-group').classList.add('hidden');
-                    document.getElementById('PadYield').closest('.form-group').classList.remove('hidden');
-                }
+        function toggleVisibility(id, show) {
+            const el = document.getElementById(`grp_${id}`);
+            if(el) {
+                if(show) el.classList.remove('hidden');
+                else el.classList.add('hidden');
             }
+        }
+
+        function evaluateDependencies() {
+            const typeOfAnalysis = document.getElementById('TypeOfAnalysis').value;
+            const opCondition = document.getElementById('OperatingCondition').value;
+            const padReq = document.getElementById('PadRequired').value;
+
+            toggleVisibility('LimitLoadModel', typeOfAnalysis === 'Limit-Load Analysis');
+
+            const showThermal = opCondition === 'Yes';
+            toggleVisibility('ShellIdHTC', showThermal);
+            toggleVisibility('NozzleIdHTC', showThermal);
+            toggleVisibility('OutsideHTC', showThermal);
+
+            const handleMaterialGroup = (prefix, isActive) => {
+                if(!isActive) {
+                    toggleVisibility(`${prefix}Material`, false);
+                    toggleVisibility(`${prefix}OtherName`, false);
+                    toggleVisibility(`${prefix}YM`, false);
+                    toggleVisibility(`${prefix}PR`, false);
+                    toggleVisibility(`${prefix}Allowable`, false);
+                    toggleVisibility(`${prefix}Yield`, false);
+                    toggleVisibility(`${prefix}UTS`, false);
+                    return;
+                }
+
+                toggleVisibility(`${prefix}Material`, true);
+                const matName = document.getElementById(`${prefix}Material`).value.toLowerCase().trim();
+                const isOther = matName === 'other material';
+                
+                toggleVisibility(`${prefix}OtherName`, isOther);
+                toggleVisibility(`${prefix}YM`, isOther);
+                toggleVisibility(`${prefix}PR`, isOther);
+                
+                const showAllowable = isOther && typeOfAnalysis === 'Elastic Analysis';
+                toggleVisibility(`${prefix}Allowable`, showAllowable);
+                
+                const showYield = isOther && ['Limit-Load Analysis', 'E-P Analysis', 'Local E-P Analysis'].includes(typeOfAnalysis);
+                toggleVisibility(`${prefix}Yield`, showYield);
+                
+                const showUTS = isOther && ['E-P Analysis', 'Local E-P Analysis'].includes(typeOfAnalysis);
+                toggleVisibility(`${prefix}UTS`, showUTS);
+            };
+
+            handleMaterialGroup('Shell', true);
+            handleMaterialGroup('Nozzle', true);
+            
+            const isPadActive = padReq === 'Yes';
+            handleMaterialGroup('Pad', isPadActive);
+            toggleVisibility('PadWidth', isPadActive);
+            toggleVisibility('PadTHK', isPadActive);
         }
 
         async function fetchMaterialData() {
@@ -682,7 +728,12 @@
             const q = inputEl.value.toLowerCase().replace(/[\s\-_]/g, "");
             if(!q) { list.style.display = 'none'; return; }
             
-            const matches = materialLibrary.filter(m => m.Name && m.Name.toLowerCase().replace(/[\s\-_]/g, "").includes(q)).slice(0, 5);
+            let matches = materialLibrary.filter(m => m.Name && m.Name.toLowerCase().replace(/[\s\-_]/g, "").includes(q)).slice(0, 5);
+            
+            if ("other material".includes(q)) {
+                matches.push({ Name: "other material" });
+            }
+
             if(matches.length > 0) {
                 list.innerHTML = matches.map(m => `<div class="autocomplete-item" onmousedown="selectMaterial('${m.Name}', '${inputEl.id}')">${m.Name}</div>`).join('');
                 list.style.display = 'block';
@@ -695,64 +746,11 @@
             const el = document.getElementById(inputId);
             el.value = matName;
             closeLists();
-            autoFillProperties(matName, inputId);
+            evaluateDependencies();
         }
 
         function closeLists() {
             document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display = 'none');
-        }
-
-        function autoFillProperties(matName, inputId) {
-            const mat = materialLibrary.find(m => m.Name === matName);
-            if(!mat) return;
-            
-            const temp = parseFloat(document.getElementById('DesignTemp').value) || 20;
-            let prefix = "";
-            if (inputId.includes("Shell")) prefix = "Shell";
-            else if (inputId.includes("Nozzle")) prefix = "Nozzle";
-            else if (inputId.includes("Pad")) prefix = "Pad";
-
-            const allowEl = document.getElementById(prefix + "Allowable");
-            const yieldEl = document.getElementById(prefix + "Yield");
-            const utsEl = document.getElementById(prefix + "UTS");
-
-            if (mat.AllowableStressData) {
-                let val = interpolateValue(mat.AllowableStressData, temp);
-                if (allowEl && val) allowEl.value = val.toFixed(1);
-            }
-            if (mat.YieldStressData) {
-                let val = interpolateValue(mat.YieldStressData, temp);
-                if (yieldEl && val) yieldEl.value = val.toFixed(1);
-            }
-            if (mat.TensileStressData && utsEl) {
-                let val = interpolateValue(mat.TensileStressData, temp);
-                if (val) utsEl.value = val.toFixed(1);
-            }
-        }
-
-        function recalculateAllMaterials() {
-            const shellMat = document.getElementById('ShellMaterial').value;
-            const nozzleMat = document.getElementById('NozzleMaterial').value;
-            const padMat = document.getElementById('PadMaterial').value;
-            if(shellMat) autoFillProperties(shellMat, 'ShellMaterial');
-            if(nozzleMat) autoFillProperties(nozzleMat, 'NozzleMaterial');
-            if(padMat) autoFillProperties(padMat, 'PadMaterial');
-        }
-
-        function interpolateValue(dataObj, targetTemp) {
-            const temps = Object.keys(dataObj).map(Number).sort((a,b)=>a-b);
-            if(temps.length === 0) return null;
-            if(targetTemp <= temps[0]) return dataObj[temps[0]];
-            if(targetTemp >= temps[temps.length-1]) return dataObj[temps[temps.length-1]];
-            
-            for(let i=0; i<temps.length-1; i++) {
-                if(targetTemp >= temps[i] && targetTemp <= temps[i+1]) {
-                    const t1 = temps[i], t2 = temps[i+1];
-                    const v1 = dataObj[t1], v2 = dataObj[t2];
-                    return v1 + ((targetTemp - t1) / (t2 - t1)) * (v2 - v1);
-                }
-            }
-            return null;
         }
 
         function switchAnalysis(type) {
@@ -771,7 +769,8 @@
 
             const payload = { AnalysisType: currentAnalysis };
             document.querySelectorAll('input, select').forEach(el => {
-                if (!el.closest('.form-group.hidden') && el.name) {
+                const group = el.closest('.form-group');
+                if (group && !group.classList.contains('hidden') && el.name) {
                     payload[el.name] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
                 }
             });
@@ -822,7 +821,7 @@
                 if(res.ok) {
                     const data = await res.json();
                     if(data.length === 0) { results.innerHTML = '<p style="color:#f59e0b; font-size:0.85rem;">No jobs found.</p>'; return; }
-                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.03); padding:10px 12px; border-radius:6px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:#94a3b8; font-size:0.8rem;">${j.id}</div><div style="font-weight:700; font-size:0.75rem; letter-spacing:1px; color:${j.status==='completed'?'#10b981':(j.status==='pending'?'#3b82f6':'#f59e0b')}">${j.status.toUpperCase()}</div></div>`).join('');
+                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.03); padding:12px 14px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:#94a3b8; font-size:0.85rem;">${j.id}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='completed'?'#10b981':(j.status==='pending'?'#3b82f6':'#f59e0b')}">${j.status.toUpperCase()}</div></div>`).join('');
                 } else {
                     results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Error retrieving data.</p>';
                 }
