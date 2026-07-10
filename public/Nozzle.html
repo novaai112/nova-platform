@@ -4,25 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="/favicon.jpg">
-    <title>NOVA Nozzle Analysis - Enterprise Edition</title>
+    <title>NOVA Nozzle Analysis - Enterprise Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #060913;
-            --bg-glow-1: #1e3a8a;
-            --bg-glow-2: #312e81;
-            --bg-glow-3: #064e3b;
-            --card-bg: rgba(15, 20, 35, 0.7);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --card-highlight: rgba(255, 255, 255, 0.12);
+            /* Premium Dark Theme */
+            --bg-base: #020617; /* Slate 950 */
+            --bg-glow-1: #0284c7; /* Sky 600 */
+            --bg-glow-2: #4338ca; /* Indigo 700 */
+            --bg-glow-3: #0f766e; /* Teal 700 */
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --card-highlight: rgba(255, 255, 255, 0.1);
             --primary: #3b82f6;
             --primary-hover: #2563eb;
+            --accent: #38bdf8;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --input-bg: rgba(6, 9, 19, 0.6);
-            --input-border: rgba(255, 255, 255, 0.15);
-            --input-focus: rgba(59, 130, 246, 0.5);
+            --input-bg: rgba(2, 6, 23, 0.7);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-focus: rgba(56, 189, 248, 0.4);
         }
+        
         * {
             box-sizing: border-box;
             margin: 0;
@@ -30,7 +33,14 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
+            cursor: none !important; /* Hide default cursor for custom cursor */
         }
+        
+        /* Allow text cursor on inputs for usability */
+        input[type="text"], input[type="number"] {
+            cursor: text !important;
+        }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
@@ -45,72 +55,110 @@
             position: relative;
         }
 
+        /* Custom Cursor */
+        .cursor-dot {
+            position: fixed; top: 0; left: 0; width: 6px; height: 6px;
+            background-color: var(--accent); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 10000;
+        }
+        .cursor-outline {
+            position: fixed; top: 0; left: 0; width: 24px; height: 24px;
+            border: 2px solid var(--accent); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 9999;
+            transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
+        }
+        .cursor-outline.hover {
+            width: 40px; height: 40px;
+            background-color: rgba(56, 189, 248, 0.1);
+            border-color: #7dd3fc;
+        }
+
+        /* Ambient Orbs */
         .ambient-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            z-index: -1;
-            opacity: 0.5;
-            animation: float 20s infinite alternate ease-in-out;
+            position: fixed; border-radius: 50%; filter: blur(130px);
+            z-index: -1; opacity: 0.4; animation: float 25s infinite alternate ease-in-out;
             pointer-events: none;
         }
-        .orb-1 { width: 40vw; height: 40vw; background: var(--bg-glow-1); top: -10vh; left: -10vw; }
-        .orb-2 { width: 30vw; height: 30vw; background: var(--bg-glow-2); bottom: -10vh; right: 10vw; animation-delay: -5s; }
-        .orb-3 { width: 35vw; height: 35vw; background: var(--bg-glow-3); top: 20vh; left: 40vw; animation-delay: -10s; opacity: 0.3; }
+        .orb-1 { width: 45vw; height: 45vw; background: var(--bg-glow-1); top: -15vh; left: -10vw; }
+        .orb-2 { width: 35vw; height: 35vw; background: var(--bg-glow-2); bottom: -10vh; right: 5vw; animation-delay: -7s; }
+        .orb-3 { width: 30vw; height: 30vw; background: var(--bg-glow-3); top: 30vh; left: 35vw; animation-delay: -12s; opacity: 0.3; }
         
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(20px, 40px) scale(1.05); }
-            100% { transform: translate(-15px, 20px) scale(0.95); }
+            50% { transform: translate(30px, 40px) scale(1.1); }
+            100% { transform: translate(-20px, 30px) scale(0.9); }
         }
 
-        .app-header {
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(6, 9, 19, 0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--card-border);
+        /* Floating Navbar */
+        .app-header-container {
+            padding: 1.25rem 2rem 0 2rem;
             z-index: 100;
         }
         
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 0.85rem 1.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.1);
+        }
+        
         .app-header h1 {
-            font-size: 1.25rem; font-weight: 800; letter-spacing: 1px;
-            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            font-size: 1.2rem; font-weight: 800; letter-spacing: 1.5px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .app-header h1::before {
+            content: ''; width: 24px; height: 24px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%2338bdf8"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>') center/cover;
         }
 
         .header-controls { display: flex; gap: 0.75rem; align-items: center; }
         
         .btn-glass {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255,255,255,0.05);
             color: var(--text-main);
             padding: 0.5rem 1.25rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.85rem; font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
         }
+        .btn-glass::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .btn-glass:hover::before { left: 100%; }
         .btn-glass:hover {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
         }
         .btn-glass.active {
-            background: rgba(59, 130, 246, 0.15);
-            border-color: var(--primary);
-            color: #60a5fa;
-            box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1);
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
 
         .batch-bar {
-            background: rgba(15, 20, 35, 0.85);
+            margin: 1rem 2rem 0 2rem;
+            background: rgba(15, 23, 42, 0.5);
             backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--card-border);
-            padding: 0.75rem 2rem;
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 0.6rem 1.5rem;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -119,44 +167,29 @@
         }
 
         .batch-toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #e2e8f0;
+            display: flex; align-items: center; gap: 0.75rem;
+            font-size: 0.9rem; font-weight: 600; color: #cbd5e1;
         }
 
-        /* Toggle Switch CSS */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(255,255,255,0.1); transition: .3s; border-radius: 24px;
             border: 1px solid var(--card-border);
         }
         .slider:before {
             position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
-            background-color: #94a3b8; transition: .3s; border-radius: 50%;
+            background-color: #94a3b8; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%;
         }
         input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); background-color: white; }
 
         .batch-input-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: opacity 0.3s;
+            display: flex; align-items: center; gap: 0.75rem; transition: opacity 0.3s;
         }
         .batch-input-group.hidden { display: none !important; }
-        .batch-input-group input {
-            width: 80px; padding: 0.4rem; text-align: center;
-        }
+        .batch-input-group input { width: 70px; padding: 0.3rem; text-align: center; }
 
         .main-workspace {
             flex: 1;
@@ -169,7 +202,7 @@
 
         #forms-container {
             width: 100%;
-            max-width: 1700px;
+            max-width: 1750px;
             display: flex;
             flex-direction: column;
             gap: 2.5rem;
@@ -177,180 +210,122 @@
         }
 
         .analysis-block {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
+            display: flex; flex-direction: column; gap: 1.25rem;
         }
 
         .block-header {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #60a5fa;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 2px solid rgba(59, 130, 246, 0.3);
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.15rem; font-weight: 800; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 1.5px;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.3);
+            padding-bottom: 0.5rem; margin-bottom: 0.5rem;
+            display: flex; align-items: center; gap: 10px;
         }
 
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-            gap: 1.25rem;
-            align-content: start;
+            gap: 1.25rem; align-content: start;
         }
 
         .glass-card {
             background: var(--card-bg);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--card-border);
-            border-top: 1px solid var(--card-highlight);
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            overflow: visible;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; overflow: visible;
         }
 
         .card-header {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #e2e8f0;
-            background: rgba(255,255,255,0.02);
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--card-border);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 0.95rem; font-weight: 700; color: #f1f5f9;
+            background: rgba(255,255,255,0.02); padding: 1.1rem 1.25rem;
+            border-bottom: 1px solid var(--card-border); border-radius: 16px 16px 0 0;
+            display: flex; align-items: center; gap: 0.5rem;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        
         .card-header::before {
-            content: '';
-            width: 4px;
-            height: 14px;
-            background: var(--primary);
-            border-radius: 4px;
+            content: ''; width: 4px; height: 16px; background: var(--accent); border-radius: 4px;
         }
 
         .card-body {
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem;
         }
 
         .section-label {
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: #60a5fa;
-            margin: 0.5rem 0 0.25rem 0;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-            padding-bottom: 0.25rem;
+            font-size: 0.75rem; font-weight: 800; color: var(--accent);
+            margin: 0.5rem 0 0.25rem 0; text-transform: uppercase; letter-spacing: 1.5px;
+            border-bottom: 1px dashed rgba(56, 189, 248, 0.2); padding-bottom: 0.25rem;
         }
         .section-label:first-child { margin-top: 0; }
 
         .form-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            transition: opacity 0.2s ease;
+            display: flex; align-items: center; gap: 10px; position: relative;
         }
         .form-group.hidden { display: none !important; }
         
         .form-label {
-            flex: 0 0 40%;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            line-height: 1.2;
+            flex: 0 0 42%; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); line-height: 1.2;
         }
 
-        .input-control {
-            flex: 1;
-            position: relative;
-        }
+        .input-control { flex: 1; position: relative; }
 
         .glass-input, .glass-select {
-            width: 100%;
-            padding: 0.6rem 0.8rem;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: var(--text-main);
-            transition: all 0.2s ease;
-            outline: none;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%; padding: 0.55rem 0.8rem; background: var(--input-bg);
+            border: 1px solid var(--input-border); border-radius: 8px;
+            font-size: 0.85rem; color: var(--text-main); transition: all 0.3s ease;
+            outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
         }
-        
-        .glass-select option { background: #0f1423; color: var(--text-main); }
+        .glass-select option { background: #0f172a; color: var(--text-main); }
         
         .glass-input:focus, .glass-select:focus {
-            border-color: var(--primary);
-            background: rgba(15, 20, 35, 0.9);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 3px var(--input-focus);
+            border-color: var(--accent); background: rgba(2, 6, 23, 0.9);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px var(--input-focus);
         }
         
-        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
-
         .input-addon-group {
-            display: flex;
-            align-items: center;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            overflow: hidden;
+            display: flex; align-items: center; background: var(--input-bg);
+            border: 1px solid var(--input-border); border-radius: 8px; transition: all 0.3s ease; overflow: hidden;
         }
         .input-addon-group:focus-within {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--input-focus);
+            border-color: var(--accent); box-shadow: 0 0 0 3px var(--input-focus);
         }
         .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; padding-right: 4px; }
         .addon {
             padding: 0 8px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
-            background: rgba(255,255,255,0.03); height: 100%; display: flex; align-items: center;
+            background: rgba(255,255,255,0.02); height: 100%; display: flex; align-items: center;
             border-left: 1px solid var(--input-border);
         }
 
         .autocomplete-list {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-            background: rgba(15, 20, 35, 0.98); backdrop-filter: blur(15px);
-            border: 1px solid var(--primary); border-radius: 6px;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
+            border: 1px solid var(--accent); border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; display: none;
             max-height: 200px; overflow-y: auto;
         }
         .autocomplete-item {
-            padding: 10px 12px; cursor: pointer; color: var(--text-main); font-size: 0.85rem;
+            padding: 10px 12px; color: var(--text-main); font-size: 0.85rem;
             border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;
         }
-        .autocomplete-item:hover { background: rgba(59,130,246,0.2); color: #60a5fa; padding-left: 16px; }
+        .autocomplete-item:hover { background: rgba(56, 189, 248, 0.15); color: var(--accent); padding-left: 16px; }
 
         .sticky-footer {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 1.25rem 2rem; background: rgba(6, 9, 19, 0.9);
+            padding: 1.25rem 2rem; background: rgba(2, 6, 23, 0.85);
             backdrop-filter: blur(20px); border-top: 1px solid var(--card-border);
             display: flex; justify-content: center; z-index: 100;
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
-            border: 1px solid rgba(255,255,255,0.15); border-top: 1px solid rgba(255,255,255,0.3);
-            color: white; padding: 0.85rem 4rem; border-radius: 10px;
-            font-weight: 700; font-size: 1rem; cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+            border: 1px solid rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 0.85rem 4rem; border-radius: 12px;
+            font-weight: 800; font-size: 1rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             letter-spacing: 1.5px; text-transform: uppercase;
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
         }
         .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
+            transform: translateY(-3px); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5);
             background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
         }
 
@@ -363,38 +338,44 @@
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         .modal-box {
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 14px; padding: 2.5rem; width: 90%; max-width: 600px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6); position: relative;
+            border-radius: 16px; padding: 2.5rem; width: 90%; max-width: 600px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7); position: relative;
         }
-        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 1.75rem; cursor: pointer; transition: color 0.2s; }
+        .close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 1.75rem; transition: color 0.2s; }
         .close-modal:hover { color: #ef4444; }
     </style>
 </head>
 <body>
+    <!-- Custom Cursor Elements -->
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-outline" id="cursorOutline"></div>
+
     <div class="ambient-orb orb-1"></div>
     <div class="ambient-orb orb-2"></div>
     <div class="ambient-orb orb-3"></div>
 
-    <header class="app-header">
-        <h1 id="main_title">NOVA Analysis Hub</h1>
-        <div class="header-controls">
-            <button type="button" class="btn-glass active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
-            <button type="button" class="btn-glass" id="btn-head" onclick="switchAnalysis('head')">Vessel Head</button>
-            <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div>
-            <button class="btn-glass" type="button" onclick="openSearchModal()">Job Repository</button>
-        </div>
-    </header>
+    <div class="app-header-container">
+        <header class="app-header">
+            <h1 id="main_title">NOVA Analysis Hub</h1>
+            <div class="header-controls">
+                <button type="button" class="btn-glass active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
+                <button type="button" class="btn-glass" id="btn-head" onclick="switchAnalysis('head')">Vessel Head</button>
+                <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div>
+                <button class="btn-glass" type="button" onclick="openSearchModal()">Job Repository</button>
+            </div>
+        </header>
+    </div>
     
     <div class="batch-bar">
         <div class="batch-toggle-group">
-            <span>Batch Mode</span>
+            <span>Batch Mode Deployment</span>
             <label class="switch">
                 <input type="checkbox" id="batchToggle" onchange="toggleBatchMode()">
                 <span class="slider"></span>
             </label>
         </div>
         <div class="batch-input-group hidden" id="batchCountContainer">
-            <span style="font-size:0.9rem; font-weight:600; color:#e2e8f0;">No. of Analyses:</span>
+            <span style="font-size:0.85rem; font-weight:700; color:#e2e8f0; text-transform:uppercase; letter-spacing:1px;">Configurations:</span>
             <input type="number" class="glass-input" id="numAnalyses" value="1" min="1" max="20" onchange="renderForms()">
         </div>
     </div>
@@ -412,7 +393,7 @@
     <div class="modal-overlay" id="searchModal">
         <div class="modal-box">
             <button class="close-modal" onclick="closeSearchModal()">&times;</button>
-            <h2 style="margin-bottom:1.5rem; font-weight:800; color:#60a5fa; font-size:1.2rem;">Job Repository</h2>
+            <h2 style="margin-bottom:1.5rem; font-weight:800; color:var(--accent); font-size:1.2rem; text-transform:uppercase; letter-spacing:1px;">Job Repository</h2>
             <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
                 <input type="text" id="searchInput" class="glass-input" placeholder="Enter Job ID or License Key...">
                 <button class="btn-glass" style="padding: 0 1.5rem;" onclick="searchJobs()">Search</button>
@@ -422,6 +403,33 @@
     </div>
 
     <script>
+        // Custom Cursor Logic
+        const cursorDot = document.getElementById('cursorDot');
+        const cursorOutline = document.getElementById('cursorOutline');
+
+        window.addEventListener('mousemove', function(e) {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+            
+            cursorOutline.animate({
+                left: `${posX}px`,
+                top: `${posY}px`
+            }, { duration: 400, fill: "forwards" });
+        });
+
+        window.addEventListener('mouseover', e => {
+            const isHoverable = e.target.closest('button, a, select, .autocomplete-item, .slider, input[type="checkbox"]');
+            if(isHoverable) {
+                cursorOutline.classList.add('hover');
+            } else {
+                cursorOutline.classList.remove('hover');
+            }
+        });
+
+        // App Logic
         const API_URL = "https://mkmkhkuhzprlnjzcouei.supabase.co/rest/v1/ansys_jobs";
         const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rbWtoa3VoenBybG5qemNvdWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4OTk1NTEsImV4cCI6MjA5ODQ3NTU1MX0.lFC60895V5YplDhcHwmAEqN2LjRNttc8_AW_faWP-fY";
         
@@ -444,9 +452,13 @@
         function getFormTemplate(i, isBatch) {
             return `
             <div class="analysis-block" id="block_${i}">
-                ${isBatch ? `<div class="block-header">Analysis Configuration ${i}</div>` : ''}
+                ${isBatch ? `<div class="block-header">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Configuration Set ${i}
+                </div>` : ''}
                 <div class="dashboard-grid">
                     
+                    <!-- 1. Project & Conditions -->
                     <div class="glass-card">
                         <div class="card-header">1. Project & Conditions</div>
                         <div class="card-body">
@@ -511,6 +523,7 @@
                         </div>
                     </div>
 
+                    <!-- 2. Materials -->
                     <div class="glass-card">
                         <div class="card-header">2. Materials</div>
                         <div class="card-body">
@@ -621,6 +634,7 @@
                         </div>
                     </div>
 
+                    <!-- 3. Geometry Details -->
                     <div class="glass-card">
                         <div class="card-header">3. Geometry Details</div>
                         <div class="card-body">
@@ -650,7 +664,7 @@
                             <div class="form-group" id="grp_TypeOfNozzle_${i}">
                                 <label class="form-label">Nozzle Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}">
+                                    <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Straight">Straight</option>
                                         <option value="SRN">SRN</option>
                                     </select>
@@ -672,18 +686,22 @@
                                 <label class="form-label">Nozzle Projection</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="775"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_HubOD_${i}">
+                            
+                            <!-- SRN Specific Fields -->
+                            <div class="form-group hidden" id="grp_HubOD_${i}">
                                 <label class="form-label">Hub OD</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD_${i}" id="HubOD_${i}" value="250"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_HubLength_${i}">
+                            <div class="form-group hidden" id="grp_HubLength_${i}">
                                 <label class="form-label">Hub Length</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubLength_${i}" id="HubLength_${i}" value="150"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_TransitionLength_${i}">
+                            <div class="form-group hidden" id="grp_TransitionLength_${i}">
                                 <label class="form-label">Transition Length</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength_${i}" id="TransitionLength_${i}" value="75"><span class="addon">mm</span></div></div>
                             </div>
+
+                            <!-- Pad Fields -->
                             <div class="form-group hidden" id="grp_PadWidth_${i}">
                                 <label class="form-label">Pad Width</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth_${i}" id="PadWidth_${i}" value="17"><span class="addon">mm</span></div></div>
@@ -695,6 +713,7 @@
                         </div>
                     </div>
 
+                    <!-- 4. Meshing & Loads -->
                     <div class="glass-card">
                         <div class="card-header">4. Meshing & Loads</div>
                         <div class="card-body">
@@ -789,14 +808,24 @@
             const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`).value;
             const opCondition = document.getElementById(`OperatingCondition_${i}`).value;
             const padReq = document.getElementById(`PadRequired_${i}`).value;
+            const nozzleType = document.getElementById(`TypeOfNozzle_${i}`).value;
 
+            // Analysis Type Logic
             toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
 
+            // Operating Conditions
             const showThermal = opCondition === 'Yes';
             toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
             toggleVisibility(`grp_NozzleIdHTC_${i}`, showThermal);
             toggleVisibility(`grp_OutsideHTC_${i}`, showThermal);
+            
+            // SRN Logic
+            const isSRN = nozzleType === 'SRN';
+            toggleVisibility(`grp_HubOD_${i}`, isSRN);
+            toggleVisibility(`grp_HubLength_${i}`, isSRN);
+            toggleVisibility(`grp_TransitionLength_${i}`, isSRN);
 
+            // Material Logic
             const handleMaterialGroup = (prefix, isActive) => {
                 if(!isActive) {
                     toggleVisibility(`grp_${prefix}Material_${i}`, false);
