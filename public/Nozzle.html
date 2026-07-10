@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="/favicon.jpg">
-    <title>NOVA Engine - Advanced Nozzle Analysis</title>
+    <title>NOVA Nozzle Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -395,7 +395,7 @@
                 </label>
             </div>
             <div class="batch-input-group hidden" id="batchCountContainer">
-                <span style="font-size:0.8rem; color:var(--text-muted);">CONFIGURATIONS:</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">No of Analysis:</span>
                 <input type="number" class="glass-input" id="numAnalyses" value="1" min="1" max="20" onchange="renderForms()">
             </div>
         </div>
@@ -406,13 +406,13 @@
     </div>
 
     <div class="sticky-footer">
-        <button class="btn-submit" type="button" onclick="submitAnalysis()">Deploy to Cloud</button>
+        <button class="btn-submit" type="button" onclick="submitAnalysis()">Solve Analysis</button>
     </div>
 
     <div class="modal-overlay" id="searchModal">
         <div class="modal-box">
             <div class="modal-header">
-                <span>Cloud Repository</span>
+                <span>Job Repository</span>
                 <button class="close-modal" onclick="closeSearchModal()">&times;</button>
             </div>
             <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
