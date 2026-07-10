@@ -9,15 +9,9 @@
     <style>
         :root {
             --bg-base: #f0f5fa;
-            --bg-surface: rgba(255, 255, 255, 0.6);
             --bg-glow-1: #bae6fd; 
             --bg-glow-2: #d1fae5; 
             --bg-glow-3: #fef08a;
-            
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 100%);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --glass-highlight: rgba(255, 255, 255, 0.9);
-            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.05);
             
             --border-subtle: rgba(0, 0, 0, 0.05);
             --border-highlight: rgba(255, 255, 255, 0.8);
@@ -28,11 +22,14 @@
             
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --text-dark: #334155;
+            --text-dark: #0f172a;
             
-            --input-bg: rgba(255, 255, 255, 0.6);
+            --input-bg: rgba(255, 255, 255, 0.7);
             --input-border: rgba(0, 0, 0, 0.1);
-            --input-focus-ring: rgba(59, 130, 246, 0.15);
+            --input-focus-ring: rgba(59, 130, 246, 0.3);
+            
+            --glass-bg: rgba(255, 255, 255, 0.55);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
         }
         
         * {
@@ -41,13 +38,13 @@
             padding: 0;
             font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             scrollbar-width: thin;
-            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.4); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
         
         body {
             height: 100vh;
@@ -76,23 +73,23 @@
 
         .ambient-orb {
             position: fixed; border-radius: 50%; filter: blur(140px);
-            z-index: -1; opacity: 0.8; animation: float 20s infinite alternate ease-in-out;
+            z-index: -1; opacity: 0.85; animation: float 20s infinite alternate ease-in-out;
             pointer-events: none;
         }
-        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
-        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
-        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
+        .orb-1 { width: 60vw; height: 60vw; background: var(--bg-glow-1); top: -20vh; left: -10vw; }
+        .orb-2 { width: 50vw; height: 50vw; background: var(--bg-glow-2); bottom: -15vh; right: 0vw; animation-delay: -5s; }
+        .orb-3 { width: 40vw; height: 40vw; background: var(--bg-glow-3); top: 30vh; left: 30vw; animation-delay: -10s; opacity: 0.5; }
         
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(40px, 60px) scale(1.1); }
-            100% { transform: translate(-30px, 40px) scale(0.9); }
+            50% { transform: translate(3%, 5%) scale(1.05); }
+            100% { transform: translate(-2%, 4%) scale(0.95); }
         }
 
         .top-navigation {
             position: relative;
             z-index: 100;
-            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.2) 100%);
+            background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border-bottom: 1px solid var(--border-subtle);
@@ -111,61 +108,54 @@
             font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
             text-transform: uppercase;
             display: flex; align-items: center; gap: 12px;
-            color: var(--text-main);
+            color: var(--text-dark);
         }
         
         .nav-brand svg {
             color: var(--primary);
-            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+            filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.3));
         }
 
         .nav-controls { 
             display: flex; gap: 0.5rem; align-items: center; 
             background: rgba(255,255,255,0.4); 
             padding: 4px; border-radius: 12px; 
-            border: 1px solid rgba(0,0,0,0.05); 
+            border: 1px solid var(--border-subtle); 
         }
         
         .btn-tab {
             background: transparent;
-            border: 1px solid transparent;
+            border: none;
             color: var(--text-muted);
             padding: 0.5rem 1.25rem;
             border-radius: 8px;
-            font-size: 0.85rem; font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.85rem; font-weight: 700;
+            transition: all 0.2s ease;
         }
         .btn-tab:hover { 
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--text-main);
-            border-color: rgba(0,0,0,0.05);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            color: var(--text-main); 
         }
         .btn-tab.active {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+            background: #ffffff;
             color: var(--primary);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .btn-action {
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--border-subtle);
             color: var(--text-main);
             padding: 0.6rem 1.25rem;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 0.85rem; font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             display: flex; align-items: center; gap: 8px;
-            backdrop-filter: blur(10px);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
         .btn-action:hover {
-            background: rgba(255, 255, 255, 0.9);
+            background: #ffffff;
             border-color: var(--primary);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
         }
 
         .nav-secondary {
@@ -179,19 +169,19 @@
 
         .batch-group {
             display: flex; align-items: center; gap: 1rem;
-            font-size: 0.85rem; font-weight: 600; color: var(--text-dark);
+            font-size: 0.85rem; font-weight: 600; color: var(--text-main);
         }
 
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.1); transition: .3s ease; border-radius: 22px;
+            background-color: rgba(0,0,0,0.15); transition: .3s ease; border-radius: 22px;
             border: 1px solid rgba(0,0,0,0.05);
         }
         .slider:before {
             position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
-            background-color: white; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%;
+            background-color: #ffffff; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
@@ -218,7 +208,7 @@
             display: flex;
             flex-direction: column;
             gap: 3rem;
-            padding-bottom: 100px;
+            padding-bottom: 120px;
         }
 
         .analysis-block {
@@ -226,15 +216,14 @@
         }
 
         .block-header {
-            font-size: 1rem; font-weight: 700; color: var(--text-main);
+            font-size: 1rem; font-weight: 700; color: var(--text-dark);
             text-transform: uppercase; letter-spacing: 2px;
             display: flex; align-items: center; gap: 12px;
             margin-bottom: 0.5rem;
         }
         .block-header span {
-            background: rgba(59, 130, 246, 0.1); color: var(--primary);
+            background: rgba(59, 130, 246, 0.15); color: var(--primary);
             padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;
-            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         .dashboard-grid {
@@ -245,20 +234,20 @@
 
         .glass-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(60px);
-            -webkit-backdrop-filter: blur(60px);
-            border: 1px solid var(--glass-border);
-            border-top: 1px solid var(--glass-highlight);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--border-highlight);
             border-radius: 16px;
             display: flex; flex-direction: column;
             box-shadow: var(--glass-shadow);
             overflow: hidden;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
         }
+        .glass-card:hover { border-color: rgba(255,255,255,1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06); }
 
         .card-header {
             font-size: 0.85rem; font-weight: 700; color: var(--text-main);
-            background: rgba(255,255,255,0.4); padding: 1rem 1.25rem;
+            background: rgba(255,255,255,0.6); padding: 1rem 1.25rem;
             border-bottom: 1px solid var(--border-subtle);
             text-transform: uppercase; letter-spacing: 1px;
             display: flex; align-items: center; gap: 8px;
@@ -273,14 +262,14 @@
         }
 
         .section-label {
-            font-size: 0.7rem; font-weight: 700; color: var(--primary);
+            font-size: 0.7rem; font-weight: 800; color: var(--primary);
             margin: 1rem 1.25rem 0.25rem 1.25rem; text-transform: uppercase; letter-spacing: 1px;
         }
 
         .form-group {
             display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 1.25rem;
-            border-bottom: 1px solid rgba(0,0,0,0.02);
+            border-bottom: 1px solid rgba(0,0,0,0.03);
             transition: background 0.2s;
         }
         .form-group:hover { background: rgba(255,255,255,0.4); }
@@ -295,102 +284,86 @@
         .input-control { flex: 0 0 160px; position: relative; }
 
         .glass-input, .glass-select {
-            width: 100%; padding: 0.55rem 0.75rem; background: var(--input-bg);
-            border: 1px solid var(--input-border); border-top: 1px solid var(--border-highlight);
-            border-radius: 8px;
-            font-size: 0.85rem; font-weight: 600; color: var(--text-main); transition: all 0.3s ease;
-            outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            width: 100%; padding: 0.5rem 0.75rem; background: var(--input-bg);
+            border: 1px solid var(--input-border); border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; color: var(--text-dark); transition: all 0.2s ease;
+            outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
         }
         
-        .glass-select option { background: #ffffff; color: var(--text-main); padding: 8px; }
+        .glass-select option { background: #ffffff; color: var(--text-dark); padding: 8px; }
         
         .glass-input:focus, .glass-select:focus {
-            border-color: rgba(96, 165, 250, 0.8); background: #ffffff;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px var(--input-focus-ring);
+            border-color: var(--primary); background: #ffffff;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring);
         }
         
         .input-addon-group {
             display: flex; align-items: stretch; background: var(--input-bg);
-            border: 1px solid var(--input-border); border-top: 1px solid var(--border-highlight);
-            border-radius: 8px; transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;
+            border: 1px solid var(--input-border); border-radius: 8px; transition: all 0.2s ease;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); overflow: hidden;
         }
         .input-addon-group:focus-within {
-            border-color: rgba(96, 165, 250, 0.8); background: #ffffff;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 4px var(--input-focus-ring);
+            border-color: var(--primary); background: #ffffff;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring);
         }
         .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; padding-right: 4px; }
         .addon {
-            padding: 0 10px; color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
-            background: rgba(0, 0, 0, 0.03); display: flex; align-items: center;
+            padding: 0 10px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
+            background: rgba(0, 0, 0, 0.02); display: flex; align-items: center;
             border-left: 1px solid rgba(0, 0, 0, 0.05); user-select: none;
         }
 
         .autocomplete-list {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px);
             border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 1000; display: none;
+            border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; display: none;
             max-height: 220px; overflow-y: auto; padding: 4px;
         }
         .autocomplete-item {
-            padding: 8px 12px; color: var(--text-main); font-size: 0.85rem; border-radius: 6px;
+            padding: 8px 12px; color: var(--text-dark); font-size: 0.85rem; border-radius: 6px;
             transition: all 0.1s; font-weight: 600;
         }
-        .autocomplete-item:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary); padding-left: 16px; }
+        .autocomplete-item:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
 
         .sticky-footer {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 1.25rem 2.5rem; background: linear-gradient(0deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%);
-            backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.4);
-            display: flex; justify-content: flex-end; z-index: 100;
+            padding: 1.25rem 2.5rem; background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.9);
+            display: flex; justify-content: center; z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.02);
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
-            color: white; padding: 0.85rem 2.5rem; border-radius: 10px;
-            font-weight: 700; font-size: 0.95rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255,255,255,0.4);
-            backdrop-filter: blur(15px); text-transform: uppercase; letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+            color: #ffffff; border: none;
+            padding: 0.9rem 3.5rem; border-radius: 12px;
+            font-weight: 700; font-size: 1rem; transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+            text-transform: uppercase; letter-spacing: 1px;
         }
         .btn-submit:hover {
-            transform: translateY(-2px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4), inset 0 2px 2px rgba(255,255,255,0.5);
-            background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(29, 78, 216, 1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #60a5fa 0%, var(--primary) 100%);
         }
         .btn-submit:active { transform: scale(0.98); }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px);
             display: flex; justify-content: center; align-items: center;
             z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
-        
-        .modal-box-wrapper { position: relative; width: 90%; max-width: 600px; }
-        .modal-box-wrapper::before {
-            content: ""; position: absolute; inset: -3px; border-radius: 20px;
-            background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #2563eb 100%);
-            background-size: 200% 200%; filter: blur(12px); opacity: 0.5; z-index: 0;
-        }
-        
         .modal-box {
-            position: relative;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 16px; padding: 2rem; width: 100%;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.1); z-index: 1;
+            background: #ffffff; border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 16px; padding: 2rem; width: 90%; max-width: 550px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15); position: relative;
         }
-        
-        .modal-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); }
-        .close-modal { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; transition: color 0.2s; }
-        .close-modal:hover { color: var(--text-main); }
-        
-        .job-result-item {
-            background: rgba(255,255,255,0.6); padding: 12px 14px; border-radius: 8px; margin-bottom: 10px; 
-            border: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;
-        }
+        .modal-header { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: var(--text-dark); }
+        .close-modal { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; }
+        .close-modal:hover { color: var(--text-dark); }
     </style>
 </head>
 <body>
@@ -402,7 +375,7 @@
         <div class="nav-primary">
             <h1 class="nav-brand" id="main_title">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                NOVA Engine
+                NOVA Engine - Shell Nozzle
             </h1>
             <div class="nav-controls">
                 <button type="button" class="btn-tab active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
@@ -429,8 +402,7 @@
     </div>
 
     <div class="main-workspace">
-        <form id="forms-container">
-        </form>
+        <form id="forms-container"></form>
     </div>
 
     <div class="sticky-footer">
@@ -438,18 +410,16 @@
     </div>
 
     <div class="modal-overlay" id="searchModal">
-        <div class="modal-box-wrapper">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <span>Cloud Repository</span>
-                    <button class="close-modal" onclick="closeSearchModal()">&times;</button>
-                </div>
-                <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
-                    <input type="text" id="searchInput" class="glass-input" placeholder="Job ID or License Key...">
-                    <button class="btn-action" onclick="searchJobs()">Search</button>
-                </div>
-                <div id="jobResults" style="max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Cloud Repository</span>
+                <button class="close-modal" onclick="closeSearchModal()">&times;</button>
             </div>
+            <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+                <input type="text" id="searchInput" class="glass-input" placeholder="Job ID or License Key...">
+                <button class="btn-action" onclick="searchJobs()" style="background:var(--primary); color:white; border:none;">Search</button>
+            </div>
+            <div id="jobResults" style="max-height:300px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
 
@@ -476,7 +446,7 @@
         function getFormTemplate(i, isBatch) {
             return `
             <div class="analysis-block" id="block_${i}">
-                ${isBatch ? \`<div class="block-header"><span>SET ${i}</span> Configuration Profile</div>\` : ''}
+                ${isBatch ? `<div class="block-header"><span>SET ${i}</span> Configuration Profile</div>` : ''}
                 <div class="dashboard-grid">
                     
                     <div class="glass-card">
@@ -1059,7 +1029,7 @@
                 if(res.ok) {
                     const data = await res.json();
                     if(data.length === 0) { results.innerHTML = '<p style="color:#f59e0b; font-size:0.85rem;">No records found.</p>'; return; }
-                    results.innerHTML = data.map(j => `<div class="job-result-item"><div style="font-family:monospace; color:var(--text-muted); font-size:0.85rem;">${j.id}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='completed'?'#10b981':(j.status==='pending'?'#3b82f6':'#f59e0b')}">${j.status.toUpperCase()}</div></div>`).join('');
+                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.6); padding:12px 14px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:var(--text-muted); font-size:0.85rem;">${j.id}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='completed'?'#10b981':(j.status==='pending'?'#3b82f6':'#f59e0b')}">${j.status.toUpperCase()}</div></div>`).join('');
                 } else {
                     results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Error retrieving data.</p>';
                 }
