@@ -395,7 +395,7 @@
                 </label>
             </div>
             <div class="batch-input-group hidden" id="batchCountContainer">
-                <span style="font-size:0.8rem; color:var(--text-muted);">No of Analysis:</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">No of Analysis :</span>
                 <input type="number" class="glass-input" id="numAnalyses" value="1" min="1" max="20" onchange="renderForms()">
             </div>
         </div>
@@ -446,11 +446,11 @@
         function getFormTemplate(i, isBatch) {
             return `
             <div class="analysis-block" id="block_${i}">
-                ${isBatch ? `<div class="block-header"><span>SET ${i}</span> Configuration Profile</div>` : ''}
+                ${isBatch ? `<div class="block-header"><span>Analysis : ${i}</span></div>` : ''}
                 <div class="dashboard-grid">
                     
                     <div class="glass-card">
-                        <div class="card-header">1. Project Parameters</div>
+                        <div class="card-header">1. Project</div>
                         <div class="card-body">
                             <div class="form-group" id="grp_AnalysisFolder_${i}">
                                 <label class="form-label">Analysis Folder</label>
@@ -476,7 +476,7 @@
                                 </div>
                             </div>
                             <div class="form-group" id="grp_DesignTemp_${i}">
-                                <label class="form-label">Design Temp</label>
+                                <label class="form-label">Design Temp.</label>
                                 <div class="input-control">
                                     <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp_${i}" id="DesignTemp_${i}" value="150" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                                 </div>
@@ -500,31 +500,31 @@
                             </div>
                             <div class="form-group hidden" id="grp_ShellIdHTC_${i}">
                                 <label class="form-label">Shell ID HTC</label>
-                                <div class="input-control"><input type="number" class="glass-input" name="ShellIdHTC_${i}" id="ShellIdHTC_${i}" value="100"></div>
+                                <div class="input-control"><input type="number" class="glass-input" name="ShellIdHTC_${i}" id="ShellIdHTC_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                             </div>
                             <div class="form-group hidden" id="grp_NozzleIdHTC_${i}">
                                 <label class="form-label">Nozzle ID HTC</label>
-                                <div class="input-control"><input type="number" class="glass-input" name="NozzleIdHTC_${i}" id="NozzleIdHTC_${i}" value="120"></div>
+                                <div class="input-control"><input type="number" class="glass-input" name="NozzleIdHTC_${i}" id="NozzleIdHTC_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                             </div>
                             <div class="form-group hidden" id="grp_OutsideHTC_${i}">
                                 <label class="form-label">Outside Surface HTC</label>
-                                <div class="input-control"><input type="number" class="glass-input" name="OutsideHTC_${i}" id="OutsideHTC_${i}" value="10"></div>
+                                <div class="input-control"><input type="number" class="glass-input" name="OutsideHTC_${i}" id="OutsideHTC_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="glass-card">
-                        <div class="card-header">2. Materials Database</div>
+                        <div class="card-header">2. Materials</div>
                         <div class="card-body">
                             <div class="section-label">Shell</div>
                             <div class="form-group" id="grp_ShellMaterial_${i}">
-                                <label class="form-label">Name</label>
+                                <label class="form-label">Shell Material Name</label>
                                 <div class="input-control">
                                     <input type="text" class="glass-input" name="ShellMaterial_${i}" id="ShellMaterial_${i}" value="SA-516-GR-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
                             <div class="form-group hidden" id="grp_ShellOtherName_${i}">
-                                <label class="form-label">Custom Identity</label>
+                                <label class="form-label">Other Material Name</label>
                                 <div class="input-control"><input type="text" class="glass-input" name="ShellOtherName_${i}" id="ShellOtherName_${i}" value="Custom_Material"></div>
                             </div>
                             <div class="form-group hidden" id="grp_ShellYM_${i}">
@@ -544,19 +544,19 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellYield_${i}" id="ShellYield_${i}" value="260"><span class="addon">MPa</span></div></div>
                             </div>
                             <div class="form-group hidden" id="grp_ShellUTS_${i}">
-                                <label class="form-label">Ult. Tensile</label>
+                                <label class="form-label">Ultimate Tensile Stress</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellUTS_${i}" id="ShellUTS_${i}" value="485"><span class="addon">MPa</span></div></div>
                             </div>
 
                             <div class="section-label">Nozzle</div>
                             <div class="form-group" id="grp_NozzleMaterial_${i}">
-                                <label class="form-label">Name</label>
+                                <label class="form-label">Nozzle Material Name</label>
                                 <div class="input-control">
                                     <input type="text" class="glass-input" name="NozzleMaterial_${i}" id="NozzleMaterial_${i}" value="SA-106-GR-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
                             <div class="form-group hidden" id="grp_NozzleOtherName_${i}">
-                                <label class="form-label">Custom Identity</label>
+                                <label class="form-label">Other Material Name</label>
                                 <div class="input-control"><input type="text" class="glass-input" name="NozzleOtherName_${i}" id="NozzleOtherName_${i}" value="Custom_Material"></div>
                             </div>
                             <div class="form-group hidden" id="grp_NozzleYM_${i}">
@@ -576,13 +576,13 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYield_${i}" id="NozzleYield_${i}" value="240"><span class="addon">MPa</span></div></div>
                             </div>
                             <div class="form-group hidden" id="grp_NozzleUTS_${i}">
-                                <label class="form-label">Ult. Tensile</label>
+                                <label class="form-label">Ultimate Tensile Stress</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleUTS_${i}" id="NozzleUTS_${i}" value="415"><span class="addon">MPa</span></div></div>
                             </div>
 
                             <div class="section-label">Reinforcement Pad</div>
                             <div class="form-group" id="grp_PadRequired_${i}">
-                                <label class="form-label">Pad Enabled</label>
+                                <label class="form-label">Pad Required</label>
                                 <div class="input-control">
                                     <select class="glass-select" name="PadRequired_${i}" id="PadRequired_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="No">No</option>
@@ -591,7 +591,7 @@
                                 </div>
                             </div>
                             <div class="form-group hidden" id="grp_PadMaterial_${i}">
-                                <label class="form-label">Name</label>
+                                <label class="form-label">Pad Material Name</label>
                                 <div class="input-control">
                                     <input type="text" class="glass-input" name="PadMaterial_${i}" id="PadMaterial_${i}" value="SA-516-GR-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
@@ -617,26 +617,26 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadYield_${i}" id="PadYield_${i}" value="260"><span class="addon">MPa</span></div></div>
                             </div>
                             <div class="form-group hidden" id="grp_PadUTS_${i}">
-                                <label class="form-label">Ult. Tensile</label>
+                                <label class="form-label">Ultimate Tensile Stress</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadUTS_${i}" id="PadUTS_${i}" value="485"><span class="addon">MPa</span></div></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="glass-card">
-                        <div class="card-header">3. Dimensional Data</div>
+                        <div class="card-header">3. Geometry</div>
                         <div class="card-body">
                             <div class="section-label">Shell Geometry</div>
                             <div class="form-group" id="grp_ShellOD_${i}">
-                                <label class="form-label">Outer Dia (OD)</label>
+                                <label class="form-label">Shell Outer Dia (OD)</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellOD_${i}" id="ShellOD_${i}" value="1000"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_ShellTHK_${i}">
-                                <label class="form-label">Thickness</label>
+                                <label class="form-label">Shell Thickness</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellTHK_${i}" id="ShellTHK_${i}" value="25"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_ShellHeight_${i}">
-                                <label class="form-label">Total Height</label>
+                                <label class="form-label">Shell Height</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellHeight_${i}" id="ShellHeight_${i}" value="1000"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_NozzleOffset_${i}">
@@ -644,13 +644,13 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOffset_${i}" id="NozzleOffset_${i}" value="0"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_CorrosionAllowance_${i}">
-                                <label class="form-label">Corrosion Allw.</label>
+                                <label class="form-label">Corrosion Allowance</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="CorrosionAllowance_${i}" id="CorrosionAllowance_${i}" value="1.5"><span class="addon">mm</span></div></div>
                             </div>
 
                             <div class="section-label">Nozzle & Pad Geometry</div>
                             <div class="form-group" id="grp_TypeOfNozzle_${i}">
-                                <label class="form-label">Profile Type</label>
+                                <label class="form-label">Nozzle Type</label>
                                 <div class="input-control">
                                     <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Straight">Straight</option>
@@ -659,7 +659,7 @@
                                 </div>
                             </div>
                             <div class="form-group" id="grp_NozzleHeight_${i}">
-                                <label class="form-label">Location (Height)</label>
+                                <label class="form-label">Nozzle Location (Height)</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleHeight_${i}" id="NozzleHeight_${i}" value="500"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_NozzleOD_${i}">
@@ -671,7 +671,7 @@
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleTHK_${i}" id="NozzleTHK_${i}" value="15"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_NozzleProjection_${i}">
-                                <label class="form-label">Projection</label>
+                                <label class="form-label">Nozzle Projection</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="775"><span class="addon">mm</span></div></div>
                             </div>
                             
@@ -700,15 +700,15 @@
                     </div>
 
                     <div class="glass-card">
-                        <div class="card-header">4. Mesh & Boundary Loads</div>
+                        <div class="card-header">4. Meshing & BCS</div>
                         <div class="card-body">
-                            <div class="section-label">Mesh Strategy</div>
+                            <div class="section-label">Meshing</div>
                             <div class="form-group" id="grp_GlobalBodySizing_${i}">
                                 <label class="form-label">Global Body Sizing</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="GlobalBodySizing_${i}" id="GlobalBodySizing_${i}" value="30"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_MeshMethod_${i}">
-                                <label class="form-label">Method</label>
+                                <label class="form-label">Mesh Method</label>
                                 <div class="input-control">
                                     <select class="glass-select" name="MeshMethod_${i}" id="MeshMethod_${i}">
                                         <option value="Sweep">Sweep</option>
@@ -723,9 +723,9 @@
                                 <div class="input-control"><input type="number" class="glass-input" name="EdgeDivision_${i}" id="EdgeDivision_${i}" value="3"></div>
                             </div>
 
-                            <div class="section-label">Load Vectors</div>
+                            <div class="section-label">Loading Conditions</div>
                             <div class="form-group" id="grp_NozzleLoadingLocation_${i}">
-                                <label class="form-label">Target Boundary</label>
+                                <label class="form-label">Load Boundary</label>
                                 <div class="input-control">
                                     <select class="glass-select" name="NozzleLoadingLocation_${i}" id="NozzleLoadingLocation_${i}">
                                         <option value="Shell Nozzle Junction">Shell/Nozzle Junct.</option>
@@ -734,27 +734,27 @@
                                 </div>
                             </div>
                             <div class="form-group" id="grp_FL_${i}">
-                                <label class="form-label">F_L (Longitudinal)</label>
+                                <label class="form-label">F_L</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FL_${i}" id="FL_${i}" value="1000"><span class="addon">N</span></div></div>
                             </div>
                             <div class="form-group" id="grp_MT_${i}">
-                                <label class="form-label">M_T (Torsional)</label>
+                                <label class="form-label">M_T</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MT_${i}" id="MT_${i}" value="10000"><span class="addon">N mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_FC_${i}">
-                                <label class="form-label">F_C (Circumferential)</label>
+                                <label class="form-label">F_C</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FC_${i}" id="FC_${i}" value="1000"><span class="addon">N</span></div></div>
                             </div>
                             <div class="form-group" id="grp_MC_${i}">
-                                <label class="form-label">M_C (Circumferential)</label>
+                                <label class="form-label">M_C</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MC_${i}" id="MC_${i}" value="10000"><span class="addon">N mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_Fa_${i}">
-                                <label class="form-label">P (Axial Load)</label>
+                                <label class="form-label">P</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Fa_${i}" id="Fa_${i}" value="1200"><span class="addon">N</span></div></div>
                             </div>
                             <div class="form-group" id="grp_ML_${i}">
-                                <label class="form-label">M_L (Longitudinal)</label>
+                                <label class="form-label">M_L</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ML_${i}" id="ML_${i}" value="20000"><span class="addon">N mm</span></div></div>
                             </div>
                         </div>
