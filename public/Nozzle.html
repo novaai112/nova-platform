@@ -455,7 +455,8 @@
     </div>
 
     <script>
-        const API_URL = "https://mkmkhkuhzprlnjzcouei.supabase.co/rest/v1/ansys_jobs";
+        // Updated API link to post to "jobs" instead of "ansys_jobs" so that the React dashboard picks it up
+        const API_URL = "https://mkmkhkuhzprlnjzcouei.supabase.co/rest/v1/jobs";
         const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rbWtoa3VoenBybG5qemNvdWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4OTk1NTEsImV4cCI6MjA5ODQ3NTU1MX0.lFC60895V5YplDhcHwmAEqN2LjRNttc8_AW_faWP-fY";
         
         let currentAnalysis = "shell";
@@ -995,6 +996,17 @@
             btn.innerText = "Deploying...";
             btn.disabled = true;
 
+            // 1. Fetch user data from localStorage to link the job to the current user
+            const userStr = localStorage.getItem('nova_user');
+            if (!userStr) {
+                alert("Authentication Error: Please log in from the dashboard first.");
+                window.location.href = '/'; 
+                return;
+            }
+            
+            const user = JSON.parse(userStr);
+
+            // 2. Map form data
             const isBatch = document.getElementById('batchToggle').checked;
             const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
             let payloadArr = [];
@@ -1014,6 +1026,29 @@
                 payloadArr.push(payload);
             }
 
+            // 3. Structure the data exactly how App.jsx expects it to prevent errors in the UI
+            const jobName = payloadArr[0].AnalysisFolder ? payloadArr[0].AnalysisFolder.split('\\').pop() : (currentAnalysis === 'shell' ? 'Shell Nozzle Analysis' : 'Vessel Head Nozzle');
+            const jobIdDisplay = "NV-" + Math.floor(1000 + Math.random() * 9000);
+            
+            const newJob = {
+                user_id: user.id,
+                job_id_display: jobIdDisplay,
+                name: jobName,
+                type: 'Nozzle Analysis',
+                status: 'Pending',
+                price: 6000,
+                geometry_data: {
+                    runs: payloadArr,
+                    inputMethod: 'manual',
+                    ui_code_edition: '2025',
+                    shellPressure: payloadArr[0].InternalPressure || 'N/A',
+                    shellTemp: payloadArr[0].DesignTemp || 'N/A',
+                    upset_selected: 'No'
+                },
+                json_payload: payloadArr
+            };
+
+            // 4. Send the POST Request to the 'jobs' table
             try {
                 const res = await fetch(API_URL, {
                     method: "POST",
@@ -1023,22 +1058,23 @@
                         "Authorization": `Bearer ${API_KEY}`,
                         "Prefer": "return=representation"
                     },
-                    body: JSON.stringify({
-                        json_payload: payloadArr,
-                        status: "pending"
-                    })
+                    body: JSON.stringify(newJob)
                 });
+                
                 if(res.ok) {
-                    const data = await res.json();
-                    alert(`Deployment Successful!\nJob ID: ${data[0].id}`);
+                    // Automatically route back to Dashboard
+                    window.location.href = '/'; 
                 } else {
-                    alert("Submission Failed.");
+                    const errData = await res.json();
+                    alert("Submission Failed: " + (errData.message || "Database Error"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 }
             } catch(e) {
                 alert("Network Error.");
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
-            btn.innerText = originalText;
-            btn.disabled = false;
         }
 
         function openSearchModal() { document.getElementById('searchModal').classList.add('active'); }
@@ -1052,15 +1088,16 @@
             
             try {
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
-                const filter = isUUID ? `id.eq.${query}` : `license_key.eq.${query}`;
-                const res = await fetch(`${API_URL}?select=id,status,created_at&${filter}`, {
+                // Matched 'license_key' to 'job_id_display' because 'jobs' table tracks the viewable ID there.
+                const filter = isUUID ? `id.eq.${query}` : `job_id_display.eq.${query}`;
+                const res = await fetch(`${API_URL}?select=id,job_id_display,status,created_at&${filter}`, {
                     headers: { "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` }
                 });
                 
                 if(res.ok) {
                     const data = await res.json();
                     if(data.length === 0) { results.innerHTML = '<p style="color:#f59e0b; font-size:0.85rem;">No records found.</p>'; return; }
-                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.6); padding:12px 14px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:var(--text-muted); font-size:0.85rem;">${j.id}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='completed'?'#10b981':(j.status==='pending'?'#3b82f6':'#f59e0b')}">${j.status.toUpperCase()}</div></div>`).join('');
+                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.6); padding:12px 14px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:var(--text-muted); font-size:0.85rem;">${j.job_id_display || j.id.substring(0,8)}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='Completed'?'#10b981':(j.status==='Pending'?'#f59e0b':'#3b82f6')}">${j.status.toUpperCase()}</div></div>`).join('');
                 } else {
                     results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Error retrieving data.</p>';
                 }
