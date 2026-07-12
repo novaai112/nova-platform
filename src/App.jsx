@@ -202,9 +202,9 @@ export default function App() {
     };
 
   const fetchJobs = async () => {
-    const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('ansys_jobs').select('*').order('created_at', { ascending: false });
     if (!error && data) setJobs(data);
-  };
+};
 
   useEffect(() => {
     if (showSplash) {
@@ -584,7 +584,7 @@ export default function App() {
 
       try {
         const { data: insertedJob, error } = await supabase
-          .from('jobs')
+          .from('ansys_jobs')
           .insert([newJob])
           .select()
           .single();
