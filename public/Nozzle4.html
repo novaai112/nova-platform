@@ -107,6 +107,110 @@
         .btn-edit-mat { background: var(--bg-glow-1); color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
         .btn-edit-mat:hover { background: var(--primary); color: white; }
 
+        /* ══════════ MATERIAL TABLE POPUP ══════════ */
+        .mat-popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 18, 40, 0.48);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9000; opacity: 0; pointer-events: none;
+            transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+        .mat-popup-overlay.active { opacity: 1; pointer-events: all; }
+        .mat-popup-container {
+            display: flex; flex-direction: column;
+            max-width: 1020px; width: 96%;
+            max-height: 92vh; overflow-y: auto;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 20px;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7);
+            padding: 1.5rem;
+            animation: popupIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        @keyframes popupIn { from { transform: scale(0.88) translateY(24px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+        .mat-popup-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.2rem; padding-bottom: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.45);
+        }
+        .mat-popup-title {
+            font-size: 0.95rem; font-weight: 800; color: var(--text-dark);
+            text-transform: uppercase; letter-spacing: 2px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mat-popup-title .mpbadge {
+            background: rgba(59,130,246,0.18); color: var(--primary);
+            padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;
+            font-weight: 700; letter-spacing: 1px; text-transform: none;
+        }
+        .mat-popup-close {
+            background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 8px; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: var(--text-muted);
+            transition: all 0.2s; flex-shrink: 0; cursor: pointer;
+        }
+        .mat-popup-close:hover { background: #fff; color: #ef4444; }
+        .mat-tables-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .mat-rect-card {
+            flex: 1; min-width: 230px;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.88);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+            overflow: hidden;
+            transition: box-shadow 0.25s, border-color 0.25s;
+        }
+        .mat-rect-card:hover { box-shadow: 0 8px 28px rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+        .mat-rect-header {
+            background: rgba(255,255,255,0.78);
+            padding: 0.5rem 0.9rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .mat-rect-header .rdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .rdot-shell { background: #3b82f6; }
+        .rdot-nozzle { background: #8b5cf6; }
+        .rdot-pad { background: #10b981; }
+        .rdot-thermal { background: #f59e0b; }
+        .mat-rect-header .rh-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dark); }
+        .mat-tbl { width: 100%; border-collapse: collapse; }
+        .mat-tbl td { padding: 0.36rem 0.9rem; font-size: 0.79rem; border-bottom: 1px solid rgba(0,0,0,0.04); vertical-align: middle; }
+        .mat-tbl tr:last-child td { border-bottom: none; }
+        .mat-tbl .tl { color: var(--text-muted); font-weight: 600; width: 50%; }
+        .mat-tbl .tv { color: var(--text-dark); font-weight: 700; }
+        .mat-tbl tr:hover td { background: rgba(59,130,246,0.04); }
+        .tiw { display: flex; align-items: stretch; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; overflow: hidden; transition: all 0.2s; }
+        .tiw:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--input-focus-ring); }
+        .ti { border: none; background: transparent; padding: 0.28rem 0.48rem; font-size: 0.79rem; font-weight: 700; color: var(--text-dark); width: 100%; outline: none; -moz-appearance: textfield; font-family: inherit; }
+        .ti::-webkit-inner-spin-button, .ti::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .tia { padding: 0 6px; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); background: rgba(0,0,0,0.03); border-left: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; white-space: nowrap; }
+        .mat-sec-divider {
+            margin: 1rem 0 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.45);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mat-sec-divider .msd-label { font-size: 0.69rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #d97706; white-space: nowrap; }
+        .mat-sec-divider::after { content: ''; flex: 1; height: 1px; background: rgba(245,158,11,0.25); }
+        /* Trigger button */
+        .btn-mat-popup {
+            margin: 0.75rem 1.25rem 1rem;
+            background: linear-gradient(135deg, rgba(59,130,246,0.11) 0%, rgba(59,130,246,0.05) 100%);
+            border: 1px solid rgba(59,130,246,0.22);
+            color: var(--primary); padding: 0.48rem 1rem;
+            border-radius: 8px; font-size: 0.79rem; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s; width: calc(100% - 2.5rem);
+            justify-content: center; letter-spacing: 0.4px; font-family: inherit;
+        }
+        .btn-mat-popup:hover { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.42); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(59,130,246,0.15); }
+        .btn-mat-popup.thermal-mode { background: linear-gradient(135deg, rgba(245,158,11,0.13) 0%, rgba(59,130,246,0.07) 100%); border-color: rgba(245,158,11,0.32); color: #b45309; }
+        .btn-mat-popup.thermal-mode:hover { background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); }
+
         @media (max-width: 768px) {
             .nav-primary { flex-direction: column; gap: 1rem; padding: 1rem; align-items: stretch; }
             .nav-brand { justify-content: center; }
@@ -244,6 +348,13 @@
                 <button class="btn-action" onclick="closeCustomMaterialModal()">Cancel</button>
                 <button class="btn-action" onclick="saveCustomMaterial()" style="background:var(--primary); color:white; border:none; padding: 0.6rem 2rem;">Save & Apply</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ══════════ MATERIAL TABLES POPUP ══════════ -->
+    <div class="mat-popup-overlay" id="matTablePopup" onclick="if(event.target===this)closeMatTablePopup()">
+        <div class="mat-popup-container" id="matTableContainer">
+            <!-- Filled dynamically by openMatTablePopup() -->
         </div>
     </div>
 
@@ -444,6 +555,11 @@
                                 <label class="form-label">Ultimate Tensile Stress</label>
                                 <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadUTS_${i}" id="PadUTS_${i}" value="485"><span class="addon">MPa</span></div></div>
                             </div>
+
+                            <button type="button" class="btn-mat-popup hidden" id="btn_matpopup_${i}" onclick="openMatTablePopup(${i})">
+                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                View Material &amp; Thermal Tables
+                            </button>
                         </div>
                     </div>
 
@@ -687,6 +803,234 @@
             handleMaterialGroup('Pad', isPadActive);
             toggleVisibility(`grp_PadWidth_${i}`, isPadActive);
             toggleVisibility(`grp_PadTHK_${i}`, isPadActive);
+
+            // ── Popup trigger button logic ──
+            // Show when analysis is NOT Elastic OR when Thermal is required
+            const isNonElastic = typeOfAnalysis !== 'Elastic Analysis';
+            const showPopupBtn = isNonElastic || showThermal;
+            const popupBtn = document.getElementById(`btn_matpopup_${i}`);
+            if (popupBtn) {
+                if (showPopupBtn) {
+                    popupBtn.classList.remove('hidden');
+                    if (showThermal) {
+                        popupBtn.classList.add('thermal-mode');
+                        popupBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> View Material &amp; Thermal Tables`;
+                    } else {
+                        popupBtn.classList.remove('thermal-mode');
+                        popupBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> View Material Property Tables`;
+                    }
+                } else {
+                    popupBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        /* ══════════════════════════════════════════════
+           MATERIAL TABLES POPUP
+        ══════════════════════════════════════════════ */
+        function openMatTablePopup(i) {
+            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`).value;
+            const opCondition    = document.getElementById(`OperatingCondition_${i}`).value;
+            const padReq         = document.getElementById(`PadRequired_${i}`).value;
+            const showThermal    = opCondition === 'Yes';
+            const showYield      = ['Limit-Load Analysis','Elastic-Plastic Analysis'].includes(typeOfAnalysis);
+            const showUTS        = typeOfAnalysis === 'Elastic-Plastic Analysis';
+            const showAllowable  = typeOfAnalysis === 'Elastic Analysis';
+            const isLimitLoad    = typeOfAnalysis === 'Limit-Load Analysis';
+            const isEP           = typeOfAnalysis === 'Elastic-Plastic Analysis';
+
+            const prefixes = ['Shell','Nozzle'];
+            if (padReq === 'Yes') prefixes.push('Pad');
+            const dotCls = { Shell:'rdot-shell', Nozzle:'rdot-nozzle', Pad:'rdot-pad' };
+
+            // Ensure hidden inputs exist that Python reads
+            function ensureHidden(id, defVal) {
+                let el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type='hidden'; el.name=id; el.id=id; el.value=defVal;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
+            prefixes.forEach(p => {
+                ensureHidden(`${p}Conductivity_${i}`, p==='Nozzle'?'52':'48');
+                ensureHidden(`${p}ThermalExp_${i}`, '12');
+            });
+
+            // ── Material Cards (all components) ──
+            const matCardsHtml = prefixes.map(prefix => {
+                const matName  = document.getElementById(`${prefix}Material_${i}`)?.value || '—';
+                const isCustom = matName.toLowerCase().trim() === 'other material';
+                const ym    = document.getElementById(`${prefix}YM_${i}`)?.value          || '200000';
+                const pr    = document.getElementById(`${prefix}PR_${i}`)?.value          || '0.3';
+                const allow = document.getElementById(`${prefix}Allowable_${i}`)?.value   || '138';
+                const yld   = document.getElementById(`${prefix}Yield_${i}`)?.value       || '260';
+                const uts   = document.getElementById(`${prefix}UTS_${i}`)?.value         || '485';
+                const cond  = document.getElementById(`${prefix}Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
+                const cte   = document.getElementById(`${prefix}ThermalExp_${i}`)?.value  || '12';
+
+                let hardeningBadge = '';
+                if (isLimitLoad) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.13);color:#4f46e5;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear Hardening</span>`;
+                if (isEP)        hardeningBadge = `<span style="font-size:0.63rem;background:rgba(16,185,129,0.13);color:#059669;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Multilinear Hardening</span>`;
+
+                let rows = `
+                <tr><td class="tl">Young's Modulus</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}YM_${i}" value="${ym}" onchange="syncPop('${prefix}YM',${i},'pop_${prefix}YM_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>
+                <tr><td class="tl">Poisson's Ratio</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" step="0.001" id="pop_${prefix}PR_${i}" value="${pr}" onchange="syncPop('${prefix}PR',${i},'pop_${prefix}PR_${i}')"></div>
+                </td></tr>`;
+
+                if (showAllowable) rows += `
+                <tr><td class="tl">Allowable Stress <span style="font-size:0.62rem;color:#3b82f6;">(Table 5A)</span></td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}All_${i}" value="${allow}" onchange="syncPop('${prefix}Allowable',${i},'pop_${prefix}All_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showYield) rows += `
+                <tr><td class="tl">Yield Stress <span style="font-size:0.62rem;color:#8b5cf6;">(Sy)</span></td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Yld_${i}" value="${yld}" onchange="syncPop('${prefix}Yield',${i},'pop_${prefix}Yld_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showUTS) rows += `
+                <tr><td class="tl">Ultimate Tensile <span style="font-size:0.62rem;color:#10b981;">(UTS)</span></td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}UTS_${i}" value="${uts}" onchange="syncPop('${prefix}UTS',${i},'pop_${prefix}UTS_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                // Custom material: Python needs Conductivity + CTE filled manually
+                if (isCustom) rows += `
+                <tr style="background:rgba(245,158,11,0.05);"><td class="tl" style="color:#b45309;">Conductivity <span style="font-size:0.62rem;">(custom)</span></td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Cond2_${i}" value="${cond}" onchange="syncThermal('${prefix}Conductivity',${i},'pop_${prefix}Cond2_${i}')"><span class="tia">W/m·°C</span></div>
+                </td></tr>
+                <tr style="background:rgba(245,158,11,0.05);"><td class="tl" style="color:#b45309;">Therm. Exp. (CTE) <span style="font-size:0.62rem;">(custom)</span></td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" step="0.1" id="pop_${prefix}CTE2_${i}" value="${cte}" onchange="syncThermal('${prefix}ThermalExp',${i},'pop_${prefix}CTE2_${i}')"><span class="tia">×10⁻⁶/°C</span></div>
+                </td></tr>`;
+
+                const matBg  = isCustom ? 'rgba(245,158,11,0.08)' : 'rgba(59,130,246,0.04)';
+                const matLbl = isCustom ? `<span style="color:#d97706;">${matName} ✎</span>` : matName;
+                return `<div class="mat-rect-card">
+                    <div class="mat-rect-header" style="display:flex;align-items:center;">
+                        <span class="rdot ${dotCls[prefix]}"></span>
+                        <span class="rh-label">${prefix}</span>
+                        ${hardeningBadge}
+                    </div>
+                    <div style="padding:0;">
+                        <div style="padding:0.28rem 0.9rem 0.35rem;font-size:0.73rem;font-weight:700;background:${matBg};border-bottom:1px solid rgba(0,0,0,0.04);">${matLbl}</div>
+                        <table class="mat-tbl"><tbody>${rows}</tbody></table>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // ── Analysis Info Card ──
+            const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
+            const loadFactor = isEP ? '2.4×' : isLimitLoad ? '1.5×' : '1.0×';
+            const solverNote = isEP       ? 'Multilinear Isotropic Hardening<br>Large Deformation ON · EP-curve computed' :
+                               isLimitLoad ? 'Bilinear Isotropic Hardening<br>Large Deformation ON · Tangent Mod = 0' :
+                                             'Linear elastic<br>SCL linearisation paths · Eq. stress averaged';
+            const infoCard = `<div class="mat-rect-card" style="min-width:200px;flex:0 1 200px;">
+                <div class="mat-rect-header" style="background:rgba(99,102,241,0.08);">
+                    <span class="rdot" style="background:#6366f1;"></span>
+                    <span class="rh-label" style="color:#4f46e5;">Analysis Info</span>
+                </div>
+                <table class="mat-tbl"><tbody>
+                <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
+                <tr><td class="tl">Design Temp</td><td class="tv">${tDes} °C</td></tr>
+                <tr><td class="tl">Load Factor</td><td class="tv">${loadFactor}</td></tr>
+                <tr><td class="tl">Thermal</td><td class="tv">${showThermal?'✅ Coupled':'—'}</td></tr>
+                <tr><td class="tl" colspan="2" style="font-size:0.66rem;color:#6366f1;line-height:1.5;padding:0.35rem 0.9rem;">${solverNote}</td></tr>
+                </tbody></table>
+            </div>`;
+
+            // ── Thermal HTC Section ──
+            let thermalHtml = '';
+            if (showThermal) {
+                const sHTC = document.getElementById(`ShellIdHTC_${i}`)?.value  || '100';
+                const nHTC = document.getElementById(`NozzleIdHTC_${i}`)?.value || '120';
+                const oHTC = document.getElementById(`OutsideHTC_${i}`)?.value  || '10';
+
+                const condCards = prefixes.map(p => {
+                    const isC  = (document.getElementById(`${p}Material_${i}`)?.value||'').toLowerCase().trim() === 'other material';
+                    const cVal = document.getElementById(`${p}Conductivity_${i}`)?.value || (p==='Nozzle'?'52':'48');
+                    const eVal = document.getElementById(`${p}ThermalExp_${i}`)?.value   || '12';
+                    const dimmed = !isC ? 'style="opacity:0.55;" title="Auto from material DB"' : '';
+                    const note  = !isC ? `<tr><td colspan="2" style="font-size:0.66rem;color:#6366f1;padding:0.25rem 0.9rem;">Auto-filled from material.json</td></tr>` : '';
+                    return `<div class="mat-rect-card" style="min-width:185px;">
+                        <div class="mat-rect-header"><span class="rdot ${dotCls[p]}"></span><span class="rh-label">${p} Thermal Props</span></div>
+                        <table class="mat-tbl"><tbody>${note}
+                        <tr><td class="tl">Conductivity</td><td class="tv">
+                            <div class="tiw"><input type="number" class="ti" id="pop_${p}Cond_${i}" value="${cVal}" ${dimmed} onchange="syncThermal('${p}Conductivity',${i},'pop_${p}Cond_${i}')"><span class="tia">W/m·°C</span></div>
+                        </td></tr>
+                        <tr><td class="tl">CTE</td><td class="tv">
+                            <div class="tiw"><input type="number" class="ti" step="0.1" id="pop_${p}Exp_${i}" value="${eVal}" ${dimmed} onchange="syncThermal('${p}ThermalExp',${i},'pop_${p}Exp_${i}')"><span class="tia">×10⁻⁶/°C</span></div>
+                        </td></tr>
+                        </tbody></table>
+                    </div>`;
+                }).join('');
+
+                thermalHtml = `
+                <div class="mat-sec-divider"><span class="msd-label">🌡 Thermal Analysis — Convection BCs &amp; Material Thermal Props</span></div>
+                <div class="mat-tables-row">
+                    <div class="mat-rect-card" style="min-width:220px;">
+                        <div class="mat-rect-header"><span class="rdot rdot-thermal"></span><span class="rh-label">Convection Coefficients</span></div>
+                        <table class="mat-tbl"><tbody>
+                        <tr><td class="tl">Shell ID (inner)</td><td class="tv">
+                            <div class="tiw"><input type="number" class="ti" id="pop_ShellIdHTC_${i}" value="${sHTC}" onchange="syncHTC('ShellIdHTC',${i},'pop_ShellIdHTC_${i}')"><span class="tia">W/m²·°C</span></div>
+                        </td></tr>
+                        <tr><td class="tl">Nozzle ID (inner)</td><td class="tv">
+                            <div class="tiw"><input type="number" class="ti" id="pop_NozzleIdHTC_${i}" value="${nHTC}" onchange="syncHTC('NozzleIdHTC',${i},'pop_NozzleIdHTC_${i}')"><span class="tia">W/m²·°C</span></div>
+                        </td></tr>
+                        <tr><td class="tl">Outside (ambient)</td><td class="tv">
+                            <div class="tiw"><input type="number" class="ti" id="pop_OutsideHTC_${i}" value="${oHTC}" onchange="syncHTC('OutsideHTC',${i},'pop_OutsideHTC_${i}')"><span class="tia">W/m²·°C</span></div>
+                        </td></tr>
+                        <tr><td colspan="2" style="font-size:0.66rem;color:#6366f1;padding:0.25rem 0.9rem;">Ambient temp = Design Temp (${tDes} °C)</td></tr>
+                        </tbody></table>
+                    </div>
+                    ${condCards}
+                </div>`;
+            }
+
+            const badge = typeOfAnalysis.replace(' Analysis','') + (showThermal ? ' · Thermal' : '');
+            document.getElementById('matTableContainer').innerHTML = `
+                <div class="mat-popup-header">
+                    <div class="mat-popup-title">Material &amp; Analysis Tables <span class="mpbadge">${badge}</span></div>
+                    <button class="mat-popup-close" onclick="closeMatTablePopup()">&#10005;</button>
+                </div>
+                <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
+                ${thermalHtml}
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.1rem;padding-top:0.85rem;border-top:1px solid rgba(255,255,255,0.4);">
+                    <span style="font-size:0.71rem;color:var(--text-muted);">✅ All changes sync immediately to form inputs</span>
+                    <button onclick="closeMatTablePopup()" style="background:var(--primary);color:white;border:none;padding:0.52rem 1.8rem;border-radius:8px;font-size:0.83rem;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.3px;">Done</button>
+                </div>`;
+
+            document.getElementById('matTablePopup').classList.add('active');
+
+        function closeMatTablePopup() {
+            document.getElementById('matTablePopup').classList.remove('active');
+        }
+
+        function syncPop(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const el  = document.getElementById(`${fieldBase}_${i}`);
+            if (el) el.value = val;
+        }
+
+        function syncHTC(fieldName, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const el  = document.getElementById(`${fieldName}_${i}`);
+            if (el) el.value = val;
+        }
+
+        function syncThermal(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const hid = `${fieldBase}_${i}`;
+            let el = document.getElementById(hid);
+            if (!el) {
+                el = document.createElement('input');
+                el.type='hidden'; el.name=hid; el.id=hid;
+                document.getElementById(`block_${i}`).appendChild(el);
+            }
+            el.value = val;
         }
 
         // Custom Material Modal Logic
