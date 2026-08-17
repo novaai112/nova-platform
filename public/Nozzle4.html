@@ -110,30 +110,29 @@
         /* ══════════ MATERIAL TABLE POPUP ══════════ */
         .mat-popup-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 18, 40, 0.48);
-            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            background: rgba(10, 18, 40, 0.65);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             display: flex; justify-content: center; align-items: center;
             z-index: 9000; opacity: 0; pointer-events: none;
-            transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+            transition: opacity 0.3s ease;
         }
         .mat-popup-overlay.active { opacity: 1; pointer-events: all; }
         .mat-popup-container {
             display: flex; flex-direction: column;
-            max-width: 1020px; width: 96%;
-            max-height: 92vh; overflow-y: auto;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
-            border: 1px solid rgba(255,255,255,0.6);
-            border-radius: 20px;
-            box-shadow: 0 32px 80px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.7);
+            max-width: 1060px; width: 96%;
+            max-height: 90vh; overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid rgba(200,210,240,0.7);
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.9) inset;
             padding: 1.5rem;
-            animation: popupIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+            animation: popupIn 0.3s ease both;
         }
         @keyframes popupIn { from { transform: scale(0.88) translateY(24px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
         .mat-popup-header {
             display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 1.2rem; padding-bottom: 0.85rem;
-            border-bottom: 1px solid rgba(255,255,255,0.45);
+            border-bottom: 1px solid #e2e8f8;
         }
         .mat-popup-title {
             font-size: 0.95rem; font-weight: 800; color: var(--text-dark);
@@ -156,19 +155,18 @@
         .mat-tables-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
         .mat-rect-card {
             flex: 1; min-width: 230px;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.88);
+            background: #f8faff;
+            border: 1px solid #e2e8f8;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             overflow: hidden;
             transition: box-shadow 0.25s, border-color 0.25s;
         }
-        .mat-rect-card:hover { box-shadow: 0 8px 28px rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+        .mat-rect-card:hover { box-shadow: 0 6px 22px rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); }
         .mat-rect-header {
-            background: rgba(255,255,255,0.78);
+            background: #eef2ff;
             padding: 0.5rem 0.9rem;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid #e0e8f8;
             display: flex; align-items: center; gap: 8px;
         }
         .mat-rect-header .rdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
@@ -191,11 +189,11 @@
         .mat-sec-divider {
             margin: 1rem 0 0.75rem;
             padding-top: 0.75rem;
-            border-top: 1px solid rgba(255,255,255,0.45);
+            border-top: 1px solid #e2e8f8;
             display: flex; align-items: center; gap: 10px;
         }
         .mat-sec-divider .msd-label { font-size: 0.69rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #d97706; white-space: nowrap; }
-        .mat-sec-divider::after { content: ''; flex: 1; height: 1px; background: rgba(245,158,11,0.25); }
+        .mat-sec-divider::after { content: ''; flex: 1; height: 1px; background: rgba(245,158,11,0.35); }
         /* Trigger button */
         .btn-mat-popup {
             margin: 0.75rem 1.25rem 1rem;
