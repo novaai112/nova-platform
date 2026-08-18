@@ -418,12 +418,12 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_LocalFailureMethod_${i}">
-                                <label class="form-label">Local Failure Method</label>
+                            <div class="form-group hidden" id="grp_LimitLoadModel_${i}">
+                                <label class="form-label">Material Model</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="LocalFailureMethod_${i}" id="LocalFailureMethod_${i}" onchange="evaluateDependencies(${i})">
-                                        <option value="Elastic Method">Elastic Method</option>
-                                        <option value="Elastic-Plastic Method">Elastic-Plastic Method</option>
+                                    <select class="glass-select" name="LimitLoadModel_${i}" id="LimitLoadModel_${i}">
+                                        <option value="Elastic">Elastic</option>
+                                        <option value="Elastic-Plastic">Elastic-Plastic</option>
                                     </select>
                                 </div>
                             </div>
@@ -757,16 +757,7 @@
             const padReq = document.getElementById(`PadRequired_${i}`).value;
             const nozzleType = document.getElementById(`TypeOfNozzle_${i}`).value;
 
-            const isLimitLoad = typeOfAnalysis === 'Limit-Load Analysis';
-            toggleVisibility(`grp_LocalFailureMethod_${i}`, isLimitLoad);
-            const lfSelect = document.getElementById(`LocalFailureMethod_${i}`);
-            if (lfSelect) {
-                if (typeOfAnalysis === 'Elastic Analysis') {
-                    lfSelect.value = 'Elastic Method';
-                } else if (typeOfAnalysis === 'Elastic-Plastic Analysis') {
-                    lfSelect.value = 'Elastic-Plastic Method';
-                }
-            }
+            toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
 
             const showThermal = opCondition === 'Yes';
             toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
@@ -951,7 +942,7 @@
 
             // ── Analysis Info Card ──
             const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
-            const locFailVal = document.getElementById(`LocalFailureMethod_${i}`)?.value || (isEP ? 'Elastic-Plastic Method' : 'Elastic Method');
+            const matModelVal = isLimitLoad ? (document.getElementById(`LimitLoadModel_${i}`)?.value || 'Elastic') : '';
             const loadFactor = isEP ? '2.4×' : isLimitLoad ? '1.5×' : '1.0×';
             const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
                                isLimitLoad ? 'Bilinear Isotropic Hardening · Non-linear geometry ON' :
@@ -963,7 +954,7 @@
                 </div>
                 <table class="mat-tbl"><tbody>
                 <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
-                <tr><td class="tl">Local Failure</td><td class="tv" style="font-size:0.72rem;color:#d97706;">${locFailVal.replace(' Method','')}</td></tr>
+                ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.72rem;color:#d97706;">${matModelVal}</td></tr>` : ''}
                 <tr><td class="tl">Design Temp</td><td class="tv">${tDes} °C</td></tr>
                 <tr><td class="tl">Load Factor</td><td class="tv">${loadFactor}</td></tr>
                 <tr><td class="tl">Thermal</td><td class="tv">${showThermal?'✅ Coupled':'—'}</td></tr>
