@@ -102,14 +102,13 @@
         .close-modal:hover { background: #ffffff; color: #ef4444; }
         
         /* Custom Material Modal Specifics */
-        .custom-mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 0.9rem; margin-bottom: 1.25rem; }
-        .custom-mat-grid .form-group { flex-direction: column; align-items: flex-start; border: none; padding: 0; gap: 0.3rem; }
-        .custom-mat-grid .form-label { font-size: 0.76rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0; }
-        .custom-mat-grid .input-control { width: 100%; flex: 1 1 100%; }
-        .custom-mat-grid .glass-input { background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 0.82rem; padding: 0.42rem 0.65rem; }
-        .custom-mat-grid .input-addon-group { background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; }
-        .custom-mat-grid .input-addon-group .glass-input { font-size: 0.82rem; padding: 0.42rem 0.65rem; }
-        .custom-mat-grid .addon { font-size: 0.7rem; padding: 0 8px; }
+        .custom-mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 0.85rem; margin-bottom: 0.5rem; }
+        .custom-mat-field { display: flex; flex-direction: column; gap: 0.28rem; }
+        .custom-mat-label { font-size: 0.76rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+        .custom-mat-field .glass-input { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 0.82rem; padding: 0.42rem 0.65rem; width: 100%; box-sizing: border-box; }
+        .custom-mat-field .input-addon-group { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; width: 100%; display: flex; align-items: stretch; overflow: hidden; }
+        .custom-mat-field .input-addon-group .glass-input { font-size: 0.82rem; padding: 0.42rem 0.65rem; border: none; background: transparent; }
+        .custom-mat-field .addon { font-size: 0.7rem; padding: 0 8px; color: var(--text-muted); font-weight: 700; background: rgba(0,0,0,0.03); border-left: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; white-space: nowrap; }
         .btn-edit-mat { background: var(--bg-glow-1); color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
         .btn-edit-mat:hover { background: var(--primary); color: white; }
 
@@ -302,73 +301,67 @@
             <input type="hidden" id="customMaterialTargetPrefix">
             <input type="hidden" id="customMaterialTargetIndex">
             
-            <div class="form-group" style="border:none; padding:0; margin-bottom:0.85rem; flex-direction: column; align-items: flex-start; gap:0.3rem;">
-                <label class="form-label" style="font-size:0.76rem; font-weight:700; color:var(--text-dark);">Material Name</label>
-                <div class="input-control" style="width: 100%;"><input type="text" class="glass-input" id="modalOtherName" placeholder="e.g. SA-516 Gr. 70" style="background:rgba(255,255,255,0.92); border:1px solid rgba(0,0,0,0.1); border-radius:8px; font-size:0.82rem; padding:0.42rem 0.65rem;"></div>
-            </div>
-
             <div class="custom-mat-grid">
-                <div class="form-group">
-                    <label class="form-label">Young's Modulus</label>
-                    <div class="input-control">
-                        <div class="input-addon-group">
-                            <input type="number" class="glass-input" id="modalYM" value="200000">
-                            <span class="addon">MPa</span>
-                        </div>
+                <div class="custom-mat-field" style="grid-column: 1 / -1; margin-bottom: 0.2rem;">
+                    <label class="custom-mat-label">Material Name</label>
+                    <input type="text" class="glass-input" id="modalOtherName" placeholder="e.g. SA-516 Gr. 70">
+                </div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Young's Modulus</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYM" value="200000">
+                        <span class="addon">MPa</span>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Poisson's Ratio</label>
-                    <div class="input-control"><input type="number" step="0.001" class="glass-input" id="modalPR" value="0.3"></div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Poisson's Ratio</label>
+                    <input type="number" step="0.001" class="glass-input" id="modalPR" value="0.3">
                 </div>
-                <div class="form-group" id="modalGrpAllowable">
-                    <label class="form-label">Allowable Stress (Table 5A)</label>
-                    <div class="input-control">
-                        <div class="input-addon-group">
-                            <input type="number" class="glass-input" id="modalAllowable" value="138">
-                            <span class="addon">MPa</span>
-                        </div>
+
+                <div class="custom-mat-field" id="modalGrpAllowable">
+                    <label class="custom-mat-label">Allowable Stress (Table 5A)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalAllowable" value="138">
+                        <span class="addon">MPa</span>
                     </div>
                 </div>
-                <div class="form-group" id="modalGrpYield">
-                    <label class="form-label">Yield Stress (Sy)</label>
-                    <div class="input-control">
-                        <div class="input-addon-group">
-                            <input type="number" class="glass-input" id="modalYield" value="260">
-                            <span class="addon">MPa</span>
-                        </div>
+
+                <div class="custom-mat-field" id="modalGrpYield">
+                    <label class="custom-mat-label">Yield Stress (Sy)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYield" value="260">
+                        <span class="addon">MPa</span>
                     </div>
                 </div>
-                <div class="form-group" id="modalGrpUTS">
-                    <label class="form-label">Ultimate Tensile (UTS)</label>
-                    <div class="input-control">
-                        <div class="input-addon-group">
-                            <input type="number" class="glass-input" id="modalUTS" value="485">
-                            <span class="addon">MPa</span>
-                        </div>
+
+                <div class="custom-mat-field" id="modalGrpUTS">
+                    <label class="custom-mat-label">Ultimate Tensile (UTS)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalUTS" value="485">
+                        <span class="addon">MPa</span>
                     </div>
                 </div>
-                <div class="form-group" id="modalGrpConductivity">
-                    <label class="form-label" style="color:#b45309;">Thermal Conductivity</label>
-                    <div class="input-control">
-                        <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
-                            <input type="number" class="glass-input" id="modalConductivity" value="48">
-                            <span class="addon" style="color:#b45309;">W/m·°C</span>
-                        </div>
+
+                <div class="custom-mat-field" id="modalGrpConductivity">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Conductivity</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" class="glass-input" id="modalConductivity" value="48">
+                        <span class="addon" style="color:#b45309;">W/m·°C</span>
                     </div>
                 </div>
-                <div class="form-group" id="modalGrpThermalExp">
-                    <label class="form-label" style="color:#b45309;">Thermal Expansion (CTE)</label>
-                    <div class="input-control">
-                        <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
-                            <input type="number" step="0.1" class="glass-input" id="modalThermalExp" value="12">
-                            <span class="addon" style="color:#b45309;">×10⁻⁶/°C</span>
-                        </div>
+
+                <div class="custom-mat-field" id="modalGrpThermalExp">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Expansion (CTE)</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" step="0.1" class="glass-input" id="modalThermalExp" value="12">
+                        <span class="addon" style="color:#b45309;">×10⁻⁶/°C</span>
                     </div>
                 </div>
             </div>
 
-            <div style="display:flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06);">
                 <button class="btn-action" type="button" onclick="closeCustomMaterialModal()" style="padding:0.45rem 1.2rem; font-size:0.82rem;">Cancel</button>
                 <button class="btn-action" type="button" onclick="saveCustomMaterial()" style="background:var(--primary); color:white; border:none; padding:0.45rem 1.6rem; font-size:0.82rem; font-weight:700;">Save &amp; Apply</button>
             </div>
@@ -812,11 +805,10 @@
                     btn.type = 'button';
                     btn.className = 'btn-edit-mat';
                     btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px; vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit Props';
-                    btn.onclick = () => openCustomMaterialModal(prefix, i, typeOfAnalysis);
-                    
                     const matInputCtrl = document.getElementById(`${prefix}Material_${i}`).parentElement;
                     matInputCtrl.appendChild(btn);
                 }
+                btn.onclick = () => openCustomMaterialModal(prefix, i);
                 btn.style.display = isOther ? 'inline-block' : 'none';
             };
 
@@ -1012,11 +1004,12 @@
         }
 
         // Custom Material Modal Logic
-        function openCustomMaterialModal(prefix, index, analysisType) {
+        function openCustomMaterialModal(prefix, index) {
             document.getElementById('customMaterialTitle').innerText = `${prefix} Custom Material Properties`;
             document.getElementById('customMaterialTargetPrefix').value = prefix;
             document.getElementById('customMaterialTargetIndex').value = index;
 
+            const analysisType = document.getElementById(`TypeOfAnalysis_${index}`)?.value || 'Elastic Analysis';
             const opCondition = document.getElementById(`OperatingCondition_${index}`)?.value || 'No';
             const showThermal = opCondition === 'Yes';
 
@@ -1126,8 +1119,7 @@
                 else if (inputId.includes("Nozzle")) prefix = "Nozzle";
                 else if (inputId.includes("Pad")) prefix = "Pad";
                 
-                const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`).value;
-                openCustomMaterialModal(prefix, i, typeOfAnalysis);
+                openCustomMaterialModal(prefix, i);
             }
         }
 
