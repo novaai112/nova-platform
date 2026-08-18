@@ -1400,6 +1400,24 @@
                         payload[cleanName] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
                     }
                 });
+
+                // If Pad is NOT required, remove pad properties so no pad geometry or material is created
+                if (payload.PadRequired !== 'Yes') {
+                    payload.PadRequired = 'No';
+                    delete payload.PadMaterial;
+                    delete payload.PadOD;
+                    delete payload.PadThick;
+                    delete payload.PadOtherName;
+                    delete payload.PadYM;
+                    delete payload.PadPR;
+                    delete payload.PadAllowable;
+                    delete payload.PadYield;
+                    delete payload.PadUTS;
+                    delete payload.PadConductivity;
+                    delete payload.PadThermalExp;
+                    delete payload.PadDensity;
+                }
+
                 payloadArr.push(payload);
             }
 
