@@ -418,12 +418,12 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_LimitLoadModel_${i}">
-                                <label class="form-label">Material Model</label>
+                            <div class="form-group" id="grp_LocalFailureMethod_${i}">
+                                <label class="form-label">Local Failure Method</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="LimitLoadModel_${i}" id="LimitLoadModel_${i}">
-                                        <option value="Elastic">Elastic</option>
-                                        <option value="Elastic-Plastic">Elastic-Plastic</option>
+                                    <select class="glass-select" name="LocalFailureMethod_${i}" id="LocalFailureMethod_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="Elastic Method">Elastic Method</option>
+                                        <option value="Elastic-Plastic Method">Elastic-Plastic Method</option>
                                     </select>
                                 </div>
                             </div>
@@ -757,7 +757,28 @@
             const padReq = document.getElementById(`PadRequired_${i}`).value;
             const nozzleType = document.getElementById(`TypeOfNozzle_${i}`).value;
 
-            toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
+            toggleVisibility(`grp_LocalFailureMethod_${i}`, true);
+            const lfSelect = document.getElementById(`LocalFailureMethod_${i}`);
+            if (lfSelect) {
+                if (typeOfAnalysis === 'Elastic Analysis') {
+                    lfSelect.value = 'Elastic Method';
+                    lfSelect.disabled = true;
+                    lfSelect.style.cursor = 'not-allowed';
+                    lfSelect.style.opacity = '0.85';
+                    lfSelect.title = 'Automatic Elastic Method for Elastic Analysis';
+                } else if (typeOfAnalysis === 'Elastic-Plastic Analysis') {
+                    lfSelect.value = 'Elastic-Plastic Method';
+                    lfSelect.disabled = true;
+                    lfSelect.style.cursor = 'not-allowed';
+                    lfSelect.style.opacity = '0.85';
+                    lfSelect.title = 'Automatic Elastic-Plastic Method for Elastic-Plastic Analysis';
+                } else if (typeOfAnalysis === 'Limit-Load Analysis') {
+                    lfSelect.disabled = false;
+                    lfSelect.style.cursor = 'pointer';
+                    lfSelect.style.opacity = '1';
+                    lfSelect.title = 'Select Local Failure check method for Limit-Load Analysis';
+                }
+            }
 
             const showThermal = opCondition === 'Yes';
             toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
@@ -942,6 +963,7 @@
 
             // ── Analysis Info Card ──
             const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
+            const locFailVal = document.getElementById(`LocalFailureMethod_${i}`)?.value || (isEP ? 'Elastic-Plastic Method' : 'Elastic Method');
             const loadFactor = isEP ? '2.4×' : isLimitLoad ? '1.5×' : '1.0×';
             const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
                                isLimitLoad ? 'Bilinear Isotropic Hardening · Non-linear geometry ON' :
@@ -953,6 +975,7 @@
                 </div>
                 <table class="mat-tbl"><tbody>
                 <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
+                <tr><td class="tl">Local Failure</td><td class="tv" style="font-size:0.72rem;color:#d97706;">${locFailVal.replace(' Method','')}</td></tr>
                 <tr><td class="tl">Design Temp</td><td class="tv">${tDes} °C</td></tr>
                 <tr><td class="tl">Load Factor</td><td class="tv">${loadFactor}</td></tr>
                 <tr><td class="tl">Thermal</td><td class="tv">${showThermal?'✅ Coupled':'—'}</td></tr>
@@ -1127,6 +1150,20 @@
             document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display = 'none');
         }
 
+        function interpolateGeneric(temps, vals, targetTemp) {
+            if(!temps || !vals || temps.length === 0) return null;
+            if(targetTemp <= temps[0]) return vals[0];
+            if(targetTemp >= temps[temps.length-1]) return vals[vals.length-1];
+            for(let j=0; j<temps.length-1; j++) {
+                if(targetTemp >= temps[j] && targetTemp <= temps[j+1]) {
+                    const t1 = temps[j], t2 = temps[j+1];
+                    const v1 = vals[j], v2 = vals[j+1];
+                    return v1 + ((targetTemp - t1) / (t2 - t1)) * (v2 - v1);
+                }
+            }
+            return null;
+        }
+
         function autoFillProperties(matName, inputId, i) {
             const mat = materialLibrary.find(m => m.Name === matName);
             if(!mat) return;
@@ -1141,15 +1178,35 @@
             const yieldEl = document.getElementById(`${prefix}Yield_${i}`);
             const utsEl = document.getElementById(`${prefix}UTS_${i}`);
 
-            if (mat.MechanicalProperties && mat.MechanicalProperties.AllowableStress && allowEl) {
-                let val = interpolateValue(mat.MechanicalProperties.AllowableStress, temp);
-                if (val) allowEl.value = val.toFixed(1);
-            }
-            if (mat.MechanicalProperties && mat.MechanicalProperties.MinimumYieldStrength && yieldEl) {
-                yieldEl.value = mat.MechanicalProperties.MinimumYieldStrength.Value.toFixed(1);
-            }
-            if (mat.MechanicalProperties && mat.MechanicalProperties.MinimumTensileStrength && utsEl) {
-                utsEl.value = mat.MechanicalProperties.MinimumTensileStrength.Value.toFixed(1);
+            if (mat.MechanicalProperties) {
+                // Allowable Stress
+                if (mat.MechanicalProperties.AllowableStress && allowEl) {
+                    let aData = mat.MechanicalProperties.AllowableStress;
+                    let val = interpolateGeneric(aData.Temperature?.Values, aData.Stress?.Values, temp);
+                    if (val !== null) allowEl.value = val.toFixed(1);
+                }
+                // Yield Stress
+                if (yieldEl) {
+                    if (mat.MechanicalProperties.Yield_Stress) {
+                        let yData = mat.MechanicalProperties.Yield_Stress;
+                        let yVals = yData.YieldStrength ? yData.YieldStrength.Values : (yData.TensileStrength ? yData.TensileStrength.Values : null);
+                        let val = interpolateGeneric(yData.Temperature?.Values, yVals, temp);
+                        if (val !== null) yieldEl.value = val.toFixed(1);
+                    } else if (mat.MechanicalProperties.MinimumYieldStrength) {
+                        yieldEl.value = mat.MechanicalProperties.MinimumYieldStrength.Value.toFixed(1);
+                    }
+                }
+                // UTS / Tensile Strength
+                if (utsEl) {
+                    let uData = mat.MechanicalProperties.TensileStrength_TableU;
+                    if (Array.isArray(uData)) uData = uData[0];
+                    if (uData && uData.Temperature && uData.TensileStrength) {
+                        let val = interpolateGeneric(uData.Temperature.Values, uData.TensileStrength.Values, temp);
+                        if (val !== null) utsEl.value = val.toFixed(1);
+                    } else if (mat.MechanicalProperties.MinimumTensileStrength) {
+                        utsEl.value = mat.MechanicalProperties.MinimumTensileStrength.Value.toFixed(1);
+                    }
+                }
             }
         }
 
@@ -1165,18 +1222,7 @@
         function interpolateValue(dataObj, targetTemp) {
             const temps = dataObj.Temperature.Values;
             const stresses = dataObj.Stress.Values;
-            if(temps.length === 0) return null;
-            if(targetTemp <= temps[0]) return stresses[0];
-            if(targetTemp >= temps[temps.length-1]) return stresses[temps.length-1];
-            
-            for(let j=0; j<temps.length-1; j++) {
-                if(targetTemp >= temps[j] && targetTemp <= temps[j+1]) {
-                    const t1 = temps[j], t2 = temps[j+1];
-                    const v1 = stresses[j], v2 = stresses[j+1];
-                    return v1 + ((targetTemp - t1) / (t2 - t1)) * (v2 - v1);
-                }
-            }
-            return null;
+            return interpolateGeneric(temps, stresses, targetTemp);
         }
 
         function switchAnalysis(type) {
