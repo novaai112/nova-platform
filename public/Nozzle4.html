@@ -241,7 +241,7 @@
 
     <div class="top-navigation">
         <div class="nav-primary">
-            <h1 class="nav-brand" id="main_title">
+            <h1 class="nav-brand" id="main_title" style="cursor: pointer;" onclick="window.location.href='/'">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                 NOVA Nozzle
             </h1>
@@ -249,10 +249,16 @@
                 <button type="button" class="btn-tab active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
                 <button type="button" class="btn-tab" id="btn-head" onclick="switchAnalysis('head')">Vessel Head</button>
             </div>
-            <button class="btn-action" type="button" onclick="openSearchModal()">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Job Repository
-            </button>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn-action" type="button" onclick="window.location.href='https://nova-analysis.vercel.app/'" title="Open NOVA Platform Dashboard">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </button>
+                <button class="btn-action" type="button" onclick="window.open('https://asme-material.vercel.app/', '_blank')" title="Open ASME Material Database Explorer">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    See Material
+                </button>
+            </div>
         </div>
         <div class="nav-secondary">
             <div class="batch-group">
@@ -859,7 +865,7 @@
             if (padReq === 'Yes') prefixes.push('Pad');
             const dotCls = { Shell:'rdot-shell', Nozzle:'rdot-nozzle', Pad:'rdot-pad' };
 
-            // Ensure hidden inputs exist that Python reads
+            // Ensure hidden inputs exist that Python and frontend read
             function ensureHidden(id, defVal) {
                 let el = document.getElementById(id);
                 if (!el) {
@@ -873,6 +879,7 @@
             prefixes.forEach(p => {
                 ensureHidden(`${p}Conductivity_${i}`, p==='Nozzle'?'52':'48');
                 ensureHidden(`${p}ThermalExp_${i}`, '12');
+                ensureHidden(`${p}Density_${i}`, '7850');
             });
 
             // ── Material Cards (all components) ──
@@ -886,6 +893,7 @@
                 const uts   = document.getElementById(`${prefix}UTS_${i}`)?.value         || '485';
                 const cond  = document.getElementById(`${prefix}Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
                 const cte   = document.getElementById(`${prefix}ThermalExp_${i}`)?.value  || '12';
+                const dens  = document.getElementById(`${prefix}Density_${i}`)?.value     || (isCustom ? '0' : '7850');
 
                 let hardeningBadge = '';
                 if (isLimitLoad) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.14);color:#4338ca;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear</span>`;
@@ -915,13 +923,20 @@
                 </td></tr>`;
 
                 if (showThermal || isCustom) {
-                    const dimmed = (!isCustom && showThermal) ? 'style="opacity:0.6;" title="From Material Database"' : '';
+                    const dimmed = (!isCustom && showThermal) ? 'style="opacity:0.8;" title="From Material Database"' : '';
                     rows += `
                 <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Conductivity</td><td class="tv">
                     <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" id="pop_${prefix}Cond_${i}" value="${cond}" ${dimmed} onchange="syncThermal('${prefix}Conductivity',${i},'pop_${prefix}Cond_${i}')"><span class="tia" style="color:#b45309;">W/m·°C</span></div>
                 </td></tr>
                 <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Exp. (CTE)</td><td class="tv">
                     <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" step="0.1" id="pop_${prefix}CTE_${i}" value="${cte}" ${dimmed} onchange="syncThermal('${prefix}ThermalExp',${i},'pop_${prefix}CTE_${i}')"><span class="tia" style="color:#b45309;">×10⁻⁶/°C</span></div>
+                </td></tr>`;
+                }
+
+                if (parseFloat(dens) > 0 && !isCustom) {
+                    rows += `
+                <tr style="background:rgba(59,130,246,0.03);"><td class="tl" style="color:#2563eb;">Density</td><td class="tv">
+                    <div class="tiw" style="border-color:rgba(59,130,246,0.3);"><input type="number" class="ti" id="pop_${prefix}Dens_${i}" value="${dens}" onchange="syncPop('${prefix}Density',${i},'pop_${prefix}Dens_${i}')"><span class="tia" style="color:#2563eb;">kg/m³</span></div>
                 </td></tr>`;
                 }
 
@@ -940,23 +955,34 @@
                 </div>`;
             }).join('');
 
-            // ── Analysis Info Card ──
+            // ── Analysis Info Card with Accurate Load Factors ──
             const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
             const matModelVal = isLimitLoad ? (document.getElementById(`LimitLoadModel_${i}`)?.value || 'Elastic') : '';
-            const loadFactor = isEP ? '2.4×' : isLimitLoad ? '1.5×' : '1.0×';
+            
+            let loadFactor = '1.0×';
+            if (isEP) {
+                loadFactor = '2.4×';
+            } else if (isLimitLoad) {
+                if (matModelVal.toLowerCase().includes('plastic') || matModelVal.toLowerCase().includes('elastic-plastic')) {
+                    loadFactor = '1.5× (Local Failure)';
+                } else {
+                    loadFactor = '1.7×';
+                }
+            }
+
             const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
-                               isLimitLoad ? 'Bilinear Isotropic Hardening · Non-linear geometry ON' :
+                               isLimitLoad ? (loadFactor.includes('1.5') ? 'Elastic-Plastic Material Model (LF = 1.5) · Local Failure' : 'Elastic Material Model (LF = 1.7) · Lower Bound Limit Load') :
                                              'Linear elastic analysis · Stress linearisation (SCL)';
-            const infoCard = `<div class="mat-rect-card" style="min-width:210px;flex:0 1 210px;">
+            const infoCard = `<div class="mat-rect-card" style="min-width:220px;flex:0 1 220px;">
                 <div class="mat-rect-header" style="background:rgba(99,102,241,0.1);">
                     <span class="rdot" style="background:#6366f1;"></span>
                     <span class="rh-label" style="color:#4338ca;">Analysis Info</span>
                 </div>
                 <table class="mat-tbl"><tbody>
-                <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
-                ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.72rem;color:#d97706;">${matModelVal}</td></tr>` : ''}
+                <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;font-weight:700;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
+                ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.72rem;color:#d97706;font-weight:800;">${matModelVal}</td></tr>` : ''}
                 <tr><td class="tl">Design Temp</td><td class="tv">${tDes} °C</td></tr>
-                <tr><td class="tl">Load Factor</td><td class="tv">${loadFactor}</td></tr>
+                <tr><td class="tl">Load Factor</td><td class="tv" style="font-weight:800;color:#2563eb;">${loadFactor}</td></tr>
                 <tr><td class="tl">Thermal</td><td class="tv">${showThermal?'✅ Coupled':'—'}</td></tr>
                 <tr><td class="tl" colspan="2" style="font-size:0.66rem;color:#4f46e5;line-height:1.4;padding:0.35rem 0.85rem;">${solverNote}</td></tr>
                 </tbody></table>
@@ -970,7 +996,7 @@
                 </div>
                 <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.1rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.06);">
-                    <span style="font-size:0.71rem;color:var(--text-muted);">✅ All changes sync immediately to form inputs</span>
+                    <span style="font-size:0.71rem;color:var(--text-muted);">✅ Real-time properties sync directly with ASME material.json &amp; ANSYS solver</span>
                     <button onclick="closeMatTablePopup()" style="background:var(--primary);color:white;border:none;padding:0.45rem 1.6rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;">Done</button>
                 </div>`;
 
@@ -1066,14 +1092,22 @@
             setOrMakeHidden(`${prefix}UTS_${index}`, document.getElementById('modalUTS').value);
             setOrMakeHidden(`${prefix}Conductivity_${index}`, document.getElementById('modalConductivity').value);
             setOrMakeHidden(`${prefix}ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
+            setOrMakeHidden(`${prefix}Density_${index}`, '0'); // Custom material skips Density
             
             closeCustomMaterialModal();
         }
 
         async function fetchMaterialData() {
             try {
-                const res = await fetch('/material.json');
-                if(res.ok) materialLibrary = await res.json();
+                let res = await fetch('/material.json');
+                if(!res.ok) res = await fetch('material.json');
+                if(res.ok) {
+                    materialLibrary = await res.json();
+                    const num = parseInt(document.getElementById('numAnalyses')?.value) || 1;
+                    for (let i = 1; i <= num; i++) {
+                        recalculateAllMaterials(i);
+                    }
+                }
             } catch (e) {
                 console.log("No local material.json found or fetch error.");
             }
@@ -1144,58 +1178,166 @@
         }
 
         function autoFillProperties(matName, inputId, i) {
-            const mat = materialLibrary.find(m => m.Name === matName);
+            if (!matName || matName.toLowerCase().trim() === 'other material') return;
+            const mat = materialLibrary.find(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
             if(!mat) return;
             
-            const temp = parseFloat(document.getElementById(`DesignTemp_${i}`).value) || 20;
+            const temp = parseFloat(document.getElementById(`DesignTemp_${i}`)?.value) || 20;
             let prefix = "";
             if (inputId.includes("Shell")) prefix = "Shell";
             else if (inputId.includes("Nozzle")) prefix = "Nozzle";
             else if (inputId.includes("Pad")) prefix = "Pad";
+            if (!prefix) return;
+
+            function ensureElement(name, def) {
+                let el = document.getElementById(name);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden'; el.name = name; el.id = name; el.value = def;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
 
             const allowEl = document.getElementById(`${prefix}Allowable_${i}`);
             const yieldEl = document.getElementById(`${prefix}Yield_${i}`);
             const utsEl = document.getElementById(`${prefix}UTS_${i}`);
+            const ymEl = document.getElementById(`${prefix}YM_${i}`);
+            const prEl = document.getElementById(`${prefix}PR_${i}`);
+            const condEl = ensureElement(`${prefix}Conductivity_${i}`, prefix==='Nozzle'?'52':'48');
+            const cteEl = ensureElement(`${prefix}ThermalExp_${i}`, '12');
+            const densityEl = ensureElement(`${prefix}Density_${i}`, '7850');
 
-            if (mat.MechanicalProperties) {
-                // Allowable Stress
-                if (mat.MechanicalProperties.AllowableStress && allowEl) {
-                    let aData = mat.MechanicalProperties.AllowableStress;
-                    let val = interpolateGeneric(aData.Temperature?.Values, aData.Stress?.Values, temp);
-                    if (val !== null) allowEl.value = val.toFixed(1);
+            const phys = mat.PhysicalProperties || mat.Properties || {};
+            const mech = mat.MechanicalProperties || {};
+
+            // 1. Allowable Stress
+            if (mech.AllowableStress && allowEl) {
+                let aData = mech.AllowableStress;
+                let val = interpolateGeneric(aData.Temperature?.Values, aData.Stress?.Values, temp);
+                if (val !== null) {
+                    allowEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}All_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
                 }
-                // Yield Stress
-                if (yieldEl) {
-                    if (mat.MechanicalProperties.Yield_Stress) {
-                        let yData = mat.MechanicalProperties.Yield_Stress;
-                        let yVals = yData.YieldStrength ? yData.YieldStrength.Values : (yData.TensileStrength ? yData.TensileStrength.Values : null);
-                        let val = interpolateGeneric(yData.Temperature?.Values, yVals, temp);
-                        if (val !== null) yieldEl.value = val.toFixed(1);
-                    } else if (mat.MechanicalProperties.MinimumYieldStrength) {
-                        yieldEl.value = mat.MechanicalProperties.MinimumYieldStrength.Value.toFixed(1);
+            }
+
+            // 2. Yield Stress
+            if (yieldEl) {
+                let val = null;
+                if (mech.Yield_Stress) {
+                    let yData = mech.Yield_Stress;
+                    let yVals = yData.YieldStrength ? yData.YieldStrength.Values : (yData.TensileStrength ? yData.TensileStrength.Values : null);
+                    val = interpolateGeneric(yData.Temperature?.Values, yVals, temp);
+                } else if (mech.MinimumYieldStrength) {
+                    val = mech.MinimumYieldStrength.Value;
+                }
+                if (val !== null) {
+                    yieldEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}Yld_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            // 3. UTS / Tensile Strength
+            if (utsEl) {
+                let val = null;
+                let uData = mech.TensileStrength_TableU;
+                if (Array.isArray(uData)) uData = uData[0];
+                if (uData && uData.Temperature && uData.TensileStrength) {
+                    val = interpolateGeneric(uData.Temperature.Values, uData.TensileStrength.Values, temp);
+                } else if (mech.MinimumTensileStrength) {
+                    val = mech.MinimumTensileStrength.Value;
+                }
+                if (val !== null) {
+                    utsEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}UTS_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            // 4. Young's Modulus & Poisson's Ratio (temperature-dependent from IsotropicElasticity)
+            if (phys.IsotropicElasticity) {
+                const iso = phys.IsotropicElasticity;
+                const tVals = iso.Temperature?.Values;
+                const eVals = iso.YoungsModulus?.Values;
+                const prVals = iso.PoissonsRatio?.Values;
+
+                if (tVals && eVals) {
+                    let eVal = interpolateGeneric(tVals, eVals, temp);
+                    if (eVal !== null) {
+                        if (eVal < 1000) eVal = eVal * 1000.0;
+                        if (ymEl) ymEl.value = Math.round(eVal);
+                        const popYm = document.getElementById(`pop_${prefix}YM_${i}`);
+                        if (popYm) popYm.value = Math.round(eVal);
                     }
                 }
-                // UTS / Tensile Strength
-                if (utsEl) {
-                    let uData = mat.MechanicalProperties.TensileStrength_TableU;
-                    if (Array.isArray(uData)) uData = uData[0];
-                    if (uData && uData.Temperature && uData.TensileStrength) {
-                        let val = interpolateGeneric(uData.Temperature.Values, uData.TensileStrength.Values, temp);
-                        if (val !== null) utsEl.value = val.toFixed(1);
-                    } else if (mat.MechanicalProperties.MinimumTensileStrength) {
-                        utsEl.value = mat.MechanicalProperties.MinimumTensileStrength.Value.toFixed(1);
+                if (tVals && prVals) {
+                    let prVal = interpolateGeneric(tVals, prVals, temp);
+                    if (prVal !== null) {
+                        if (prEl) prEl.value = prVal.toFixed(3);
+                        const popPr = document.getElementById(`pop_${prefix}PR_${i}`);
+                        if (popPr) popPr.value = prVal.toFixed(3);
                     }
                 }
+            }
+
+            // 5. Thermal Conductivity
+            if (phys.ThermalConductivity) {
+                const tc = phys.ThermalConductivity;
+                let kVal = null;
+                if (tc.Temperature && (tc.ThermalConductivity || tc.Conductivity)) {
+                    const cVals = tc.ThermalConductivity ? tc.ThermalConductivity.Values : tc.Conductivity.Values;
+                    kVal = interpolateGeneric(tc.Temperature.Values, cVals, temp);
+                } else if (tc.Value !== undefined) {
+                    kVal = tc.Value;
+                }
+                if (kVal !== null) {
+                    if (condEl) condEl.value = kVal.toFixed(1);
+                    const popCond = document.getElementById(`pop_${prefix}Cond_${i}`);
+                    if (popCond) popCond.value = kVal.toFixed(1);
+                }
+            }
+
+            // 6. Coefficient of Thermal Expansion (CTE)
+            const cteObj = phys.CoefficientOfThermalExpansion || phys.ThermalExpansion;
+            if (cteObj) {
+                let cteVal = null;
+                if (cteObj.Temperature && (cteObj.CTE || cteObj.ThermalExpansion || cteObj.Values)) {
+                    const cVals = cteObj.CTE ? cteObj.CTE.Values : (cteObj.ThermalExpansion ? cteObj.ThermalExpansion.Values : cteObj.Values);
+                    cteVal = interpolateGeneric(cteObj.Temperature.Values, cVals, temp);
+                } else if (cteObj.Value !== undefined) {
+                    cteVal = cteObj.Value;
+                }
+                if (cteVal !== null) {
+                    if (cteVal < 0.001) cteVal = cteVal * 1e6;
+                    if (cteEl) cteEl.value = cteVal.toFixed(2);
+                    const popCte = document.getElementById(`pop_${prefix}CTE_${i}`);
+                    if (popCte) popCte.value = cteVal.toFixed(2);
+                }
+            }
+
+            // 7. Density
+            if (phys.Density && phys.Density.Value) {
+                const dens = parseFloat(phys.Density.Value) || 7850;
+                if (densityEl) densityEl.value = dens;
+                const popDens = document.getElementById(`pop_${prefix}Dens_${i}`);
+                if (popDens) popDens.value = dens;
+            } else if (densityEl) {
+                densityEl.value = 0;
             }
         }
 
         function recalculateAllMaterials(i) {
-            const shellMat = document.getElementById(`ShellMaterial_${i}`).value;
-            const nozzleMat = document.getElementById(`NozzleMaterial_${i}`).value;
-            const padMat = document.getElementById(`PadMaterial_${i}`).value;
+            const shellMat = document.getElementById(`ShellMaterial_${i}`)?.value;
+            const nozzleMat = document.getElementById(`NozzleMaterial_${i}`)?.value;
+            const padMat = document.getElementById(`PadMaterial_${i}`)?.value;
+            const padReq = document.getElementById(`PadRequired_${i}`)?.value;
+
             if(shellMat && shellMat !== "other material") autoFillProperties(shellMat, `ShellMaterial_${i}`, i);
             if(nozzleMat && nozzleMat !== "other material") autoFillProperties(nozzleMat, `NozzleMaterial_${i}`, i);
-            if(padMat && padMat !== "other material") autoFillProperties(padMat, `PadMaterial_${i}`, i);
+            if(padReq === 'Yes' && padMat && padMat !== "other material") autoFillProperties(padMat, `PadMaterial_${i}`, i);
         }
 
         function interpolateValue(dataObj, targetTemp) {
@@ -1250,8 +1392,8 @@
                 
                 block.querySelectorAll('input, select').forEach(el => {
                     const group = el.closest('.form-group');
-                    // Extract values from custom material & thermal fields which may be hidden
-                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp"));
+                    // Extract values from material, thermal, and solver fields which may be hidden
+                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp") || el.name.includes("Density") || el.name.includes("LimitLoadModel") || el.name.includes("LocalFailureMethod"));
                     
                     if (el.name && (isCustomField || (group && !group.classList.contains('hidden')))) {
                         let cleanName = el.name.replace(`_${i}`, '');

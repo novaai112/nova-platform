@@ -5,7 +5,8 @@ import {
   ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, Link,
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell,Target,
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,CircleDot,
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart
+  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart,
+  FileJson, AlertCircle, ExternalLink, RefreshCw, Copy, CheckCheck
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -115,6 +116,8 @@ export default function App() {
 
   const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false);
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
+  const [activeDetailRun, setActiveDetailRun] = useState(0);
+  const [copiedError, setCopiedError] = useState(false);
 
   const [showMaterialConsultant, setShowMaterialConsultant] = useState(false);
   const [materialPrompt, setMaterialPrompt] = useState("");
@@ -168,17 +171,51 @@ export default function App() {
     }
   };
 
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase.from('ansys_jobs').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        setJobs(data);
+        setSelectedJobDetails(prev => {
+          if (!prev) return null;
+          const updated = data.find(j => j.id === prev.id);
+          return updated || prev;
+        });
+      }
+    } catch (e) {
+      console.error("fetchJobs error:", e);
+    }
+  };
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (isLoggedIn) {
+    if (isLoggedIn) {
+      fetchJobs();
+
+      // Realtime listener for immediate database updates
+      const channel = supabase
+        .channel('ansys_jobs_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'ansys_jobs' },
+          () => {
+            fetchJobs();
+          }
+        )
+        .subscribe();
+
+      // Fast periodic polling (2.5s) for instant status updates
+      const interval = setInterval(() => {
         fetchJobs();
         if (!currentUser.isApproved) {
           checkApprovalStatus();
         }
-      }
-    }, 5000); 
-    
-    return () => clearInterval(interval);
+      }, 2500);
+
+      return () => {
+        supabase.removeChannel(channel);
+        clearInterval(interval);
+      };
+    }
   }, [isLoggedIn, currentUser.isApproved]);
 
   const setupUser = (user) => {
@@ -200,11 +237,6 @@ export default function App() {
       localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
     };
-
-  const fetchJobs = async () => {
-    const { data, error } = await supabase.from('ansys_jobs').select('*').order('created_at', { ascending: false });
-    if (!error && data) setJobs(data);
-};
 
   useEffect(() => {
     if (showSplash) {
@@ -1161,195 +1193,578 @@ export default function App() {
     </div>
   );
 
+  const downloadJobJson = (job) => {
+    if (!job) return;
+    const exportData = {
+      job_id: job.job_id_display || job.id,
+      project_name: job.name,
+      type: job.type,
+      status: job.status,
+      created_at: job.created_at,
+      error_message: job.error_message || null,
+      result_url: job.result_url || null,
+      geometry_data: job.geometry_data || {},
+      json_payload: job.json_payload || []
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${job.job_id_display || 'nova_job'}_inputs.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const generateAndOpenReport = (job) => {
+    if (!job) return;
+    if (job.report_url) {
+      window.open(job.report_url, '_blank');
+      return;
+    }
+    if (job.excel_file_url) {
+      window.open(job.excel_file_url, '_blank');
+      return;
+    }
+
+    const geom = job.geometry_data || {};
+    let runs = [];
+    if (Array.isArray(geom.runs) && geom.runs.length > 0) runs = geom.runs;
+    else if (Array.isArray(job.json_payload) && job.json_payload.length > 0) runs = job.json_payload;
+    else if (typeof job.json_payload === 'string') {
+      try { const p = JSON.parse(job.json_payload); if (Array.isArray(p)) runs = p; } catch (e) {}
+    }
+    if (!Array.isArray(runs) || runs.length === 0) runs = [geom];
+
+    const reportHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NOVA FEA Report - ${job.job_id_display || job.name || 'Analysis'}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4; margin: 15mm; }
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+    body { background: #f0f4f8; color: #1e293b; margin: 0; padding: 25px; line-height: 1.5; }
+    .report-container { max-width: 880px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 10px 35px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #3b82f6; padding-bottom: 20px; margin-bottom: 25px; }
+    .brand-title { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+    .brand-title span { color: #3b82f6; }
+    .meta-box { text-align: right; font-size: 13px; color: #64748b; }
+    .job-badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; ${job.status === 'Completed' ? 'background:#dcfce7; color:#15803d; border:1px solid #86efac;' : job.status === 'Failed' ? 'background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5;' : 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;'} margin-top: 6px; }
+    h2 { font-size: 15px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 1px; margin-top: 28px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    h2::before { content: ''; width: 4px; height: 16px; background: #3b82f6; border-radius: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }
+    th, td { border: 1px solid #e2e8f0; padding: 9px 14px; text-align: left; }
+    th { background: #f8fafc; color: #475569; font-weight: 700; width: 38%; }
+    td { color: #1e293b; font-weight: 500; }
+    .section-banner { background: #eff6ff; color: #1e40af; font-weight: 800; font-size: 11.5px; letter-spacing: 0.5px; text-transform: uppercase; padding: 8px 14px; border: 1px solid #bfdbfe; }
+    .action-bar { max-width: 880px; margin: 0 auto 15px; display: flex; justify-content: space-between; gap: 10px; }
+    .btn { background: #3b82f6; color: white; border: none; padding: 10px 22px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59,130,246,0.25); }
+    .btn-secondary { background: #64748b; box-shadow: none; }
+    .status-alert { padding: 16px 20px; border-radius: 12px; font-size: 13px; margin-bottom: 25px; ${job.status === 'Completed' ? 'background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;' : job.status === 'Failed' ? 'background:#fef2f2; border:1px solid #fecaca; color:#991b1b;' : 'background:#fffbeb; border:1px solid #fde68a; color:#92400e;'} }
+    @media print {
+      .action-bar { display: none !important; }
+      body { background: white; padding: 0; }
+      .report-container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="action-bar">
+    <button class="btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button class="btn btn-secondary" onclick="window.close()">✕ Close Report</button>
+  </div>
+  <div class="report-container">
+    <div class="header">
+      <div>
+        <div class="brand-title">NOVA <span>ENGINEERING</span></div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">Finite Element Analysis & Structural Verification</div>
+      </div>
+      <div class="meta-box">
+        <div style="font-weight: 800; font-size: 16px; color: #3b82f6;">${job.job_id_display || job.id.substring(0,8)}</div>
+        <div style="margin-top: 2px;">${new Date(job.created_at).toLocaleString()}</div>
+        <span class="job-badge">${job.status}</span>
+      </div>
+    </div>
+
+    ${job.status === 'Failed' ? `
+      <div class="status-alert">
+        <strong>⚠ Simulation Execution Failure:</strong><br/>
+        ${job.error_message || job.error || 'The simulation runner reported an error during solver execution.'}
+      </div>
+    ` : ''}
+
+    ${job.status === 'Completed' ? `
+      <div class="status-alert">
+        <strong>✔ Simulation Successfully Executed:</strong> All load cases processed according to ASME Section VIII Div 2 Part 5 design-by-analysis rules.
+      </div>
+    ` : ''}
+
+    <h2>Project & Job Overview</h2>
+    <table>
+      <tr><th>Project Name</th><td><strong>${job.name || 'Analysis Job'}</strong></td></tr>
+      <tr><th>Analysis Type</th><td>${job.type}</td></tr>
+      <tr><th>Job Identifier</th><td><code>${job.job_id_display || job.id}</code></td></tr>
+      <tr><th>Date & Time</th><td>${new Date(job.created_at).toLocaleString()}</td></tr>
+      <tr><th>Current Status</th><td><strong>${job.status}</strong></td></tr>
+      ${job.result_url ? `<tr><th>Full Analysis ZIP</th><td><a href="${job.result_url}" target="_blank" style="color:#2563eb; font-weight:bold;">Download Archive (Google Drive)</a></td></tr>` : ''}
+    </table>
+
+    ${runs.map((run, idx) => `
+      <h2>Run ${idx + 1} Parameters</h2>
+      <table>
+        <tr><td colspan="2" class="section-banner">1. Geometry & Shell Configuration</td></tr>
+        ${run.AnalysisType || run.TypeOfAnalysis ? `<tr><th>Analysis Category</th><td>${run.AnalysisType || run.TypeOfAnalysis}</td></tr>` : ''}
+        ${run.ShellType ? `<tr><th>Shell Type</th><td>${run.ShellType}</td></tr>` : ''}
+        ${run.ShellOD !== undefined ? `<tr><th>Shell Outer Diameter (OD)</th><td>${run.ShellOD} mm</td></tr>` : ''}
+        ${run.ShellThick !== undefined ? `<tr><th>Shell Thickness</th><td>${run.ShellThick} mm</td></tr>` : ''}
+        ${run.ShellLength !== undefined ? `<tr><th>Shell Length</th><td>${run.ShellLength} mm</td></tr>` : ''}
+        ${run.NozzleOD !== undefined ? `<tr><th>Nozzle Outer Diameter (OD)</th><td>${run.NozzleOD} mm</td></tr>` : ''}
+        ${run.NozzleThick !== undefined ? `<tr><th>Nozzle Thickness</th><td>${run.NozzleThick} mm</td></tr>` : ''}
+        ${run.NozzleLength !== undefined ? `<tr><th>Nozzle Projection Length</th><td>${run.NozzleLength} mm</td></tr>` : ''}
+        ${run.PadOD ? `<tr><th>Reinforcing Pad Outer Diameter</th><td>${run.PadOD} mm</td></tr>` : ''}
+        ${run.PadThick ? `<tr><th>Reinforcing Pad Thickness</th><td>${run.PadThick} mm</td></tr>` : ''}
+        ${run.NozzleFilletWeld ? `<tr><th>Nozzle Weld Size</th><td>${run.NozzleFilletWeld} mm</td></tr>` : ''}
+
+        <tr><td colspan="2" class="section-banner">2. Material Specifications</td></tr>
+        ${run.ShellMaterial ? `<tr><th>Shell Material</th><td><strong>${run.ShellMaterial}</strong> ${run.ShellAllowable ? `(Allowable: ${run.ShellAllowable} MPa)` : ''} ${run.ShellYield ? `(Yield: ${run.ShellYield} MPa)` : ''} ${run.ShellUTS ? `(UTS: ${run.ShellUTS} MPa)` : ''}</td></tr>` : ''}
+        ${run.NozzleMaterial ? `<tr><th>Nozzle Material</th><td><strong>${run.NozzleMaterial}</strong> ${run.NozzleAllowable ? `(Allowable: ${run.NozzleAllowable} MPa)` : ''} ${run.NozzleYield ? `(Yield: ${run.NozzleYield} MPa)` : ''} ${run.NozzleUTS ? `(UTS: ${run.NozzleUTS} MPa)` : ''}</td></tr>` : ''}
+        ${run.PadMaterial ? `<tr><th>Pad Material</th><td><strong>${run.PadMaterial}</strong></td></tr>` : ''}
+
+        <tr><td colspan="2" class="section-banner">3. Design, Operating & Thermal Loads</td></tr>
+        ${run.InternalPressure !== undefined ? `<tr><th>Internal Pressure (Pi)</th><td>${run.InternalPressure} MPa</td></tr>` : ''}
+        ${run.ExternalPressure !== undefined ? `<tr><th>External Pressure (Po)</th><td>${run.ExternalPressure} MPa</td></tr>` : ''}
+        ${run.DesignTemp !== undefined ? `<tr><th>Design Temperature</th><td>${run.DesignTemp} °C</td></tr>` : ''}
+        ${run.OperatingCondition ? `<tr><th>Coupled Thermal Condition</th><td>${run.OperatingCondition}</td></tr>` : ''}
+        ${run.OperatingTemp !== undefined ? `<tr><th>Operating Temperature</th><td>${run.OperatingTemp} °C</td></tr>` : ''}
+        ${run.AmbientTemp !== undefined ? `<tr><th>Ambient Temperature</th><td>${run.AmbientTemp} °C</td></tr>` : ''}
+        ${run.ShellCorrosion !== undefined ? `<tr><th>Shell Corrosion Allowance</th><td>${run.ShellCorrosion} mm</td></tr>` : ''}
+        ${run.NozzleCorrosion !== undefined ? `<tr><th>Nozzle Corrosion Allowance</th><td>${run.NozzleCorrosion} mm</td></tr>` : ''}
+
+        <tr><td colspan="2" class="section-banner">4. Nozzle External Mechanical Loads</td></tr>
+        <tr><th>Forces (Fx, Fy, Fz)</th><td>Fx: ${run.Fx || 0} N &nbsp;|&nbsp; Fy: ${run.Fy || 0} N &nbsp;|&nbsp; Fz: ${run.Fz || 0} N</td></tr>
+        <tr><th>Moments (Mx, My, Mz)</th><td>Mx: ${run.Mx || 0} N·mm &nbsp;|&nbsp; My: ${run.My || 0} N·mm &nbsp;|&nbsp; Mz: ${run.Mz || 0} N·mm</td></tr>
+      </table>
+    `).join('')}
+
+    <div style="margin-top: 30px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
+      Generated automatically by NOVA Cloud Engineering Platform. Compliant with ASME Sec VIII Div 2 standards.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const reportWin = window.open('', '_blank');
+    if (reportWin) {
+      reportWin.document.write(reportHtml);
+      reportWin.document.close();
+    }
+  };
+
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
     const geom = selectedJobDetails.geometry_data || {};
-    const runs = Array.isArray(geom.runs) ? geom.runs : [];
-    
-    const upsetSelected = geom.upset_selected === 'Yes';
-    
-    const isManual = geom.inputMethod === 'manual' || (!geom.pdfName && !geom.pdfUrl && geom.inputMethod !== 'pdf');
-    
-    let hydroRun = {};
-    let upsetCases = [];
-
-    if (upsetSelected) {
-        upsetCases = runs;
-        hydroRun = { T_amb: runs.length > 0 ? runs[0].T_amb : undefined };
-    } else {
-        hydroRun = runs.length > 0 ? runs[0] : {};
+    let runs = [];
+    if (Array.isArray(geom.runs) && geom.runs.length > 0) {
+      runs = geom.runs;
+    } else if (Array.isArray(selectedJobDetails.json_payload) && selectedJobDetails.json_payload.length > 0) {
+      runs = selectedJobDetails.json_payload;
+    } else if (typeof selectedJobDetails.json_payload === 'string') {
+      try {
+        const parsed = JSON.parse(selectedJobDetails.json_payload);
+        if (Array.isArray(parsed) && parsed.length > 0) runs = parsed;
+      } catch (e) {}
+    }
+    if (!Array.isArray(runs) || runs.length === 0) {
+      runs = [geom];
     }
 
-    const codeEdition = geom.ui_code_edition || '2025';
-    
-    const displayHydroP = geom.shellPressure ? `${geom.shellPressure} MPa` : (hydroRun.P !== undefined ? `${hydroRun.P} MPa` : 'N/A');
-    const displayHydroT = geom.shellTemp ? `${geom.shellTemp} °C` : (hydroRun.T_amb !== undefined ? `${hydroRun.T_amb} °C` : 'N/A');
+    const activeIndex = Math.min(activeDetailRun, runs.length - 1);
+    const currentRun = runs[activeIndex] || runs[0] || {};
+    const isNozzleJob = selectedJobDetails.type?.includes('Nozzle') || currentRun.ShellOD !== undefined || currentRun.NozzleOD !== undefined || currentRun.AnalysisType !== undefined;
+    const isBellowJob = selectedJobDetails.type?.includes('Bellow') || geom.bellowVariation !== undefined;
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        {/* Dark Backdrop */}
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsJobDetailsOpen(false)}></div>
+        {/* Transparent Frosted Glass Backdrop */}
+        <div 
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300" 
+          onClick={() => setIsJobDetailsOpen(false)}
+        />
         
-        {/* Main Modal Container - White, rounded, scrollable */}
-        <div className="bg-white w-full max-w-[500px] h-[85vh] rounded-2xl overflow-hidden flex flex-col shadow-2xl relative z-10 animate-in zoom-in-95">
+        {/* Main Glassmorphic Modal Box */}
+        <div className="glass-panel w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col relative z-10 border-t border-l border-white/90 shadow-[0_25px_70px_rgba(0,0,0,0.28)] bg-white/75 backdrop-blur-3xl animate-in zoom-in-95">
           
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center gap-2">
-              <Box className="w-5 h-5 text-blue-500" />
-              <h3 className="text-base font-bold text-slate-800">Job: {selectedJobDetails.job_id_display}</h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-full">
-                {selectedJobDetails.type}
-              </span>
+          {/* Modal Header */}
+          <div className="flex items-center justify-between px-8 py-5 border-b bg-white/50 backdrop-blur-xl border-white/60">
+            <div className="flex items-center gap-3.5 flex-wrap">
+              <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-700 border border-blue-500/30 shadow-sm">
+                <Box className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="text-xl font-black text-slate-800 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</h3>
+                  <span className="px-3 py-1 text-xs font-extrabold text-[#3C64D6] bg-blue-500/15 border border-blue-500/30 rounded-full">
+                    {selectedJobDetails.type}
+                  </span>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border shadow-sm ${
+                    selectedJobDetails.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                    selectedJobDetails.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                    selectedJobDetails.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
+                    'bg-red-500/20 text-red-800 border-red-500/30'
+                  }`}>
+                    {selectedJobDetails.status === 'Processing' && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
+                    {selectedJobDetails.status === 'Completed' && <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />}
+                    {selectedJobDetails.status === 'Pending' && <Clock className="w-3.5 h-3.5 mr-1.5 text-orange-600" />}
+                    {selectedJobDetails.status === 'Failed' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-red-600" />}
+                    {selectedJobDetails.status}
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                  Project: <span className="font-bold text-slate-700">{selectedJobDetails.name || 'Analysis Job'}</span> • Submitted: {new Date(selectedJobDetails.created_at).toLocaleString()}
+                </p>
+              </div>
             </div>
-            <button onClick={() => setIsJobDetailsOpen(false)} className="flex items-center justify-center w-6 h-6 text-white transition-colors bg-red-500 rounded-full hover:bg-red-600">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Scrollable Body */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
             
-            {/* Job Details Card */}
-            <div className="overflow-hidden border border-blue-100 rounded-xl">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
-                  <Box className="w-4 h-4"/> Job Details
-               </div>
-               <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
-                 <div className="font-bold text-slate-700">Job ID:</div>
-                 <div className="font-semibold text-slate-600">{selectedJobDetails.job_id_display}</div>
-                 <div className="font-bold text-slate-700">Date:</div>
-                 <div className="font-semibold text-slate-600">{new Date(selectedJobDetails.created_at).toLocaleString()}</div>
-                 <div className="font-bold text-slate-700">Type:</div>
-                 <div className="flex items-center gap-1 font-bold text-blue-600">
-                    <Box className="w-3 h-3"/> {selectedJobDetails.type}
-                 </div>
-               </div>
-            </div>
-
-            {/* Bellow Configuration Card */}
-            <div className="overflow-hidden border border-blue-100 rounded-xl">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 bg-blue-50 border-b border-blue-100">
-                  <Settings2 className="w-4 h-4"/> Bellow Configuration
-               </div>
-               <div className="grid grid-cols-2 p-4 text-xs gap-y-3">
-                 <div className="font-bold text-slate-700">Design Code:</div>
-                 <div className="font-semibold text-slate-600">{codeEdition}</div>
-                 <div className="font-bold text-slate-700">Bellow Variation:</div>
-                 <div className="font-semibold text-slate-600">Flanged and Flued</div>
-               </div>
-            </div>
-
-            {/* Hydrotest Parameters Card */}
-            <div className="overflow-hidden border border-emerald-100 rounded-xl">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border-b border-emerald-100">
-                  <Database className="w-4 h-4 text-purple-500"/> Hydrotest Parameters
-               </div>
-               <div className="grid grid-cols-2 p-4 text-xs gap-y-4">
-                 <div className="font-bold text-slate-700">Shell<br/>Pressure:</div>
-                 <div className="flex items-center font-bold text-slate-800">{displayHydroP}</div>
-                 <div className="font-bold text-slate-700">Shell<br/>Temperature:</div>
-                 <div className="flex items-center font-bold text-slate-800">{displayHydroT}</div>
-                 <div className="font-bold text-slate-700">Additional<br/>Cases:</div>
-                 <div className="flex items-center">
-                   <span className={`px-2 py-0.5 text-white rounded-full font-bold text-[10px] ${upsetSelected ? 'bg-orange-500' : 'bg-slate-400'}`}>
-                     {upsetSelected ? 'Yes' : 'No'}
-                   </span>
-                 </div>
-               </div>
-            </div>
-
-            {/* Upset Cases Card (Only displays cases if available) */}
-            {upsetSelected && (
-              <div className="overflow-hidden border border-orange-100 rounded-xl">
-                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 border-b border-orange-100">
-                    <Shapes className="w-4 h-4"/> Upset Cases ({upsetCases.length})
-                 </div>
-                 <div className="p-4 space-y-3 text-xs">
-                   {upsetCases.length > 0 ? upsetCases.map((uc, idx) => (
-                     <div key={idx} className="flex items-center justify-between pb-2 border-b border-slate-100 last:border-0 last:pb-0">
-                       <span className="font-bold text-slate-700">Case {idx + 1}:</span>
-                       <span className="font-bold text-slate-800 w-16">{uc.P !== undefined ? `${uc.P} MPa` : 'N/A'}</span>
-                       <span className="font-bold text-slate-800 w-16 text-right">{uc.T !== undefined ? `${uc.T} °C` : 'N/A'}</span>
-                     </div>
-                   )) : (
-                     <div className="text-center font-medium text-slate-500">No Upset Cases Available</div>
-                   )}
-                 </div>
-              </div>
-            )}
-
-            {/* PV Elite Report PDF Card (Hidden if manual) */}
-            {!isManual && (
-              <div className="overflow-hidden border border-blue-100 rounded-xl bg-blue-50/30">
-                 <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-700 border-b border-blue-100">
-                    <FileText className="w-4 h-4 text-amber-400"/> PV Elite Report PDF
-                 </div>
-                 <div className="grid grid-cols-[100px_1fr] p-4 text-xs gap-y-2">
-                   <div className="font-bold text-slate-700">PDF Name:</div>
-                   <div className="font-bold text-blue-600 truncate">
-                     {geom.pdfUrl ? (
-                       <a href={geom.pdfUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1 w-max">
-                         {geom.pdfName || 'PV_Elite_Report.pdf'} <Download className="w-3 h-3" />
-                       </a>
-                     ) : (
-                       <span>{geom.pdfName || 'PV_Elite_Report.pdf'}</span>
-                     )}
-                   </div>
-                   <div className="font-bold text-slate-700">File Size:</div>
-                   <div className="font-semibold text-slate-600">{geom.pdfSize || 'N/A'}</div>
-                 </div>
-              </div>
-            )}
-
-            {/* Spring Rate Results Card */}
-            <div className="overflow-hidden border border-emerald-200 rounded-xl bg-emerald-50/20">
-               <div className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 border-b border-emerald-100">
-                  <Award className="w-4 h-4"/> Spring Rate Results
-               </div>
-               <div className="p-4 space-y-3 text-xs">
-                 <div className="grid grid-cols-[60px_1fr] gap-y-2">
-                   <div className="font-bold text-slate-700">File:</div>
-                   <div className="font-semibold text-emerald-700 break-all">
-                     {selectedJobDetails.excel_file_url ? `${selectedJobDetails.job_id_display}_spring_rates.xlsx` : 'Processing...'}
-                   </div>
-                   <div className="font-bold text-slate-700">Status:</div>
-                   <div className={`flex items-center gap-1 font-bold ${selectedJobDetails.excel_file_url ? 'text-emerald-600' : 'text-amber-500'}`}>
-                     {selectedJobDetails.excel_file_url ? <CheckCircle className="w-3.5 h-3.5"/> : <Loader2 className="w-3.5 h-3.5 animate-spin"/>} 
-                     {selectedJobDetails.excel_file_url ? 'Available' : 'Pending Calculation'}
-                   </div>
-                 </div>
-                 {selectedJobDetails.excel_file_url ? (
-                   <a href={selectedJobDetails.excel_file_url} target="_blank" rel="noopener noreferrer" className="w-full py-2.5 mt-2 text-xs font-bold text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-2">
-                     <Download className="w-4 h-4"/> Download Spring Rate Results
-                   </a>
-                 ) : (
-                   <button disabled className="w-full py-2.5 mt-2 text-xs font-bold text-slate-500 bg-slate-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                     <Clock className="w-4 h-4"/> Awaiting Calculation
-                   </button>
-                 )}
-               </div>
-            </div>
-
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-center gap-3 p-4 bg-white border-t border-slate-100">
             <button 
               onClick={() => setIsJobDetailsOpen(false)} 
-              className="px-6 py-2 text-sm font-bold text-blue-700 transition-colors bg-white border-2 border-blue-700 rounded-lg hover:bg-blue-50"
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white/60 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Scrollable Content Body */}
+          <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300/70 [&::-webkit-scrollbar-thumb]:rounded-full">
+            
+            {/* Failed Error Diagnostic Box */}
+            {selectedJobDetails.status === 'Failed' && (
+              <div className="bg-red-500/15 border-2 border-red-500/30 backdrop-blur-md rounded-2xl p-5 shadow-sm space-y-2.5 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-red-800 font-extrabold text-sm">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <span>Simulation Solver Failure Diagnostics</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedJobDetails.error_message || selectedJobDetails.error || 'Solver failure occurred');
+                      setCopiedError(true);
+                      setTimeout(() => setCopiedError(false), 2500);
+                    }}
+                    className="text-xs font-bold text-red-700 bg-red-100/80 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    {copiedError ? <CheckCheck className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedError ? 'Copied' : 'Copy Log'}
+                  </button>
+                </div>
+                <div className="bg-white/70 border border-red-200/80 rounded-xl p-3.5 font-mono text-xs text-red-900 whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed shadow-inner">
+                  {selectedJobDetails.error_message || selectedJobDetails.error || "An error occurred during ANSYS solver execution or file processing. Please verify input parameters and material properties."}
+                </div>
+              </div>
+            )}
+
+            {/* Completed Banner */}
+            {selectedJobDetails.status === 'Completed' && (
+              <div className="bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="text-xs font-bold text-emerald-900">
+                    Simulation successfully completed. Code compliance verification, stress reports, and archive files are ready.
+                  </div>
+                </div>
+                {selectedJobDetails.result_url && (
+                  <a href={selectedJobDetails.result_url} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center gap-1.5">
+                    <Download className="w-3.5 h-3.5" /> Full Analysis ZIP
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Multi-Run Batch Selector */}
+            {runs.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Batch Runs ({runs.length}):</span>
+                {runs.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveDetailRun(idx)}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                      activeIndex === idx
+                        ? 'bg-[#3C64D6] text-white shadow-md shadow-blue-500/25 scale-105'
+                        : 'bg-white/50 text-slate-700 hover:bg-white/80 border border-white/70 shadow-sm'
+                    }`}
+                  >
+                    Run {idx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* NOZZLE ANALYSIS CARDS */}
+            {isNozzleJob && (
+              <div className="space-y-6">
+                
+                {/* 1. Geometry & Shell Configuration Card */}
+                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
+                    <Shapes className="w-4 h-4 text-indigo-600" />
+                    <span>1. Geometry & General Configuration {runs.length > 1 ? `(Run ${activeIndex + 1})` : ''}</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Analysis Type</span>
+                      <span className="font-extrabold text-indigo-700">{currentRun.AnalysisType || currentRun.TypeOfAnalysis || 'Elastic Analysis'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Type</span>
+                      <span className="font-bold text-slate-800">{currentRun.ShellType || (currentRun.AnalysisType === 'head' ? 'Vessel Head' : 'Cylindrical Shell')}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Outer Dia (OD)</span>
+                      <span className="font-bold text-slate-800">{currentRun.ShellOD ? `${currentRun.ShellOD} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Thickness</span>
+                      <span className="font-bold text-slate-800">{currentRun.ShellThick ? `${currentRun.ShellThick} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Length</span>
+                      <span className="font-bold text-slate-800">{currentRun.ShellLength ? `${currentRun.ShellLength} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Outer Dia (OD)</span>
+                      <span className="font-bold text-slate-800">{currentRun.NozzleOD ? `${currentRun.NozzleOD} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Thickness</span>
+                      <span className="font-bold text-slate-800">{currentRun.NozzleThick ? `${currentRun.NozzleThick} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Projection</span>
+                      <span className="font-bold text-slate-800">{currentRun.NozzleLength ? `${currentRun.NozzleLength} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Reinforcement Pad OD</span>
+                      <span className="font-bold text-slate-800">{currentRun.PadOD ? `${currentRun.PadOD} mm` : 'None / N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Pad Thickness</span>
+                      <span className="font-bold text-slate-800">{currentRun.PadThick ? `${currentRun.PadThick} mm` : 'None / N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Weld Size</span>
+                      <span className="font-bold text-slate-800">{currentRun.NozzleFilletWeld ? `${currentRun.NozzleFilletWeld} mm` : 'N/A'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Analysis Run Folder</span>
+                      <span className="font-bold text-slate-800 truncate block">{currentRun.AnalysisFolder ? currentRun.AnalysisFolder.split('\\').pop() : 'Standard'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Material Properties Card */}
+                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
+                    <Database className="w-4 h-4 text-blue-600" />
+                    <span>2. Material Properties & Stress Allowables</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    {/* Shell Material Box */}
+                    <div className="p-4 bg-white/45 border border-white/70 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/50">
+                        <span className="font-black text-blue-700 uppercase tracking-wide text-[11px]">Shell Material</span>
+                        <span className="font-extrabold text-slate-800">{currentRun.ShellMaterial || currentRun.ShellOtherName || 'Standard'}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-y-1.5 text-slate-600">
+                        <div>Allowable Stress (S): <strong className="text-slate-800">{currentRun.ShellAllowable || '138'} MPa</strong></div>
+                        <div>Yield Stress (Sy): <strong className="text-slate-800">{currentRun.ShellYield || '260'} MPa</strong></div>
+                        <div>UTS (Tensile): <strong className="text-slate-800">{currentRun.ShellUTS || '485'} MPa</strong></div>
+                        <div>Young's Modulus: <strong className="text-slate-800">{currentRun.ShellYM || '200000'} MPa</strong></div>
+                        {currentRun.ShellConductivity && <div>Conductivity (k): <strong className="text-slate-800">{currentRun.ShellConductivity} W/m·°C</strong></div>}
+                        {currentRun.ShellThermalExp && <div>CTE (α): <strong className="text-slate-800">{currentRun.ShellThermalExp} ×10⁻⁶/°C</strong></div>}
+                      </div>
+                    </div>
+
+                    {/* Nozzle Material Box */}
+                    <div className="p-4 bg-white/45 border border-white/70 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/50">
+                        <span className="font-black text-indigo-700 uppercase tracking-wide text-[11px]">Nozzle Material</span>
+                        <span className="font-extrabold text-slate-800">{currentRun.NozzleMaterial || currentRun.NozzleOtherName || 'Standard'}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-y-1.5 text-slate-600">
+                        <div>Allowable Stress (S): <strong className="text-slate-800">{currentRun.NozzleAllowable || '138'} MPa</strong></div>
+                        <div>Yield Stress (Sy): <strong className="text-slate-800">{currentRun.NozzleYield || '260'} MPa</strong></div>
+                        <div>UTS (Tensile): <strong className="text-slate-800">{currentRun.NozzleUTS || '485'} MPa</strong></div>
+                        <div>Young's Modulus: <strong className="text-slate-800">{currentRun.NozzleYM || '200000'} MPa</strong></div>
+                        {currentRun.NozzleConductivity && <div>Conductivity (k): <strong className="text-slate-800">{currentRun.NozzleConductivity} W/m·°C</strong></div>}
+                        {currentRun.NozzleThermalExp && <div>CTE (α): <strong className="text-slate-800">{currentRun.NozzleThermalExp} ×10⁻⁶/°C</strong></div>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Design & Operating Conditions Card */}
+                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
+                    <Flame className="w-4 h-4 text-orange-600" />
+                    <span>3. Design & Thermal Operating Parameters</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Internal Pressure (Pi)</span>
+                      <span className="font-extrabold text-slate-800">{currentRun.InternalPressure !== undefined ? `${currentRun.InternalPressure} MPa` : '0 MPa'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">External Pressure (Po)</span>
+                      <span className="font-bold text-slate-800">{currentRun.ExternalPressure !== undefined ? `${currentRun.ExternalPressure} MPa` : '0 MPa'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Design Temperature</span>
+                      <span className="font-bold text-slate-800">{currentRun.DesignTemp !== undefined ? `${currentRun.DesignTemp} °C` : '20 °C'}</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Coupled Thermal?</span>
+                      <span className="font-bold text-slate-800">{currentRun.OperatingCondition || 'No'}</span>
+                    </div>
+                    {currentRun.OperatingTemp !== undefined && (
+                      <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                        <span className="block text-slate-400 font-bold text-[10px] uppercase">Operating Temp</span>
+                        <span className="font-bold text-slate-800">{currentRun.OperatingTemp} °C</span>
+                      </div>
+                    )}
+                    {currentRun.AmbientTemp !== undefined && (
+                      <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                        <span className="block text-slate-400 font-bold text-[10px] uppercase">Ambient Temp</span>
+                        <span className="font-bold text-slate-800">{currentRun.AmbientTemp} °C</span>
+                      </div>
+                    )}
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Corrosion Allow.</span>
+                      <span className="font-bold text-slate-800">{currentRun.ShellCorrosion || currentRun.ShellCA || 0} mm</span>
+                    </div>
+                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Corrosion Allow.</span>
+                      <span className="font-bold text-slate-800">{currentRun.NozzleCorrosion || currentRun.NozzleCA || 0} mm</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. External Loads & Moments Card */}
+                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
+                    <Target className="w-4 h-4 text-emerald-600" />
+                    <span>4. External Mechanical Forces & Moments</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Circumferential Force (Fx)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.Fx || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
+                    </div>
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Longitudinal Force (Fy)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.Fy || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
+                    </div>
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Axial / Radial Force (Fz)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.Fz || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
+                    </div>
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Circumferential Moment (Mx)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.Mx || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
+                    </div>
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Longitudinal Moment (My)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.My || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
+                    </div>
+                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
+                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Torsional Moment (Mz)</span>
+                      <span className="font-black text-slate-800 text-sm">{currentRun.Mz || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* GENERIC / BELLOW JOB DETAILS */}
+            {!isNozzleJob && (
+              <div className="space-y-6">
+                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
+                    <Settings2 className="w-4 h-4 text-blue-600" />
+                    <span>Configuration Parameters</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                    {Object.entries(geom).map(([k, v]) => {
+                      if (typeof v === 'object') return null;
+                      return (
+                        <div key={k} className="p-3 bg-white/40 border border-white/60 rounded-xl">
+                          <span className="block text-slate-400 font-bold text-[10px] uppercase">{k}</span>
+                          <span className="font-bold text-slate-800 truncate block">{String(v)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* Transparent Glass Action Footer Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 md:px-8 bg-white/60 backdrop-blur-2xl border-t border-white/70 shadow-lg">
+            <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
+              
+              {/* Download JSON Button */}
+              <button 
+                onClick={() => downloadJobJson(selectedJobDetails)} 
+                title="Download user-filled inputs and geometry payload as JSON file"
+                className="glass-panel px-4 py-2.5 rounded-xl text-xs font-extrabold text-slate-800 hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border-white/80"
+              >
+                <FileJson className="w-4 h-4 text-blue-600" />
+                Download JSON
+              </button>
+
+              {/* Download Report Button */}
+              <button 
+                onClick={() => generateAndOpenReport(selectedJobDetails)}
+                title="View / Download FEA Engineering Summary Report"
+                className="glass-panel px-4 py-2.5 rounded-xl text-xs font-extrabold text-emerald-800 hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border-emerald-300/60 bg-emerald-50/50"
+              >
+                <FileText className="w-4 h-4 text-emerald-600" />
+                Download Report
+              </button>
+
+              {/* Full Analysis Zip Button */}
+              {selectedJobDetails.result_url ? (
+                <a 
+                  href={selectedJobDetails.result_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  title="Download complete ANSYS simulation archive from Google Drive"
+                  className="glass-btn-blue text-white px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+                >
+                  <Download className="w-4 h-4" />
+                  Full Analysis ZIP
+                </a>
+              ) : (
+                <button 
+                  disabled 
+                  title={selectedJobDetails.status === 'Failed' ? 'Analysis failed' : 'Archive available after simulation completes'}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-200/60 border border-slate-300/50 cursor-not-allowed flex items-center gap-2 shadow-none"
+                >
+                  <Download className="w-4 h-4" />
+                  Full Analysis (Pending)
+                </button>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setIsJobDetailsOpen(false)} 
+              className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white/70 hover:bg-white border border-slate-300/80 rounded-xl transition-all shadow-sm"
             >
               Close
-            </button>
-            <button 
-              onClick={() => { 
-                localStorage.setItem('nova_job_id', selectedJobDetails.id);
-                window.location.href = '/bellow2.html'; 
-              }}
-              className="px-6 py-2 text-sm font-bold text-white transition-colors bg-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-700"
-            >
-              Continue to Step 2
             </button>
           </div>
 
@@ -1456,7 +1871,7 @@ export default function App() {
             
             {currentUser.isApproved ? (
               <button 
-                onClick={() => window.location.href = '/Nozzle_ACT.html'} 
+                onClick={() => window.location.href = '/Nozzle4.html'} 
                 className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
                 Submit New Job
               </button>
@@ -1767,29 +2182,89 @@ export default function App() {
              <div className="p-4 overflow-x-auto">
                <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
                  <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
-                   <tr><th className="px-6 py-2">Job ID</th><th className="px-6 py-2">Project Name</th><th className="px-6 py-2">Type</th><th className="px-6 py-2">Date</th><th className="px-6 py-2 text-right">Actions</th></tr>
+                   <tr>
+                     <th className="px-6 py-2.5">Job ID</th>
+                     <th className="px-6 py-2.5">Project Name</th>
+                     <th className="px-6 py-2.5">Type</th>
+                     <th className="px-6 py-2.5">Date &amp; Time</th>
+                     <th className="px-6 py-2.5 text-right">Actions</th>
+                   </tr>
                  </thead>
                  <tbody>
                    {filteredJobs.map(job => (
-                     <tr key={job.id} className="transition-colors shadow-sm bg-white/40 hover:bg-white/60 rounded-xl">
-                       <td className="px-6 py-4 font-black text-[#3C64D6] first:rounded-l-xl">{job.job_id_display}</td>
-                       <td className="px-6 py-4 font-bold text-slate-800">{job.name}</td>
-                       <td className="px-6 py-4 font-medium">{job.type}</td>
-                       <td className="px-6 py-4 font-medium text-slate-500">{new Date(job.created_at).toLocaleDateString()}</td>
-                       <td className="px-6 py-4 flex items-center justify-end gap-3 last:rounded-r-xl">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold border ${job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' : job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' : job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' : 'bg-red-500/20 text-red-800 border-red-500/30'}`}>
-                            {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />} 
+                     <tr key={job.id} className="transition-colors shadow-sm bg-white/40 hover:bg-white/70 rounded-xl">
+                       <td className="px-6 py-4 font-black text-[#3C64D6] first:rounded-l-xl">
+                         {job.job_id_display || job.id.substring(0,8)}
+                       </td>
+                       <td className="px-6 py-4 font-bold text-slate-800">
+                         {job.name || 'Analysis Project'}
+                       </td>
+                       <td className="px-6 py-4 font-semibold text-slate-700">
+                         <span className="inline-flex items-center gap-1.5">
+                           <Box className="w-3.5 h-3.5 text-indigo-500" />
+                           {job.type}
+                         </span>
+                       </td>
+                       <td className="px-6 py-4 font-medium text-slate-600 text-xs">
+                         {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                         <span className="block text-[11px] text-slate-400 font-semibold">
+                           {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                         </span>
+                       </td>
+                       <td className="px-6 py-4 flex items-center justify-end gap-2.5 last:rounded-r-xl">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
+                            job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                            job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                            job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
+                            'bg-red-500/20 text-red-800 border-red-500/30'
+                          }`}>
+                            {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
+                            {job.status === 'Completed' && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
+                            {job.status === 'Pending' && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
+                            {job.status === 'Failed' && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
                             {job.status}
                           </span>
                           
-                          {job.status === 'Completed' && job.excel_file_url && (
-                             <a href={job.excel_file_url} target="_blank" rel="noopener noreferrer" className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-200/50">
-                                <Download className="w-3.5 h-3.5" /> Result
-                             </a>
+                          {/* On Success / Completed only: Show Download Report and Result */}
+                          {job.status === 'Completed' && (
+                            <button 
+                              onClick={() => generateAndOpenReport(job)} 
+                              title="Download / View Analysis Report"
+                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                            </button>
+                          )}
+
+                          {job.status === 'Completed' && job.result_url && (
+                            <a 
+                              href={job.result_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              title="Download Full Analysis ZIP"
+                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-300/60 bg-blue-50/40"
+                            >
+                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis
+                            </a>
                           )}
                           
-                          <button onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }} className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-700 hover:bg-white/60 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-200/50">
-                            <Eye className="w-3.5 h-3.5" /> Details
+                          {/* Details Button for every job */}
+                          <button 
+                            onClick={() => { 
+                              setSelectedJobDetails(job); 
+                              setActiveDetailRun(0); 
+                              setCopiedError(false); 
+                              setIsJobDetailsOpen(true); 
+                            }} 
+                            title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
+                            className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${
+                              job.status === 'Failed' 
+                                ? 'text-red-700 hover:bg-red-50/80 border-red-300/70 bg-red-50/30' 
+                                : 'text-slate-700 hover:bg-white/80 border-slate-200/70'
+                            }`}
+                          >
+                            {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
+                            Details
                           </button>
                        </td>
                      </tr>
