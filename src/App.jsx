@@ -1195,21 +1195,14 @@ export default function App() {
 
   const downloadJobJson = (job) => {
     if (!job) return;
-    const exportData = {
-      job_id: job.job_id_display || job.id,
-      project_name: job.name,
-      type: job.type,
-      status: job.status,
-      created_at: job.created_at,
-      error_message: job.error_message || null,
-      result_url: job.result_url || null,
-      geometry_data: job.geometry_data || {},
-      json_payload: job.json_payload || []
-    };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    let payload = job.json_payload || job.geometry_data?.runs || job.geometry_data || [];
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch(e) {}
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `${job.job_id_display || 'nova_job'}_inputs.json`);
+    downloadAnchor.setAttribute("download", "nozzle_batch_data.json");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -1310,43 +1303,6 @@ export default function App() {
       ${job.result_url ? `<tr><th>Full Analysis ZIP</th><td><a href="${job.result_url}" target="_blank" style="color:#2563eb; font-weight:bold;">Download Archive (Google Drive)</a></td></tr>` : ''}
     </table>
 
-    ${runs.map((run, idx) => `
-      <h2>Run ${idx + 1} Parameters</h2>
-      <table>
-        <tr><td colspan="2" class="section-banner">1. Geometry & Shell Configuration</td></tr>
-        ${run.AnalysisType || run.TypeOfAnalysis ? `<tr><th>Analysis Category</th><td>${run.AnalysisType || run.TypeOfAnalysis}</td></tr>` : ''}
-        ${run.ShellType ? `<tr><th>Shell Type</th><td>${run.ShellType}</td></tr>` : ''}
-        ${run.ShellOD !== undefined ? `<tr><th>Shell Outer Diameter (OD)</th><td>${run.ShellOD} mm</td></tr>` : ''}
-        ${run.ShellThick !== undefined ? `<tr><th>Shell Thickness</th><td>${run.ShellThick} mm</td></tr>` : ''}
-        ${run.ShellLength !== undefined ? `<tr><th>Shell Length</th><td>${run.ShellLength} mm</td></tr>` : ''}
-        ${run.NozzleOD !== undefined ? `<tr><th>Nozzle Outer Diameter (OD)</th><td>${run.NozzleOD} mm</td></tr>` : ''}
-        ${run.NozzleThick !== undefined ? `<tr><th>Nozzle Thickness</th><td>${run.NozzleThick} mm</td></tr>` : ''}
-        ${run.NozzleLength !== undefined ? `<tr><th>Nozzle Projection Length</th><td>${run.NozzleLength} mm</td></tr>` : ''}
-        ${run.PadOD ? `<tr><th>Reinforcing Pad Outer Diameter</th><td>${run.PadOD} mm</td></tr>` : ''}
-        ${run.PadThick ? `<tr><th>Reinforcing Pad Thickness</th><td>${run.PadThick} mm</td></tr>` : ''}
-        ${run.NozzleFilletWeld ? `<tr><th>Nozzle Weld Size</th><td>${run.NozzleFilletWeld} mm</td></tr>` : ''}
-
-        <tr><td colspan="2" class="section-banner">2. Material Specifications</td></tr>
-        ${run.ShellMaterial ? `<tr><th>Shell Material</th><td><strong>${run.ShellMaterial}</strong> ${run.ShellAllowable ? `(Allowable: ${run.ShellAllowable} MPa)` : ''} ${run.ShellYield ? `(Yield: ${run.ShellYield} MPa)` : ''} ${run.ShellUTS ? `(UTS: ${run.ShellUTS} MPa)` : ''}</td></tr>` : ''}
-        ${run.NozzleMaterial ? `<tr><th>Nozzle Material</th><td><strong>${run.NozzleMaterial}</strong> ${run.NozzleAllowable ? `(Allowable: ${run.NozzleAllowable} MPa)` : ''} ${run.NozzleYield ? `(Yield: ${run.NozzleYield} MPa)` : ''} ${run.NozzleUTS ? `(UTS: ${run.NozzleUTS} MPa)` : ''}</td></tr>` : ''}
-        ${run.PadMaterial ? `<tr><th>Pad Material</th><td><strong>${run.PadMaterial}</strong></td></tr>` : ''}
-
-        <tr><td colspan="2" class="section-banner">3. Design, Operating & Thermal Loads</td></tr>
-        ${run.InternalPressure !== undefined ? `<tr><th>Internal Pressure (Pi)</th><td>${run.InternalPressure} MPa</td></tr>` : ''}
-        ${run.ExternalPressure !== undefined ? `<tr><th>External Pressure (Po)</th><td>${run.ExternalPressure} MPa</td></tr>` : ''}
-        ${run.DesignTemp !== undefined ? `<tr><th>Design Temperature</th><td>${run.DesignTemp} °C</td></tr>` : ''}
-        ${run.OperatingCondition ? `<tr><th>Coupled Thermal Condition</th><td>${run.OperatingCondition}</td></tr>` : ''}
-        ${run.OperatingTemp !== undefined ? `<tr><th>Operating Temperature</th><td>${run.OperatingTemp} °C</td></tr>` : ''}
-        ${run.AmbientTemp !== undefined ? `<tr><th>Ambient Temperature</th><td>${run.AmbientTemp} °C</td></tr>` : ''}
-        ${run.ShellCorrosion !== undefined ? `<tr><th>Shell Corrosion Allowance</th><td>${run.ShellCorrosion} mm</td></tr>` : ''}
-        ${run.NozzleCorrosion !== undefined ? `<tr><th>Nozzle Corrosion Allowance</th><td>${run.NozzleCorrosion} mm</td></tr>` : ''}
-
-        <tr><td colspan="2" class="section-banner">4. Nozzle External Mechanical Loads</td></tr>
-        <tr><th>Forces (Fx, Fy, Fz)</th><td>Fx: ${run.Fx || 0} N &nbsp;|&nbsp; Fy: ${run.Fy || 0} N &nbsp;|&nbsp; Fz: ${run.Fz || 0} N</td></tr>
-        <tr><th>Moments (Mx, My, Mz)</th><td>Mx: ${run.Mx || 0} N·mm &nbsp;|&nbsp; My: ${run.My || 0} N·mm &nbsp;|&nbsp; Mz: ${run.Mz || 0} N·mm</td></tr>
-      </table>
-    `).join('')}
-
     <div style="margin-top: 30px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
       Generated automatically by NOVA Cloud Engineering Platform. Compliant with ASME Sec VIII Div 2 standards.
     </div>
@@ -1364,26 +1320,10 @@ export default function App() {
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
-    const geom = selectedJobDetails.geometry_data || {};
-    let runs = [];
-    if (Array.isArray(geom.runs) && geom.runs.length > 0) {
-      runs = geom.runs;
-    } else if (Array.isArray(selectedJobDetails.json_payload) && selectedJobDetails.json_payload.length > 0) {
-      runs = selectedJobDetails.json_payload;
-    } else if (typeof selectedJobDetails.json_payload === 'string') {
-      try {
-        const parsed = JSON.parse(selectedJobDetails.json_payload);
-        if (Array.isArray(parsed) && parsed.length > 0) runs = parsed;
-      } catch (e) {}
-    }
-    if (!Array.isArray(runs) || runs.length === 0) {
-      runs = [geom];
-    }
-
-    const activeIndex = Math.min(activeDetailRun, runs.length - 1);
-    const currentRun = runs[activeIndex] || runs[0] || {};
-    const isNozzleJob = selectedJobDetails.type?.includes('Nozzle') || currentRun.ShellOD !== undefined || currentRun.NozzleOD !== undefined || currentRun.AnalysisType !== undefined;
-    const isBellowJob = selectedJobDetails.type?.includes('Bellow') || geom.bellowVariation !== undefined;
+    const isSuccess = selectedJobDetails.status === 'Completed';
+    const isFailed = selectedJobDetails.status === 'Failed';
+    const isProcessing = selectedJobDetails.status === 'Processing';
+    const isPending = selectedJobDetails.status === 'Pending';
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1393,376 +1333,189 @@ export default function App() {
           onClick={() => setIsJobDetailsOpen(false)}
         />
         
-        {/* Main Glassmorphic Modal Box */}
-        <div className="glass-panel w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col relative z-10 border-t border-l border-white/90 shadow-[0_25px_70px_rgba(0,0,0,0.28)] bg-white/75 backdrop-blur-3xl animate-in zoom-in-95">
+        {/* Main Clean Glassmorphic Rectangular Modal */}
+        <div className="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col relative z-10 border border-white/80 shadow-[0_25px_70px_rgba(0,0,0,0.25)] bg-white/85 backdrop-blur-3xl animate-in zoom-in-95">
           
-          {/* Modal Header */}
-          <div className="flex items-center justify-between px-8 py-5 border-b bg-white/50 backdrop-blur-xl border-white/60">
-            <div className="flex items-center gap-3.5 flex-wrap">
-              <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-700 border border-blue-500/30 shadow-sm">
-                <Box className="w-6 h-6" />
+          {/* Simple Modal Header */}
+          <div className="flex items-center justify-between px-7 py-5 border-b bg-white/60 backdrop-blur-xl border-slate-200/60">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-700 border border-blue-500/25">
+                <Box className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="text-xl font-black text-slate-800 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</h3>
-                  <span className="px-3 py-1 text-xs font-extrabold text-[#3C64D6] bg-blue-500/15 border border-blue-500/30 rounded-full">
-                    {selectedJobDetails.type}
-                  </span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border shadow-sm ${
-                    selectedJobDetails.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
-                    selectedJobDetails.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
-                    selectedJobDetails.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
-                    'bg-red-500/20 text-red-800 border-red-500/30'
-                  }`}>
-                    {selectedJobDetails.status === 'Processing' && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />}
-                    {selectedJobDetails.status === 'Completed' && <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />}
-                    {selectedJobDetails.status === 'Pending' && <Clock className="w-3.5 h-3.5 mr-1.5 text-orange-600" />}
-                    {selectedJobDetails.status === 'Failed' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-red-600" />}
-                    {selectedJobDetails.status}
-                  </span>
-                </div>
-                <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                  Project: <span className="font-bold text-slate-700">{selectedJobDetails.name || 'Analysis Job'}</span> • Submitted: {new Date(selectedJobDetails.created_at).toLocaleString()}
-                </p>
+                <h3 className="text-lg font-black text-slate-800 tracking-tight">Job Summary &amp; Details</h3>
+                <p className="text-xs font-semibold text-slate-500">NOVA Engineering Analysis Record</p>
               </div>
             </div>
-            
             <button 
               onClick={() => setIsJobDetailsOpen(false)} 
-              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white/60 rounded-full transition-colors"
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Scrollable Content Body */}
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-300/70 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {/* Simple Rectangular Box Body */}
+          <div className="p-6 md:p-8 space-y-5">
             
-            {/* Failed Error Diagnostic Box */}
-            {selectedJobDetails.status === 'Failed' && (
-              <div className="bg-red-500/15 border-2 border-red-500/30 backdrop-blur-md rounded-2xl p-5 shadow-sm space-y-2.5 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-red-800 font-extrabold text-sm">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                    <span>Simulation Solver Failure Diagnostics</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedJobDetails.error_message || selectedJobDetails.error || 'Solver failure occurred');
-                      setCopiedError(true);
-                      setTimeout(() => setCopiedError(false), 2500);
-                    }}
-                    className="text-xs font-bold text-red-700 bg-red-100/80 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors flex items-center gap-1.5"
-                  >
-                    {copiedError ? <CheckCheck className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedError ? 'Copied' : 'Copy Log'}
-                  </button>
-                </div>
-                <div className="bg-white/70 border border-red-200/80 rounded-xl p-3.5 font-mono text-xs text-red-900 whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed shadow-inner">
-                  {selectedJobDetails.error_message || selectedJobDetails.error || "An error occurred during ANSYS solver execution or file processing. Please verify input parameters and material properties."}
-                </div>
-              </div>
-            )}
-
-            {/* Completed Banner */}
-            {selectedJobDetails.status === 'Completed' && (
-              <div className="bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
-                <div className="flex items-center gap-2.5">
-                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div className="text-xs font-bold text-emerald-900">
-                    Simulation successfully completed. Code compliance verification, stress reports, and archive files are ready.
-                  </div>
-                </div>
-                {selectedJobDetails.result_url && (
-                  <a href={selectedJobDetails.result_url} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center gap-1.5">
-                    <Download className="w-3.5 h-3.5" /> Full Analysis ZIP
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Multi-Run Batch Selector */}
-            {runs.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Batch Runs ({runs.length}):</span>
-                {runs.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveDetailRun(idx)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      activeIndex === idx
-                        ? 'bg-[#3C64D6] text-white shadow-md shadow-blue-500/25 scale-105'
-                        : 'bg-white/50 text-slate-700 hover:bg-white/80 border border-white/70 shadow-sm'
-                    }`}
-                  >
-                    Run {idx + 1}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* NOZZLE ANALYSIS CARDS */}
-            {isNozzleJob && (
-              <div className="space-y-6">
+            {/* Single Clean Rectangular Information Card */}
+            <div className="bg-white/60 border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                {/* 1. Geometry & Shell Configuration Card */}
-                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
-                    <Shapes className="w-4 h-4 text-indigo-600" />
-                    <span>1. Geometry & General Configuration {runs.length > 1 ? `(Run ${activeIndex + 1})` : ''}</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Analysis Type</span>
-                      <span className="font-extrabold text-indigo-700">{currentRun.AnalysisType || currentRun.TypeOfAnalysis || 'Elastic Analysis'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Type</span>
-                      <span className="font-bold text-slate-800">{currentRun.ShellType || (currentRun.AnalysisType === 'head' ? 'Vessel Head' : 'Cylindrical Shell')}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Outer Dia (OD)</span>
-                      <span className="font-bold text-slate-800">{currentRun.ShellOD ? `${currentRun.ShellOD} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Thickness</span>
-                      <span className="font-bold text-slate-800">{currentRun.ShellThick ? `${currentRun.ShellThick} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Length</span>
-                      <span className="font-bold text-slate-800">{currentRun.ShellLength ? `${currentRun.ShellLength} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Outer Dia (OD)</span>
-                      <span className="font-bold text-slate-800">{currentRun.NozzleOD ? `${currentRun.NozzleOD} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Thickness</span>
-                      <span className="font-bold text-slate-800">{currentRun.NozzleThick ? `${currentRun.NozzleThick} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Projection</span>
-                      <span className="font-bold text-slate-800">{currentRun.NozzleLength ? `${currentRun.NozzleLength} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Reinforcement Pad OD</span>
-                      <span className="font-bold text-slate-800">{currentRun.PadOD ? `${currentRun.PadOD} mm` : 'None / N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Pad Thickness</span>
-                      <span className="font-bold text-slate-800">{currentRun.PadThick ? `${currentRun.PadThick} mm` : 'None / N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Weld Size</span>
-                      <span className="font-bold text-slate-800">{currentRun.NozzleFilletWeld ? `${currentRun.NozzleFilletWeld} mm` : 'N/A'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Analysis Run Folder</span>
-                      <span className="font-bold text-slate-800 truncate block">{currentRun.AnalysisFolder ? currentRun.AnalysisFolder.split('\\').pop() : 'Standard'}</span>
-                    </div>
-                  </div>
+                {/* Project Name */}
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl">
+                  <span className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Project Name</span>
+                  <span className="font-extrabold text-slate-800 text-sm">{selectedJobDetails.name || 'Analysis Project'}</span>
                 </div>
 
-                {/* 2. Material Properties Card */}
-                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
-                    <Database className="w-4 h-4 text-blue-600" />
-                    <span>2. Material Properties & Stress Allowables</span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    {/* Shell Material Box */}
-                    <div className="p-4 bg-white/45 border border-white/70 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/50">
-                        <span className="font-black text-blue-700 uppercase tracking-wide text-[11px]">Shell Material</span>
-                        <span className="font-extrabold text-slate-800">{currentRun.ShellMaterial || currentRun.ShellOtherName || 'Standard'}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-y-1.5 text-slate-600">
-                        <div>Allowable Stress (S): <strong className="text-slate-800">{currentRun.ShellAllowable || '138'} MPa</strong></div>
-                        <div>Yield Stress (Sy): <strong className="text-slate-800">{currentRun.ShellYield || '260'} MPa</strong></div>
-                        <div>UTS (Tensile): <strong className="text-slate-800">{currentRun.ShellUTS || '485'} MPa</strong></div>
-                        <div>Young's Modulus: <strong className="text-slate-800">{currentRun.ShellYM || '200000'} MPa</strong></div>
-                        {currentRun.ShellConductivity && <div>Conductivity (k): <strong className="text-slate-800">{currentRun.ShellConductivity} W/m·°C</strong></div>}
-                        {currentRun.ShellThermalExp && <div>CTE (α): <strong className="text-slate-800">{currentRun.ShellThermalExp} ×10⁻⁶/°C</strong></div>}
-                      </div>
-                    </div>
-
-                    {/* Nozzle Material Box */}
-                    <div className="p-4 bg-white/45 border border-white/70 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/50">
-                        <span className="font-black text-indigo-700 uppercase tracking-wide text-[11px]">Nozzle Material</span>
-                        <span className="font-extrabold text-slate-800">{currentRun.NozzleMaterial || currentRun.NozzleOtherName || 'Standard'}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-y-1.5 text-slate-600">
-                        <div>Allowable Stress (S): <strong className="text-slate-800">{currentRun.NozzleAllowable || '138'} MPa</strong></div>
-                        <div>Yield Stress (Sy): <strong className="text-slate-800">{currentRun.NozzleYield || '260'} MPa</strong></div>
-                        <div>UTS (Tensile): <strong className="text-slate-800">{currentRun.NozzleUTS || '485'} MPa</strong></div>
-                        <div>Young's Modulus: <strong className="text-slate-800">{currentRun.NozzleYM || '200000'} MPa</strong></div>
-                        {currentRun.NozzleConductivity && <div>Conductivity (k): <strong className="text-slate-800">{currentRun.NozzleConductivity} W/m·°C</strong></div>}
-                        {currentRun.NozzleThermalExp && <div>CTE (α): <strong className="text-slate-800">{currentRun.NozzleThermalExp} ×10⁻⁶/°C</strong></div>}
-                      </div>
-                    </div>
-                  </div>
+                {/* Job ID */}
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl">
+                  <span className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Job ID</span>
+                  <span className="font-black text-[#3C64D6] text-sm">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
                 </div>
 
-                {/* 3. Design & Operating Conditions Card */}
-                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
-                    <Flame className="w-4 h-4 text-orange-600" />
-                    <span>3. Design & Thermal Operating Parameters</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Internal Pressure (Pi)</span>
-                      <span className="font-extrabold text-slate-800">{currentRun.InternalPressure !== undefined ? `${currentRun.InternalPressure} MPa` : '0 MPa'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">External Pressure (Po)</span>
-                      <span className="font-bold text-slate-800">{currentRun.ExternalPressure !== undefined ? `${currentRun.ExternalPressure} MPa` : '0 MPa'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Design Temperature</span>
-                      <span className="font-bold text-slate-800">{currentRun.DesignTemp !== undefined ? `${currentRun.DesignTemp} °C` : '20 °C'}</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Coupled Thermal?</span>
-                      <span className="font-bold text-slate-800">{currentRun.OperatingCondition || 'No'}</span>
-                    </div>
-                    {currentRun.OperatingTemp !== undefined && (
-                      <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                        <span className="block text-slate-400 font-bold text-[10px] uppercase">Operating Temp</span>
-                        <span className="font-bold text-slate-800">{currentRun.OperatingTemp} °C</span>
-                      </div>
-                    )}
-                    {currentRun.AmbientTemp !== undefined && (
-                      <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                        <span className="block text-slate-400 font-bold text-[10px] uppercase">Ambient Temp</span>
-                        <span className="font-bold text-slate-800">{currentRun.AmbientTemp} °C</span>
-                      </div>
-                    )}
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Shell Corrosion Allow.</span>
-                      <span className="font-bold text-slate-800">{currentRun.ShellCorrosion || currentRun.ShellCA || 0} mm</span>
-                    </div>
-                    <div className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Nozzle Corrosion Allow.</span>
-                      <span className="font-bold text-slate-800">{currentRun.NozzleCorrosion || currentRun.NozzleCA || 0} mm</span>
-                    </div>
-                  </div>
+                {/* Type of Analysis */}
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl">
+                  <span className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Type of Analysis</span>
+                  <span className="font-bold text-slate-700 text-sm flex items-center gap-1.5 mt-0.5">
+                    <Box className="w-3.5 h-3.5 text-indigo-500" />
+                    {selectedJobDetails.type || 'Nozzle Analysis'}
+                  </span>
                 </div>
 
-                {/* 4. External Loads & Moments Card */}
-                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
-                    <Target className="w-4 h-4 text-emerald-600" />
-                    <span>4. External Mechanical Forces & Moments</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Circumferential Force (Fx)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.Fx || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
-                    </div>
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Longitudinal Force (Fy)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.Fy || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
-                    </div>
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Axial / Radial Force (Fz)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.Fz || 0} <span className="text-[11px] font-normal text-slate-500">N</span></span>
-                    </div>
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Circumferential Moment (Mx)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.Mx || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
-                    </div>
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Longitudinal Moment (My)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.My || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
-                    </div>
-                    <div className="p-3.5 bg-white/40 border border-white/60 rounded-xl">
-                      <span className="block text-slate-400 font-bold text-[10px] uppercase">Torsional Moment (Mz)</span>
-                      <span className="font-black text-slate-800 text-sm">{currentRun.Mz || 0} <span className="text-[11px] font-normal text-slate-500">N·mm</span></span>
-                    </div>
-                  </div>
+                {/* Submitted Date & Time */}
+                <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl">
+                  <span className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Submitted</span>
+                  <span className="font-semibold text-slate-700 text-xs mt-0.5 block">
+                    {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
                 </div>
 
               </div>
-            )}
 
-            {/* GENERIC / BELLOW JOB DETAILS */}
-            {!isNozzleJob && (
-              <div className="space-y-6">
-                <div className="glass-panel bg-white/50 border border-white/70 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-200/60 text-slate-800 font-extrabold text-sm uppercase tracking-wide">
-                    <Settings2 className="w-4 h-4 text-blue-600" />
-                    <span>Configuration Parameters</span>
+              {/* Status Row */}
+              <div className="p-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="block text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">Status</span>
+                  <span className="text-xs font-semibold text-slate-600">Current Execution State</span>
+                </div>
+                <span className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-black border shadow-sm ${
+                  isSuccess ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                  isProcessing ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                  isPending ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
+                  'bg-red-500/20 text-red-800 border-red-500/30'
+                }`}>
+                  {isProcessing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600" />}
+                  {isSuccess && <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />}
+                  {isPending && <Clock className="w-3.5 h-3.5 mr-1.5 text-orange-600" />}
+                  {isFailed && <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-red-600" />}
+                  {selectedJobDetails.status}
+                </span>
+              </div>
+
+              {/* Error Box (If Failed / Error) */}
+              {isFailed && (
+                <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-4 space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-red-800 font-extrabold text-xs">
+                      <AlertTriangle className="w-4 h-4 text-red-600" />
+                      <span>Error Diagnostics:</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedJobDetails.error_message || selectedJobDetails.error || 'Simulation solver error');
+                        setCopiedError(true);
+                        setTimeout(() => setCopiedError(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1"
+                    >
+                      {copiedError ? <CheckCheck className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      {copiedError ? 'Copied' : 'Copy Error'}
+                    </button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                    {Object.entries(geom).map(([k, v]) => {
-                      if (typeof v === 'object') return null;
-                      return (
-                        <div key={k} className="p-3 bg-white/40 border border-white/60 rounded-xl">
-                          <span className="block text-slate-400 font-bold text-[10px] uppercase">{k}</span>
-                          <span className="font-bold text-slate-800 truncate block">{String(v)}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="bg-white/80 border border-red-200 rounded-lg p-3 font-mono text-xs text-red-900 whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed shadow-inner">
+                    {selectedJobDetails.error_message || selectedJobDetails.error || "Simulation solver execution failed. Please verify geometry dimensions, material temperature limits, and boundary conditions."}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Processing Notice */}
+              {isProcessing && (
+                <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-blue-900 font-semibold">
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
+                  <span>ANSYS Solver is executing analysis. Results, JSON, and Report downloads will appear here upon completion.</span>
+                </div>
+              )}
+
+              {/* Pending Notice */}
+              {isPending && (
+                <div className="bg-orange-500/10 border border-orange-500/25 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-orange-900 font-semibold">
+                  <Clock className="w-4 h-4 text-orange-600 shrink-0" />
+                  <span>Job is queued in database waiting for backend simulation worker.</span>
+                </div>
+              )}
+
+              {/* Success Notice */}
+              {isSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3.5 flex items-center gap-2.5 text-xs text-emerald-900 font-bold">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Simulation completed successfully! You can now download the batch JSON, FEA report, or full analysis ZIP below.</span>
+                </div>
+              )}
+
+            </div>
 
           </div>
 
-          {/* Transparent Glass Action Footer Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 md:px-8 bg-white/60 backdrop-blur-2xl border-t border-white/70 shadow-lg">
+          {/* Action Footer: ONLY ON SUCCESS show Download JSON, Download Report, and Full Analysis ZIP */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-7 py-4 bg-white/70 backdrop-blur-xl border-t border-slate-200/70">
             <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
               
-              {/* Download JSON Button */}
-              <button 
-                onClick={() => downloadJobJson(selectedJobDetails)} 
-                title="Download user-filled inputs and geometry payload as JSON file"
-                className="glass-panel px-4 py-2.5 rounded-xl text-xs font-extrabold text-slate-800 hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border-white/80"
-              >
-                <FileJson className="w-4 h-4 text-blue-600" />
-                Download JSON
-              </button>
+              {/* On Success ONLY: Download JSON (nozzle_batch_data.json) */}
+              {isSuccess && (
+                <button 
+                  onClick={() => downloadJobJson(selectedJobDetails)} 
+                  title="Download nozzle_batch_data.json"
+                  className="glass-panel px-4 py-2 rounded-xl text-xs font-black text-slate-800 hover:bg-white transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-slate-300"
+                >
+                  <FileJson className="w-4 h-4 text-blue-600" />
+                  Download JSON
+                </button>
+              )}
 
-              {/* Download Report Button */}
-              <button 
-                onClick={() => generateAndOpenReport(selectedJobDetails)}
-                title="View / Download FEA Engineering Summary Report"
-                className="glass-panel px-4 py-2.5 rounded-xl text-xs font-extrabold text-emerald-800 hover:bg-white/80 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border-emerald-300/60 bg-emerald-50/50"
-              >
-                <FileText className="w-4 h-4 text-emerald-600" />
-                Download Report
-              </button>
+              {/* On Success ONLY: Download Report */}
+              {isSuccess && (
+                <button 
+                  onClick={() => generateAndOpenReport(selectedJobDetails)}
+                  title="Download / View Analysis Report"
+                  className="glass-panel px-4 py-2 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300 bg-emerald-50/50"
+                >
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  Download Report
+                </button>
+              )}
 
-              {/* Full Analysis Zip Button */}
-              {selectedJobDetails.result_url ? (
+              {/* On Success ONLY: Full Analysis ZIP */}
+              {isSuccess && selectedJobDetails.result_url && (
                 <a 
                   href={selectedJobDetails.result_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   title="Download complete ANSYS simulation archive from Google Drive"
-                  className="glass-btn-blue text-white px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+                  className="glass-btn-blue text-white px-4 py-2 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-1.5 shadow-md"
                 >
                   <Download className="w-4 h-4" />
                   Full Analysis ZIP
                 </a>
-              ) : (
-                <button 
-                  disabled 
-                  title={selectedJobDetails.status === 'Failed' ? 'Analysis failed' : 'Archive available after simulation completes'}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-200/60 border border-slate-300/50 cursor-not-allowed flex items-center gap-2 shadow-none"
-                >
-                  <Download className="w-4 h-4" />
-                  Full Analysis (Pending)
-                </button>
               )}
+
             </div>
 
+            {/* Close Button */}
             <button 
-              onClick={() => setIsJobDetailsOpen(false)} 
-              className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white/70 hover:bg-white border border-slate-300/80 rounded-xl transition-all shadow-sm"
+              onClick={() => setIsJobDetailsOpen(false)}
+              className="w-full sm:w-auto px-6 py-2 rounded-xl text-xs font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm"
             >
               Close
             </button>
