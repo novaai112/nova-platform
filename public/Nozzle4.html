@@ -112,87 +112,136 @@
         .btn-edit-mat { background: var(--bg-glow-1); color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
         .btn-edit-mat:hover { background: var(--primary); color: white; }
 
-        /* ══════════ MATERIAL TABLE POPUP ══════════ */
+        /* ══════════ MATERIAL TABLE POPUP (VIBRANT & SPACIOUS) ══════════ */
         .mat-popup-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 18, 40, 0.55);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
             display: flex; justify-content: center; align-items: center;
             z-index: 9000; opacity: 0; pointer-events: none;
             transition: opacity 0.3s ease;
+            padding: 1.5rem;
+            box-sizing: border-box;
         }
         .mat-popup-overlay.active { opacity: 1; pointer-events: all; }
         .mat-popup-container {
             display: flex; flex-direction: column;
-            max-width: 980px; width: 95%;
-            max-height: 88vh; overflow-y: auto;
-            background: rgba(255, 255, 255, 0.82);
-            backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-            padding: 1.4rem;
+            max-width: 1320px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8);
+            padding: 2rem 2.4rem;
             animation: popupIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            box-sizing: border-box;
         }
-        @keyframes popupIn { from { transform: scale(0.88) translateY(24px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+        @keyframes popupIn { from { transform: scale(0.92) translateY(20px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
         .mat-popup-header {
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 1.1rem; padding-bottom: 0.75rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+            margin-bottom: 1.4rem; padding-bottom: 1rem;
+            border-bottom: 1.5px solid #f1f5f9;
         }
         .mat-popup-title {
-            font-size: 0.95rem; font-weight: 800; color: var(--text-dark);
-            text-transform: uppercase; letter-spacing: 2px;
-            display: flex; align-items: center; gap: 10px;
+            font-size: 1.15rem; font-weight: 900; color: #0f172a;
+            letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 12px;
         }
         .mat-popup-title .mpbadge {
-            background: rgba(59, 130, 246, 0.14); color: var(--primary);
-            padding: 2px 10px; border-radius: 20px; font-size: 0.7rem;
-            font-weight: 700; letter-spacing: 1px; text-transform: none;
+            background: #eff6ff; color: #1d4ed8; border: 1.5px solid #dbeafe;
+            padding: 4px 14px; border-radius: 24px; font-size: 0.78rem;
+            font-weight: 800; letter-spacing: 0.5px;
         }
         .mat-popup-close {
-            background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.06);
-            border-radius: 8px; width: 30px; height: 30px;
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; color: var(--text-muted);
+            font-size: 1.2rem; color: #64748b;
             transition: all 0.2s; flex-shrink: 0; cursor: pointer;
         }
-        .mat-popup-close:hover { background: #fff; color: #ef4444; }
-        .mat-tables-row { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .mat-popup-close:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; transform: scale(1.05); }
+        
+        .mat-tables-row { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 1.25rem; 
+            margin-bottom: 1.25rem; 
+        }
         .mat-rect-card {
-            flex: 1; min-width: 220px;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
             overflow: hidden;
-            transition: box-shadow 0.25s, border-color 0.25s;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s ease;
         }
-        .mat-rect-card:hover { box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); }
+        .mat-rect-card:hover { 
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1); 
+            border-color: #93c5fd; 
+            transform: translateY(-2px); 
+        }
         .mat-rect-header {
-            background: rgba(238, 242, 255, 0.85);
-            padding: 0.45rem 0.85rem;
-            border-bottom: 1px solid rgba(224, 232, 248, 0.8);
-            display: flex; align-items: center; gap: 8px;
+            padding: 0.65rem 1.1rem;
+            border-bottom: 1.5px solid #e2e8f0;
+            display: flex; align-items: center; gap: 10px;
         }
-        .mat-rect-header .rdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .rdot-shell { background: #3b82f6; }
-        .rdot-nozzle { background: #8b5cf6; }
-        .rdot-pad { background: #10b981; }
-        .rdot-thermal { background: #f59e0b; }
-        .mat-rect-header .rh-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dark); }
+        .mat-rect-header .rdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.8); }
+        .rdot-shell { background: #2563eb; }
+        .rdot-nozzle { background: #7c3aed; }
+        .rdot-pad { background: #059669; }
+        .rdot-thermal { background: #d97706; }
+        .mat-rect-header .rh-label { font-size: 0.8rem; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; }
+        
         .mat-tbl { width: 100%; border-collapse: collapse; }
-        .mat-tbl td { padding: 0.34rem 0.85rem; font-size: 0.78rem; border-bottom: 1px solid rgba(0, 0, 0, 0.04); vertical-align: middle; }
+        .mat-tbl td { padding: 0.5rem 1rem; font-size: 0.84rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
         .mat-tbl tr:last-child td { border-bottom: none; }
-        .mat-tbl .tl { color: var(--text-muted); font-weight: 600; width: 48%; }
-        .mat-tbl .tv { color: var(--text-dark); font-weight: 700; }
-        .mat-tbl tr:hover td { background: rgba(59, 130, 246, 0.04); }
-        .tiw { display: flex; align-items: stretch; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 6px; overflow: hidden; transition: all 0.2s; }
-        .tiw:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--input-focus-ring); }
-        .ti { border: none; background: transparent; padding: 0.24rem 0.44rem; font-size: 0.78rem; font-weight: 700; color: var(--text-dark); width: 100%; outline: none; -moz-appearance: textfield; font-family: inherit; }
+        .mat-tbl .tl { color: #334155; font-weight: 700; width: 45%; }
+        .mat-tbl .tv { color: #0f172a; font-weight: 800; text-align: right; }
+        .mat-tbl tr:hover td { background: #f8fafc; }
+        
+        .tiw { 
+            display: inline-flex; 
+            align-items: stretch; 
+            background: #ffffff; 
+            border: 1.5px solid #cbd5e1; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            width: 100%; 
+            min-width: 145px; 
+            transition: all 0.2s ease; 
+        }
+        .tiw:focus-within { 
+            border-color: #2563eb; 
+            box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.18); 
+        }
+        .ti { 
+            border: none; 
+            background: transparent; 
+            padding: 0.42rem 0.7rem; 
+            font-size: 0.92rem; 
+            font-weight: 800; 
+            color: #0f172a; 
+            width: 100%; 
+            outline: none; 
+            -moz-appearance: textfield; 
+            font-family: inherit; 
+            box-sizing: border-box;
+        }
         .ti::-webkit-inner-spin-button, .ti::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .tia { padding: 0 6px; font-size: 0.66rem; font-weight: 700; color: var(--text-muted); background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.06); display: flex; align-items: center; white-space: nowrap; }
+        .tia { 
+            padding: 0 10px; 
+            font-size: 0.76rem; 
+            font-weight: 800; 
+            color: #475569; 
+            background: #f8fafc; 
+            border-left: 1.5px solid #cbd5e1; 
+            display: flex; 
+            align-items: center; 
+            white-space: nowrap; 
+        }
+        
         .mat-sec-divider {
             margin: 0.9rem 0 0.65rem;
             padding-top: 0.65rem;
@@ -940,16 +989,21 @@
                 </td></tr>`;
                 }
 
-                const matBg  = isCustom ? 'rgba(245,158,11,0.08)' : 'rgba(59,130,246,0.04)';
-                const matLbl = isCustom ? `<span style="color:#b45309; font-weight:800;">${matName} ✎</span>` : matName;
+                const headerStyles = {
+                    Shell: 'background:#eff6ff; color:#1e40af; border-bottom:1.5px solid #dbeafe;',
+                    Nozzle: 'background:#f5f3ff; color:#6b21a8; border-bottom:1.5px solid #ede9fe;',
+                    Pad: 'background:#ecfdf5; color:#065f46; border-bottom:1.5px solid #d1fae5;'
+                };
+                const matBg  = isCustom ? '#fef3c7' : '#f8fafc';
+                const matLbl = isCustom ? `<span style="color:#b45309; font-weight:900;">${matName} ✎</span>` : `<span style="color:#0f172a; font-weight:900;">${matName}</span>`;
                 return `<div class="mat-rect-card">
-                    <div class="mat-rect-header" style="display:flex;align-items:center;">
+                    <div class="mat-rect-header" style="${headerStyles[prefix] || ''}">
                         <span class="rdot ${dotCls[prefix]}"></span>
                         <span class="rh-label">${prefix}</span>
                         ${hardeningBadge}
                     </div>
                     <div style="padding:0;">
-                        <div style="padding:0.3rem 0.85rem;font-size:0.73rem;font-weight:700;background:${matBg};border-bottom:1px solid rgba(0,0,0,0.04);">${matLbl}</div>
+                        <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:800;background:${matBg};border-bottom:1px solid #e2e8f0;">${matLbl}</div>
                         <table class="mat-tbl"><tbody>${rows}</tbody></table>
                     </div>
                 </div>`;
@@ -973,19 +1027,22 @@
             const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
                                isLimitLoad ? (loadFactor.includes('1.5') ? 'Elastic-Plastic Material Model (LF = 1.5) · Local Failure' : 'Elastic Material Model (LF = 1.7) · Lower Bound Limit Load') :
                                              'Linear elastic analysis · Stress linearisation (SCL)';
-            const infoCard = `<div class="mat-rect-card" style="min-width:220px;flex:0 1 220px;">
-                <div class="mat-rect-header" style="background:rgba(99,102,241,0.1);">
-                    <span class="rdot" style="background:#6366f1;"></span>
-                    <span class="rh-label" style="color:#4338ca;">Analysis Info</span>
+            const infoCard = `<div class="mat-rect-card">
+                <div class="mat-rect-header" style="background:#eef2ff; color:#3730a3; border-bottom:1.5px solid #e0e7ff;">
+                    <span class="rdot" style="background:#4f46e5;"></span>
+                    <span class="rh-label" style="color:#3730a3;">Analysis Info</span>
                 </div>
-                <table class="mat-tbl"><tbody>
-                <tr><td class="tl">Method</td><td class="tv" style="font-size:0.72rem;font-weight:700;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
-                ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.72rem;color:#d97706;font-weight:800;">${matModelVal}</td></tr>` : ''}
-                <tr><td class="tl">Design Temp</td><td class="tv">${tDes} °C</td></tr>
-                <tr><td class="tl">Load Factor</td><td class="tv" style="font-weight:800;color:#2563eb;">${loadFactor}</td></tr>
-                <tr><td class="tl">Thermal</td><td class="tv">${showThermal?'✅ Coupled':'—'}</td></tr>
-                <tr><td class="tl" colspan="2" style="font-size:0.66rem;color:#4f46e5;line-height:1.4;padding:0.35rem 0.85rem;">${solverNote}</td></tr>
-                </tbody></table>
+                <div style="padding:0;">
+                    <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:900;color:#0f172a;background:#f8fafc;border-bottom:1px solid #e2e8f0;">Execution Parameters</div>
+                    <table class="mat-tbl"><tbody>
+                    <tr><td class="tl">Method</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
+                    ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.84rem;color:#b45309;font-weight:900;">${matModelVal}</td></tr>` : ''}
+                    <tr><td class="tl">Design Temp</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${tDes} °C</td></tr>
+                    <tr><td class="tl">Load Factor</td><td class="tv" style="font-weight:900;color:#2563eb;font-size:0.86rem;">${loadFactor}</td></tr>
+                    <tr><td class="tl">Thermal</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#059669;">${showThermal?'✅ Coupled':'—'}</td></tr>
+                    <tr><td class="tl" colspan="2" style="font-size:0.76rem;font-weight:700;color:#4338ca;line-height:1.45;padding:0.6rem 1.1rem;background:#f5f3ff;">${solverNote}</td></tr>
+                    </tbody></table>
+                </div>
             </div>`;
 
             const badge = typeOfAnalysis.replace(' Analysis','') + (showThermal ? ' · Thermal' : '');
@@ -995,9 +1052,12 @@
                     <button class="mat-popup-close" onclick="closeMatTablePopup()">&#10005;</button>
                 </div>
                 <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.1rem;padding-top:0.75rem;border-top:1px solid rgba(0,0,0,0.06);">
-                    <span style="font-size:0.71rem;color:var(--text-muted);">✅ Real-time properties sync directly with ASME material.json &amp; ANSYS solver</span>
-                    <button onclick="closeMatTablePopup()" style="background:var(--primary);color:white;border:none;padding:0.45rem 1.6rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;">Done</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1.5px solid #f1f5f9;flex-wrap:wrap;gap:1rem;">
+                    <span style="font-size:0.82rem;font-weight:700;color:#059669;display:flex;align-items:center;gap:6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Real-time properties sync directly with ASME material.json &amp; ANSYS solver
+                    </span>
+                    <button onclick="closeMatTablePopup()" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:white;border:none;padding:0.65rem 2.4rem;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s;">Done</button>
                 </div>`;
 
             document.getElementById('matTablePopup').classList.add('active');
