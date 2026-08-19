@@ -6,7 +6,7 @@ import {
   Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell,Target,
   BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,CircleDot,
   Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart,
-  FileJson, AlertCircle, ExternalLink, RefreshCw, Copy, CheckCheck
+  FileJson, AlertCircle, ExternalLink, RefreshCw, Copy, CheckCheck, Trash2, Trash, CheckSquare, Square
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
@@ -88,6 +88,8 @@ export default function App() {
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
   const [jobs, setJobs] = useState([]);
+  const [selectedJobIds, setSelectedJobIds] = useState([]);
+  const [isDeletingJobs, setIsDeletingJobs] = useState(false);
   const [jobFilter, setJobFilter] = useState('All Analysis');
   const [notification, setNotification] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -647,6 +649,68 @@ export default function App() {
       if (jobFilter === '2D Axisymetric Tubesheet Analysis') return j.type.includes('2D Axisymetric Tubesheet');
       return j.type === jobFilter;
     });
+
+  const handleDeleteJob = async (jobId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this analysis job?")) return;
+    try {
+      setIsDeletingJobs(true);
+      const { error } = await supabase.from('ansys_jobs').delete().eq('id', jobId);
+      if (error) throw error;
+      setJobs(prev => prev.filter(j => j.id !== jobId));
+      setSelectedJobIds(prev => prev.filter(id => id !== jobId));
+      if (selectedJobDetails?.id === jobId) {
+        setSelectedJobDetails(null);
+        setIsJobDetailsOpen(false);
+      }
+      showNotification("Job deleted successfully.", "success");
+    } catch (err) {
+      console.error("Delete error:", err);
+      showNotification("Failed to delete job: " + err.message, "error");
+    } finally {
+      setIsDeletingJobs(false);
+    }
+  };
+
+  const handleDeleteSelectedJobs = async () => {
+    if (selectedJobIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedJobIds.length} selected job(s)?`)) return;
+    try {
+      setIsDeletingJobs(true);
+      const { error } = await supabase.from('ansys_jobs').delete().in('id', selectedJobIds);
+      if (error) throw error;
+      setJobs(prev => prev.filter(j => !selectedJobIds.includes(j.id)));
+      if (selectedJobDetails && selectedJobIds.includes(selectedJobDetails.id)) {
+        setSelectedJobDetails(null);
+        setIsJobDetailsOpen(false);
+      }
+      showNotification(`${selectedJobIds.length} job(s) deleted successfully.`, "success");
+      setSelectedJobIds([]);
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      showNotification("Failed to delete selected jobs: " + err.message, "error");
+    } finally {
+      setIsDeletingJobs(false);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    if (!filteredJobs || filteredJobs.length === 0) return;
+    const allIds = filteredJobs.map(j => j.id);
+    const isAllSelected = allIds.every(id => selectedJobIds.includes(id));
+    if (isAllSelected) {
+      setSelectedJobIds(prev => prev.filter(id => !allIds.includes(id)));
+    } else {
+      setSelectedJobIds(prev => Array.from(new Set([...prev, ...allIds])));
+    }
+  };
+
+  const handleToggleSelectJob = (jobId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedJobIds(prev =>
+      prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
+    );
+  };
 
   const stats = {
     total: filteredJobs.length,
@@ -1911,13 +1975,37 @@ export default function App() {
           </div>
         ) : (
           <div className="glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
-             <div className="flex items-center justify-between px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
-                <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
+             <div className="flex flex-wrap items-center justify-between gap-3 px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
+                <div className="flex items-center gap-3">
+                  <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
+                  <span className="text-xs font-bold text-slate-500 bg-white/60 px-2.5 py-1 rounded-full border border-slate-200/60">
+                    {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
+                  </span>
+                </div>
+
+                {selectedJobIds.length > 0 && (
+                  <button 
+                    onClick={handleDeleteSelectedJobs} 
+                    disabled={isDeletingJobs}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-black text-white transition-all bg-red-600 rounded-xl shadow-md hover:bg-red-700 hover:scale-105 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete Selected ({selectedJobIds.length})
+                  </button>
+                )}
              </div>
              <div className="p-4 overflow-x-auto">
                <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
                  <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
                    <tr>
+                     <th className="w-12 px-4 py-2.5 text-center">
+                       <input 
+                         type="checkbox" 
+                         className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]" 
+                         checked={filteredJobs.length > 0 && filteredJobs.every(j => selectedJobIds.includes(j.id))} 
+                         onChange={handleToggleSelectAll} 
+                         title="Select / Deselect All" 
+                       />
+                     </th>
                      <th className="px-6 py-2.5">Job ID</th>
                      <th className="px-6 py-2.5">Project Name</th>
                      <th className="px-6 py-2.5">Type</th>
@@ -1926,84 +2014,106 @@ export default function App() {
                    </tr>
                  </thead>
                  <tbody>
-                   {filteredJobs.map(job => (
-                     <tr key={job.id} className="transition-colors shadow-sm bg-white/40 hover:bg-white/70 rounded-xl">
-                       <td className="px-6 py-4 font-black text-[#3C64D6] first:rounded-l-xl">
-                         {job.job_id_display || job.id.substring(0,8)}
-                       </td>
-                       <td className="px-6 py-4 font-bold text-slate-800">
-                         {job.name || 'Analysis Project'}
-                       </td>
-                       <td className="px-6 py-4 font-semibold text-slate-700">
-                         <span className="inline-flex items-center gap-1.5">
-                           <Box className="w-3.5 h-3.5 text-indigo-500" />
-                           {job.type}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4 font-medium text-slate-600 text-xs">
-                         {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                         <span className="block text-[11px] text-slate-400 font-semibold">
-                           {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                         </span>
-                       </td>
-                       <td className="px-6 py-4 flex items-center justify-end gap-2.5 last:rounded-r-xl">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
-                            job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
-                            job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
-                            job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
-                            'bg-red-500/20 text-red-800 border-red-500/30'
-                          }`}>
-                            {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
-                            {job.status === 'Completed' && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
-                            {job.status === 'Pending' && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
-                            {job.status === 'Failed' && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
-                            {job.status}
-                          </span>
-                          
-                          {/* On Success / Completed only: Show Download Report and Result */}
-                          {job.status === 'Completed' && (
-                            <button 
-                              onClick={() => generateAndOpenReport(job)} 
-                              title="Download / View Analysis Report"
-                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
-                            </button>
-                          )}
+                   {filteredJobs.map(job => {
+                     const isSelected = selectedJobIds.includes(job.id);
+                     return (
+                       <tr key={job.id} className={`transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
+                         <td className="w-12 px-4 py-4 text-center first:rounded-l-xl">
+                           <input 
+                             type="checkbox" 
+                             className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]" 
+                             checked={isSelected} 
+                             onChange={(e) => handleToggleSelectJob(job.id, e)} 
+                             title="Select Job" 
+                           />
+                         </td>
+                         <td className="px-6 py-4 font-black text-[#3C64D6]">
+                           {job.job_id_display || job.id.substring(0,8)}
+                         </td>
+                         <td className="px-6 py-4 font-bold text-slate-800">
+                           {job.name || 'Analysis Project'}
+                         </td>
+                         <td className="px-6 py-4 font-semibold text-slate-700">
+                           <span className="inline-flex items-center gap-1.5">
+                             <Box className="w-3.5 h-3.5 text-indigo-500" />
+                             {job.type}
+                           </span>
+                         </td>
+                         <td className="px-6 py-4 font-medium text-slate-600 text-xs">
+                           {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                           <span className="block text-[11px] text-slate-400 font-semibold">
+                             {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                           </span>
+                         </td>
+                         <td className="px-6 py-4 flex items-center justify-end gap-2 last:rounded-r-xl">
+                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
+                              job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                              job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                              job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
+                              'bg-red-500/20 text-red-800 border-red-500/30'
+                            }`}>
+                              {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
+                              {job.status === 'Completed' && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
+                              {job.status === 'Pending' && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
+                              {job.status === 'Failed' && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
+                              {job.status}
+                            </span>
+                            
+                            {/* On Success / Completed only: Show Download Report and Result */}
+                            {job.status === 'Completed' && (
+                              <button 
+                                onClick={() => generateAndOpenReport(job)} 
+                                title="Download / View Analysis Report"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                              </button>
+                            )}
 
-                          {job.status === 'Completed' && job.result_url && (
-                            <a 
-                              href={job.result_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              title="Download Full Analysis ZIP"
-                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-300/60 bg-blue-50/40"
+                            {job.status === 'Completed' && job.result_url && (
+                              <a 
+                                href={job.result_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                title="Download Full Analysis ZIP"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-300/60 bg-blue-50/40"
+                              >
+                                <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis
+                              </a>
+                            )}
+                            
+                            {/* Details Button for every job */}
+                            <button 
+                              onClick={() => { 
+                                setSelectedJobDetails(job); 
+                                setActiveDetailRun(0); 
+                                setCopiedError(false); 
+                                setIsJobDetailsOpen(true); 
+                              }} 
+                              title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
+                              className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${
+                                job.status === 'Failed' 
+                                  ? 'text-red-700 hover:bg-red-50/80 border-red-300/70 bg-red-50/30' 
+                                  : 'text-slate-700 hover:bg-white/80 border-slate-200/70'
+                              }`}
                             >
-                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis
-                            </a>
-                          )}
-                          
-                          {/* Details Button for every job */}
-                          <button 
-                            onClick={() => { 
-                              setSelectedJobDetails(job); 
-                              setActiveDetailRun(0); 
-                              setCopiedError(false); 
-                              setIsJobDetailsOpen(true); 
-                            }} 
-                            title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
-                            className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${
-                              job.status === 'Failed' 
-                                ? 'text-red-700 hover:bg-red-50/80 border-red-300/70 bg-red-50/30' 
-                                : 'text-slate-700 hover:bg-white/80 border-slate-200/70'
-                            }`}
-                          >
-                            {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
-                            Details
-                          </button>
-                       </td>
-                     </tr>
-                   ))}
+                              {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
+                              Details
+                            </button>
+
+                            {/* Delete Button per job */}
+                            <button
+                              onClick={(e) => handleDeleteJob(job.id, e)}
+                              disabled={isDeletingJobs}
+                              title="Delete Job"
+                              className="p-1.5 text-red-600 transition-all border rounded-lg shadow-sm glass-panel hover:bg-red-50/80 border-red-200/70 hover:scale-105 disabled:opacity-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                         </td>
+                       </tr>
+                     );
+                   })}
                  </tbody>
                </table>
              </div>
