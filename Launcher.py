@@ -937,14 +937,22 @@ NozzleProjection = N_P
     def report_mech_status(msg):
         try:
             d_str = json.dumps({"status": str(msg)})
-            for cand in [SAFE_BASE_DIR, os.getcwd()]:
+            candidates = [SAFE_BASE_DIR, os.getcwd()]
+            try:
+                p1 = os.path.dirname(SAFE_BASE_DIR)
+                if p1: candidates.append(p1)
+                p2 = os.path.dirname(p1)
+                if p2: candidates.append(p2)
+            except Exception:
+                pass
+            for cand in candidates:
                 try:
                     if cand and os.path.exists(cand):
                         with open(os.path.join(cand, "job_status.json"), "w") as jf:
                             jf.write(d_str)
-                except:
+                except Exception:
                     pass
-        except:
+        except Exception:
             pass
 
     S_OR = S_OD / 2.0
