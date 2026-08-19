@@ -1048,8 +1048,6 @@ NozzleProjection = N_P
     outer_pad_ids = []
 
     rim_tol = 0.002
-    S_MID_m = (S_IR_m + S_OR_m) / 2.0
-    N_MID_m = (N_IR_m + N_OR_m) / 2.0
 
     for part in ExtAPI.DataModel.GeoData.Assemblies[0].Parts:
         for gbody in part.Bodies:
@@ -1061,58 +1059,70 @@ NozzleProjection = N_P
                 xc, yc, zc = float(c[0]), float(c[1]), float(c[2])
                 rg = get_face_rad(face)
 
-                # Shell bottom rim
                 if abs(yc) < rim_tol and all(abs(p[1]) < rim_tol for p in pts):
                     shell_bottom_ids.append(face.Id)
                     continue
 
-                # Shell top rim
                 if abs(yc - S_H_m) < rim_tol and all(abs(p[1] - S_H_m) < rim_tol for p in pts):
                     shell_top_ids.append(face.Id)
                     continue
 
-                # Nozzle flange / end face
                 if abs(xc - N_P_m) < rim_tol and all(abs(p[0] - N_P_m) < rim_tol for p in pts):
                     nozzle_end_ids.append(face.Id)
                     continue
 
                 r_s_pts = [math.sqrt(p[0]**2 + p[2]**2) for p in pts]
-                avg_r_s = sum(r_s_pts) / float(len(r_s_pts))
-
                 r_n_pts = [math.sqrt((p[1] - N_LOC_m)**2 + (p[2] - N_OFF_m)**2) for p in pts]
-                avg_r_n = sum(r_n_pts) / float(len(r_n_pts))
 
-                # Shell cylindrical faces (along Y axis)
-                if 0.001 < yc < (S_H_m - 0.001):
-                    # Strict Inner Shell Check (closer to S_IR_m and < S_MID_m)
-                    if (rg is not None and abs(rg - S_IR_m) < abs(rg - S_OR_m) and abs(rg - S_IR_m) <= 0.008) or \
-                       (avg_r_s < S_MID_m and abs(avg_r_s - S_IR_m) <= 0.008):
-                        inner_shell_ids.append(face.Id)
-                        continue
+                is_in_s = False
+                if rg is not None and abs(rg - S_IR_m) / S_IR_m <= 0.05:
+                    is_in_s = True
+                elif all(abs(rp - S_IR_m) <= 0.003 for rp in r_s_pts):
+                    is_in_s = True
 
-                    # Strict Outer Shell Check (closer to S_OR_m and > S_MID_m)
-                    if (rg is not None and abs(rg - S_OR_m) < abs(rg - S_IR_m) and abs(rg - S_OR_m) <= 0.008) or \
-                       (avg_r_s > S_MID_m and abs(avg_r_s - S_OR_m) <= 0.008):
+                if is_in_s and (0.001 < yc < S_H_m - 0.001):
+                    inner_shell_ids.append(face.Id)
+                    continue
+
+                is_out_s = False
+                if rg is not None and abs(rg - S_OR_m) / S_OR_m <= 0.05:
+                    is_out_s = True
+                elif all(abs(rp - S_OR_m) <= 0.003 for rp in r_s_pts):
+                    is_out_s = True
+
+                if is_out_s and (0.001 < yc < S_H_m - 0.001):
+                    r_nc = math.sqrt((yc - N_LOC_m)**2 + (zc - N_OFF_m)**2)
+                    if r_nc > (N_OR_m + 0.02):
                         outer_shell_ids.append(face.Id)
                         continue
 
-                # Nozzle cylindrical faces (along X axis at Y=N_LOC, Z=N_OFF)
-                if xc < (N_P_m - 0.001):
-                    # Strict Inner Nozzle Check (closer to N_IR_m and < N_MID_m)
-                    if (rg is not None and abs(rg - N_IR_m) < abs(rg - N_OR_m) and abs(rg - N_IR_m) <= 0.008) or \
-                       (avg_r_n < N_MID_m and abs(avg_r_n - N_IR_m) <= 0.008):
-                        inner_nozzle_ids.append(face.Id)
-                        continue
+                is_in_n = False
+                if rg is not None and abs(rg - N_IR_m) / N_IR_m <= 0.05:
+                    is_in_n = True
+                elif all(abs(rnp - N_IR_m) <= 0.003 for rnp in r_n_pts):
+                    is_in_n = True
 
-                    # Strict Outer Nozzle Check (closer to N_OR_m and > N_MID_m)
-                    if (rg is not None and abs(rg - N_OR_m) < abs(rg - N_IR_m) and abs(rg - N_OR_m) <= 0.008) or \
-                       (avg_r_n > N_MID_m and abs(avg_r_n - N_OR_m) <= 0.008):
+                if is_in_n and xc < N_P_m - 0.001:
+                    inner_nozzle_ids.append(face.Id)
+                    continue
+
+                is_out_n = False
+                if rg is not None and abs(rg - N_OR_m) / N_OR_m <= 0.05:
+                    is_out_n = True
+                elif all(abs(rnp - N_OR_m) <= 0.003 for rnp in r_n_pts):
+                    is_out_n = True
+
+                if is_out_n and xc < N_P_m - 0.001:
+                    s_ox = math.sqrt(max(S_OR_m**2 - zc**2, 0.0))
+                    if xc >= (s_ox + 0.01):
                         outer_nozzle_ids.append(face.Id)
                         continue
 
-                # Reinforcement Pad outer cylindrical surface
                 if pad_active and P_OR_m > 0:
-                    if (rg is not None and abs(rg - P_OR_m) <= 0.008) or (abs(avg_r_n - P_OR_m) <= 0.008):
+                    if rg is not None and abs(rg - P_OR_m) / P_OR_m <= 0.05:
+                        outer_pad_ids.append(face.Id)
+                        continue
+                    elif all(abs(rnp - P_OR_m) <= 0.003 for rnp in r_n_pts):
                         outer_pad_ids.append(face.Id)
                         continue
 
