@@ -1038,6 +1038,13 @@ NozzleProjection = N_P
                 pass
         return None
 
+    # --- ANSYS ACT 2024 R1 MECHANICAL FACE CLASSIFICATION --------------------
+    # Robust, dimension-independent geometric classifier for all vessel configurations:
+    # 1. Straight nozzle (with and without pad)
+    # 2. SRN (Self-Reinforced Nozzle with Hub, Transition/Cone, and Barrel)
+    # 3. All Shell & Nozzle dimensions (from micro-nozzles to large pressure vessels)
+    # 4. Excludes internal split-body partition faces (conformal mesh shared faces)
+
     shell_bottom_ids = []
     shell_top_ids = []
     nozzle_end_ids = []
@@ -1047,190 +1054,198 @@ NozzleProjection = N_P
     outer_nozzle_ids = []
     outer_pad_ids = []
 
-    # Geometry-scaled relative tolerance.
-    # Scales with 3% of the reference radius, clamped to [2 mm, 20 mm].
-    # This prevents the old fixed 8 mm limit from missing faces on large vessels
-    # or misclassifying faces on thin/small nozzles.
-    def rel_tol(r, pct=0.03, lo=0.002, hi=0.020):
-        return max(lo, min(hi, abs(r) * pct))
+    # Dimension variables in meters (Mechanical GeoData standard)
+    S_THK_m = max(S_THK1 / 1000.0, 1e-6)
+    N_THK_m = max(N_THK1 / 1000.0, 1e-6)
+    H_OD_m = (H_OD / 1000.0) if H_OD > 0 else (N_OD / 1000.0)
+    H_OR_m = H_OD_m / 2.0
+    is_srn = (str(N_TYPE).strip() == "SRN")
+    P_THK_m = (P_THK1 / 1000.0) if pad_active else 0.0
 
-    S_IR_tol  = rel_tol(S_IR_m)
-    S_OR_tol  = rel_tol(S_OR_m)
-    N_IR_tol  = rel_tol(N_IR_m)
-    N_OR_tol  = rel_tol(N_OR_m)
-    P_OR_tol  = rel_tol(P_OR_m) if (pad_active and P_OR_m > 0) else 0.010
+    # Geometric tolerances scaled to wall thickness and overall dimensions
+    # Allows curvature tolerance up to 25% of thickness or 1.5% of radius (whichever is larger)
+    tol_shell = max(0.0008, min(0.025, max(S_THK_m * 0.25, S_IR_m * 0.015)))
+    tol_nozzle = max(0.0008, min(0.025, max(N_THK_m * 0.25, N_IR_m * 0.015)))
+    tol_hub = max(0.001, min(0.030, max(N_THK_m * 0.35, H_OR_m * 0.020)))
+    tol_pad = max(0.001, min(0.030, max(P_THK_m * 0.35, P_OR_m * 0.020))) if pad_active else 0.010
 
-    # Midpoint dividers for inner/outer disambiguation
+    # Rim tolerances
+    tol_rim_y = max(0.001, min(0.015, S_H_m * 0.003))
+    tol_rim_x = max(0.001, min(0.015, N_OR_m * 0.03))
+
+    # Midpoint dividers
     S_MID_m = (S_IR_m + S_OR_m) / 2.0
     N_MID_m = (N_IR_m + N_OR_m) / 2.0
 
-    # X-coordinate where the nozzle bore meets the shell inner wall
-    _s_sq    = max(S_IR_m**2 - N_OFF_m**2, 0.0)
-    X_SHELL_INNER_m = math.sqrt(_s_sq)   # inner-wall intersection along nozzle axis
+    _classified_faces = set()
 
-    # Rim tolerances scaled to geometry
-    rim_tol_y = max(0.002, S_H_m  * 0.005)   # 0.5% of shell height
-    rim_tol_x = max(0.002, N_OR_m * 0.04)    # 4% of nozzle outer radius
-
-    # Track classified face IDs to avoid double-counting
-    _classified = set()
-
-    def _face_r_shell(pts):
-        # Radius of each point from the shell (Y) axis: sqrt(x^2 + z^2)
-        return [math.sqrt(p[0]**2 + p[2]**2) for p in pts]
-
-    def _face_r_nozzle(pts):
-        # Radius of each point from the nozzle (X) axis at (Y=N_LOC, Z=N_OFF)
-        return [math.sqrt((p[1] - N_LOC_m)**2 + (p[2] - N_OFF_m)**2) for p in pts]
-
-    def _avg(lst):
-        return sum(lst) / float(len(lst)) if lst else 0.0
-
-    def _classify_face(face_id, xc, yc, zc, pts, rg):
-        # Return the bucket name for this face, or None if unmatched.
-
-        rs_pts = _face_r_shell(pts)
-        rn_pts = _face_r_nozzle(pts)
-        avg_rs = _avg(rs_pts)
-        avg_rn = _avg(rn_pts)
-
-        # --- 1. Shell bottom rim (Y ~ 0) ------------------------------------
-        if (abs(yc) < rim_tol_y and
-                all(abs(p[1]) < rim_tol_y for p in pts)):
-            return "shell_bottom"
-
-        # --- 2. Shell top rim (Y ~ S_H) -------------------------------------
-        if (abs(yc - S_H_m) < rim_tol_y and
-                all(abs(p[1] - S_H_m) < rim_tol_y for p in pts)):
-            return "shell_top"
-
-        # --- 3. Nozzle free-end face (X ~ N_P) ------------------------------
-        # All points lie at the nozzle projection plane
-        if (abs(xc - N_P_m) < rim_tol_x and
-                all(abs(p[0] - N_P_m) < rim_tol_x for p in pts) and
-                avg_rn < (N_OR_m + N_OR_tol)):
-            return "nozzle_end"
-
-        # --- 4. Reinforcement pad outer cylindrical surface ------------------
-        # Annular face centred on shell axis (not nozzle axis) at radius P_OR_m
-        if pad_active and P_OR_m > 0:
-            if (abs(avg_rs - P_OR_m) < P_OR_tol and
-                    0.0 < yc < S_H_m):
-                return "outer_pad"
-
-        # --- 5. Nozzle barrel faces ------------------------------------------
-        # Must be outside the shell wall (xc >= X_SHELL_INNER_m - tol)
-        # and close enough to nozzle axis radius
-        nozzle_x_gate = X_SHELL_INNER_m - N_OR_tol
-        if xc >= nozzle_x_gate and avg_rn < (N_OR_m + N_OR_tol):
-            # Inner nozzle bore
-            inner_by_rg   = (rg is not None and
-                             abs(rg - N_IR_m) <= N_IR_tol and
-                             abs(rg - N_IR_m) < abs(rg - N_OR_m))
-            inner_by_cent = (avg_rn <= N_MID_m and
-                             abs(avg_rn - N_IR_m) <= N_IR_tol)
-            if inner_by_rg or inner_by_cent:
-                return "inner_nozzle"
-
-            # Outer nozzle surface
-            outer_by_rg   = (rg is not None and
-                             abs(rg - N_OR_m) <= N_OR_tol and
-                             abs(rg - N_OR_m) < abs(rg - N_IR_m))
-            outer_by_cent = (avg_rn >= N_MID_m and
-                             abs(avg_rn - N_OR_m) <= N_OR_tol)
-            if outer_by_rg or outer_by_cent:
-                return "outer_nozzle"
-
-        # --- 6. Shell barrel faces -------------------------------------------
-        # Y must be within shell height (generous tolerance for junction blends)
-        # and the face must be clearly outside the nozzle cut-out zone
-        shell_y_ok = (-rim_tol_y < yc < S_H_m + rim_tol_y)
-        # Faces near nozzle axis area (nozzle cut-out zone) are excluded
-        near_nozzle_zone = (avg_rn < (N_OR_m + N_OR_tol) and
-                            xc >= nozzle_x_gate)
-        if shell_y_ok and not near_nozzle_zone:
-            # Inner shell bore
-            inner_by_rg   = (rg is not None and
-                             abs(rg - S_IR_m) <= S_IR_tol and
-                             abs(rg - S_IR_m) < abs(rg - S_OR_m))
-            inner_by_cent = (avg_rs <= S_MID_m and
-                             abs(avg_rs - S_IR_m) <= S_IR_tol)
-            if inner_by_rg or inner_by_cent:
-                return "inner_shell"
-
-            # Outer shell surface
-            outer_by_rg   = (rg is not None and
-                             abs(rg - S_OR_m) <= S_OR_tol and
-                             abs(rg - S_OR_m) < abs(rg - S_IR_m))
-            outer_by_cent = (avg_rs >= S_MID_m and
-                             abs(avg_rs - S_OR_m) <= S_OR_tol)
-            if outer_by_rg or outer_by_cent:
-                return "outer_shell"
-
-        # --- 7. Fallback: assign to nearest expected surface -----------------
-        candidates = [
-            ("inner_shell",  abs(avg_rs - S_IR_m)),
-            ("outer_shell",  abs(avg_rs - S_OR_m)),
-            ("inner_nozzle", abs(avg_rn - N_IR_m)),
-            ("outer_nozzle", abs(avg_rn - N_OR_m)),
-        ]
-        if pad_active and P_OR_m > 0:
-            candidates.append(("outer_pad", abs(avg_rs - P_OR_m)))
-
-        # Only use fallback if the face is inside the geometry bounding box
-        if (-rim_tol_y < yc < S_H_m + rim_tol_y):
-            best = min(candidates, key=lambda kv: kv[1])
-            # Cap at 25% of the reference radius to avoid wild misclassification
-            ref_r = {"inner_shell": S_IR_m, "outer_shell": S_OR_m,
-                     "inner_nozzle": N_IR_m, "outer_nozzle": N_OR_m,
-                     "outer_pad": P_OR_m if P_OR_m > 0 else 1.0}
-            if best[1] < 0.25 * ref_r.get(best[0], 1.0):
-                return best[0]
-
-        return None  # truly unclassified - leave out of BCs
-
-    # --- Main face iteration -------------------------------------------------
     for part in ExtAPI.DataModel.GeoData.Assemblies[0].Parts:
         for gbody in part.Bodies:
             for face in gbody.Faces:
                 fid = face.Id
-                if fid in _classified:
+                if fid in _classified_faces:
                     continue
                 pts = get_face_pts(face)
                 if not pts or face.Area <= 0:
                     continue
-                c   = face.Centroid
+
+                c = face.Centroid
                 xc, yc, zc = float(c[0]), float(c[1]), float(c[2])
-                rg  = get_face_rad(face)
+                rg = get_face_rad(face)
 
-                bucket = _classify_face(fid, xc, yc, zc, pts, rg)
-                if bucket is None:
-                    continue
-                _classified.add(fid)
-                if   bucket == "shell_bottom":  shell_bottom_ids.append(fid)
-                elif bucket == "shell_top":     shell_top_ids.append(fid)
-                elif bucket == "nozzle_end":    nozzle_end_ids.append(fid)
-                elif bucket == "inner_shell":   inner_shell_ids.append(fid)
-                elif bucket == "outer_shell":   outer_shell_ids.append(fid)
-                elif bucket == "inner_nozzle":  inner_nozzle_ids.append(fid)
-                elif bucket == "outer_nozzle":  outer_nozzle_ids.append(fid)
-                elif bucket == "outer_pad":     outer_pad_ids.append(fid)
+                # Coordinate bounds of all sample points on face
+                x_pts = [p[0] for p in pts]
+                y_pts = [p[1] for p in pts]
+                z_pts = [p[2] for p in pts]
 
-    # Deduplicate
-    shell_bottom_ids = list(set(shell_bottom_ids))
-    shell_top_ids    = list(set(shell_top_ids))
-    nozzle_end_ids   = list(set(nozzle_end_ids))
-    inner_shell_ids  = list(set(inner_shell_ids))
-    inner_nozzle_ids = list(set(inner_nozzle_ids))
-    outer_shell_ids  = list(set(outer_shell_ids))
-    outer_nozzle_ids = list(set(outer_nozzle_ids))
-    outer_pad_ids    = list(set(outer_pad_ids))
+                x_min, x_max = min(x_pts), max(x_pts)
+                y_min, y_max = min(y_pts), max(y_pts)
+                z_min, z_max = min(z_pts), max(z_pts)
+
+                # Radial coordinates from Shell Y-axis: r_s = sqrt(x^2 + z^2)
+                rs_pts = [math.sqrt(p[0]**2 + p[2]**2) for p in pts]
+                rs_min, rs_max = min(rs_pts), max(rs_pts)
+                rs_avg = sum(rs_pts) / float(len(rs_pts))
+                rs_spread = rs_max - rs_min
+
+                # Radial coordinates from Nozzle X-axis: r_n = sqrt((y-N_LOC)^2 + (z-N_OFF)^2)
+                rn_pts = [math.sqrt((p[1] - N_LOC_m)**2 + (p[2] - N_OFF_m)**2) for p in pts]
+                rn_min, rn_max = min(rn_pts), max(rn_pts)
+                rn_avg = sum(rn_pts) / float(len(rn_pts))
+                rn_spread = rn_max - rn_min
+
+                # Planar coordinate spans
+                x_span = x_max - x_min
+                y_span = y_max - y_min
+                z_span = z_max - z_min
+
+                assigned = False
+
+                # -----------------------------------------------------------------
+                # 1. SHELL BOTTOM RIM (Planar Annulus at Y = 0)
+                # -----------------------------------------------------------------
+                if abs(yc) <= tol_rim_y and y_max <= tol_rim_y and y_min >= -tol_rim_y:
+                    if (S_IR_m - tol_shell) <= rs_avg <= (S_OR_m + tol_shell):
+                        shell_bottom_ids.append(fid)
+                        _classified_faces.add(fid)
+                        continue
+
+                # -----------------------------------------------------------------
+                # 2. SHELL TOP RIM (Planar Annulus at Y = S_H)
+                # -----------------------------------------------------------------
+                if abs(yc - S_H_m) <= tol_rim_y and abs(y_max - S_H_m) <= tol_rim_y and abs(y_min - S_H_m) <= tol_rim_y:
+                    if (S_IR_m - tol_shell) <= rs_avg <= (S_OR_m + tol_shell):
+                        shell_top_ids.append(fid)
+                        _classified_faces.add(fid)
+                        continue
+
+                # -----------------------------------------------------------------
+                # 3. NOZZLE FREE-END FACE (Planar Annulus at X = N_P)
+                # -----------------------------------------------------------------
+                if abs(xc - N_P_m) <= tol_rim_x and abs(x_max - N_P_m) <= tol_rim_x and abs(x_min - N_P_m) <= tol_rim_x:
+                    if (N_IR_m - tol_nozzle) <= rn_avg <= (N_OR_m + tol_nozzle):
+                        nozzle_end_ids.append(fid)
+                        _classified_faces.add(fid)
+                        continue
+
+                # -----------------------------------------------------------------
+                # 4. REINFORCEMENT PAD (When Pad is Active)
+                # -----------------------------------------------------------------
+                if pad_active and P_OR_m > 0:
+                    # Pad Outer Cylinder (wrapped onto shell at radius S_OR + P_THK)
+                    if abs(rs_avg - (S_OR_m + P_THK_m)) <= tol_pad and rs_spread <= (P_THK_m * 0.7 + tol_pad):
+                        if rn_avg <= (P_OR_m + tol_pad) and (-tol_rim_y < yc < S_H_m + tol_rim_y):
+                            outer_pad_ids.append(fid)
+                            _classified_faces.add(fid)
+                            continue
+                    # Pad Outer Rim / Bevel (cylinder around nozzle axis at radius P_OR)
+                    if abs(rn_avg - P_OR_m) <= tol_pad and rn_spread <= (N_THK_m * 0.7 + tol_pad):
+                        if rs_avg >= (S_OR_m - tol_shell) and (-tol_rim_y < yc < S_H_m + tol_rim_y):
+                            outer_pad_ids.append(fid)
+                            _classified_faces.add(fid)
+                            continue
+
+                # -----------------------------------------------------------------
+                # 5. INNER NOZZLE BORE (Wetted Cylindrical Surface at r_n = N_IR)
+                # -----------------------------------------------------------------
+                is_inner_nozzle_rg = (rg is not None and abs(rg - N_IR_m) <= tol_nozzle and abs(rg - N_IR_m) < abs(rg - N_OR_m))
+                is_inner_nozzle_rad = (abs(rn_avg - N_IR_m) <= tol_nozzle and rn_avg < N_MID_m)
+                if (is_inner_nozzle_rg or is_inner_nozzle_rad):
+                    # Check that radial spread is small (it's a cylinder, not an internal planar slice across nozzle wall)
+                    if rn_spread <= (N_THK_m * 0.65 + tol_nozzle):
+                        s_in_x = math.sqrt(max(S_IR_m**2 - zc**2, 0.0))
+                        if xc >= (s_in_x - tol_shell - 0.01) and xc <= (N_P_m + tol_rim_x):
+                            inner_nozzle_ids.append(fid)
+                            _classified_faces.add(fid)
+                            continue
+
+                # -----------------------------------------------------------------
+                # 6. INNER SHELL BORE (Wetted Cylindrical Surface at r_s = S_IR)
+                # -----------------------------------------------------------------
+                is_inner_shell_rg = (rg is not None and abs(rg - S_IR_m) <= tol_shell and abs(rg - S_IR_m) < abs(rg - S_OR_m))
+                is_inner_shell_rad = (abs(rs_avg - S_IR_m) <= tol_shell and rs_avg < S_MID_m)
+                if (is_inner_shell_rg or is_inner_shell_rad):
+                    # Check that radial spread is small (it's a cylinder, not an internal planar slice across shell wall)
+                    if rs_spread <= (S_THK_m * 0.65 + tol_shell):
+                        if (-tol_rim_y < yc < S_H_m + tol_rim_y):
+                            # Exclude if inside the nozzle cut-out bore
+                            if not (rn_avg < (N_IR_m - tol_nozzle) and xc > math.sqrt(max(S_IR_m**2 - zc**2, 0.0))):
+                                inner_shell_ids.append(fid)
+                                _classified_faces.add(fid)
+                                continue
+
+                # -----------------------------------------------------------------
+                # 7. OUTER NOZZLE SURFACES (Exposed Barrel, Hub, & Transition)
+                # -----------------------------------------------------------------
+                s_out_x = math.sqrt(max(S_OR_m**2 - zc**2, 0.0))
+                if xc >= (s_out_x - tol_shell - 0.005) and xc <= (N_P_m - tol_rim_x + 0.001):
+                    # Straight nozzle outer barrel: r_n = N_OR
+                    is_out_nozzle_barrel = (abs(rn_avg - N_OR_m) <= tol_nozzle and rn_avg >= N_MID_m)
+                    if is_srn:
+                        # SRN Hub cylinder: r_n = H_OR
+                        is_hub = (abs(rn_avg - H_OR_m) <= tol_hub)
+                        # SRN Transition / Taper cone: r_n between N_OR and H_OR
+                        is_taper = ((N_OR_m - tol_nozzle) <= rn_avg <= (H_OR_m + tol_hub) and rn_spread > 0.001)
+                        if is_out_nozzle_barrel or is_hub or is_taper:
+                            outer_nozzle_ids.append(fid)
+                            _classified_faces.add(fid)
+                            continue
+                    else:
+                        if is_out_nozzle_barrel and rn_spread <= (N_THK_m * 0.65 + tol_nozzle):
+                            outer_nozzle_ids.append(fid)
+                            _classified_faces.add(fid)
+                            continue
+
+                # -----------------------------------------------------------------
+                # 8. OUTER SHELL SURFACE (Exposed Cylindrical Surface at r_s = S_OR)
+                # -----------------------------------------------------------------
+                is_outer_shell_rg = (rg is not None and abs(rg - S_OR_m) <= tol_shell and abs(rg - S_OR_m) < abs(rg - S_IR_m))
+                is_outer_shell_rad = (abs(rs_avg - S_OR_m) <= tol_shell and rs_avg >= S_MID_m)
+                if (is_outer_shell_rg or is_outer_shell_rad):
+                    # Check that radial spread is small (it's a cylinder, not an internal planar slice across shell wall)
+                    if rs_spread <= (S_THK_m * 0.65 + tol_shell):
+                        if (-tol_rim_y < yc < S_H_m + tol_rim_y):
+                            # Exclude if inside the nozzle junction
+                            if not (rn_avg < (N_OR_m - tol_nozzle) and xc > s_out_x):
+                                outer_shell_ids.append(fid)
+                                _classified_faces.add(fid)
+                                continue
+
+    # Ensure unique IDs
+    shell_bottom_ids = sorted(list(set(shell_bottom_ids)))
+    shell_top_ids    = sorted(list(set(shell_top_ids)))
+    nozzle_end_ids   = sorted(list(set(nozzle_end_ids)))
+    inner_shell_ids  = sorted(list(set(inner_shell_ids)))
+    inner_nozzle_ids = sorted(list(set(inner_nozzle_ids)))
+    outer_shell_ids  = sorted(list(set(outer_shell_ids)))
+    outer_nozzle_ids = sorted(list(set(outer_nozzle_ids)))
+    outer_pad_ids    = sorted(list(set(outer_pad_ids)))
 
     # Combined sets for BCs
-    # Pressure: all wetted interior faces (shell bore + nozzle bore)
-    all_inner_face_ids = list(set(inner_shell_ids + inner_nozzle_ids))
-    # Convection outside: all outer surfaces including pad
-    all_outer_face_ids = list(set(outer_shell_ids + outer_nozzle_ids + outer_pad_ids))
+    # Pressure: All wetted interior surfaces (Shell ID + Nozzle ID)
+    all_inner_face_ids = sorted(list(set(inner_shell_ids + inner_nozzle_ids)))
+    # Outside Convection: All exposed exterior surfaces (Shell OD + Nozzle OD + Pad OD)
+    all_outer_face_ids = sorted(list(set(outer_shell_ids + outer_nozzle_ids + outer_pad_ids)))
 
     mesh = Model.Mesh
     try:
