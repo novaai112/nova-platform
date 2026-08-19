@@ -1047,8 +1047,8 @@ NozzleProjection = N_P
     outer_nozzle_ids = []
     outer_pad_ids = []
 
-    # ── Geometry-scaled relative tolerance ────────────────────────────────────
-    # Scales with 3 % of the reference radius, clamped to [2 mm, 20 mm].
+    # Geometry-scaled relative tolerance.
+    # Scales with 3% of the reference radius, clamped to [2 mm, 20 mm].
     # This prevents the old fixed 8 mm limit from missing faces on large vessels
     # or misclassifying faces on thin/small nozzles.
     def rel_tol(r, pct=0.03, lo=0.002, hi=0.020):
@@ -1069,57 +1069,57 @@ NozzleProjection = N_P
     X_SHELL_INNER_m = math.sqrt(_s_sq)   # inner-wall intersection along nozzle axis
 
     # Rim tolerances scaled to geometry
-    rim_tol_y = max(0.002, S_H_m  * 0.005)   # 0.5 % of shell height
-    rim_tol_x = max(0.002, N_OR_m * 0.04)    # 4 %  of nozzle outer radius
+    rim_tol_y = max(0.002, S_H_m  * 0.005)   # 0.5% of shell height
+    rim_tol_x = max(0.002, N_OR_m * 0.04)    # 4% of nozzle outer radius
 
-    # Fallback: all face IDs already classified (to avoid double-counting)
+    # Track classified face IDs to avoid double-counting
     _classified = set()
 
     def _face_r_shell(pts):
-        """Radius of each point from the shell (Y) axis: sqrt(x²+z²)."""
+        # Radius of each point from the shell (Y) axis: sqrt(x^2 + z^2)
         return [math.sqrt(p[0]**2 + p[2]**2) for p in pts]
 
     def _face_r_nozzle(pts):
-        """Radius of each point from the nozzle (X) axis at (Y=N_LOC, Z=N_OFF)."""
+        # Radius of each point from the nozzle (X) axis at (Y=N_LOC, Z=N_OFF)
         return [math.sqrt((p[1] - N_LOC_m)**2 + (p[2] - N_OFF_m)**2) for p in pts]
 
     def _avg(lst):
         return sum(lst) / float(len(lst)) if lst else 0.0
 
     def _classify_face(face_id, xc, yc, zc, pts, rg):
-        """Return the bucket name for this face, or None if unmatched."""
+        # Return the bucket name for this face, or None if unmatched.
 
         rs_pts = _face_r_shell(pts)
         rn_pts = _face_r_nozzle(pts)
         avg_rs = _avg(rs_pts)
         avg_rn = _avg(rn_pts)
 
-        # ── 1. Shell bottom rim (Y ≈ 0) ──────────────────────────────────────
+        # --- 1. Shell bottom rim (Y ~ 0) ------------------------------------
         if (abs(yc) < rim_tol_y and
                 all(abs(p[1]) < rim_tol_y for p in pts)):
             return "shell_bottom"
 
-        # ── 2. Shell top rim (Y ≈ S_H) ───────────────────────────────────────
+        # --- 2. Shell top rim (Y ~ S_H) -------------------------------------
         if (abs(yc - S_H_m) < rim_tol_y and
                 all(abs(p[1] - S_H_m) < rim_tol_y for p in pts)):
             return "shell_top"
 
-        # ── 3. Nozzle free-end face (X ≈ N_P) ────────────────────────────────
+        # --- 3. Nozzle free-end face (X ~ N_P) ------------------------------
         # All points lie at the nozzle projection plane
         if (abs(xc - N_P_m) < rim_tol_x and
                 all(abs(p[0] - N_P_m) < rim_tol_x for p in pts) and
                 avg_rn < (N_OR_m + N_OR_tol)):
             return "nozzle_end"
 
-        # ── 4. Reinforcement pad outer cylindrical surface ────────────────────
+        # --- 4. Reinforcement pad outer cylindrical surface ------------------
         # Annular face centred on shell axis (not nozzle axis) at radius P_OR_m
         if pad_active and P_OR_m > 0:
             if (abs(avg_rs - P_OR_m) < P_OR_tol and
                     0.0 < yc < S_H_m):
                 return "outer_pad"
 
-        # ── 5. Nozzle barrel faces ─────────────────────────────────────────────
-        # Must be: outside the shell wall (xc ≥ X_SHELL_INNER_m - tol)
+        # --- 5. Nozzle barrel faces ------------------------------------------
+        # Must be outside the shell wall (xc >= X_SHELL_INNER_m - tol)
         # and close enough to nozzle axis radius
         nozzle_x_gate = X_SHELL_INNER_m - N_OR_tol
         if xc >= nozzle_x_gate and avg_rn < (N_OR_m + N_OR_tol):
@@ -1141,11 +1141,11 @@ NozzleProjection = N_P
             if outer_by_rg or outer_by_cent:
                 return "outer_nozzle"
 
-        # ── 6. Shell barrel faces ─────────────────────────────────────────────
-        # Y must be within the shell height (with generous tolerance for junction
-        # blend surfaces) and the face must be clearly away from nozzle bore
+        # --- 6. Shell barrel faces -------------------------------------------
+        # Y must be within shell height (generous tolerance for junction blends)
+        # and the face must be clearly outside the nozzle cut-out zone
         shell_y_ok = (-rim_tol_y < yc < S_H_m + rim_tol_y)
-        # Faces well beyond the nozzle axis area (nozzle cut-out zone excluded)
+        # Faces near nozzle axis area (nozzle cut-out zone) are excluded
         near_nozzle_zone = (avg_rn < (N_OR_m + N_OR_tol) and
                             xc >= nozzle_x_gate)
         if shell_y_ok and not near_nozzle_zone:
@@ -1167,7 +1167,7 @@ NozzleProjection = N_P
             if outer_by_rg or outer_by_cent:
                 return "outer_shell"
 
-        # ── 7. Fallback: assign to nearest expected surface ───────────────────
+        # --- 7. Fallback: assign to nearest expected surface -----------------
         candidates = [
             ("inner_shell",  abs(avg_rs - S_IR_m)),
             ("outer_shell",  abs(avg_rs - S_OR_m)),
@@ -1180,16 +1180,16 @@ NozzleProjection = N_P
         # Only use fallback if the face is inside the geometry bounding box
         if (-rim_tol_y < yc < S_H_m + rim_tol_y):
             best = min(candidates, key=lambda kv: kv[1])
-            # Cap at 25 % of the reference radius to avoid wild misclassification
+            # Cap at 25% of the reference radius to avoid wild misclassification
             ref_r = {"inner_shell": S_IR_m, "outer_shell": S_OR_m,
                      "inner_nozzle": N_IR_m, "outer_nozzle": N_OR_m,
                      "outer_pad": P_OR_m if P_OR_m > 0 else 1.0}
             if best[1] < 0.25 * ref_r.get(best[0], 1.0):
                 return best[0]
 
-        return None  # truly unclassified — leave out of BCs
+        return None  # truly unclassified - leave out of BCs
 
-    # ── Main face iteration ───────────────────────────────────────────────────
+    # --- Main face iteration -------------------------------------------------
     for part in ExtAPI.DataModel.GeoData.Assemblies[0].Parts:
         for gbody in part.Bodies:
             for face in gbody.Faces:
@@ -1216,7 +1216,7 @@ NozzleProjection = N_P
                 elif bucket == "outer_nozzle":  outer_nozzle_ids.append(fid)
                 elif bucket == "outer_pad":     outer_pad_ids.append(fid)
 
-    # Deduplicate (should already be unique, but be safe)
+    # Deduplicate
     shell_bottom_ids = list(set(shell_bottom_ids))
     shell_top_ids    = list(set(shell_top_ids))
     nozzle_end_ids   = list(set(nozzle_end_ids))
