@@ -714,8 +714,8 @@ export default function App() {
 
   const stats = {
     total: filteredJobs.length,
-    completed: filteredJobs.filter(j => j.status === 'Completed').length,
-    processing: filteredJobs.filter(j => j.status === 'Processing').length,
+    completed: filteredJobs.filter(j => j.status === 'Completed' || j.status === 'Success').length,
+    processing: filteredJobs.filter(j => j.status && j.status !== 'Completed' && j.status !== 'Success' && j.status !== 'Pending' && j.status !== 'Failed').length,
     pending: filteredJobs.filter(j => j.status === 'Pending').length,
     failed: filteredJobs.filter(j => j.status === 'Failed').length,
   };
@@ -1384,10 +1384,10 @@ export default function App() {
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
 
-    const isSuccess = selectedJobDetails.status === 'Completed';
+    const isSuccess = selectedJobDetails.status === 'Completed' || selectedJobDetails.status === 'Success';
     const isFailed = selectedJobDetails.status === 'Failed';
-    const isProcessing = selectedJobDetails.status === 'Processing';
     const isPending = selectedJobDetails.status === 'Pending';
+    const isProcessing = !isSuccess && !isFailed && !isPending;
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -2007,7 +2007,6 @@ export default function App() {
                        />
                      </th>
                      <th className="px-6 py-2.5">Job ID</th>
-                     <th className="px-6 py-2.5">Project Name</th>
                      <th className="px-6 py-2.5">Type</th>
                      <th className="px-6 py-2.5">Date &amp; Time</th>
                      <th className="px-6 py-2.5 text-right">Actions</th>
@@ -2016,6 +2015,10 @@ export default function App() {
                  <tbody>
                    {filteredJobs.map(job => {
                      const isSelected = selectedJobIds.includes(job.id);
+                     const isJobSuccess = job.status === 'Completed' || job.status === 'Success';
+                     const isJobFailed = job.status === 'Failed';
+                     const isJobPending = job.status === 'Pending';
+                     const isJobProcessing = !isJobSuccess && !isJobFailed && !isJobPending;
                      return (
                        <tr key={job.id} className={`transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
                          <td className="w-12 px-4 py-4 text-center first:rounded-l-xl">
@@ -2029,9 +2032,6 @@ export default function App() {
                          </td>
                          <td className="px-6 py-4 font-black text-[#3C64D6]">
                            {job.job_id_display || job.id.substring(0,8)}
-                         </td>
-                         <td className="px-6 py-4 font-bold text-slate-800">
-                           {job.name || 'Analysis Project'}
                          </td>
                          <td className="px-6 py-4 font-semibold text-slate-700">
                            <span className="inline-flex items-center gap-1.5">
@@ -2047,15 +2047,15 @@ export default function App() {
                          </td>
                          <td className="px-6 py-4 flex items-center justify-end gap-2 last:rounded-r-xl">
                             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
-                              job.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
-                              job.status === 'Processing' ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
-                              job.status === 'Pending' ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
+                              isJobSuccess ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                              isJobProcessing ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                              isJobPending ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
                               'bg-red-500/20 text-red-800 border-red-500/30'
                             }`}>
-                              {job.status === 'Processing' && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
-                              {job.status === 'Completed' && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
-                              {job.status === 'Pending' && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
-                              {job.status === 'Failed' && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
+                              {isJobProcessing && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
+                              {isJobSuccess && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
+                              {isJobPending && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
+                              {isJobFailed && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
                               {job.status}
                             </span>
                             
