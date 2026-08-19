@@ -1527,45 +1527,73 @@ export default function App() {
           )}
 
           {/* Action Buttons: Directly inside the rectangular box ON SUCCESS */}
-          {isSuccess && (
-            <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 flex-wrap">
-              
-              {/* Download JSON (nozzle_batch_data.json) */}
-              <button 
-                onClick={() => downloadJobJson(selectedJobDetails)} 
-                title="Download nozzle_batch_data.json"
-                className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-800 bg-white hover:bg-slate-50 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-slate-300"
-              >
-                <FileJson className="w-4 h-4 text-blue-600" />
-                Download JSON
-              </button>
+          {/* Action Buttons: Download Deliverables */}
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 flex-wrap">
+            
+            {/* Input JSON */}
+            <button 
+              onClick={() => downloadJobJson(selectedJobDetails)} 
+              title="Download input nozzle_batch_data.json"
+              className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-800 bg-white hover:bg-slate-50 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-slate-300"
+            >
+              <FileJson className="w-4 h-4 text-slate-600" />
+              Input JSON
+            </button>
 
-              {/* Download Report */}
-              <button 
-                onClick={() => generateAndOpenReport(selectedJobDetails)}
-                title="Download / View Analysis Report"
-                className="px-5 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+            {/* Results JSON */}
+            {selectedJobDetails.json_url && (
+              <a 
+                href={selectedJobDetails.json_url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title="Download FEA Results JSON"
+                className="px-4 py-2.5 rounded-xl text-xs font-black text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-amber-300"
               >
-                <FileText className="w-4 h-4 text-emerald-600" />
-                Download Report
-              </button>
+                <FileJson className="w-4 h-4 text-amber-600" />
+                Results JSON
+              </a>
+            )}
 
-              {/* Full Analysis ZIP */}
-              {selectedJobDetails.result_url && (
+            {/* Download Word Report */}
+            {(selectedJobDetails.report_url || isSuccess) && (
+              selectedJobDetails.report_url ? (
                 <a 
-                  href={selectedJobDetails.result_url} 
+                  href={selectedJobDetails.report_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  title="Download complete ANSYS simulation archive from Google Drive"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+                  title="Download MS Word FEA Report (.docx)"
+                  className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
                 >
-                  <Download className="w-4 h-4" />
-                  Full Analysis ZIP
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  Word Report (.docx)
                 </a>
-              )}
+              ) : (
+                <button 
+                  onClick={() => generateAndOpenReport(selectedJobDetails)}
+                  title="Download / View Analysis Report"
+                  className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+                >
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  View Report
+                </button>
+              )
+            )}
 
-            </div>
-          )}
+            {/* Full Analysis ZIP */}
+            {selectedJobDetails.result_url && (
+              <a 
+                href={selectedJobDetails.result_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                title="Download complete ANSYS simulation archive from Google Drive"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+              >
+                <Download className="w-4 h-4" />
+                Full Analysis (.zip)
+              </a>
+            )}
+
+          </div>
 
         </div>
       </div>
@@ -2059,26 +2087,52 @@ export default function App() {
                               {job.status}
                             </span>
                             
-                            {/* On Success / Completed only: Show Download Report and Result */}
-                            {job.status === 'Completed' && (
-                              <button 
-                                onClick={() => generateAndOpenReport(job)} 
-                                title="Download / View Analysis Report"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
-                              >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
-                              </button>
+                            {/* Word FEA Report */}
+                            {(job.report_url || isJobSuccess) && (
+                              job.report_url ? (
+                                <a 
+                                  href={job.report_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  title="Download MS Word FEA Report (.docx)"
+                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Word Report
+                                </a>
+                              ) : (
+                                <button 
+                                  onClick={() => generateAndOpenReport(job)} 
+                                  title="Download / View Analysis Report"
+                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                                </button>
+                              )
                             )}
 
-                            {job.status === 'Completed' && job.result_url && (
+                            {/* JSON Results */}
+                            {job.json_url && (
+                              <a 
+                                href={job.json_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                title="Download FEA Results JSON"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-amber-700 hover:bg-amber-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-amber-300/60 bg-amber-50/40"
+                              >
+                                <FileJson className="w-3.5 h-3.5 text-amber-600" /> JSON Results
+                              </a>
+                            )}
+
+                            {/* Full Analysis ZIP */}
+                            {job.result_url && (
                               <a 
                                 href={job.result_url} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                title="Download Full Analysis ZIP"
+                                title="Download Full Analysis ZIP Archive"
                                 className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-300/60 bg-blue-50/40"
                               >
-                                <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis
+                                <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
                               </a>
                             )}
                             

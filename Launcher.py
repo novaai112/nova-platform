@@ -9,7 +9,7 @@ import tempfile
 
 def write_status(status_msg, base_dir=None):
     try:
-        data = json.dumps({"status": str(status_msg), "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+        data = json.dumps({"status": str(status_msg), "timestamp": time.time(), "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
         paths_to_write = [os.getcwd(), os.path.dirname(os.path.abspath(__file__))]
         if base_dir:
             paths_to_write.insert(0, base_dir)
@@ -842,6 +842,7 @@ import System.IO
 import os
 import clr
 import json
+import time
 import math
 import re
 import traceback
@@ -938,7 +939,7 @@ NozzleProjection = N_P
             mech_body = """try:
     def report_mech_status(msg):
         try:
-            d_str = json.dumps({"status": str(msg)})
+            d_str = json.dumps({"status": str(msg), "timestamp": time.time()})
             candidates = [SAFE_BASE_DIR, os.getcwd()]
             try:
                 p1 = os.path.dirname(SAFE_BASE_DIR)
@@ -985,8 +986,9 @@ NozzleProjection = N_P
     N_LOC_m = N_LOC / 1000.0
     N_OFF_m = N_OFF / 1000.0
     N_P_m = N_P / 1000.0
-    P_D_m = (P_D / 1000.0) if (pad_active and P_D > 0) else 0.0
-    P_OR_m = (P_D_m / 2.0) if P_D_m > 0 else 0.0
+    P_W_m = (P_D / 1000.0) if pad_active else 0.0
+    P_OR_m = (N_OR_m + P_W_m) if (pad_active and P_W_m > 0) else 0.0
+    P_THK_m = (P_THK1 / 1000.0) if pad_active else 0.0
 
     for gbody in all_geo_bodies:
         bc = gbody.Centroid
@@ -994,7 +996,7 @@ NozzleProjection = N_P
         r_nozzle_b = math.sqrt((by - N_LOC_m)**2 + (bz - N_OFF_m)**2)
         s_out_x_b = math.sqrt(max(S_OR_m**2 - bz**2, 0.0))
 
-        if pad_active and P_OR_m > 0 and r_nozzle_b > N_OR_m and r_nozzle_b <= (P_OR_m + 0.01):
+        if pad_active and P_OR_m > 0 and r_nozzle_b > (N_OR_m - 0.005) and r_nozzle_b <= (P_OR_m + 0.02):
             pad_body_ids.append(gbody.Id)
         elif bx >= (s_out_x_b - 0.02) and r_nozzle_b <= (N_OR_m + 0.02):
             nozzle_body_ids.append(gbody.Id)
@@ -1129,12 +1131,14 @@ NozzleProjection = N_P
                         continue
 
                 if pad_active and P_OR_m > 0:
-                    if rg is not None and abs(rg - P_OR_m) / P_OR_m <= 0.05:
+                    r_nc = math.sqrt((yc - N_LOC_m)**2 + (zc - N_OFF_m)**2)
+                    if (rg is not None and abs(rg - P_OR_m) / P_OR_m <= 0.06) or all(abs(rnp - P_OR_m) <= 0.005 for rnp in r_n_pts):
                         outer_pad_ids.append(face.Id)
                         continue
-                    elif all(abs(rnp - P_OR_m) <= 0.003 for rnp in r_n_pts):
-                        outer_pad_ids.append(face.Id)
-                        continue
+                    if (rg is not None and abs(rg - (S_OR_m + P_THK_m)) / (S_OR_m + P_THK_m) <= 0.06) or all(abs(rp - (S_OR_m + P_THK_m)) <= 0.005 for rp in r_s_pts):
+                        if r_nc <= (P_OR_m + 0.02):
+                            outer_pad_ids.append(face.Id)
+                            continue
 
     shell_bottom_ids = list(set(shell_bottom_ids))
     shell_top_ids = list(set(shell_top_ids))
