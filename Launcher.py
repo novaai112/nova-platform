@@ -282,6 +282,8 @@ def run_batch(json_path):
             base_p = itm.get("AnalysisFolder", "")
             wbpj_p = base_p + ".wbpj"
 
+            write_status("Opening Ansys Workbench", base_p)
+
             if base_p != last_proj:
                 if base_p in done_proj:
                     Open(FilePath=wbpj_p)
@@ -2792,7 +2794,7 @@ except Exception as e:
 
             mech_scr = mech_vars + mech_body
 
-            write_status("Opening Ansys Workbench & Mechanical", base_p)
+            write_status("Opening Ansys Mechanical", base_p)
             mod_comp = sys1.GetComponent(Name="Model")
             mod_comp.Refresh()
             mod_cont = sys1.GetContainer(ComponentName="Model")
