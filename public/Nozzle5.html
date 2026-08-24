@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg">
+    <title>NOVA Nozzle Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #f0f5fa;
+            --bg-glow-1: #bae6fd;
+            --bg-glow-2: #d1fae5;
+            --bg-glow-3: #fef08a;
+            --border-subtle: rgba(0, 0, 0, 0.05);
+            --border-highlight: rgba(255, 255, 255, 0.8);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #38bdf8;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --text-dark: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(0, 0, 0, 0.1);
+            --input-focus-ring: rgba(59, 130, 246, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.55);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.15) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+        body { min-height: 100vh; min-height: 100dvh; background-color: var(--bg-base); color: var(--text-main); overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; position: relative; cursor: default; }
+        input[type="text"], input[type="number"] { cursor: text; }
+        button, select, .switch, .slider, .autocomplete-item, .close-modal, a { cursor: pointer; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }
+        input[type="number"] { -moz-appearance: textfield !important; appearance: none !important; }
+        .ambient-orb { position: fixed; border-radius: 50%; filter: blur(140px); z-index: -1; opacity: 0.85; animation: float 20s infinite alternate ease-in-out; pointer-events: none; }
+        .orb-1 { width: 60vw; height: 60vw; background: var(--bg-glow-1); top: -20vh; left: -10vw; }
+        .orb-2 { width: 50vw; height: 50vw; background: var(--bg-glow-2); bottom: -15vh; right: 0vw; animation-delay: -5s; }
+        .orb-3 { width: 40vw; height: 40vw; background: var(--bg-glow-3); top: 30vh; left: 30vw; animation-delay: -10s; opacity: 0.5; }
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(3%, 5%) scale(1.05); } 100% { transform: translate(-2%, 4%) scale(0.95); } }
+        .top-navigation { position: relative; z-index: 100; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-subtle); display: flex; flex-direction: column; }
+        .nav-primary { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2.5rem; }
+        .nav-brand { font-size: 1.15rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; color: var(--text-dark); }
+        .nav-brand svg { color: var(--primary); filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.3)); }
+        .nav-controls { display: flex; gap: 0.5rem; align-items: center; background: rgba(255,255,255,0.4); padding: 4px; border-radius: 12px; border: 1px solid var(--border-subtle); }
+        .btn-tab { background: transparent; border: none; color: var(--text-muted); padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; transition: all 0.2s ease; }
+        .btn-tab:hover { color: var(--text-main); }
+        .btn-tab.active { background: #ffffff; color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .btn-action { background: rgba(255, 255, 255, 0.8); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+        .btn-action:hover { background: #ffffff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
+        .nav-secondary { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2.5rem; background: rgba(255, 255, 255, 0.3); border-top: 1px solid rgba(0, 0, 0, 0.03); }
+        .batch-group { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.15); transition: .3s ease; border-radius: 22px; border: 1px solid rgba(0,0,0,0.05); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: #ffffff; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(18px); background-color: white; }
+        .batch-input-group { display: flex; align-items: center; gap: 0.5rem; transition: opacity 0.3s; }
+        .batch-input-group.hidden { display: none !important; }
+        .batch-input-group input { width: 60px; padding: 0.3rem 0.5rem; text-align: center; }
+        .main-workspace { flex: 1 0 auto; width: 100%; padding: 2rem 2.5rem; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
+        #forms-container { width: 100%; max-width: 1800px; display: flex; flex-direction: column; gap: 3rem; padding-bottom: 140px; box-sizing: border-box; }
+        .analysis-block { display: flex; flex-direction: column; gap: 1rem; }
+        .block-header { font-size: 1rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem; }
+        .block-header span { background: rgba(59, 130, 246, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; align-content: start; }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-highlight); border-radius: 16px; display: flex; flex-direction: column; box-shadow: var(--glass-shadow); overflow: hidden; transition: all 0.3s ease; }
+        .glass-card:hover { border-color: rgba(255,255,255,1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06); }
+        .card-header { font-size: 0.85rem; font-weight: 700; color: var(--text-main); background: rgba(255,255,255,0.6); padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .card-header::before { content: ''; display: block; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; }
+        .card-body { padding: 0.5rem 0; display: flex; flex-direction: column; }
+        .section-label { font-size: 0.7rem; font-weight: 800; color: var(--primary); margin: 1rem 1.25rem 0.25rem 1.25rem; text-transform: uppercase; letter-spacing: 1px; }
+        .form-group { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.03); transition: background 0.2s; }
+        .form-group:hover { background: rgba(255,255,255,0.4); }
+        .form-group:last-child { border-bottom: none; }
+        .form-group.hidden { display: none !important; }
+        .form-label { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text-main); padding-right: 15px; }
+        .input-control { flex: 0 0 160px; position: relative; }
+        .glass-input, .glass-select { width: 100%; padding: 0.5rem 0.75rem; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-dark); transition: all 0.2s ease; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
+        .glass-select option { background: #ffffff; color: var(--text-dark); padding: 8px; }
+        .glass-input:focus, .glass-select:focus { border-color: var(--primary); background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring); }
+        .input-addon-group { display: flex; align-items: stretch; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; transition: all 0.2s ease; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; }
+        .input-addon-group:focus-within { border-color: var(--primary); background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring); }
+        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; padding-right: 4px; }
+        .addon { padding: 0 10px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: rgba(0, 0, 0, 0.02); display: flex; align-items: center; border-left: 1px solid rgba(0, 0, 0, 0.05); user-select: none; }
+        .autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; display: none; max-height: 220px; overflow-y: auto; padding: 4px; }
+        .autocomplete-item { padding: 8px 12px; color: var(--text-dark); font-size: 0.85rem; border-radius: 6px; transition: all 0.1s; font-weight: 600; }
+        .autocomplete-item:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+        .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; padding: 1.1rem 2rem; padding-bottom: max(1.1rem, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border-top: 1px solid rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.08); }
+        .btn-submit { background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%); color: #ffffff; border: none; padding: 0.9rem 3.5rem; border-radius: 12px; font-weight: 700; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); text-transform: uppercase; letter-spacing: 1px; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, #60a5fa 0%, var(--primary) 100%); }
+        .btn-submit:active { transform: scale(0.98); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 18, 40, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-box { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 18px; padding: 1.5rem; width: 92%; max-width: 520px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.95); position: relative; animation: popupIn 0.3s ease both; }
+        .modal-header { font-size: 1.05rem; font-weight: 800; margin-bottom: 1.1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(0, 0, 0, 0.06); display: flex; align-items: center; justify-content: space-between; color: var(--text-dark); }
+        .close-modal { background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; }
+        .close-modal:hover { background: #ffffff; color: #ef4444; }
+        
+        /* Custom Material Modal Specifics */
+        .custom-mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 0.85rem; margin-bottom: 0.5rem; }
+        .custom-mat-field { display: flex; flex-direction: column; gap: 0.28rem; }
+        .custom-mat-label { font-size: 0.76rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+        .custom-mat-field .glass-input { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 0.82rem; padding: 0.42rem 0.65rem; width: 100%; box-sizing: border-box; }
+        .custom-mat-field .input-addon-group { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; width: 100%; display: flex; align-items: stretch; overflow: hidden; }
+        .custom-mat-field .input-addon-group .glass-input { font-size: 0.82rem; padding: 0.42rem 0.65rem; border: none; background: transparent; }
+        .custom-mat-field .addon { font-size: 0.7rem; padding: 0 8px; color: var(--text-muted); font-weight: 700; background: rgba(0,0,0,0.03); border-left: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; white-space: nowrap; }
+        .btn-edit-mat { background: var(--bg-glow-1); color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
+        .btn-edit-mat:hover { background: var(--primary); color: white; }
+
+        /* ══════════ MATERIAL TABLE POPUP (VIBRANT & SPACIOUS) ══════════ */
+        .mat-popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9000; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        .mat-popup-overlay.active { opacity: 1; pointer-events: all; }
+        .mat-popup-container {
+            display: flex; flex-direction: column;
+            max-width: 1320px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8);
+            padding: 2rem 2.4rem;
+            animation: popupIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            box-sizing: border-box;
+        }
+        @keyframes popupIn { from { transform: scale(0.92) translateY(20px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+        .mat-popup-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.4rem; padding-bottom: 1rem;
+            border-bottom: 1.5px solid #f1f5f9;
+        }
+        .mat-popup-title {
+            font-size: 1.15rem; font-weight: 900; color: #0f172a;
+            letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .mat-popup-title .mpbadge {
+            background: #eff6ff; color: #1d4ed8; border: 1.5px solid #dbeafe;
+            padding: 4px 14px; border-radius: 24px; font-size: 0.78rem;
+            font-weight: 800; letter-spacing: 0.5px;
+        }
+        .mat-popup-close {
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #64748b;
+            transition: all 0.2s; flex-shrink: 0; cursor: pointer;
+        }
+        .mat-popup-close:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; transform: scale(1.05); }
+        
+        .mat-tables-row { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 1.25rem; 
+            margin-bottom: 1.25rem; 
+        }
+        .mat-rect-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s ease;
+        }
+        .mat-rect-card:hover { 
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1); 
+            border-color: #93c5fd; 
+            transform: translateY(-2px); 
+        }
+        .mat-rect-header {
+            padding: 0.65rem 1.1rem;
+            border-bottom: 1.5px solid #e2e8f0;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mat-rect-header .rdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.8); }
+        .rdot-shell { background: #2563eb; }
+        .rdot-nozzle { background: #7c3aed; }
+        .rdot-pad { background: #059669; }
+        .rdot-thermal { background: #d97706; }
+        .mat-rect-header .rh-label { font-size: 0.8rem; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; }
+        
+        .mat-tbl { width: 100%; border-collapse: collapse; }
+        .mat-tbl td { padding: 0.5rem 1rem; font-size: 0.84rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .mat-tbl tr:last-child td { border-bottom: none; }
+        .mat-tbl .tl { color: #334155; font-weight: 700; width: 45%; }
+        .mat-tbl .tv { color: #0f172a; font-weight: 800; text-align: right; }
+        .mat-tbl tr:hover td { background: #f8fafc; }
+        
+        .tiw { 
+            display: inline-flex; 
+            align-items: stretch; 
+            background: #ffffff; 
+            border: 1.5px solid #cbd5e1; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            width: 100%; 
+            min-width: 145px; 
+            transition: all 0.2s ease; 
+        }
+        .tiw:focus-within { 
+            border-color: #2563eb; 
+            box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.18); 
+        }
+        .ti { 
+            border: none; 
+            background: transparent; 
+            padding: 0.42rem 0.7rem; 
+            font-size: 0.92rem; 
+            font-weight: 800; 
+            color: #0f172a; 
+            width: 100%; 
+            outline: none; 
+            -moz-appearance: textfield; 
+            font-family: inherit; 
+            box-sizing: border-box;
+        }
+        .ti::-webkit-inner-spin-button, .ti::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .tia { 
+            padding: 0 10px; 
+            font-size: 0.76rem; 
+            font-weight: 800; 
+            color: #475569; 
+            background: #f8fafc; 
+            border-left: 1.5px solid #cbd5e1; 
+            display: flex; 
+            align-items: center; 
+            white-space: nowrap; 
+        }
+        
+        .mat-sec-divider {
+            margin: 0.9rem 0 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.07);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mat-sec-divider .msd-label { font-size: 0.69rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #d97706; white-space: nowrap; }
+        .mat-sec-divider::after { content: ''; flex: 1; height: 1px; background: rgba(245,158,11,0.3); }
+        /* Trigger button */
+        .btn-mat-popup {
+            margin: 0.75rem 1.25rem 1rem;
+            background: linear-gradient(135deg, rgba(59,130,246,0.11) 0%, rgba(59,130,246,0.05) 100%);
+            border: 1px solid rgba(59,130,246,0.22);
+            color: var(--primary); padding: 0.48rem 1rem;
+            border-radius: 8px; font-size: 0.79rem; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s; width: calc(100% - 2.5rem);
+            justify-content: center; letter-spacing: 0.4px; font-family: inherit;
+        }
+        .btn-mat-popup:hover { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.42); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(59,130,246,0.15); }
+        .btn-mat-popup.thermal-mode { background: linear-gradient(135deg, rgba(245,158,11,0.13) 0%, rgba(59,130,246,0.07) 100%); border-color: rgba(245,158,11,0.32); color: #b45309; }
+        .btn-mat-popup.thermal-mode:hover { background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); }
+
+        @media (max-width: 768px) {
+            .nav-primary { flex-direction: column; gap: 1rem; padding: 1rem; align-items: stretch; }
+            .nav-brand { justify-content: center; }
+            .nav-controls { justify-content: center; width: 100%; }
+            .nav-secondary { flex-direction: column; gap: 1rem; padding: 1rem; }
+            .main-workspace { padding: 1rem; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .form-group { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.8rem 1rem; }
+            .form-label { padding-right: 0; }
+            .input-control { flex: 1 1 100%; width: 100%; }
+            .sticky-footer { padding: 0.75rem 1rem; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+            .btn-submit { width: 100%; max-width: 500px; padding: 0.85rem 1.5rem; font-size: 0.95rem; }
+            #forms-container { gap: 1.5rem; padding-bottom: 120px; }
+            .batch-group { justify-content: center; }
+            .batch-input-group { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="top-navigation">
+        <div class="nav-primary">
+            <h1 class="nav-brand" id="main_title" style="cursor: pointer;" onclick="window.location.href='/'">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                NOVA Nozzle
+            </h1>
+            <div class="nav-controls">
+                <button type="button" class="btn-tab active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
+                <button type="button" class="btn-tab" id="btn-head" onclick="switchAnalysis('head')">Vessel Head</button>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn-action" type="button" onclick="window.location.href='https://nova-analysis.vercel.app/'" title="Open NOVA Platform Dashboard">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </button>
+                <button class="btn-action" type="button" onclick="window.open('https://asme-material.vercel.app/', '_blank')" title="Open ASME Material Database Explorer">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    See Material
+                </button>
+            </div>
+        </div>
+        <div class="nav-secondary">
+            <div class="batch-group">
+                <span>Batch Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="batchToggle" onchange="toggleBatchMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="batch-input-group hidden" id="batchCountContainer">
+                <span style="font-size:0.8rem; color:var(--text-muted);">No of Analysis :</span>
+                <input type="number" class="glass-input" id="numAnalyses" value="1" min="1" max="20" onchange="renderForms()">
+            </div>
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        <form id="forms-container"></form>
+    </div>
+
+    <div class="sticky-footer">
+        <button class="btn-submit" type="button" onclick="submitAnalysis()">Solve Analysis</button>
+    </div>
+
+    <div class="modal-overlay" id="searchModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Job Repository</span>
+                <button class="close-modal" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+                <input type="text" id="searchInput" class="glass-input" placeholder="Job ID or License Key...">
+                <button class="btn-action" onclick="searchJobs()" style="background:var(--primary); color:white; border:none;">Search</button>
+            </div>
+            <div id="jobResults" style="max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <!-- Custom Material Modal -->
+    <div class="modal-overlay" id="customMaterialModal" onclick="if(event.target===this)closeCustomMaterialModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="customMaterialTitle" style="display:flex; align-items:center; gap:8px;">Custom Material Properties</span>
+                <button class="close-modal" onclick="closeCustomMaterialModal()">&times;</button>
+            </div>
+            <input type="hidden" id="customMaterialTargetPrefix">
+            <input type="hidden" id="customMaterialTargetIndex">
+            
+            <div class="custom-mat-grid">
+                <div class="custom-mat-field" style="grid-column: 1 / -1; margin-bottom: 0.2rem;">
+                    <label class="custom-mat-label">Material Name</label>
+                    <input type="text" class="glass-input" id="modalOtherName" placeholder="e.g. SA-516 Gr. 70">
+                </div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Young's Modulus</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYM" value="200000">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Poisson's Ratio</label>
+                    <input type="number" step="0.001" class="glass-input" id="modalPR" value="0.3">
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpAllowable">
+                    <label class="custom-mat-label">Allowable Stress (Table 5A)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalAllowable" value="138">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpYield">
+                    <label class="custom-mat-label">Yield Stress (Sy)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYield" value="260">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpUTS">
+                    <label class="custom-mat-label">Ultimate Tensile (UTS)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalUTS" value="485">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpConductivity">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Conductivity</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" class="glass-input" id="modalConductivity" value="48">
+                        <span class="addon" style="color:#b45309;">W/m·°C</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpThermalExp">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Expansion (CTE)</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" step="0.1" class="glass-input" id="modalThermalExp" value="12">
+                        <span class="addon" style="color:#b45309;">×10⁻⁶/°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06);">
+                <button class="btn-action" type="button" onclick="closeCustomMaterialModal()" style="padding:0.45rem 1.2rem; font-size:0.82rem;">Cancel</button>
+                <button class="btn-action" type="button" onclick="saveCustomMaterial()" style="background:var(--primary); color:white; border:none; padding:0.45rem 1.6rem; font-size:0.82rem; font-weight:700;">Save &amp; Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════ MATERIAL TABLES POPUP ══════════ -->
+    <div class="mat-popup-overlay" id="matTablePopup" onclick="if(event.target===this)closeMatTablePopup()">
+        <div class="mat-popup-container" id="matTableContainer">
+            <!-- Filled dynamically by openMatTablePopup() -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://opzfhsonosqqxometiou.supabase.co/rest/v1/ansys_jobs";
+        const API_KEY = "sb_publishable_tZ-Wulo5bNADs-w9dca3Vw_3CL1RNuo";
+        
+        let currentAnalysis = "shell";
+        let materialLibrary = [];
+
+        function toggleBatchMode() {
+            const isBatch = document.getElementById('batchToggle').checked;
+            const container = document.getElementById('batchCountContainer');
+            if(isBatch) {
+                container.classList.remove('hidden');
+                document.getElementById('numAnalyses').value = 2;
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('numAnalyses').value = 1;
+            }
+            renderForms();
+        }
+
+        function getFormTemplate(i, isBatch) {
+            return `
+            <div class="analysis-block" id="block_${i}">
+                ${isBatch ? `<div class="block-header"><span>Analysis : ${i}</span></div>` : ''}
+                <div class="dashboard-grid">
+                    
+                    <div class="glass-card">
+                        <div class="card-header">1. Project</div>
+                        <div class="card-body">
+                            <div class="form-group" id="grp_AnalysisFolder_${i}">
+                                <label class="form-label">Analysis Folder</label>
+                                <div class="input-control"><input type="text" class="glass-input" name="AnalysisFolder_${i}" id="AnalysisFolder_${i}" value="D:\\Test\\Check1"></div>
+                            </div>
+                            <div class="form-group" id="grp_TypeOfAnalysis_${i}">
+                                <label class="form-label">Analysis Type</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="TypeOfAnalysis_${i}" id="TypeOfAnalysis_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="Elastic Analysis">Elastic Analysis</option>
+                                        <option value="Limit-Load Analysis">Limit-Load Analysis</option>
+                                        <option value="Elastic-Plastic Analysis">Elastic-Plastic Analysis</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_LimitLoadModel_${i}">
+                                <label class="form-label">Material Model</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="LimitLoadModel_${i}" id="LimitLoadModel_${i}">
+                                        <option value="Elastic">Elastic</option>
+                                        <option value="Elastic-Plastic">Elastic-Plastic</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" id="grp_DesignTemp_${i}">
+                                <label class="form-label">Design Temp.</label>
+                                <div class="input-control">
+                                    <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp_${i}" id="DesignTemp_${i}" value="150" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="grp_InternalPressure_${i}">
+                                <label class="form-label">Internal Pressure</label>
+                                <div class="input-control">
+                                    <div class="input-addon-group"><input type="number" class="glass-input" name="InternalPressure_${i}" id="InternalPressure_${i}" value="10"><span class="addon">MPa</span></div>
+                                </div>
+                            </div>
+
+                            <div class="section-label">Operating Thermal Conditions</div>
+                            <div class="form-group" id="grp_OperatingCondition_${i}">
+                                <label class="form-label">Thermal Required</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="OperatingCondition_${i}" id="OperatingCondition_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellIdHTC_${i}">
+                                <label class="form-label">Shell ID HTC</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellIdHTC_${i}" id="ShellIdHTC_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleIdHTC_${i}">
+                                <label class="form-label">Nozzle ID HTC</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleIdHTC_${i}" id="NozzleIdHTC_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_OutsideHTC_${i}">
+                                <label class="form-label">Outside Surface HTC</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="OutsideHTC_${i}" id="OutsideHTC_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">2. Materials</div>
+                        <div class="card-body">
+                            <div class="section-label">Shell</div>
+                            <div class="form-group" id="grp_ShellMaterial_${i}">
+                                <label class="form-label">Shell Material Name</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="ShellMaterial_${i}" id="ShellMaterial_${i}" value="SA-516-Gr-60" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellOtherName_${i}">
+                                <label class="form-label">Other Material Name</label>
+                                <div class="input-control"><input type="text" class="glass-input" name="ShellOtherName_${i}" id="ShellOtherName_${i}" value="Custom_Material"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellYM_${i}">
+                                <label class="form-label">Young's Modulus</label>
+                   
