@@ -902,6 +902,9 @@
                     popupBtn.classList.add('hidden');
                 }
             }
+            
+            // Ensure material properties are recalculated when dependencies (like Pad visibility) change
+            recalculateAllMaterials(i);
         }
 
         /* ══════════════════════════════════════════════
