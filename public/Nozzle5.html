@@ -536,4 +536,1031 @@
                             </div>
                             <div class="form-group hidden" id="grp_ShellYM_${i}">
                                 <label class="form-label">Young's Modulus</label>
-                   
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellYM_${i}" id="ShellYM_${i}" value="200000"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellPR_${i}">
+                                <label class="form-label">Poisson's Ratio</label>
+                                <div class="input-control"><input type="number" class="glass-input" name="ShellPR_${i}" id="ShellPR_${i}" value="0.3"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellAllowable_${i}">
+                                <label class="form-label">Allowable Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellAllowable_${i}" id="ShellAllowable_${i}" value="138"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellYield_${i}">
+                                <label class="form-label">Yield Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellYield_${i}" id="ShellYield_${i}" value="260"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_ShellUTS_${i}">
+                                <label class="form-label">Ultimate Tensile Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellUTS_${i}" id="ShellUTS_${i}" value="485"><span class="addon">MPa</span></div></div>
+                            </div>
+
+                            <div class="section-label">Nozzle</div>
+                            <div class="form-group" id="grp_NozzleMaterial_${i}">
+                                <label class="form-label">Nozzle Material Name</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="NozzleMaterial_${i}" id="NozzleMaterial_${i}" value="SA-106-Type-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleOtherName_${i}">
+                                <label class="form-label">Other Material Name</label>
+                                <div class="input-control"><input type="text" class="glass-input" name="NozzleOtherName_${i}" id="NozzleOtherName_${i}" value="Custom_Material"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleYM_${i}">
+                                <label class="form-label">Young's Modulus</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYM_${i}" id="NozzleYM_${i}" value="200000"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzlePR_${i}">
+                                <label class="form-label">Poisson's Ratio</label>
+                                <div class="input-control"><input type="number" class="glass-input" name="NozzlePR_${i}" id="NozzlePR_${i}" value="0.3"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleAllowable_${i}">
+                                <label class="form-label">Allowable Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleAllowable_${i}" id="NozzleAllowable_${i}" value="118"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleYield_${i}">
+                                <label class="form-label">Yield Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleYield_${i}" id="NozzleYield_${i}" value="240"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_NozzleUTS_${i}">
+                                <label class="form-label">Ultimate Tensile Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleUTS_${i}" id="NozzleUTS_${i}" value="415"><span class="addon">MPa</span></div></div>
+                            </div>
+
+                            <div class="section-label">Reinforcement Pad</div>
+                            <div class="form-group" id="grp_PadRequired_${i}">
+                                <label class="form-label">Pad Required</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="PadRequired_${i}" id="PadRequired_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadMaterial_${i}">
+                                <label class="form-label">Pad Material Name</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="PadMaterial_${i}" id="PadMaterial_${i}" value="SA-516-Gr-60" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadOtherName_${i}">
+                                <label class="form-label">Custom Identity</label>
+                                <div class="input-control"><input type="text" class="glass-input" name="PadOtherName_${i}" id="PadOtherName_${i}" value="Custom_Material"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadYM_${i}">
+                                <label class="form-label">Young's Modulus</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadYM_${i}" id="PadYM_${i}" value="200000"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadPR_${i}">
+                                <label class="form-label">Poisson's Ratio</label>
+                                <div class="input-control"><input type="number" class="glass-input" name="PadPR_${i}" id="PadPR_${i}" value="0.3"></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadAllowable_${i}">
+                                <label class="form-label">Allowable Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadAllowable_${i}" id="PadAllowable_${i}" value="138"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadYield_${i}">
+                                <label class="form-label">Yield Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadYield_${i}" id="PadYield_${i}" value="260"><span class="addon">MPa</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadUTS_${i}">
+                                <label class="form-label">Ultimate Tensile Stress</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadUTS_${i}" id="PadUTS_${i}" value="485"><span class="addon">MPa</span></div></div>
+                            </div>
+
+                            <button type="button" class="btn-mat-popup hidden" id="btn_matpopup_${i}" onclick="openMatTablePopup(${i})">
+                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                View Material &amp; Thermal Tables
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">3. Geometry</div>
+                        <div class="card-body">
+                            <div class="section-label">Shell Geometry</div>
+                            <div class="form-group" id="grp_ShellOD_${i}">
+                                <label class="form-label">Shell Outer Dia (OD)</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellOD_${i}" id="ShellOD_${i}" value="1000"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_ShellTHK_${i}">
+                                <label class="form-label">Shell Thickness</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellTHK_${i}" id="ShellTHK_${i}" value="25"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_ShellHeight_${i}">
+                                <label class="form-label">Shell Height</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellHeight_${i}" id="ShellHeight_${i}" value="1000"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_NozzleOffset_${i}">
+                                <label class="form-label">Nozzle Offset</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOffset_${i}" id="NozzleOffset_${i}" value="0"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_CorrosionAllowance_${i}">
+                                <label class="form-label">Corrosion Allowance</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="CorrosionAllowance_${i}" id="CorrosionAllowance_${i}" value="1.5"><span class="addon">mm</span></div></div>
+                            </div>
+
+                            <div class="section-label">Nozzle & Pad Geometry</div>
+                            <div class="form-group" id="grp_TypeOfNozzle_${i}">
+                                <label class="form-label">Nozzle Type</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="Straight">Straight</option>
+                                        <option value="SRN">SRN</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" id="grp_NozzleHeight_${i}">
+                                <label class="form-label">Nozzle Location (Height)</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleHeight_${i}" id="NozzleHeight_${i}" value="500"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_NozzleOD_${i}">
+                                <label class="form-label">Neck OD</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOD_${i}" id="NozzleOD_${i}" value="150"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_NozzleTHK_${i}">
+                                <label class="form-label">Neck Thickness</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleTHK_${i}" id="NozzleTHK_${i}" value="15"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_NozzleProjection_${i}">
+                                <label class="form-label">Nozzle Projection</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="775"><span class="addon">mm</span></div></div>
+                            </div>
+                            
+                            <div class="form-group hidden" id="grp_HubOD_${i}">
+                                <label class="form-label">Hub OD</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD_${i}" id="HubOD_${i}" value="250"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_HubLength_${i}">
+                                <label class="form-label">Hub Length</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubLength_${i}" id="HubLength_${i}" value="150"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_TransitionLength_${i}">
+                                <label class="form-label">Transition Length</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength_${i}" id="TransitionLength_${i}" value="75"><span class="addon">mm</span></div></div>
+                            </div>
+
+                            <div class="form-group hidden" id="grp_PadWidth_${i}">
+                                <label class="form-label">Pad Width</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth_${i}" id="PadWidth_${i}" value="17"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group hidden" id="grp_PadTHK_${i}">
+                                <label class="form-label">Pad Thickness</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadTHK_${i}" id="PadTHK_${i}" value="7"><span class="addon">mm</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">4. Meshing & BCS</div>
+                        <div class="card-body">
+                            <div class="section-label">Meshing</div>
+                            <div class="form-group" id="grp_GlobalBodySizing_${i}">
+                                <label class="form-label">Global Body Sizing</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="GlobalBodySizing_${i}" id="GlobalBodySizing_${i}" value="30"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_MeshMethod_${i}">
+                                <label class="form-label">Mesh Method</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="MeshMethod_${i}" id="MeshMethod_${i}">
+                                        <option value="Sweep">Sweep</option>
+                                        <option value="MultiZone">MultiZone</option>
+                                        <option value="HexDominant">HexDominant</option>
+                                        <option value="Automatic">Automatic</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" id="grp_EdgeDivision_${i}">
+                                <label class="form-label">Edge Divisions</label>
+                                <div class="input-control"><input type="number" class="glass-input" name="EdgeDivision_${i}" id="EdgeDivision_${i}" value="3"></div>
+                            </div>
+
+                            <div class="section-label">Loading Conditions</div>
+                            <div class="form-group" id="grp_NozzleLoadingLocation_${i}">
+                                <label class="form-label">Load Boundary</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="NozzleLoadingLocation_${i}" id="NozzleLoadingLocation_${i}">
+                                        <option value="Shell Nozzle Junction">Shell/Nozzle Junct.</option>
+                                        <option value="Nozzle Flange Junction">Flange Interface</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" id="grp_FL_${i}">
+                                <label class="form-label">F_L</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FL_${i}" id="FL_${i}" value="1000"><span class="addon">N</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_MT_${i}">
+                                <label class="form-label">M_T</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MT_${i}" id="MT_${i}" value="10000"><span class="addon">N mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_FC_${i}">
+                                <label class="form-label">F_C</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FC_${i}" id="FC_${i}" value="1000"><span class="addon">N</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_MC_${i}">
+                                <label class="form-label">M_C</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MC_${i}" id="MC_${i}" value="10000"><span class="addon">N mm</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_Fa_${i}">
+                                <label class="form-label">P</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Fa_${i}" id="Fa_${i}" value="1200"><span class="addon">N</span></div></div>
+                            </div>
+                            <div class="form-group" id="grp_ML_${i}">
+                                <label class="form-label">M_L</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ML_${i}" id="ML_${i}" value="20000"><span class="addon">N mm</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        function renderForms() {
+            if (currentAnalysis === 'head') {
+                document.getElementById('forms-container').innerHTML = '<h2 style="color: red; text-align: center; margin-top: 50px; font-weight: 800; letter-spacing: 2px;">IN FUTURE DEVELOPE</h2>';
+                return;
+            }
+            const container = document.getElementById('forms-container');
+            const num = parseInt(document.getElementById('numAnalyses').value) || 1;
+            const isBatch = document.getElementById('batchToggle').checked;
+            const total = isBatch ? num : 1;
+            
+            let html = '';
+            for(let i=1; i<=total; i++) {
+                html += getFormTemplate(i, isBatch);
+            }
+            container.innerHTML = html;
+            
+            for(let i=1; i<=total; i++) {
+                evaluateDependencies(i);
+            }
+        }
+
+        function toggleVisibility(id, show) {
+            const el = document.getElementById(id);
+            if(el) {
+                if(show) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        }
+
+        function evaluateDependencies(i) {
+            if (currentAnalysis === 'head') return;
+            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`).value;
+            const opCondition = document.getElementById(`OperatingCondition_${i}`).value;
+            const padReq = document.getElementById(`PadRequired_${i}`).value;
+            const nozzleType = document.getElementById(`TypeOfNozzle_${i}`).value;
+
+            toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
+
+            const showThermal = opCondition === 'Yes';
+            toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
+            toggleVisibility(`grp_NozzleIdHTC_${i}`, showThermal);
+            toggleVisibility(`grp_OutsideHTC_${i}`, showThermal);
+            
+            const isSRN = nozzleType === 'SRN';
+            toggleVisibility(`grp_HubOD_${i}`, isSRN);
+            toggleVisibility(`grp_HubLength_${i}`, isSRN);
+            toggleVisibility(`grp_TransitionLength_${i}`, isSRN);
+
+            const handleMaterialGroup = (prefix, isActive) => {
+                if(!isActive) {
+                    toggleVisibility(`grp_${prefix}Material_${i}`, false);
+                    toggleVisibility(`grp_${prefix}OtherName_${i}`, false);
+                    toggleVisibility(`grp_${prefix}YM_${i}`, false);
+                    toggleVisibility(`grp_${prefix}PR_${i}`, false);
+                    toggleVisibility(`grp_${prefix}Allowable_${i}`, false);
+                    toggleVisibility(`grp_${prefix}Yield_${i}`, false);
+                    toggleVisibility(`grp_${prefix}UTS_${i}`, false);
+                    
+                    const btn = document.getElementById(`btnEdit_${prefix}_${i}`);
+                    if(btn) btn.style.display = 'none';
+                    return;
+                }
+
+                toggleVisibility(`grp_${prefix}Material_${i}`, true);
+                
+                // Hide inline custom fields completely (they act as hidden inputs now)
+                toggleVisibility(`grp_${prefix}OtherName_${i}`, false);
+                toggleVisibility(`grp_${prefix}YM_${i}`, false);
+                toggleVisibility(`grp_${prefix}PR_${i}`, false);
+                toggleVisibility(`grp_${prefix}Allowable_${i}`, false);
+                toggleVisibility(`grp_${prefix}Yield_${i}`, false);
+                toggleVisibility(`grp_${prefix}UTS_${i}`, false);
+
+                const matName = document.getElementById(`${prefix}Material_${i}`).value.toLowerCase().trim();
+                const isOther = matName === 'other material';
+                
+                // Show Edit button next to material input if it's "other material"
+                let btn = document.getElementById(`btnEdit_${prefix}_${i}`);
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.id = `btnEdit_${prefix}_${i}`;
+                    btn.type = 'button';
+                    btn.className = 'btn-edit-mat';
+                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px; vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit Props';
+                    const matInputCtrl = document.getElementById(`${prefix}Material_${i}`).parentElement;
+                    matInputCtrl.appendChild(btn);
+                }
+                btn.onclick = () => openCustomMaterialModal(prefix, i);
+                btn.style.display = isOther ? 'inline-block' : 'none';
+            };
+
+            handleMaterialGroup('Shell', true);
+            handleMaterialGroup('Nozzle', true);
+            
+            const isPadActive = padReq === 'Yes';
+            handleMaterialGroup('Pad', isPadActive);
+            toggleVisibility(`grp_PadWidth_${i}`, isPadActive);
+            toggleVisibility(`grp_PadTHK_${i}`, isPadActive);
+
+            // ── Popup trigger button logic ──
+            // Show when analysis is NOT Elastic OR when Thermal is required
+            const isNonElastic = typeOfAnalysis !== 'Elastic Analysis';
+            const showPopupBtn = isNonElastic || showThermal;
+            const popupBtn = document.getElementById(`btn_matpopup_${i}`);
+            if (popupBtn) {
+                if (showPopupBtn) {
+                    popupBtn.classList.remove('hidden');
+                    if (showThermal) {
+                        popupBtn.classList.add('thermal-mode');
+                        popupBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> View Material &amp; Thermal Tables`;
+                    } else {
+                        popupBtn.classList.remove('thermal-mode');
+                        popupBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> View Material Property Tables`;
+                    }
+                } else {
+                    popupBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        /* ══════════════════════════════════════════════
+           MATERIAL TABLES POPUP
+        ══════════════════════════════════════════════ */
+        function openMatTablePopup(i) {
+            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`).value;
+            const opCondition    = document.getElementById(`OperatingCondition_${i}`).value;
+            const padReq         = document.getElementById(`PadRequired_${i}`).value;
+            const showThermal    = opCondition === 'Yes';
+            const showYield      = ['Limit-Load Analysis','Elastic-Plastic Analysis'].includes(typeOfAnalysis);
+            const showUTS        = typeOfAnalysis === 'Elastic-Plastic Analysis';
+            const showAllowable  = typeOfAnalysis === 'Elastic Analysis';
+            const isLimitLoad    = typeOfAnalysis === 'Limit-Load Analysis';
+            const isEP           = typeOfAnalysis === 'Elastic-Plastic Analysis';
+
+            const prefixes = ['Shell','Nozzle'];
+            if (padReq === 'Yes') prefixes.push('Pad');
+            const dotCls = { Shell:'rdot-shell', Nozzle:'rdot-nozzle', Pad:'rdot-pad' };
+
+            // Ensure hidden inputs exist that Python and frontend read
+            function ensureHidden(id, defVal) {
+                let el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type='hidden'; el.name=id; el.id=id; el.value=defVal;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
+            prefixes.forEach(p => {
+                ensureHidden(`${p}Conductivity_${i}`, p==='Nozzle'?'52':'48');
+                ensureHidden(`${p}ThermalExp_${i}`, '12');
+                ensureHidden(`${p}Density_${i}`, '7850');
+            });
+
+            // ── Material Cards (all components) ──
+            const matCardsHtml = prefixes.map(prefix => {
+                const matName  = document.getElementById(`${prefix}Material_${i}`)?.value || '—';
+                const isCustom = matName.toLowerCase().trim() === 'other material';
+                const ym    = document.getElementById(`${prefix}YM_${i}`)?.value          || '200000';
+                const pr    = document.getElementById(`${prefix}PR_${i}`)?.value          || '0.3';
+                const allow = document.getElementById(`${prefix}Allowable_${i}`)?.value   || '138';
+                const yld   = document.getElementById(`${prefix}Yield_${i}`)?.value       || '260';
+                const uts   = document.getElementById(`${prefix}UTS_${i}`)?.value         || '485';
+                const cond  = document.getElementById(`${prefix}Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
+                const cte   = document.getElementById(`${prefix}ThermalExp_${i}`)?.value  || '12';
+                const dens  = document.getElementById(`${prefix}Density_${i}`)?.value     || (isCustom ? '0' : '7850');
+
+                let hardeningBadge = '';
+                if (isLimitLoad) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.14);color:#4338ca;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear</span>`;
+                if (isEP)        hardeningBadge = `<span style="font-size:0.63rem;background:rgba(16,185,129,0.14);color:#047857;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Multilinear</span>`;
+
+                let rows = `
+                <tr><td class="tl">Young's Modulus</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}YM_${i}" value="${ym}" onchange="syncPop('${prefix}YM',${i},'pop_${prefix}YM_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>
+                <tr><td class="tl">Poisson's Ratio</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" step="0.001" id="pop_${prefix}PR_${i}" value="${pr}" onchange="syncPop('${prefix}PR',${i},'pop_${prefix}PR_${i}')"></div>
+                </td></tr>`;
+
+                if (showAllowable) rows += `
+                <tr><td class="tl">Allowable Stress</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}All_${i}" value="${allow}" onchange="syncPop('${prefix}Allowable',${i},'pop_${prefix}All_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showYield) rows += `
+                <tr><td class="tl">Yield Stress</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Yld_${i}" value="${yld}" onchange="syncPop('${prefix}Yield',${i},'pop_${prefix}Yld_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showUTS) rows += `
+                <tr><td class="tl">Ultimate Tensile (UTS)</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}UTS_${i}" value="${uts}" onchange="syncPop('${prefix}UTS',${i},'pop_${prefix}UTS_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showThermal || isCustom) {
+                    const dimmed = (!isCustom && showThermal) ? 'style="opacity:0.8;" title="From Material Database"' : '';
+                    rows += `
+                <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Conductivity</td><td class="tv">
+                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" id="pop_${prefix}Cond_${i}" value="${cond}" ${dimmed} onchange="syncThermal('${prefix}Conductivity',${i},'pop_${prefix}Cond_${i}')"><span class="tia" style="color:#b45309;">W/m·°C</span></div>
+                </td></tr>
+                <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Exp. (CTE)</td><td class="tv">
+                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" step="0.1" id="pop_${prefix}CTE_${i}" value="${cte}" ${dimmed} onchange="syncThermal('${prefix}ThermalExp',${i},'pop_${prefix}CTE_${i}')"><span class="tia" style="color:#b45309;">×10⁻⁶/°C</span></div>
+                </td></tr>`;
+                }
+
+                if (parseFloat(dens) > 0 && !isCustom) {
+                    rows += `
+                <tr style="background:rgba(59,130,246,0.03);"><td class="tl" style="color:#2563eb;">Density</td><td class="tv">
+                    <div class="tiw" style="border-color:rgba(59,130,246,0.3);"><input type="number" class="ti" id="pop_${prefix}Dens_${i}" value="${dens}" onchange="syncPop('${prefix}Density',${i},'pop_${prefix}Dens_${i}')"><span class="tia" style="color:#2563eb;">kg/m³</span></div>
+                </td></tr>`;
+                }
+
+                const headerStyles = {
+                    Shell: 'background:#eff6ff; color:#1e40af; border-bottom:1.5px solid #dbeafe;',
+                    Nozzle: 'background:#f5f3ff; color:#6b21a8; border-bottom:1.5px solid #ede9fe;',
+                    Pad: 'background:#ecfdf5; color:#065f46; border-bottom:1.5px solid #d1fae5;'
+                };
+                const matBg  = isCustom ? '#fef3c7' : '#f8fafc';
+                const matLbl = isCustom ? `<span style="color:#b45309; font-weight:900;">${matName} ✎</span>` : `<span style="color:#0f172a; font-weight:900;">${matName}</span>`;
+                return `<div class="mat-rect-card">
+                    <div class="mat-rect-header" style="${headerStyles[prefix] || ''}">
+                        <span class="rdot ${dotCls[prefix]}"></span>
+                        <span class="rh-label">${prefix}</span>
+                        ${hardeningBadge}
+                    </div>
+                    <div style="padding:0;">
+                        <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:800;background:${matBg};border-bottom:1px solid #e2e8f0;">${matLbl}</div>
+                        <table class="mat-tbl"><tbody>${rows}</tbody></table>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // ── Analysis Info Card with Accurate Load Factors ──
+            const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
+            const matModelVal = isLimitLoad ? (document.getElementById(`LimitLoadModel_${i}`)?.value || 'Elastic') : '';
+            
+            let loadFactor = '1.0×';
+            if (isEP) {
+                loadFactor = '2.4×';
+            } else if (isLimitLoad) {
+                if (matModelVal.toLowerCase().includes('plastic') || matModelVal.toLowerCase().includes('elastic-plastic')) {
+                    loadFactor = '1.5× (Local Failure)';
+                } else {
+                    loadFactor = '1.7×';
+                }
+            }
+
+            const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
+                               isLimitLoad ? (loadFactor.includes('1.5') ? 'Elastic-Plastic Material Model (LF = 1.5) · Local Failure' : 'Elastic Material Model (LF = 1.7) · Lower Bound Limit Load') :
+                                             'Linear elastic analysis · Stress linearisation (SCL)';
+            const infoCard = `<div class="mat-rect-card">
+                <div class="mat-rect-header" style="background:#eef2ff; color:#3730a3; border-bottom:1.5px solid #e0e7ff;">
+                    <span class="rdot" style="background:#4f46e5;"></span>
+                    <span class="rh-label" style="color:#3730a3;">Analysis Info</span>
+                </div>
+                <div style="padding:0;">
+                    <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:900;color:#0f172a;background:#f8fafc;border-bottom:1px solid #e2e8f0;">Execution Parameters</div>
+                    <table class="mat-tbl"><tbody>
+                    <tr><td class="tl">Method</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${typeOfAnalysis.replace(' Analysis','')}</td></tr>
+                    ${isLimitLoad ? `<tr><td class="tl">Model</td><td class="tv" style="font-size:0.84rem;color:#b45309;font-weight:900;">${matModelVal}</td></tr>` : ''}
+                    <tr><td class="tl">Design Temp</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${tDes} °C</td></tr>
+                    <tr><td class="tl">Load Factor</td><td class="tv" style="font-weight:900;color:#2563eb;font-size:0.86rem;">${loadFactor}</td></tr>
+                    <tr><td class="tl">Thermal</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#059669;">${showThermal?'✅ Coupled':'—'}</td></tr>
+                    <tr><td class="tl" colspan="2" style="font-size:0.76rem;font-weight:700;color:#4338ca;line-height:1.45;padding:0.6rem 1.1rem;background:#f5f3ff;">${solverNote}</td></tr>
+                    </tbody></table>
+                </div>
+            </div>`;
+
+            const badge = typeOfAnalysis.replace(' Analysis','') + (showThermal ? ' · Thermal' : '');
+            document.getElementById('matTableContainer').innerHTML = `
+                <div class="mat-popup-header">
+                    <div class="mat-popup-title">Material Properties <span class="mpbadge">${badge}</span></div>
+                    <button class="mat-popup-close" onclick="closeMatTablePopup()">&#10005;</button>
+                </div>
+                <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1.5px solid #f1f5f9;flex-wrap:wrap;gap:1rem;">
+                    <span style="font-size:0.82rem;font-weight:700;color:#059669;display:flex;align-items:center;gap:6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Real-time properties sync directly with ASME material.json &amp; ANSYS solver
+                    </span>
+                    <button onclick="closeMatTablePopup()" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:white;border:none;padding:0.65rem 2.4rem;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s;">Done</button>
+                </div>`;
+
+            document.getElementById('matTablePopup').classList.add('active');
+        }
+
+        function closeMatTablePopup() {
+            document.getElementById('matTablePopup').classList.remove('active');
+        }
+
+        function syncPop(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const el  = document.getElementById(`${fieldBase}_${i}`);
+            if (el) el.value = val;
+        }
+
+        function syncHTC(fieldName, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const el  = document.getElementById(`${fieldName}_${i}`);
+            if (el) el.value = val;
+        }
+
+        function syncThermal(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const hid = `${fieldBase}_${i}`;
+            let el = document.getElementById(hid);
+            if (!el) {
+                el = document.createElement('input');
+                el.type='hidden'; el.name=hid; el.id=hid;
+                document.getElementById(`block_${i}`).appendChild(el);
+            }
+            el.value = val;
+        }
+
+        // Custom Material Modal Logic
+        function openCustomMaterialModal(prefix, index) {
+            document.getElementById('customMaterialTitle').innerText = `${prefix} Custom Material Properties`;
+            document.getElementById('customMaterialTargetPrefix').value = prefix;
+            document.getElementById('customMaterialTargetIndex').value = index;
+
+            const analysisType = document.getElementById(`TypeOfAnalysis_${index}`)?.value || 'Elastic Analysis';
+            const opCondition = document.getElementById(`OperatingCondition_${index}`)?.value || 'No';
+            const showThermal = opCondition === 'Yes';
+
+            // Load existing values from hidden fields or defaults
+            document.getElementById('modalOtherName').value = document.getElementById(`${prefix}OtherName_${index}`)?.value || 'Custom_Material';
+            document.getElementById('modalYM').value = document.getElementById(`${prefix}YM_${index}`)?.value || '200000';
+            document.getElementById('modalPR').value = document.getElementById(`${prefix}PR_${index}`)?.value || '0.3';
+            document.getElementById('modalAllowable').value = document.getElementById(`${prefix}Allowable_${index}`)?.value || '138';
+            document.getElementById('modalYield').value = document.getElementById(`${prefix}Yield_${index}`)?.value || '260';
+            document.getElementById('modalUTS').value = document.getElementById(`${prefix}UTS_${index}`)?.value || '485';
+            document.getElementById('modalConductivity').value = document.getElementById(`${prefix}Conductivity_${index}`)?.value || (prefix === 'Nozzle' ? '52' : '48');
+            document.getElementById('modalThermalExp').value = document.getElementById(`${prefix}ThermalExp_${index}`)?.value || '12';
+
+            // Show/Hide fields based on analysis type and thermal condition
+            const showAllowable = analysisType === 'Elastic Analysis';
+            const showYield = ['Limit-Load Analysis', 'Elastic-Plastic Analysis'].includes(analysisType);
+            const showUTS = analysisType === 'Elastic-Plastic Analysis';
+            
+            document.getElementById('modalGrpAllowable').style.display = showAllowable ? 'flex' : 'none';
+            document.getElementById('modalGrpYield').style.display = showYield ? 'flex' : 'none';
+            document.getElementById('modalGrpUTS').style.display = showUTS ? 'flex' : 'none';
+            document.getElementById('modalGrpConductivity').style.display = showThermal ? 'flex' : 'none';
+            document.getElementById('modalGrpThermalExp').style.display = showThermal ? 'flex' : 'none';
+
+            document.getElementById('customMaterialModal').classList.add('active');
+        }
+
+        function closeCustomMaterialModal() {
+            document.getElementById('customMaterialModal').classList.remove('active');
+        }
+
+        function saveCustomMaterial() {
+            const prefix = document.getElementById('customMaterialTargetPrefix').value;
+            const index = document.getElementById('customMaterialTargetIndex').value;
+            
+            function setOrMakeHidden(name, val) {
+                let el = document.getElementById(name);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden'; el.name = name; el.id = name;
+                    const blk = document.getElementById(`block_${index}`);
+                    if (blk) blk.appendChild(el);
+                }
+                el.value = val;
+            }
+
+            setOrMakeHidden(`${prefix}OtherName_${index}`, document.getElementById('modalOtherName').value);
+            setOrMakeHidden(`${prefix}YM_${index}`, document.getElementById('modalYM').value);
+            setOrMakeHidden(`${prefix}PR_${index}`, document.getElementById('modalPR').value);
+            setOrMakeHidden(`${prefix}Allowable_${index}`, document.getElementById('modalAllowable').value);
+            setOrMakeHidden(`${prefix}Yield_${index}`, document.getElementById('modalYield').value);
+            setOrMakeHidden(`${prefix}UTS_${index}`, document.getElementById('modalUTS').value);
+            setOrMakeHidden(`${prefix}Conductivity_${index}`, document.getElementById('modalConductivity').value);
+            setOrMakeHidden(`${prefix}ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
+            setOrMakeHidden(`${prefix}Density_${index}`, '0'); // Custom material skips Density
+            
+            closeCustomMaterialModal();
+        }
+
+        async function fetchMaterialData() {
+            try {
+                let res = await fetch('/material.json');
+                if(!res.ok) res = await fetch('material.json');
+                if(res.ok) {
+                    materialLibrary = await res.json();
+                    const num = parseInt(document.getElementById('numAnalyses')?.value) || 1;
+                    for (let i = 1; i <= num; i++) {
+                        recalculateAllMaterials(i);
+                    }
+                }
+            } catch (e) {
+                console.log("No local material.json found or fetch error.");
+            }
+        }
+
+        function searchMaterial(inputEl, i) {
+            let control = inputEl.closest('.input-control');
+            let list = control.querySelector('.autocomplete-list');
+            if(!list) {
+                list = document.createElement('div');
+                list.className = 'autocomplete-list';
+                control.appendChild(list);
+            }
+            
+            const q = inputEl.value.toLowerCase().replace(/[\s\-_]/g, "");
+            if(!q) { list.style.display = 'none'; return; }
+            
+            let matches = materialLibrary.filter(m => m.Name && m.Name.toLowerCase().replace(/[\s\-_]/g, "").includes(q)).slice(0, 5);
+            
+            if ("other material".includes(q)) {
+                matches.push({ Name: "other material" });
+            }
+
+            if(matches.length > 0) {
+                list.innerHTML = matches.map(m => `<div class="autocomplete-item" onmousedown="selectMaterial('${m.Name}', '${inputEl.id}', ${i})">${m.Name}</div>`).join('');
+                list.style.display = 'block';
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function selectMaterial(matName, inputId, i) {
+            const el = document.getElementById(inputId);
+            el.value = matName;
+            closeLists();
+            
+            if(matName !== "other material") {
+                autoFillProperties(matName, inputId, i);
+                evaluateDependencies(i);
+            } else {
+                evaluateDependencies(i);
+                
+                let prefix = "";
+                if (inputId.includes("Shell")) prefix = "Shell";
+                else if (inputId.includes("Nozzle")) prefix = "Nozzle";
+                else if (inputId.includes("Pad")) prefix = "Pad";
+                
+                openCustomMaterialModal(prefix, i);
+            }
+        }
+
+        function closeLists() {
+            document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display = 'none');
+        }
+
+        function interpolateGeneric(temps, vals, targetTemp) {
+            if(!temps || !vals || temps.length === 0) return null;
+            if(targetTemp <= temps[0]) return vals[0];
+            if(targetTemp >= temps[temps.length-1]) return vals[vals.length-1];
+            for(let j=0; j<temps.length-1; j++) {
+                if(targetTemp >= temps[j] && targetTemp <= temps[j+1]) {
+                    const t1 = temps[j], t2 = temps[j+1];
+                    const v1 = vals[j], v2 = vals[j+1];
+                    return v1 + ((targetTemp - t1) / (t2 - t1)) * (v2 - v1);
+                }
+            }
+            return null;
+        }
+
+        function autoFillProperties(matName, inputId, i) {
+            if (!matName || matName.toLowerCase().trim() === 'other material') return;
+            const mat = materialLibrary.find(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+            if(!mat) return;
+            
+            const temp = parseFloat(document.getElementById(`DesignTemp_${i}`)?.value) || 20;
+            let prefix = "";
+            if (inputId.includes("Shell")) prefix = "Shell";
+            else if (inputId.includes("Nozzle")) prefix = "Nozzle";
+            else if (inputId.includes("Pad")) prefix = "Pad";
+            if (!prefix) return;
+
+            function ensureElement(name, def) {
+                let el = document.getElementById(name);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden'; el.name = name; el.id = name; el.value = def;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
+
+            const allowEl = document.getElementById(`${prefix}Allowable_${i}`);
+            const yieldEl = document.getElementById(`${prefix}Yield_${i}`);
+            const utsEl = document.getElementById(`${prefix}UTS_${i}`);
+            const ymEl = document.getElementById(`${prefix}YM_${i}`);
+            const prEl = document.getElementById(`${prefix}PR_${i}`);
+            const condEl = ensureElement(`${prefix}Conductivity_${i}`, prefix==='Nozzle'?'52':'48');
+            const cteEl = ensureElement(`${prefix}ThermalExp_${i}`, '12');
+            const densityEl = ensureElement(`${prefix}Density_${i}`, '7850');
+
+            const phys = mat.PhysicalProperties || mat.Properties || {};
+            const mech = mat.MechanicalProperties || {};
+
+            // 1. Allowable Stress
+            if (mech.AllowableStress && allowEl) {
+                let aData = mech.AllowableStress;
+                let val = interpolateGeneric(aData.Temperature?.Values, aData.Stress?.Values, temp);
+                if (val !== null) {
+                    allowEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}All_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            // 2. Yield Stress
+            if (yieldEl) {
+                let val = null;
+                if (mech.Yield_Stress) {
+                    let yData = mech.Yield_Stress;
+                    let yVals = yData.YieldStrength ? yData.YieldStrength.Values : (yData.TensileStrength ? yData.TensileStrength.Values : null);
+                    val = interpolateGeneric(yData.Temperature?.Values, yVals, temp);
+                } else if (mech.MinimumYieldStrength) {
+                    val = mech.MinimumYieldStrength.Value;
+                }
+                if (val !== null) {
+                    yieldEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}Yld_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            // 3. UTS / Tensile Strength
+            if (utsEl) {
+                let val = null;
+                let uData = mech.TensileStrength_TableU;
+                if (Array.isArray(uData)) uData = uData[0];
+                if (uData && uData.Temperature && uData.TensileStrength) {
+                    val = interpolateGeneric(uData.Temperature.Values, uData.TensileStrength.Values, temp);
+                } else if (mech.MinimumTensileStrength) {
+                    val = mech.MinimumTensileStrength.Value;
+                }
+                if (val !== null) {
+                    utsEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}UTS_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            // 4. Young's Modulus & Poisson's Ratio (temperature-dependent from IsotropicElasticity)
+            if (phys.IsotropicElasticity) {
+                const iso = phys.IsotropicElasticity;
+                const tVals = iso.Temperature?.Values;
+                const eVals = iso.YoungsModulus?.Values;
+                const prVals = iso.PoissonsRatio?.Values;
+
+                if (tVals && eVals) {
+                    let eVal = interpolateGeneric(tVals, eVals, temp);
+                    if (eVal !== null) {
+                        if (eVal < 1000) eVal = eVal * 1000.0;
+                        if (ymEl) ymEl.value = Math.round(eVal);
+                        const popYm = document.getElementById(`pop_${prefix}YM_${i}`);
+                        if (popYm) popYm.value = Math.round(eVal);
+                    }
+                }
+                if (tVals && prVals) {
+                    let prVal = interpolateGeneric(tVals, prVals, temp);
+                    if (prVal !== null) {
+                        if (prEl) prEl.value = prVal.toFixed(3);
+                        const popPr = document.getElementById(`pop_${prefix}PR_${i}`);
+                        if (popPr) popPr.value = prVal.toFixed(3);
+                    }
+                }
+            }
+
+            // 5. Thermal Conductivity
+            if (phys.ThermalConductivity) {
+                const tc = phys.ThermalConductivity;
+                let kVal = null;
+                if (tc.Temperature && (tc.ThermalConductivity || tc.Conductivity)) {
+                    const cVals = tc.ThermalConductivity ? tc.ThermalConductivity.Values : tc.Conductivity.Values;
+                    kVal = interpolateGeneric(tc.Temperature.Values, cVals, temp);
+                } else if (tc.Value !== undefined) {
+                    kVal = tc.Value;
+                }
+                if (kVal !== null) {
+                    if (condEl) condEl.value = kVal.toFixed(1);
+                    const popCond = document.getElementById(`pop_${prefix}Cond_${i}`);
+                    if (popCond) popCond.value = kVal.toFixed(1);
+                }
+            }
+
+            // 6. Coefficient of Thermal Expansion (CTE)
+            const cteObj = phys.CoefficientOfThermalExpansion || phys.ThermalExpansion;
+            if (cteObj) {
+                let cteVal = null;
+                if (cteObj.Temperature && (cteObj.CTE || cteObj.ThermalExpansion || cteObj.Values)) {
+                    const cVals = cteObj.CTE ? cteObj.CTE.Values : (cteObj.ThermalExpansion ? cteObj.ThermalExpansion.Values : cteObj.Values);
+                    cteVal = interpolateGeneric(cteObj.Temperature.Values, cVals, temp);
+                } else if (cteObj.Value !== undefined) {
+                    cteVal = cteObj.Value;
+                }
+                if (cteVal !== null) {
+                    if (cteVal < 0.001) cteVal = cteVal * 1e6;
+                    if (cteEl) cteEl.value = cteVal.toFixed(2);
+                    const popCte = document.getElementById(`pop_${prefix}CTE_${i}`);
+                    if (popCte) popCte.value = cteVal.toFixed(2);
+                }
+            }
+
+            // 7. Density
+            if (phys.Density && phys.Density.Value) {
+                const dens = parseFloat(phys.Density.Value) || 7850;
+                if (densityEl) densityEl.value = dens;
+                const popDens = document.getElementById(`pop_${prefix}Dens_${i}`);
+                if (popDens) popDens.value = dens;
+            } else if (densityEl) {
+                densityEl.value = 0;
+            }
+        }
+
+        function recalculateAllMaterials(i) {
+            const shellMat = document.getElementById(`ShellMaterial_${i}`)?.value;
+            const nozzleMat = document.getElementById(`NozzleMaterial_${i}`)?.value;
+            const padMat = document.getElementById(`PadMaterial_${i}`)?.value;
+            const padReq = document.getElementById(`PadRequired_${i}`)?.value;
+
+            if(shellMat && shellMat !== "other material") autoFillProperties(shellMat, `ShellMaterial_${i}`, i);
+            if(nozzleMat && nozzleMat !== "other material") autoFillProperties(nozzleMat, `NozzleMaterial_${i}`, i);
+            if(padReq === 'Yes' && padMat && padMat !== "other material") autoFillProperties(padMat, `PadMaterial_${i}`, i);
+        }
+
+        function interpolateValue(dataObj, targetTemp) {
+            const temps = dataObj.Temperature.Values;
+            const stresses = dataObj.Stress.Values;
+            return interpolateGeneric(temps, stresses, targetTemp);
+        }
+
+        function switchAnalysis(type) {
+            currentAnalysis = type;
+            document.getElementById('btn-shell').classList.remove('active');
+            document.getElementById('btn-head').classList.remove('active');
+            document.getElementById(`btn-${type}`).classList.add('active');
+            
+            document.getElementById('main_title').innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> NOVA Engine - ${type === 'shell' ? 'Shell Nozzle' : 'Vessel Head'}`;
+
+            if (type === 'head') {
+                document.getElementById('forms-container').innerHTML = '<h2 style="color: red; text-align: center; margin-top: 50px; font-weight: 800; letter-spacing: 2px;">IN FUTURE DEVELOPE</h2>';
+                document.getElementById('batchCountContainer').classList.add('hidden');
+            } else {
+                toggleBatchMode();
+            }
+        }
+
+        async function submitAnalysis() {
+            if (currentAnalysis === 'head') {
+                alert("Vessel Head analysis is in future development.");
+                return;
+            }
+            const btn = document.querySelector('.btn-submit');
+            const originalText = btn.innerText;
+            btn.innerText = "Deploying...";
+            btn.disabled = true;
+
+            const userStr = localStorage.getItem('nova_user');
+            if (!userStr) {
+                alert("Authentication Error: Please log in from the dashboard first.");
+                window.location.href = '/'; 
+                return;
+            }
+            
+            const user = JSON.parse(userStr);
+
+            const isBatch = document.getElementById('batchToggle').checked;
+            const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
+            let payloadArr = [];
+
+            for(let i=1; i<=total; i++) {
+                const payload = { AnalysisType: currentAnalysis, AnalysisID: i };
+                const block = document.getElementById(`block_${i}`);
+                if(!block) continue;
+                
+                block.querySelectorAll('input, select').forEach(el => {
+                    const group = el.closest('.form-group');
+                    // Extract values from material, thermal, and solver fields which may be hidden
+                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp") || el.name.includes("Density") || el.name.includes("LimitLoadModel") || el.name.includes("LocalFailureMethod"));
+                    
+                    if (el.name && (isCustomField || (group && !group.classList.contains('hidden')))) {
+                        let cleanName = el.name.replace(`_${i}`, '');
+                        payload[cleanName] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
+                    }
+                });
+
+                // If Pad is NOT required, remove pad properties so no pad geometry or material is created
+                if (payload.PadRequired !== 'Yes') {
+                    payload.PadRequired = 'No';
+                    delete payload.PadMaterial;
+                    delete payload.PadOD;
+                    delete payload.PadThick;
+                    delete payload.PadOtherName;
+                    delete payload.PadYM;
+                    delete payload.PadPR;
+                    delete payload.PadAllowable;
+                    delete payload.PadYield;
+                    delete payload.PadUTS;
+                    delete payload.PadConductivity;
+                    delete payload.PadThermalExp;
+                    delete payload.PadDensity;
+                }
+
+                payloadArr.push(payload);
+            }
+
+            const jobName = payloadArr[0].AnalysisFolder ? payloadArr[0].AnalysisFolder.split('\\').pop() : (currentAnalysis === 'shell' ? 'Shell Nozzle Analysis' : 'Vessel Head Nozzle');
+            const jobIdDisplay = "NV-" + Math.floor(1000 + Math.random() * 9000);
+            
+            const newJob = {
+                user_id: user.id,
+                job_id_display: jobIdDisplay,
+                name: jobName,
+                type: 'Nozzle Analysis',
+                status: 'Pending',
+                price: 6000,
+                geometry_data: {
+                    runs: payloadArr,
+                    inputMethod: 'manual',
+                    ui_code_edition: '2025',
+                    shellPressure: payloadArr[0].InternalPressure || 'N/A',
+                    shellTemp: payloadArr[0].DesignTemp || 'N/A',
+                    upset_selected: 'No'
+                },
+                json_payload: payloadArr
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": API_KEY,
+                        "Authorization": `Bearer ${API_KEY}`,
+                        "Prefer": "return=representation"
+                    },
+                    body: JSON.stringify(newJob)
+                });
+                
+                if(res.ok) {
+                    window.location.href = '/'; 
+                } else {
+                    const errData = await res.json();
+                    alert("Submission Failed: " + (errData.message || "Database Error"));
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } catch(e) {
+                alert("Network Error.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function openSearchModal() { document.getElementById('searchModal').classList.add('active'); }
+        function closeSearchModal() { document.getElementById('searchModal').classList.remove('active'); }
+        
+        async function searchJobs() {
+            const query = document.getElementById('searchInput').value.trim();
+            const results = document.getElementById('jobResults');
+            if(!query) return;
+            results.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Searching registry...</p>';
+            
+            try {
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
+                const filter = isUUID ? `id.eq.${query}` : `job_id_display.eq.${query}`;
+                const res = await fetch(`${API_URL}?select=id,job_id_display,status,created_at&${filter}`, {
+                    headers: { "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` }
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.length === 0) { results.innerHTML = '<p style="color:#f59e0b; font-size:0.85rem;">No records found.</p>'; return; }
+                    results.innerHTML = data.map(j => `<div style="background:rgba(255,255,255,0.6); padding:12px 14px; border-radius:8px; margin-bottom:10px; border:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;"><div style="font-family:monospace; color:var(--text-muted); font-size:0.85rem;">${j.job_id_display || j.id.substring(0,8)}</div><div style="font-weight:700; font-size:0.8rem; letter-spacing:1px; color:${j.status==='Completed'?'#10b981':(j.status==='Pending'?'#f59e0b':'#3b82f6')}">${j.status.toUpperCase()}</div></div>`).join('');
+                } else {
+                    results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Error retrieving data.</p>';
+                }
+            } catch(e) {
+                results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Connection error.</p>';
+            }
+        }
+
+        window.onload = () => {
+            fetchMaterialData();
+            renderForms();
+        };
+    </script>
+</body>
+</html>
