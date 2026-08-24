@@ -414,6 +414,14 @@
                         <span class="addon" style="color:#b45309;">×10⁻⁶/°C</span>
                     </div>
                 </div>
+
+                <div class="custom-mat-field" id="modalGrpDensity">
+                    <label class="custom-mat-label" style="color:#2563eb;">Density</label>
+                    <div class="input-addon-group" style="border-color:rgba(59,130,246,0.35);">
+                        <input type="number" class="glass-input" id="modalDensity" value="7850">
+                        <span class="addon" style="color:#2563eb;">kg/m³</span>
+                    </div>
+                </div>
             </div>
 
             <div style="display:flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06);">
@@ -1110,6 +1118,7 @@
             document.getElementById('modalUTS').value = document.getElementById(`${prefix}UTS_${index}`)?.value || '485';
             document.getElementById('modalConductivity').value = document.getElementById(`${prefix}Conductivity_${index}`)?.value || (prefix === 'Nozzle' ? '52' : '48');
             document.getElementById('modalThermalExp').value = document.getElementById(`${prefix}ThermalExp_${index}`)?.value || '12';
+            document.getElementById('modalDensity').value = document.getElementById(`${prefix}Density_${index}`)?.value || '7850';
 
             // Show/Hide fields based on analysis type and thermal condition
             const showAllowable = analysisType === 'Elastic Analysis';
@@ -1121,6 +1130,7 @@
             document.getElementById('modalGrpUTS').style.display = showUTS ? 'flex' : 'none';
             document.getElementById('modalGrpConductivity').style.display = showThermal ? 'flex' : 'none';
             document.getElementById('modalGrpThermalExp').style.display = showThermal ? 'flex' : 'none';
+            document.getElementById('modalGrpDensity').style.display = 'flex';
 
             document.getElementById('customMaterialModal').classList.add('active');
         }
@@ -1152,7 +1162,7 @@
             setOrMakeHidden(`${prefix}UTS_${index}`, document.getElementById('modalUTS').value);
             setOrMakeHidden(`${prefix}Conductivity_${index}`, document.getElementById('modalConductivity').value);
             setOrMakeHidden(`${prefix}ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
-            setOrMakeHidden(`${prefix}Density_${index}`, '0'); // Custom material skips Density
+            setOrMakeHidden(`${prefix}Density_${index}`, document.getElementById('modalDensity').value);
             
             closeCustomMaterialModal();
         }
