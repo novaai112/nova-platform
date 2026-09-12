@@ -1168,15 +1168,23 @@
 
             const matCardsHtml = prefixes.map(prefix => {
                 const matName  = document.getElementById(`${prefix}_Material_${i}`)?.value || '—';
-                const isCustom = matName.toLowerCase().trim() === 'other material';
-                const ym    = document.getElementById(`${prefix}_YM_${i}`)?.value          || '200000';
-                const pr    = document.getElementById(`${prefix}_PR_${i}`)?.value          || '0.3';
-                const allow = document.getElementById(`${prefix}_Allowable_${i}`)?.value   || '138';
-                const yld   = document.getElementById(`${prefix}_Yield_${i}`)?.value       || '260';
-                const uts   = document.getElementById(`${prefix}_UTS_${i}`)?.value         || '485';
-                const cond  = document.getElementById(`${prefix}_Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
-                const cte   = document.getElementById(`${prefix}_ThermalExp_${i}`)?.value  || '12';
-                const dens  = document.getElementById(`${prefix}_Density_${i}`)?.value     || (isCustom ? '0' : '7850');
+                const isCustom = matName.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+                const ymEl = document.getElementById(`${prefix}_YM_${i}`);
+                const ym = ymEl ? ymEl.value : '200000';
+                const prEl = document.getElementById(`${prefix}_PR_${i}`);
+                const pr = prEl ? prEl.value : '0.3';
+                const allowEl = document.getElementById(`${prefix}_Allowable_${i}`);
+                const allow = allowEl ? allowEl.value : '138';
+                const yldEl = document.getElementById(`${prefix}_Yield_${i}`);
+                const yld = yldEl ? yldEl.value : '260';
+                const utsEl = document.getElementById(`${prefix}_UTS_${i}`);
+                const uts = utsEl ? utsEl.value : '485';
+                const condEl = document.getElementById(`${prefix}_Conductivity_${i}`);
+                const cond = condEl ? condEl.value : (prefix==='Nozzle'?'52':'48');
+                const cteEl = document.getElementById(`${prefix}_ThermalExp_${i}`);
+                const cte = cteEl ? cteEl.value : '12';
+                const densEl = document.getElementById(`${prefix}_Density_${i}`);
+                const dens = densEl ? densEl.value : (isCustom ? '0' : '7850');
 
                 let hardeningBadge = '';
                 if (isLimitLoad && !isLimitLoadEP) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.14);color:#4338ca;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear</span>`;
@@ -1230,7 +1238,11 @@
                     Pad: 'background:#ecfdf5; color:#065f46; border-bottom:1.5px solid #d1fae5;'
                 };
                 const matBg  = isCustom ? '#fef3c7' : '#f8fafc';
-                const matLbl = isCustom ? `<span style="color:#b45309; font-weight:900;">${matName} ✎</span>` : `<span style="color:#0f172a; font-weight:900;">${matName}</span>`;
+                const popMatInputId = `pop_${prefix}_Material_${i}`;
+                const matLbl = `<div style="position:relative;" class="input-control"><input type="text" id="${popMatInputId}" class="ti" style="font-weight:900; color:${isCustom ? '#b45309' : '#0f172a'}; width:100%; background:transparent; border:none; outline:none; font-size:0.95rem; padding:0;" value="${matName}" autocomplete="off" oninput="syncPopMatName('${prefix}', ${i}, this.value); searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)"></div>`;
+                
+                let notFoundText = `<div id="warn_${prefix}_${i}" style="color:#ef4444; font-size:0.75rem; font-weight:700; margin-top:6px; line-height:1.2; display:${(isCustom && matName.trim() !== '' && matName.toLowerCase().trim() !== 'other material' && matName.trim() !== '—') ? 'block' : 'none'};">⚠️ "<span id="warn_name_${prefix}_${i}">${matName}</span>" is not in Database. Required to fill.</div>`;
+
                 return `<div class="mat-rect-card">
                     <div class="mat-rect-header" style="${headerStyles[prefix] || ''}">
                         <span class="rdot ${dotCls[prefix]}"></span>
@@ -1238,7 +1250,7 @@
                         ${hardeningBadge}
                     </div>
                     <div style="padding:0;">
-                        <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:800;background:${matBg};border-bottom:1px solid #e2e8f0;">${matLbl}</div>
+                        <div id="mat_bg_${prefix}_${i}" style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:800;background:${matBg};border-bottom:1px solid #e2e8f0;">${matLbl}${notFoundText}</div>
                         <table class="mat-tbl"><tbody>${rows}</tbody></table>
                     </div>
                 </div>`;
@@ -1287,7 +1299,11 @@
             document.getElementById('matTableContainer').innerHTML = `
                 <div class="mat-popup-header">
                     <div class="mat-popup-title">Material Properties <span class="mpbadge">${badge}</span></div>
-                    <button class="mat-popup-close" onclick="closeMatTablePopup()">&#10005;</button>
+                    <div style="display:flex; align-items:center; gap: 8px;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #475569;">Design Temp (°C):</label>
+                        <input type="number" id="pop_DesignTemp_${i}" class="glass-input" style="width: 80px; padding: 4px 8px;" value="${tDes}" onchange="syncDesignTemp(${i}, this.value)">
+                        <button class="mat-popup-close" onclick="closeMatTablePopup()" style="margin-left: 10px;">&#10005;</button>
+                    </div>
                 </div>
                 <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1.5px solid #f1f5f9;flex-wrap:wrap;gap:1rem;">
@@ -1295,7 +1311,7 @@
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                         Real-time properties sync directly with ASME material.json &amp; ANSYS solver
                     </span>
-                    <button onclick="closeMatTablePopup()" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:white;border:none;padding:0.65rem 2.4rem;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s;">Done</button>
+                    <button onclick="validateAndCloseMatPopup(${i})" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:white;border:none;padding:0.65rem 2.4rem;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s;">Done</button>
                 </div>`;
 
             document.getElementById('matTablePopup').classList.add('active');
@@ -1303,6 +1319,107 @@
 
         function closeMatTablePopup() {
             document.getElementById('matTablePopup').classList.remove('active');
+        }
+
+        function syncPopMatName(prefix, i, val) {
+            const el = document.getElementById(`${prefix}_Material_${i}`);
+            if (el) el.value = val;
+            
+            const hiddenEl = document.getElementById(`${prefix}_OtherName_${i}`);
+            if(hiddenEl) hiddenEl.value = val;
+
+            recalculateAllMaterials(i);
+
+            const isCustom = val.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === val.toLowerCase().trim());
+            const warnDiv = document.getElementById(`warn_${prefix}_${i}`);
+            const warnSpan = document.getElementById(`warn_name_${prefix}_${i}`);
+            const bgDiv = document.getElementById(`mat_bg_${prefix}_${i}`);
+            const inputEl = document.getElementById(`pop_${prefix}_Material_${i}`);
+
+            if (warnDiv && warnSpan && bgDiv && inputEl) {
+                if (isCustom && val.trim() !== '' && val.toLowerCase().trim() !== 'other material' && val.trim() !== '—') {
+                    warnSpan.innerText = val;
+                    warnDiv.style.display = 'block';
+                    bgDiv.style.background = '#fef3c7';
+                    inputEl.style.color = '#b45309';
+                } else {
+                    warnDiv.style.display = 'none';
+                    bgDiv.style.background = isCustom ? '#fef3c7' : '#f8fafc';
+                    inputEl.style.color = isCustom ? '#b45309' : '#0f172a';
+                }
+            }
+        }
+
+        function syncDesignTemp(i, val) {
+            const el = document.getElementById(`DesignTemp_${i}`);
+            if(el) el.value = val;
+            recalculateAllMaterials(i);
+            openMatTablePopup(i);
+        }
+
+        function validateAndCloseMatPopup(i) {
+            const padReq = document.getElementById(`pad_${i}`)?.value || 'No';
+            const prefixes = ['Shell', 'Nozzle'];
+            if (padReq.toLowerCase() === 'yes' || padReq.toLowerCase() === 'true') prefixes.push('Pad');
+            
+            const analysisType = document.getElementById(`Analysis_Type_${i}`)?.value || 'Elastic Analysis';
+            const opCondition = document.getElementById(`Thermal_Required_${i}`)?.value || 'No';
+            const showThermal = opCondition === 'Yes';
+            const showYield = ['Limit-Load Analysis', 'Elastic-Plastic Analysis'].includes(analysisType);
+            const isLimitLoad = analysisType === 'Limit-Load Analysis';
+            const isEP = analysisType === 'Elastic-Plastic Analysis';
+            const matModelVal = isLimitLoad ? (document.getElementById(`Material_Type_${i}`)?.value || 'Elastic') : '';
+            const isLimitLoadEP = isLimitLoad && matModelVal.toLowerCase().includes('plastic');
+            const showUTS = isEP || isLimitLoadEP;
+            const showAllowable = analysisType === 'Elastic Analysis';
+
+            let hasError = false;
+            let errorMsg = "Required to fill this material is not in Database:\n";
+
+            for (let prefix of prefixes) {
+                const matName = document.getElementById(`${prefix}_Material_${i}`)?.value || '';
+                const isCustom = matName.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+
+                if (isCustom) {
+                    const fields = [
+                        { id: `pop_${prefix}YM_${i}`, name: "Young's Modulus", required: true },
+                        { id: `pop_${prefix}PR_${i}`, name: "Poisson's Ratio", required: true },
+                        { id: `pop_${prefix}All_${i}`, name: "Allowable Stress", required: showAllowable },
+                        { id: `pop_${prefix}Yld_${i}`, name: "Yield Stress", required: showYield },
+                        { id: `pop_${prefix}UTS_${i}`, name: "Ultimate Tensile Stress", required: showUTS },
+                        { id: `pop_${prefix}Cond_${i}`, name: "Thermal Conductivity", required: showThermal },
+                        { id: `pop_${prefix}CTE_${i}`, name: "Thermal Expansion (CTE)", required: showThermal },
+                        { id: `pop_${prefix}Dens_${i}`, name: "Density", required: true }
+                    ];
+
+                    let missing = [];
+                    for (let f of fields) {
+                        if (!f.required) continue;
+                        const el = document.getElementById(f.id);
+                        if (el) {
+                            if (!el.value) {
+                                missing.push(f.name);
+                                el.style.borderBottom = '2px solid #ef4444';
+                                el.parentElement.style.borderColor = '#ef4444';
+                            } else {
+                                el.style.borderBottom = 'none';
+                                el.parentElement.style.borderColor = '';
+                            }
+                        }
+                    }
+
+                    if (missing.length > 0) {
+                        hasError = true;
+                        errorMsg += `\n- ${prefix} (${matName || 'Custom'}): missing ${missing.join(', ')}`;
+                    }
+                }
+            }
+
+            if (hasError) {
+                alert(errorMsg);
+            } else {
+                closeMatTablePopup();
+            }
         }
 
         function syncPop(fieldBase, i, popId) {
@@ -1434,21 +1551,35 @@
 
         function selectMaterial(matName, inputId, i) {
             const el = document.getElementById(inputId);
-            el.value = matName;
+            if(el) el.value = matName;
             closeLists();
             
+            let mainInputId = inputId;
+            let isPopup = false;
+            if (inputId.startsWith('pop_')) {
+                mainInputId = inputId.replace('pop_', '');
+                const mainEl = document.getElementById(mainInputId);
+                if (mainEl) mainEl.value = matName;
+                isPopup = true;
+            }
+
             if(matName !== "other material") {
-                autoFillProperties(matName, inputId, i);
+                autoFillProperties(matName, mainInputId, i);
                 evaluateDependencies(i);
+                if (isPopup) openMatTablePopup(i);
             } else {
                 evaluateDependencies(i);
                 
                 let prefix = "";
-                if (inputId.includes("Shell")) prefix = "Shell";
-                else if (inputId.includes("Nozzle")) prefix = "Nozzle";
-                else if (inputId.includes("Pad")) prefix = "Pad";
+                if (mainInputId.includes("Shell")) prefix = "Shell";
+                else if (mainInputId.includes("Nozzle")) prefix = "Nozzle";
+                else if (mainInputId.includes("Pad")) prefix = "Pad";
                 
-                openCustomMaterialModal(prefix, i);
+                if (!isPopup) {
+                    openCustomMaterialModal(prefix, i);
+                } else {
+                    openMatTablePopup(i);
+                }
             }
         }
 
@@ -1471,11 +1602,6 @@
         }
 
         function autoFillProperties(matName, inputId, i) {
-            if (!matName || matName.toLowerCase().trim() === 'other material') return;
-            const mat = materialLibrary.find(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
-            if(!mat) return;
-            
-            const temp = parseFloat(document.getElementById(`DesignTemp_${i}`)?.value) || 20;
             let prefix = "";
             if (inputId.includes("Shell")) prefix = "Shell";
             else if (inputId.includes("Nozzle")) prefix = "Nozzle";
@@ -1493,15 +1619,49 @@
                 return el;
             }
 
-            const allowEl = ensureElement(`${prefix}Allowable_${i}`, '138');
-            const yieldEl = ensureElement(`${prefix}Yield_${i}`, '260');
-            const utsEl = ensureElement(`${prefix}UTS_${i}`, '485');
-            const ymEl = ensureElement(`${prefix}YM_${i}`, '200000');
-            const prEl = ensureElement(`${prefix}PR_${i}`, '0.3');
-            const condEl = ensureElement(`${prefix}Conductivity_${i}`, prefix==='Nozzle'?'52':'48');
-            const cteEl = ensureElement(`${prefix}ThermalExp_${i}`, '12');
-            const densityEl = ensureElement(`${prefix}Density_${i}`, '7850');
+            const allowEl = ensureElement(`${prefix}_Allowable_${i}`, '138');
+            const yieldEl = ensureElement(`${prefix}_Yield_${i}`, '260');
+            const utsEl = ensureElement(`${prefix}_UTS_${i}`, '485');
+            const ymEl = ensureElement(`${prefix}_YM_${i}`, '200000');
+            const prEl = ensureElement(`${prefix}_PR_${i}`, '0.3');
+            const condEl = ensureElement(`${prefix}_Conductivity_${i}`, prefix==='Nozzle'?'52':'48');
+            const cteEl = ensureElement(`${prefix}_ThermalExp_${i}`, '12');
+            const densityEl = ensureElement(`${prefix}_Density_${i}`, '7850');
 
+            const isCustom = !matName || matName.toLowerCase().trim() === 'other material';
+            const mat = isCustom ? null : materialLibrary.find(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+            
+            if (!mat) {
+                // If not found in database, clear all properties
+                allowEl.value = "";
+                yieldEl.value = "";
+                utsEl.value = "";
+                ymEl.value = "";
+                prEl.value = "";
+                condEl.value = "";
+                cteEl.value = "";
+                densityEl.value = "";
+
+                const popAll = document.getElementById(`pop_${prefix}All_${i}`);
+                if (popAll) popAll.value = "";
+                const popYld = document.getElementById(`pop_${prefix}Yld_${i}`);
+                if (popYld) popYld.value = "";
+                const popUTS = document.getElementById(`pop_${prefix}UTS_${i}`);
+                if (popUTS) popUTS.value = "";
+                const popYM = document.getElementById(`pop_${prefix}YM_${i}`);
+                if (popYM) popYM.value = "";
+                const popPR = document.getElementById(`pop_${prefix}PR_${i}`);
+                if (popPR) popPR.value = "";
+                const popCond = document.getElementById(`pop_${prefix}Cond_${i}`);
+                if (popCond) popCond.value = "";
+                const popCTE = document.getElementById(`pop_${prefix}CTE_${i}`);
+                if (popCTE) popCTE.value = "";
+                const popDens = document.getElementById(`pop_${prefix}Dens_${i}`);
+                if (popDens) popDens.value = "";
+                return;
+            }
+
+            const temp = parseFloat(document.getElementById(`DesignTemp_${i}`)?.value) || 20;
             const phys = mat.PhysicalProperties || mat.Properties || {};
             const mech = mat.MechanicalProperties || {};
 
@@ -1621,9 +1781,9 @@
             const padMat = document.getElementById(`Pad_Material_${i}`)?.value;
             const padReq = document.getElementById(`pad_${i}`)?.value;
 
-            if(shellMat && shellMat !== "other material") autoFillProperties(shellMat, `ShellMaterial_${i}`, i);
-            if(nozzleMat && nozzleMat !== "other material") autoFillProperties(nozzleMat, `NozzleMaterial_${i}`, i);
-            if((padReq === 'Yes' || padReq === 'True') && padMat && padMat !== "other material") autoFillProperties(padMat, `PadMaterial_${i}`, i);
+            if(shellMat) autoFillProperties(shellMat, `ShellMaterial_${i}`, i);
+            if(nozzleMat) autoFillProperties(nozzleMat, `NozzleMaterial_${i}`, i);
+            if((padReq === 'Yes' || padReq === 'True') && padMat) autoFillProperties(padMat, `PadMaterial_${i}`, i);
         }
 
         function switchAnalysis(type) {
