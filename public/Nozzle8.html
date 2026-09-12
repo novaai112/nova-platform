@@ -366,24 +366,24 @@
                     <div class="glass-card">
                         <div class="card-header">1. Project & Conditions</div>
                         <div class="card-body">
-                            <div class="form-group" id="grp_AnalysisFolder_${i}">
+                            <div class="form-group" id="grp_File_Path_${i}">
                                 <label class="form-label">Analysis Folder</label>
-                                <div class="input-control"><input type="text" class="glass-input" name="AnalysisFolder_${i}" id="AnalysisFolder_${i}" value="D:\\Test\\Shell_${i}"></div>
+                                <div class="input-control"><input type="text" class="glass-input" name="File_Path_${i}" id="File_Path_${i}" value="D:\\Test\\Shell_${i}"></div>
                             </div>
-                            <div class="form-group" id="grp_TypeOfAnalysis_${i}">
+                            <div class="form-group" id="grp_Analysis_Type_${i}">
                                 <label class="form-label">Analysis Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="TypeOfAnalysis_${i}" id="TypeOfAnalysis_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="Analysis_Type_${i}" id="Analysis_Type_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Elastic Analysis">Elastic Analysis</option>
                                         <option value="Limit-Load Analysis">Limit-Load Analysis</option>
                                         <option value="Elastic-Plastic Analysis">Elastic-Plastic Analysis</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_LimitLoadModel_${i}">
+                            <div class="form-group hidden" id="grp_Material_Type_${i}">
                                 <label class="form-label">Material Model</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="LimitLoadModel_${i}" id="LimitLoadModel_${i}">
+                                    <select class="glass-select" name="Material_Type_${i}" id="Material_Type_${i}">
                                         <option value="Elastic">Elastic</option>
                                         <option value="Elastic-Plastic">Elastic-Plastic</option>
                                     </select>
@@ -395,34 +395,34 @@
                                     <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp_${i}" id="DesignTemp_${i}" value="150" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_InternalPressure_${i}">
+                            <div class="form-group" id="grp_p_${i}">
                                 <label class="form-label">Internal Pressure</label>
                                 <div class="input-control">
-                                    <div class="input-addon-group"><input type="number" class="glass-input" name="InternalPressure_${i}" id="InternalPressure_${i}" value="10"><span class="addon">MPa</span></div>
+                                    <div class="input-addon-group"><input type="number" class="glass-input" name="p_${i}" id="p_${i}" value="10"><span class="addon">MPa</span></div>
                                 </div>
                             </div>
 
                             <div class="section-label">Operating Thermal Conditions</div>
-                            <div class="form-group" id="grp_OperatingCondition_${i}">
+                            <div class="form-group" id="grp_Thermal_Required_${i}">
                                 <label class="form-label">Thermal Required</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="OperatingCondition_${i}" id="OperatingCondition_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="Thermal_Required_${i}" id="Thermal_Required_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_ShellIdHTC_${i}">
+                            <div class="form-group hidden" id="grp_shell_id_htc_${i}">
                                 <label class="form-label">Shell ID HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellIdHTC_${i}" id="ShellIdHTC_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="shell_id_htc_${i}" id="shell_id_htc_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_NozzleIdHTC_${i}">
+                            <div class="form-group hidden" id="grp_nozzle_id_htc_${i}">
                                 <label class="form-label">Nozzle ID HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleIdHTC_${i}" id="NozzleIdHTC_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="nozzle_id_htc_${i}" id="nozzle_id_htc_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_OutsideHTC_${i}">
+                            <div class="form-group hidden" id="grp_outside_id_htc_${i}">
                                 <label class="form-label">Outside Surface HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="OutsideHTC_${i}" id="OutsideHTC_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="outside_id_htc_${i}" id="outside_id_htc_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -431,55 +431,55 @@
                         <div class="card-header">2. Materials</div>
                         <div class="card-body">
                             <div class="section-label">Shell</div>
-                            <div class="form-group" id="grp_ShellMaterial_${i}">
+                            <div class="form-group" id="grp_Shell_Material_${i}">
                                 <label class="form-label">Shell Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="ShellMaterial_${i}" id="ShellMaterial_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Shell_Material_${i}" id="Shell_Material_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_ShellOtherName_${i}"><input type="hidden" name="ShellOtherName_${i}" id="ShellOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_ShellYM_${i}"><input type="hidden" name="ShellYM_${i}" id="ShellYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_ShellPR_${i}"><input type="hidden" name="ShellPR_${i}" id="ShellPR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_ShellAllowable_${i}"><input type="hidden" name="ShellAllowable_${i}" id="ShellAllowable_${i}" value="138"></div>
-                            <div class="form-group hidden" id="grp_ShellYield_${i}"><input type="hidden" name="ShellYield_${i}" id="ShellYield_${i}" value="260"></div>
-                            <div class="form-group hidden" id="grp_ShellUTS_${i}"><input type="hidden" name="ShellUTS_${i}" id="ShellUTS_${i}" value="485"></div>
+                            <div class="form-group hidden" id="grp_Shell_OtherName_${i}"><input type="hidden" name="Shell_OtherName_${i}" id="Shell_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Shell_YM_${i}"><input type="hidden" name="Shell_YM_${i}" id="Shell_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Shell_PR_${i}"><input type="hidden" name="Shell_PR_${i}" id="Shell_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Shell_Allowable_${i}"><input type="hidden" name="Shell_Allowable_${i}" id="Shell_Allowable_${i}" value="138"></div>
+                            <div class="form-group hidden" id="grp_Shell_Yield_${i}"><input type="hidden" name="Shell_Yield_${i}" id="Shell_Yield_${i}" value="260"></div>
+                            <div class="form-group hidden" id="grp_Shell_UTS_${i}"><input type="hidden" name="Shell_UTS_${i}" id="Shell_UTS_${i}" value="485"></div>
 
                             <div class="section-label">Nozzle</div>
-                            <div class="form-group" id="grp_NozzleMaterial_${i}">
+                            <div class="form-group" id="grp_Nozzle_Material_${i}">
                                 <label class="form-label">Nozzle Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="NozzleMaterial_${i}" id="NozzleMaterial_${i}" value="SA-106-Type-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Nozzle_Material_${i}" id="Nozzle_Material_${i}" value="SA-106-Type-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_NozzleOtherName_${i}"><input type="hidden" name="NozzleOtherName_${i}" id="NozzleOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_NozzleYM_${i}"><input type="hidden" name="NozzleYM_${i}" id="NozzleYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_NozzlePR_${i}"><input type="hidden" name="NozzlePR_${i}" id="NozzlePR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_NozzleAllowable_${i}"><input type="hidden" name="NozzleAllowable_${i}" id="NozzleAllowable_${i}" value="118"></div>
-                            <div class="form-group hidden" id="grp_NozzleYield_${i}"><input type="hidden" name="NozzleYield_${i}" id="NozzleYield_${i}" value="240"></div>
-                            <div class="form-group hidden" id="grp_NozzleUTS_${i}"><input type="hidden" name="NozzleUTS_${i}" id="NozzleUTS_${i}" value="415"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_OtherName_${i}"><input type="hidden" name="Nozzle_OtherName_${i}" id="Nozzle_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_YM_${i}"><input type="hidden" name="Nozzle_YM_${i}" id="Nozzle_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_PR_${i}"><input type="hidden" name="Nozzle_PR_${i}" id="Nozzle_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_Allowable_${i}"><input type="hidden" name="Nozzle_Allowable_${i}" id="Nozzle_Allowable_${i}" value="118"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_Yield_${i}"><input type="hidden" name="Nozzle_Yield_${i}" id="Nozzle_Yield_${i}" value="240"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_UTS_${i}"><input type="hidden" name="Nozzle_UTS_${i}" id="Nozzle_UTS_${i}" value="415"></div>
 
                             <div class="section-label">Reinforcement Pad</div>
-                            <div class="form-group" id="grp_PadRequired_${i}">
+                            <div class="form-group" id="grp_pad_${i}">
                                 <label class="form-label">Pad Required</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="PadRequired_${i}" id="PadRequired_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="pad_${i}" id="pad_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadMaterial_${i}">
+                            <div class="form-group hidden" id="grp_Pad_Material_${i}">
                                 <label class="form-label">Pad Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="PadMaterial_${i}" id="PadMaterial_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Pad_Material_${i}" id="Pad_Material_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadOtherName_${i}"><input type="hidden" name="PadOtherName_${i}" id="PadOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_PadYM_${i}"><input type="hidden" name="PadYM_${i}" id="PadYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_PadPR_${i}"><input type="hidden" name="PadPR_${i}" id="PadPR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_PadAllowable_${i}"><input type="hidden" name="PadAllowable_${i}" id="PadAllowable_${i}" value="138"></div>
-                            <div class="form-group hidden" id="grp_PadYield_${i}"><input type="hidden" name="PadYield_${i}" id="PadYield_${i}" value="260"></div>
-                            <div class="form-group hidden" id="grp_PadUTS_${i}"><input type="hidden" name="PadUTS_${i}" id="PadUTS_${i}" value="485"></div>
+                            <div class="form-group hidden" id="grp_Pad_OtherName_${i}"><input type="hidden" name="Pad_OtherName_${i}" id="Pad_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Pad_YM_${i}"><input type="hidden" name="Pad_YM_${i}" id="Pad_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Pad_PR_${i}"><input type="hidden" name="Pad_PR_${i}" id="Pad_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Pad_Allowable_${i}"><input type="hidden" name="Pad_Allowable_${i}" id="Pad_Allowable_${i}" value="138"></div>
+                            <div class="form-group hidden" id="grp_Pad_Yield_${i}"><input type="hidden" name="Pad_Yield_${i}" id="Pad_Yield_${i}" value="260"></div>
+                            <div class="form-group hidden" id="grp_Pad_UTS_${i}"><input type="hidden" name="Pad_UTS_${i}" id="Pad_UTS_${i}" value="485"></div>
 
                             <button type="button" class="btn-mat-popup hidden" id="btn_matpopup_${i}" onclick="openMatTablePopup(${i})">
                                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -492,21 +492,21 @@
                         <div class="card-header">3. Shell & Nozzle Geometry</div>
                         <div class="card-body">
                             <div class="section-label">Shell Dimensions</div>
-                            <div class="form-group" id="grp_ShellOD_${i}">
+                            <div class="form-group" id="grp_S_OD_${i}">
                                 <label class="form-label">Shell Outer Dia (OD)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellOD_${i}" id="ShellOD_${i}" value="2000"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_OD_${i}" id="S_OD_${i}" value="2000"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_ShellTHK_${i}">
+                            <div class="form-group" id="grp_S_THK_${i}">
                                 <label class="form-label">Shell Thickness</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellTHK_${i}" id="ShellTHK_${i}" value="50"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_THK_${i}" id="S_THK_${i}" value="50"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_ShellHeight_${i}">
+                            <div class="form-group" id="grp_S_H_${i}">
                                 <label class="form-label">Shell Height</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellHeight_${i}" id="ShellHeight_${i}" value="2000"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_H_${i}" id="S_H_${i}" value="2000"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleOffset_${i}">
+                            <div class="form-group" id="grp_N_OFF_${i}">
                                 <label class="form-label">Nozzle Offset</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOffset_${i}" id="NozzleOffset_${i}" value="0"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_OFF_${i}" id="N_OFF_${i}" value="0"><span class="addon">mm</span></div></div>
                             </div>
                             <div class="form-group" id="grp_CorrosionAllowance_${i}">
                                 <label class="form-label">Corrosion Allowance</label>
@@ -514,52 +514,52 @@
                             </div>
 
                             <div class="section-label">Nozzle & Pad Dimensions</div>
-                            <div class="form-group" id="grp_TypeOfNozzle_${i}">
+                            <div class="form-group" id="grp_N_TYPE_${i}">
                                 <label class="form-label">Nozzle Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="N_TYPE_${i}" id="N_TYPE_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Straight">Straight</option>
                                         <option value="Barrel">Barrel (SRN)</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_NozzleHeight_${i}">
+                            <div class="form-group" id="grp_N_L1_${i}">
                                 <label class="form-label">Nozzle Location (Height)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleHeight_${i}" id="NozzleHeight_${i}" value="1000"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_L1_${i}" id="N_L1_${i}" value="1000"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleOD_${i}">
+                            <div class="form-group" id="grp_N_OD_${i}">
                                 <label class="form-label">Neck OD</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOD_${i}" id="NozzleOD_${i}" value="400"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_OD_${i}" id="N_OD_${i}" value="400"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleTHK_${i}">
+                            <div class="form-group" id="grp_N_THK_${i}">
                                 <label class="form-label">Neck Thickness</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleTHK_${i}" id="NozzleTHK_${i}" value="60"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_THK_${i}" id="N_THK_${i}" value="60"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleProjection_${i}">
+                            <div class="form-group" id="grp_N_P_${i}">
                                 <label class="form-label">Nozzle Projection</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="1600"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_P_${i}" id="N_P_${i}" value="1600"><span class="addon">mm</span></div></div>
                             </div>
                             
-                            <div class="form-group hidden" id="grp_HubOD_${i}">
+                            <div class="form-group hidden" id="grp_Hub_OD_${i}">
                                 <label class="form-label">Hub OD</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD_${i}" id="HubOD_${i}" value="600"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Hub_OD_${i}" id="Hub_OD_${i}" value="600"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_HubLength_${i}">
+                            <div class="form-group hidden" id="grp_Hub_LEN_${i}">
                                 <label class="form-label">Hub Length</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubLength_${i}" id="HubLength_${i}" value="300"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Hub_LEN_${i}" id="Hub_LEN_${i}" value="300"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_TransitionLength_${i}">
+                            <div class="form-group hidden" id="grp_T_LEN_${i}">
                                 <label class="form-label">Transition Length</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength_${i}" id="TransitionLength_${i}" value="200"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="T_LEN_${i}" id="T_LEN_${i}" value="200"><span class="addon">mm</span></div></div>
                             </div>
 
-                            <div class="form-group hidden" id="grp_PadWidth_${i}">
+                            <div class="form-group hidden" id="grp_P_W_${i}">
                                 <label class="form-label">Pad Width</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth_${i}" id="PadWidth_${i}" value="75"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="P_W_${i}" id="P_W_${i}" value="75"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadTHK_${i}">
+                            <div class="form-group hidden" id="grp_P_THK_${i}">
                                 <label class="form-label">Pad Thickness</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadTHK_${i}" id="PadTHK_${i}" value="25"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="P_THK_${i}" id="P_THK_${i}" value="25"><span class="addon">mm</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -568,14 +568,14 @@
                         <div class="card-header">4. Meshing & BCS</div>
                         <div class="card-body">
                             <div class="section-label">Meshing</div>
-                            <div class="form-group" id="grp_GlobalBodySizing_${i}">
+                            <div class="form-group" id="grp_B_size_${i}">
                                 <label class="form-label">Global Body Sizing</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="GlobalBodySizing_${i}" id="GlobalBodySizing_${i}" value="50"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="B_size_${i}" id="B_size_${i}" value="50"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MeshMethod_${i}">
+                            <div class="form-group" id="grp_m_method_${i}">
                                 <label class="form-label">Mesh Method</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="MeshMethod_${i}" id="MeshMethod_${i}">
+                                    <select class="glass-select" name="m_method_${i}" id="m_method_${i}">
                                         <option value="MultiZone">MultiZone</option>
                                         <option value="Sweep">Sweep</option>
                                         <option value="HexDominant">HexDominant</option>
@@ -583,14 +583,14 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_EdgeDivision_${i}">
+                            <div class="form-group" id="grp_N_D_${i}">
                                 <label class="form-label">Edge Divisions</label>
-                                <div class="input-control"><input type="number" class="glass-input" name="EdgeDivision_${i}" id="EdgeDivision_${i}" value="3"></div>
+                                <div class="input-control"><input type="number" class="glass-input" name="N_D_${i}" id="N_D_${i}" value="3"></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleThrustAnalysis_${i}">
+                            <div class="form-group" id="grp_N_analysis_${i}">
                                 <label class="form-label">Nozzle Thrust Analysis</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="NozzleThrustAnalysis_${i}" id="NozzleThrustAnalysis_${i}">
+                                    <select class="glass-select" name="N_analysis_${i}" id="N_analysis_${i}">
                                         <option value="True">True</option>
                                         <option value="False">False</option>
                                     </select>
@@ -598,38 +598,38 @@
                             </div>
 
                             <div class="section-label">Loading Conditions</div>
-                            <div class="form-group" id="grp_NozzleLoadingLocation_${i}">
+                            <div class="form-group" id="grp_N_Location_${i}">
                                 <label class="form-label">Load Boundary</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="NozzleLoadingLocation_${i}" id="NozzleLoadingLocation_${i}">
+                                    <select class="glass-select" name="N_Location_${i}" id="N_Location_${i}">
                                         <option value="Shell Nozzle Junction">Shell/Nozzle Junct.</option>
                                         <option value="Nozzle Flange Junction">Flange Interface</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_FL_${i}">
+                            <div class="form-group" id="grp_FX_${i}">
                                 <label class="form-label">F_L (Longitudinal)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FL_${i}" id="FL_${i}" value="50"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FX_${i}" id="FX_${i}" value="50"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MT_${i}">
+                            <div class="form-group" id="grp_MY_${i}">
                                 <label class="form-label">M_T (Torsional)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MT_${i}" id="MT_${i}" value="150"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MY_${i}" id="MY_${i}" value="150"><span class="addon">N mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_FC_${i}">
+                            <div class="form-group" id="grp_FZ_${i}">
                                 <label class="form-label">F_C (Circumferential)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FC_${i}" id="FC_${i}" value="80"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FZ_${i}" id="FZ_${i}" value="80"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MC_${i}">
+                            <div class="form-group" id="grp_MZ_${i}">
                                 <label class="form-label">M_C (Circumferential)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MC_${i}" id="MC_${i}" value="100"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MZ_${i}" id="MZ_${i}" value="100"><span class="addon">N mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_Fa_${i}">
+                            <div class="form-group" id="grp_FY_${i}">
                                 <label class="form-label">P (Axial / Thrust)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Fa_${i}" id="Fa_${i}" value="60"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FY_${i}" id="FY_${i}" value="60"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_ML_${i}">
+                            <div class="form-group" id="grp_MX_${i}">
                                 <label class="form-label">M_L (Longitudinal)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ML_${i}" id="ML_${i}" value="200"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MX_${i}" id="MX_${i}" value="200"><span class="addon">N mm</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -647,34 +647,34 @@
                     <div class="glass-card">
                         <div class="card-header">1. Project & Conditions</div>
                         <div class="card-body">
-                            <div class="form-group" id="grp_AnalysisFolder_${i}">
+                            <div class="form-group" id="grp_File_Path_${i}">
                                 <label class="form-label">Analysis Folder</label>
-                                <div class="input-control"><input type="text" class="glass-input" name="AnalysisFolder_${i}" id="AnalysisFolder_${i}" value="D:\\Test\\Head_${i}"></div>
+                                <div class="input-control"><input type="text" class="glass-input" name="File_Path_${i}" id="File_Path_${i}" value="D:\\Test\\Head_${i}"></div>
                             </div>
-                            <div class="form-group" id="grp_HeadType_${i}">
+                            <div class="form-group" id="grp_Head_TYPE_${i}">
                                 <label class="form-label">Head Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="HeadType_${i}" id="HeadType_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="Head_TYPE_${i}" id="Head_TYPE_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Ellipsoidal Head">Ellipsoidal Head</option>
                                         <option value="Flat Head">Flat Head</option>
                                         <option value="Torispherical Head">Torispherical Head</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_TypeOfAnalysis_${i}">
+                            <div class="form-group" id="grp_Analysis_Type_${i}">
                                 <label class="form-label">Analysis Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="TypeOfAnalysis_${i}" id="TypeOfAnalysis_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="Analysis_Type_${i}" id="Analysis_Type_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Elastic Analysis">Elastic Analysis</option>
                                         <option value="Limit-Load Analysis">Limit-Load Analysis</option>
                                         <option value="Elastic-Plastic Analysis">Elastic-Plastic Analysis</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_LimitLoadModel_${i}">
+                            <div class="form-group hidden" id="grp_Material_Type_${i}">
                                 <label class="form-label">Material Model</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="LimitLoadModel_${i}" id="LimitLoadModel_${i}">
+                                    <select class="glass-select" name="Material_Type_${i}" id="Material_Type_${i}">
                                         <option value="Elastic">Elastic</option>
                                         <option value="Elastic-Plastic">Elastic-Plastic</option>
                                     </select>
@@ -686,34 +686,34 @@
                                     <div class="input-addon-group"><input type="number" class="glass-input" name="DesignTemp_${i}" id="DesignTemp_${i}" value="150" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_InternalPressure_${i}">
+                            <div class="form-group" id="grp_p_${i}">
                                 <label class="form-label">Internal Pressure</label>
                                 <div class="input-control">
-                                    <div class="input-addon-group"><input type="number" class="glass-input" name="InternalPressure_${i}" id="InternalPressure_${i}" value="10"><span class="addon">MPa</span></div>
+                                    <div class="input-addon-group"><input type="number" class="glass-input" name="p_${i}" id="p_${i}" value="10"><span class="addon">MPa</span></div>
                                 </div>
                             </div>
 
                             <div class="section-label">Operating Thermal Conditions</div>
-                            <div class="form-group" id="grp_OperatingCondition_${i}">
+                            <div class="form-group" id="grp_Thermal_Required_${i}">
                                 <label class="form-label">Thermal Required</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="OperatingCondition_${i}" id="OperatingCondition_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="Thermal_Required_${i}" id="Thermal_Required_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_ShellIdHTC_${i}">
+                            <div class="form-group hidden" id="grp_shell_id_htc_${i}">
                                 <label class="form-label">Head/Shell ID HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellIdHTC_${i}" id="ShellIdHTC_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="shell_id_htc_${i}" id="shell_id_htc_${i}" value="100" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_NozzleIdHTC_${i}">
+                            <div class="form-group hidden" id="grp_nozzle_id_htc_${i}">
                                 <label class="form-label">Nozzle ID HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleIdHTC_${i}" id="NozzleIdHTC_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="nozzle_id_htc_${i}" id="nozzle_id_htc_${i}" value="120" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_OutsideHTC_${i}">
+                            <div class="form-group hidden" id="grp_outside_id_htc_${i}">
                                 <label class="form-label">Outside Surface HTC</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="OutsideHTC_${i}" id="OutsideHTC_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="outside_id_htc_${i}" id="outside_id_htc_${i}" value="10" onchange="recalculateAllMaterials(${i})"><span class="addon">W/m²·°C</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -722,55 +722,55 @@
                         <div class="card-header">2. Materials</div>
                         <div class="card-body">
                             <div class="section-label">Head / Shell</div>
-                            <div class="form-group" id="grp_ShellMaterial_${i}">
+                            <div class="form-group" id="grp_Shell_Material_${i}">
                                 <label class="form-label">Head Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="ShellMaterial_${i}" id="ShellMaterial_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Shell_Material_${i}" id="Shell_Material_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_ShellOtherName_${i}"><input type="hidden" name="ShellOtherName_${i}" id="ShellOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_ShellYM_${i}"><input type="hidden" name="ShellYM_${i}" id="ShellYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_ShellPR_${i}"><input type="hidden" name="ShellPR_${i}" id="ShellPR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_ShellAllowable_${i}"><input type="hidden" name="ShellAllowable_${i}" id="ShellAllowable_${i}" value="138"></div>
-                            <div class="form-group hidden" id="grp_ShellYield_${i}"><input type="hidden" name="ShellYield_${i}" id="ShellYield_${i}" value="260"></div>
-                            <div class="form-group hidden" id="grp_ShellUTS_${i}"><input type="hidden" name="ShellUTS_${i}" id="ShellUTS_${i}" value="485"></div>
+                            <div class="form-group hidden" id="grp_Shell_OtherName_${i}"><input type="hidden" name="Shell_OtherName_${i}" id="Shell_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Shell_YM_${i}"><input type="hidden" name="Shell_YM_${i}" id="Shell_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Shell_PR_${i}"><input type="hidden" name="Shell_PR_${i}" id="Shell_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Shell_Allowable_${i}"><input type="hidden" name="Shell_Allowable_${i}" id="Shell_Allowable_${i}" value="138"></div>
+                            <div class="form-group hidden" id="grp_Shell_Yield_${i}"><input type="hidden" name="Shell_Yield_${i}" id="Shell_Yield_${i}" value="260"></div>
+                            <div class="form-group hidden" id="grp_Shell_UTS_${i}"><input type="hidden" name="Shell_UTS_${i}" id="Shell_UTS_${i}" value="485"></div>
 
                             <div class="section-label">Nozzle</div>
-                            <div class="form-group" id="grp_NozzleMaterial_${i}">
+                            <div class="form-group" id="grp_Nozzle_Material_${i}">
                                 <label class="form-label">Nozzle Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="NozzleMaterial_${i}" id="NozzleMaterial_${i}" value="SA-106-Type-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Nozzle_Material_${i}" id="Nozzle_Material_${i}" value="SA-106-Type-B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_NozzleOtherName_${i}"><input type="hidden" name="NozzleOtherName_${i}" id="NozzleOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_NozzleYM_${i}"><input type="hidden" name="NozzleYM_${i}" id="NozzleYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_NozzlePR_${i}"><input type="hidden" name="NozzlePR_${i}" id="NozzlePR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_NozzleAllowable_${i}"><input type="hidden" name="NozzleAllowable_${i}" id="NozzleAllowable_${i}" value="118"></div>
-                            <div class="form-group hidden" id="grp_NozzleYield_${i}"><input type="hidden" name="NozzleYield_${i}" id="NozzleYield_${i}" value="240"></div>
-                            <div class="form-group hidden" id="grp_NozzleUTS_${i}"><input type="hidden" name="NozzleUTS_${i}" id="NozzleUTS_${i}" value="415"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_OtherName_${i}"><input type="hidden" name="Nozzle_OtherName_${i}" id="Nozzle_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_YM_${i}"><input type="hidden" name="Nozzle_YM_${i}" id="Nozzle_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_PR_${i}"><input type="hidden" name="Nozzle_PR_${i}" id="Nozzle_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_Allowable_${i}"><input type="hidden" name="Nozzle_Allowable_${i}" id="Nozzle_Allowable_${i}" value="118"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_Yield_${i}"><input type="hidden" name="Nozzle_Yield_${i}" id="Nozzle_Yield_${i}" value="240"></div>
+                            <div class="form-group hidden" id="grp_Nozzle_UTS_${i}"><input type="hidden" name="Nozzle_UTS_${i}" id="Nozzle_UTS_${i}" value="415"></div>
 
                             <div class="section-label">Reinforcement Pad</div>
-                            <div class="form-group" id="grp_PadRequired_${i}">
+                            <div class="form-group" id="grp_pad_${i}">
                                 <label class="form-label">Pad Required</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="PadRequired_${i}" id="PadRequired_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="pad_${i}" id="pad_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="No">No</option>
                                         <option value="Yes">Yes</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadMaterial_${i}">
+                            <div class="form-group hidden" id="grp_Pad_Material_${i}">
                                 <label class="form-label">Pad Material Name</label>
                                 <div class="input-control">
-                                    <input type="text" class="glass-input" name="PadMaterial_${i}" id="PadMaterial_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                    <input type="text" class="glass-input" name="Pad_Material_${i}" id="Pad_Material_${i}" value="SA-516-Gr-70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
                                 </div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadOtherName_${i}"><input type="hidden" name="PadOtherName_${i}" id="PadOtherName_${i}" value="Custom_Material"></div>
-                            <div class="form-group hidden" id="grp_PadYM_${i}"><input type="hidden" name="PadYM_${i}" id="PadYM_${i}" value="200000"></div>
-                            <div class="form-group hidden" id="grp_PadPR_${i}"><input type="hidden" name="PadPR_${i}" id="PadPR_${i}" value="0.3"></div>
-                            <div class="form-group hidden" id="grp_PadAllowable_${i}"><input type="hidden" name="PadAllowable_${i}" id="PadAllowable_${i}" value="138"></div>
-                            <div class="form-group hidden" id="grp_PadYield_${i}"><input type="hidden" name="PadYield_${i}" id="PadYield_${i}" value="260"></div>
-                            <div class="form-group hidden" id="grp_PadUTS_${i}"><input type="hidden" name="PadUTS_${i}" id="PadUTS_${i}" value="485"></div>
+                            <div class="form-group hidden" id="grp_Pad_OtherName_${i}"><input type="hidden" name="Pad_OtherName_${i}" id="Pad_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="form-group hidden" id="grp_Pad_YM_${i}"><input type="hidden" name="Pad_YM_${i}" id="Pad_YM_${i}" value="200000"></div>
+                            <div class="form-group hidden" id="grp_Pad_PR_${i}"><input type="hidden" name="Pad_PR_${i}" id="Pad_PR_${i}" value="0.3"></div>
+                            <div class="form-group hidden" id="grp_Pad_Allowable_${i}"><input type="hidden" name="Pad_Allowable_${i}" id="Pad_Allowable_${i}" value="138"></div>
+                            <div class="form-group hidden" id="grp_Pad_Yield_${i}"><input type="hidden" name="Pad_Yield_${i}" id="Pad_Yield_${i}" value="260"></div>
+                            <div class="form-group hidden" id="grp_Pad_UTS_${i}"><input type="hidden" name="Pad_UTS_${i}" id="Pad_UTS_${i}" value="485"></div>
 
                             <button type="button" class="btn-mat-popup hidden" id="btn_matpopup_${i}" onclick="openMatTablePopup(${i})">
                                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -788,27 +788,27 @@
                                 <div class="section-label">Ellipsoidal Head Dimensions</div>
                                 <div class="form-group" id="grp_EH_HeadID_${i}">
                                     <label class="form-label">Head Inner Dia (ID)</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HeadID_${i}" id="HeadID_${i}" value="1000"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="H_ID_${i}" id="H_ID_${i}" value="1000"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_EH_HeadTHK_${i}">
                                     <label class="form-label">Head Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HeadTHK_${i}" id="HeadTHK_${i}" value="40"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="H_THK_${i}" id="H_THK_${i}" value="40"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_EH_RatioAB_${i}">
                                     <label class="form-label">a:b Ratio</label>
-                                    <div class="input-control"><input type="number" step="0.1" class="glass-input" name="RatioAB_${i}" id="RatioAB_${i}" value="2"></div>
+                                    <div class="input-control"><input type="number" step="0.1" class="glass-input" name="ratio_${i}" id="ratio_${i}" value="2"></div>
                                 </div>
                                 <div class="form-group" id="grp_EH_StraightFlange_${i}">
                                     <label class="form-label">Straight Flange Offset</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="StraightFlangeOffset_${i}" id="StraightFlangeOffset_${i}" value="50"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_OFF_${i}" id="S_OFF_${i}" value="50"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_EH_ShellTHK_${i}">
                                     <label class="form-label">Attached Shell Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellTHK_${i}" id="ShellTHK_${i}" value="50"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_THK_${i}" id="S_THK_${i}" value="50"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_EH_ShellHeight_${i}">
                                     <label class="form-label">Attached Shell Height</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellHeight_${i}" id="ShellHeight_${i}" value="100"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_H_${i}" id="S_H_${i}" value="100"><span class="addon">mm</span></div></div>
                                 </div>
                             </div>
 
@@ -817,106 +817,106 @@
                                 <div class="section-label">Flat Head Dimensions</div>
                                 <div class="form-group" id="grp_FH_HeadOD_${i}">
                                     <label class="form-label">Head Outer Dia (OD)</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HeadOD_${i}" id="HeadOD_${i}" value="1000"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="H_OD_${i}" id="H_OD_${i}" value="1000"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_FH_HeadTHK_${i}">
+                                <div class="form-group" id="grp_FH_H_THK_${i}">
                                     <label class="form-label">Head Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_HeadTHK_${i}" id="FH_HeadTHK_${i}" value="40"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_H_THK_${i}" id="FH_H_THK_${i}" value="40"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_FH_ShellID_${i}">
                                     <label class="form-label">Shell Inner Dia (ID)</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ShellID_${i}" id="ShellID_${i}" value="900"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="S_ID_${i}" id="S_ID_${i}" value="900"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_FH_TransitionLength_${i}">
                                     <label class="form-label">Transition Length</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HeadTransitionLength_${i}" id="HeadTransitionLength_${i}" value="30"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="T_LEN_${i}" id="T_LEN_${i}" value="30"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_FH_ShellHeight_${i}">
+                                <div class="form-group" id="grp_FH_S_H_${i}">
                                     <label class="form-label">Shell Height</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_ShellHeight_${i}" id="FH_ShellHeight_${i}" value="150"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_S_H_${i}" id="FH_S_H_${i}" value="150"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_FH_ShellTHK_${i}">
+                                <div class="form-group" id="grp_FH_S_THK_${i}">
                                     <label class="form-label">Shell Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_ShellTHK_${i}" id="FH_ShellTHK_${i}" value="30"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FH_S_THK_${i}" id="FH_S_THK_${i}" value="30"><span class="addon">mm</span></div></div>
                                 </div>
                             </div>
 
                             <!-- Torispherical Head Specific Inputs -->
                             <div id="sec_Torispherical_${i}" class="hidden">
                                 <div class="section-label">Torispherical Head Dimensions</div>
-                                <div class="form-group" id="grp_TH_HeadID_${i}">
+                                <div class="form-group" id="grp_TH_H_ID_${i}">
                                     <label class="form-label">Crown Radius (Head ID)</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_HeadID_${i}" id="TH_HeadID_${i}" value="1000"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_H_ID_${i}" id="TH_H_ID_${i}" value="1000"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_TH_HeadTHK_${i}">
+                                <div class="form-group" id="grp_TH_H_THK_${i}">
                                     <label class="form-label">Head Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_HeadTHK_${i}" id="TH_HeadTHK_${i}" value="40"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_H_THK_${i}" id="TH_H_THK_${i}" value="40"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_TH_KnuckleRadius_${i}">
                                     <label class="form-label">Knuckle Radius</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="KnuckleRadius_${i}" id="KnuckleRadius_${i}" value="60"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="H_KR_${i}" id="H_KR_${i}" value="60"><span class="addon">mm</span></div></div>
                                 </div>
                                 <div class="form-group" id="grp_TH_StraightFlange_${i}">
                                     <label class="form-label">Straight Flange Offset</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_StraightFlangeOffset_${i}" id="TH_StraightFlangeOffset_${i}" value="50"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_S_OFF_${i}" id="TH_S_OFF_${i}" value="50"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_TH_ShellHeight_${i}">
+                                <div class="form-group" id="grp_TH_S_H_${i}">
                                     <label class="form-label">Shell Height</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_ShellHeight_${i}" id="TH_ShellHeight_${i}" value="100"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_S_H_${i}" id="TH_S_H_${i}" value="100"><span class="addon">mm</span></div></div>
                                 </div>
-                                <div class="form-group" id="grp_TH_ShellTHK_${i}">
+                                <div class="form-group" id="grp_TH_S_THK_${i}">
                                     <label class="form-label">Shell Thickness</label>
-                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_ShellTHK_${i}" id="TH_ShellTHK_${i}" value="50"><span class="addon">mm</span></div></div>
+                                    <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TH_S_THK_${i}" id="TH_S_THK_${i}" value="50"><span class="addon">mm</span></div></div>
                                 </div>
                             </div>
 
                             <div class="section-label">Nozzle & Pad Dimensions</div>
-                            <div class="form-group" id="grp_TypeOfNozzle_${i}">
+                            <div class="form-group" id="grp_N_TYPE_${i}">
                                 <label class="form-label">Nozzle Type</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="TypeOfNozzle_${i}" id="TypeOfNozzle_${i}" onchange="evaluateDependencies(${i})">
+                                    <select class="glass-select" name="N_TYPE_${i}" id="N_TYPE_${i}" onchange="evaluateDependencies(${i})">
                                         <option value="Straight">Straight</option>
                                         <option value="Barrel">Barrel</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_NozzleOffset_${i}">
+                            <div class="form-group" id="grp_N_OFF_${i}">
                                 <label class="form-label">Nozzle Offset</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOffset_${i}" id="NozzleOffset_${i}" value="0"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_OFF_${i}" id="N_OFF_${i}" value="0"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleProjection_${i}">
+                            <div class="form-group" id="grp_N_P_${i}">
                                 <label class="form-label">Nozzle Projection</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleProjection_${i}" id="NozzleProjection_${i}" value="500"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_P_${i}" id="N_P_${i}" value="500"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleOD_${i}">
+                            <div class="form-group" id="grp_N_OD_${i}">
                                 <label class="form-label">Neck OD</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleOD_${i}" id="NozzleOD_${i}" value="200"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_OD_${i}" id="N_OD_${i}" value="200"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleTHK_${i}">
+                            <div class="form-group" id="grp_N_THK_${i}">
                                 <label class="form-label">Neck Thickness</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleTHK_${i}" id="NozzleTHK_${i}" value="35"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_THK_${i}" id="N_THK_${i}" value="35"><span class="addon">mm</span></div></div>
                             </div>
                             
-                            <div class="form-group hidden" id="grp_HubOD_${i}">
+                            <div class="form-group hidden" id="grp_Hub_OD_${i}">
                                 <label class="form-label">Hub OD</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubOD_${i}" id="HubOD_${i}" value="300"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Hub_OD_${i}" id="Hub_OD_${i}" value="300"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_HubLength_${i}">
+                            <div class="form-group hidden" id="grp_Hub_LEN_${i}">
                                 <label class="form-label">Hub Length</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="HubLength_${i}" id="HubLength_${i}" value="100"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Hub_LEN_${i}" id="Hub_LEN_${i}" value="100"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_TransitionLength_${i}">
+                            <div class="form-group hidden" id="grp_T_LEN_${i}">
                                 <label class="form-label">Transition Length</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="TransitionLength_${i}" id="TransitionLength_${i}" value="30"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="T_LEN_${i}" id="T_LEN_${i}" value="30"><span class="addon">mm</span></div></div>
                             </div>
 
-                            <div class="form-group hidden" id="grp_PadWidth_${i}">
+                            <div class="form-group hidden" id="grp_P_W_${i}">
                                 <label class="form-label">Pad Width</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadWidth_${i}" id="PadWidth_${i}" value="75"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="P_W_${i}" id="P_W_${i}" value="75"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group hidden" id="grp_PadTHK_${i}">
+                            <div class="form-group hidden" id="grp_P_THK_${i}">
                                 <label class="form-label">Pad Thickness</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="PadTHK_${i}" id="PadTHK_${i}" value="20"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="P_THK_${i}" id="P_THK_${i}" value="20"><span class="addon">mm</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -925,42 +925,42 @@
                         <div class="card-header">4. Meshing & BCS</div>
                         <div class="card-body">
                             <div class="section-label">Meshing Parameters</div>
-                            <div class="form-group" id="grp_GlobalBodySizing_${i}">
+                            <div class="form-group" id="grp_B_size_${i}">
                                 <label class="form-label" id="lbl_BodySizing_${i}">Body Sizing (Head)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="GlobalBodySizing_${i}" id="GlobalBodySizing_${i}" value="10"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="B_size_${i}" id="B_size_${i}" value="10"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MeshMethod_${i}">
-                                <label class="form-label" id="lbl_MeshMethod_${i}">Mesh Method (Head)</label>
+                            <div class="form-group" id="grp_m_method_${i}">
+                                <label class="form-label" id="lbl_m_method_${i}">Mesh Method (Head)</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="MeshMethod_${i}" id="MeshMethod_${i}">
+                                    <select class="glass-select" name="m_method_${i}" id="m_method_${i}">
                                         <option value="MultiZone">MultiZone</option>
                                         <option value="Sweep">Sweep</option>
                                         <option value="HexDominant">HexDominant</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_NozzleBodySizing_${i}">
+                            <div class="form-group" id="grp_N_size_${i}">
                                 <label class="form-label">Body Sizing (Nozzle)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="NozzleBodySizing_${i}" id="NozzleBodySizing_${i}" value="5"><span class="addon">mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="N_size_${i}" id="N_size_${i}" value="5"><span class="addon">mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleMeshMethod_${i}">
+                            <div class="form-group" id="grp_h_method_${i}">
                                 <label class="form-label">Mesh Method (Nozzle)</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="NozzleMeshMethod_${i}" id="NozzleMeshMethod_${i}">
+                                    <select class="glass-select" name="h_method_${i}" id="h_method_${i}">
                                         <option value="MultiZone">MultiZone</option>
                                         <option value="Sweep">Sweep</option>
                                         <option value="HexDominant">HexDominant</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_EdgeDivision_${i}">
+                            <div class="form-group" id="grp_N_D_${i}">
                                 <label class="form-label">Edge Divisions</label>
-                                <div class="input-control"><input type="number" class="glass-input" name="EdgeDivision_${i}" id="EdgeDivision_${i}" value="3"></div>
+                                <div class="input-control"><input type="number" class="glass-input" name="N_D_${i}" id="N_D_${i}" value="3"></div>
                             </div>
-                            <div class="form-group" id="grp_NozzleThrustAnalysis_${i}">
+                            <div class="form-group" id="grp_N_analysis_${i}">
                                 <label class="form-label">Nozzle Thrust Analysis</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="NozzleThrustAnalysis_${i}" id="NozzleThrustAnalysis_${i}">
+                                    <select class="glass-select" name="N_analysis_${i}" id="N_analysis_${i}">
                                         <option value="YES">YES</option>
                                         <option value="NO">NO</option>
                                     </select>
@@ -968,38 +968,38 @@
                             </div>
 
                             <div class="section-label">Loading Conditions</div>
-                            <div class="form-group" id="grp_NozzleLoadingLocation_${i}">
+                            <div class="form-group" id="grp_N_Location_${i}">
                                 <label class="form-label">Load Boundary</label>
                                 <div class="input-control">
-                                    <select class="glass-select" name="NozzleLoadingLocation_${i}" id="NozzleLoadingLocation_${i}">
+                                    <select class="glass-select" name="N_Location_${i}" id="N_Location_${i}">
                                         <option value="Head Nozzle Junction">Head/Nozzle Junct.</option>
                                         <option value="Nozzle Flange Junction">Flange Interface</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group" id="grp_FL_${i}">
+                            <div class="form-group" id="grp_FX_${i}">
                                 <label class="form-label">F_L (Longitudinal)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FL_${i}" id="FL_${i}" value="50"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FX_${i}" id="FX_${i}" value="50"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MT_${i}">
+                            <div class="form-group" id="grp_MY_${i}">
                                 <label class="form-label">M_T (Torsional)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MT_${i}" id="MT_${i}" value="150"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MY_${i}" id="MY_${i}" value="150"><span class="addon">N mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_FC_${i}">
+                            <div class="form-group" id="grp_FZ_${i}">
                                 <label class="form-label">F_C (Circumferential)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FC_${i}" id="FC_${i}" value="80"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FZ_${i}" id="FZ_${i}" value="80"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_MC_${i}">
+                            <div class="form-group" id="grp_MZ_${i}">
                                 <label class="form-label">M_C (Circumferential)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MC_${i}" id="MC_${i}" value="100"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MZ_${i}" id="MZ_${i}" value="100"><span class="addon">N mm</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_Fa_${i}">
+                            <div class="form-group" id="grp_FY_${i}">
                                 <label class="form-label">P (Axial / Thrust)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="Fa_${i}" id="Fa_${i}" value="60"><span class="addon">N</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="FY_${i}" id="FY_${i}" value="60"><span class="addon">N</span></div></div>
                             </div>
-                            <div class="form-group" id="grp_ML_${i}">
+                            <div class="form-group" id="grp_MX_${i}">
                                 <label class="form-label">M_L (Longitudinal)</label>
-                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ML_${i}" id="ML_${i}" value="200"><span class="addon">N mm</span></div></div>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="MX_${i}" id="MX_${i}" value="200"><span class="addon">N mm</span></div></div>
                             </div>
                         </div>
                     </div>
@@ -1038,51 +1038,53 @@
         }
 
         function evaluateDependencies(i) {
-            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`)?.value || 'Elastic Analysis';
-            const opCondition = document.getElementById(`OperatingCondition_${i}`)?.value || 'No';
-            const padReq = document.getElementById(`PadRequired_${i}`)?.value || 'No';
-            const nozzleType = document.getElementById(`TypeOfNozzle_${i}`)?.value || 'Straight';
+            const typeOfAnalysis = document.getElementById(`Analysis_Type_${i}`)?.value || 'Elastic Analysis';
+            const opCondition = document.getElementById(`Thermal_Required_${i}`)?.value || 'No';
+            const padReq = document.getElementById(`pad_${i}`)?.value || 'No';
+            const nozzleType = document.getElementById(`N_TYPE_${i}`)?.value || 'Straight';
 
-            toggleVisibility(`grp_LimitLoadModel_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
+            toggleVisibility(`grp_Material_Type_${i}`, typeOfAnalysis === 'Limit-Load Analysis');
 
             const showThermal = opCondition === 'Yes';
-            toggleVisibility(`grp_ShellIdHTC_${i}`, showThermal);
-            toggleVisibility(`grp_NozzleIdHTC_${i}`, showThermal);
-            toggleVisibility(`grp_OutsideHTC_${i}`, showThermal);
+            toggleVisibility(`grp_shell_id_htc_${i}`, showThermal);
+            toggleVisibility(`grp_nozzle_id_htc_${i}`, showThermal);
+            toggleVisibility(`grp_outside_id_htc_${i}`, showThermal);
             
             const isBarrelOrSRN = (nozzleType === 'Barrel' || nozzleType === 'SRN');
-            toggleVisibility(`grp_HubOD_${i}`, isBarrelOrSRN);
-            toggleVisibility(`grp_HubLength_${i}`, isBarrelOrSRN);
-            toggleVisibility(`grp_TransitionLength_${i}`, isBarrelOrSRN);
+            toggleVisibility(`grp_Hub_OD_${i}`, isBarrelOrSRN);
+            toggleVisibility(`grp_Hub_LEN_${i}`, isBarrelOrSRN);
+            toggleVisibility(`grp_T_LEN_${i}`, isBarrelOrSRN);
 
             if (currentAnalysis === 'head') {
-                const headType = document.getElementById(`HeadType_${i}`)?.value || 'Ellipsoidal Head';
+                const headType = document.getElementById(`Head_TYPE_${i}`)?.value || 'Ellipsoidal Head';
                 toggleVisibility(`sec_Ellipsoidal_${i}`, headType === 'Ellipsoidal Head');
                 toggleVisibility(`sec_Flat_${i}`, headType === 'Flat Head');
                 toggleVisibility(`sec_Torispherical_${i}`, headType === 'Torispherical Head');
 
 
                 const isEllipsoidal = (headType === 'Ellipsoidal Head');
-                toggleVisibility(`grp_NozzleBodySizing_${i}`, isEllipsoidal);
-                toggleVisibility(`grp_NozzleMeshMethod_${i}`, isEllipsoidal);
+                toggleVisibility(`grp_N_size_${i}`, isEllipsoidal);
+                toggleVisibility(`grp_h_method_${i}`, isEllipsoidal);
                 
-                const lblBody = document.getElementById(`lbl_BodySizing_${i}`);
-                const lblMethod = document.getElementById(`lbl_MeshMethod_${i}`);
+                const lblBody = document.getElementById(`lbl_B_size_${i}`);
+                const lblMethod = document.getElementById(`lbl_m_method_${i}`);
                 if (lblBody) lblBody.innerText = isEllipsoidal ? "Body Sizing (HeadSide)" : "Body Sizing";
                 if (lblMethod) lblMethod.innerText = isEllipsoidal ? "Mesh Method (HeadSide)" : "Mesh Method";
             }
 
+            const prefixToFieldMap = { 'Shell': 'Shell_Material', 'Nozzle': 'Nozzle_Material', 'Pad': 'Pad_Material' };
             const handleMaterialGroup = (prefix, isActive) => {
+                const fieldName = prefixToFieldMap[prefix];
                 if(!isActive) {
-                    toggleVisibility(`grp_${prefix}Material_${i}`, false);
+                    toggleVisibility(`grp_${fieldName}_${i}`, false);
                     const btn = document.getElementById(`btnEdit_${prefix}_${i}`);
                     if(btn) btn.style.display = 'none';
                     return;
                 }
 
-                toggleVisibility(`grp_${prefix}Material_${i}`, true);
+                toggleVisibility(`grp_${fieldName}_${i}`, true);
                 
-                const matInput = document.getElementById(`${prefix}Material_${i}`);
+                const matInput = document.getElementById(`${fieldName}_${i}`);
                 if(!matInput) return;
                 const matName = matInput.value.toLowerCase().trim();
                 const isOther = matName === 'other material';
@@ -1106,8 +1108,8 @@
             
             const isPadActive = (padReq.toLowerCase() === 'yes' || padReq.toLowerCase() === 'true');
             handleMaterialGroup('Pad', isPadActive);
-            toggleVisibility(`grp_PadWidth_${i}`, isPadActive);
-            toggleVisibility(`grp_PadTHK_${i}`, isPadActive);
+            toggleVisibility(`grp_P_W_${i}`, isPadActive);
+            toggleVisibility(`grp_P_THK_${i}`, isPadActive);
 
             const isNonElastic = typeOfAnalysis !== 'Elastic Analysis';
             const showPopupBtn = true;
@@ -1131,15 +1133,17 @@
         }
 
         function openMatTablePopup(i) {
-            const typeOfAnalysis = document.getElementById(`TypeOfAnalysis_${i}`)?.value || 'Elastic Analysis';
-            const opCondition    = document.getElementById(`OperatingCondition_${i}`)?.value || 'No';
-            const padReq         = document.getElementById(`PadRequired_${i}`)?.value || 'No';
+            const typeOfAnalysis = document.getElementById(`Analysis_Type_${i}`)?.value || 'Elastic Analysis';
+            const opCondition    = document.getElementById(`Thermal_Required_${i}`)?.value || 'No';
+            const padReq         = document.getElementById(`pad_${i}`)?.value || 'No';
             const showThermal    = opCondition === 'Yes';
             const showYield      = ['Limit-Load Analysis','Elastic-Plastic Analysis'].includes(typeOfAnalysis);
-            const showUTS        = typeOfAnalysis === 'Elastic-Plastic Analysis';
-            const showAllowable  = typeOfAnalysis === 'Elastic Analysis';
             const isLimitLoad    = typeOfAnalysis === 'Limit-Load Analysis';
             const isEP           = typeOfAnalysis === 'Elastic-Plastic Analysis';
+            const matModelVal0   = isLimitLoad ? (document.getElementById(`Material_Type_${i}`)?.value || 'Elastic') : '';
+            const isLimitLoadEP  = isLimitLoad && (matModelVal0.toLowerCase().includes('plastic'));
+            const showUTS        = isEP || isLimitLoadEP;
+            const showAllowable  = typeOfAnalysis === 'Elastic Analysis';
 
             const prefixes = ['Shell','Nozzle'];
             if (padReq.toLowerCase() === 'yes' || padReq.toLowerCase() === 'true') prefixes.push('Pad');
@@ -1155,66 +1159,67 @@
                 }
                 return el;
             }
+            const prefixFieldMap = { 'Shell': 'Shell', 'Nozzle': 'Nozzle', 'Pad': 'Pad' };
             prefixes.forEach(p => {
-                ensureHidden(`${p}Conductivity_${i}`, p==='Nozzle'?'52':'48');
-                ensureHidden(`${p}ThermalExp_${i}`, '12');
-                ensureHidden(`${p}Density_${i}`, '7850');
+                ensureHidden(`${p}_Conductivity_${i}`, p==='Nozzle'?'52':'48');
+                ensureHidden(`${p}_ThermalExp_${i}`, '12');
+                ensureHidden(`${p}_Density_${i}`, '7850');
             });
 
             const matCardsHtml = prefixes.map(prefix => {
-                const matName  = document.getElementById(`${prefix}Material_${i}`)?.value || '—';
+                const matName  = document.getElementById(`${prefix}_Material_${i}`)?.value || '—';
                 const isCustom = matName.toLowerCase().trim() === 'other material';
-                const ym    = document.getElementById(`${prefix}YM_${i}`)?.value          || '200000';
-                const pr    = document.getElementById(`${prefix}PR_${i}`)?.value          || '0.3';
-                const allow = document.getElementById(`${prefix}Allowable_${i}`)?.value   || '138';
-                const yld   = document.getElementById(`${prefix}Yield_${i}`)?.value       || '260';
-                const uts   = document.getElementById(`${prefix}UTS_${i}`)?.value         || '485';
-                const cond  = document.getElementById(`${prefix}Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
-                const cte   = document.getElementById(`${prefix}ThermalExp_${i}`)?.value  || '12';
-                const dens  = document.getElementById(`${prefix}Density_${i}`)?.value     || (isCustom ? '0' : '7850');
+                const ym    = document.getElementById(`${prefix}_YM_${i}`)?.value          || '200000';
+                const pr    = document.getElementById(`${prefix}_PR_${i}`)?.value          || '0.3';
+                const allow = document.getElementById(`${prefix}_Allowable_${i}`)?.value   || '138';
+                const yld   = document.getElementById(`${prefix}_Yield_${i}`)?.value       || '260';
+                const uts   = document.getElementById(`${prefix}_UTS_${i}`)?.value         || '485';
+                const cond  = document.getElementById(`${prefix}_Conductivity_${i}`)?.value || (prefix==='Nozzle'?'52':'48');
+                const cte   = document.getElementById(`${prefix}_ThermalExp_${i}`)?.value  || '12';
+                const dens  = document.getElementById(`${prefix}_Density_${i}`)?.value     || (isCustom ? '0' : '7850');
 
                 let hardeningBadge = '';
-                if (isLimitLoad) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.14);color:#4338ca;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear</span>`;
-                if (isEP)        hardeningBadge = `<span style="font-size:0.63rem;background:rgba(16,185,129,0.14);color:#047857;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Multilinear</span>`;
+                if (isLimitLoad && !isLimitLoadEP) hardeningBadge = `<span style="font-size:0.63rem;background:rgba(99,102,241,0.14);color:#4338ca;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Bilinear</span>`;
+                if (isLimitLoadEP || isEP)         hardeningBadge = `<span style="font-size:0.63rem;background:rgba(16,185,129,0.14);color:#047857;padding:1px 7px;border-radius:10px;font-weight:700;margin-left:auto;">Multilinear</span>`;
 
                 let rows = `
                 <tr><td class="tl">Young's Modulus</td><td class="tv">
-                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}YM_${i}" value="${ym}" onchange="syncPop('${prefix}YM',${i},'pop_${prefix}YM_${i}')"><span class="tia">MPa</span></div>
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}YM_${i}" value="${ym}" onchange="syncPop('${prefix}_YM',${i},'pop_${prefix}YM_${i}')"><span class="tia">MPa</span></div>
                 </td></tr>
                 <tr><td class="tl">Poisson's Ratio</td><td class="tv">
-                    <div class="tiw"><input type="number" class="ti" step="0.001" id="pop_${prefix}PR_${i}" value="${pr}" onchange="syncPop('${prefix}PR',${i},'pop_${prefix}PR_${i}')"></div>
+                    <div class="tiw"><input type="number" class="ti" step="0.001" id="pop_${prefix}PR_${i}" value="${pr}" onchange="syncPop('${prefix}_PR',${i},'pop_${prefix}PR_${i}')"></div>
                 </td></tr>`;
 
                 if (showAllowable) rows += `
                 <tr><td class="tl">Allowable Stress</td><td class="tv">
-                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}All_${i}" value="${allow}" onchange="syncPop('${prefix}Allowable',${i},'pop_${prefix}All_${i}')"><span class="tia">MPa</span></div>
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}All_${i}" value="${allow}" onchange="syncPop('${prefix}_Allowable',${i},'pop_${prefix}All_${i}')"><span class="tia">MPa</span></div>
                 </td></tr>`;
 
                 if (showYield) rows += `
                 <tr><td class="tl">Yield Stress</td><td class="tv">
-                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Yld_${i}" value="${yld}" onchange="syncPop('${prefix}Yield',${i},'pop_${prefix}Yld_${i}')"><span class="tia">MPa</span></div>
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Yld_${i}" value="${yld}" onchange="syncPop('${prefix}_Yield',${i},'pop_${prefix}Yld_${i}')"><span class="tia">MPa</span></div>
                 </td></tr>`;
 
                 if (showUTS) rows += `
                 <tr><td class="tl">Ultimate Tensile (UTS)</td><td class="tv">
-                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}UTS_${i}" value="${uts}" onchange="syncPop('${prefix}UTS',${i},'pop_${prefix}UTS_${i}')"><span class="tia">MPa</span></div>
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}UTS_${i}" value="${uts}" onchange="syncPop('${prefix}_UTS',${i},'pop_${prefix}UTS_${i}')"><span class="tia">MPa</span></div>
                 </td></tr>`;
 
                 if (showThermal) {
                     const dimmed = (!isCustom && showThermal) ? 'style="opacity:0.8;" title="From Material Database"' : '';
                     rows += `
                 <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Conductivity</td><td class="tv">
-                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" id="pop_${prefix}Cond_${i}" value="${cond}" ${dimmed} onchange="syncThermal('${prefix}Conductivity',${i},'pop_${prefix}Cond_${i}')"><span class="tia" style="color:#b45309;">W/m·°C</span></div>
+                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" id="pop_${prefix}Cond_${i}" value="${cond}" ${dimmed} onchange="syncThermal('${prefix}_Conductivity',${i},'pop_${prefix}Cond_${i}')"><span class="tia" style="color:#b45309;">W/m·°C</span></div>
                 </td></tr>
                 <tr style="background:rgba(245,158,11,0.04);"><td class="tl" style="color:#b45309;">Thermal Exp. (CTE)</td><td class="tv">
-                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" step="0.1" id="pop_${prefix}CTE_${i}" value="${cte}" ${dimmed} onchange="syncThermal('${prefix}ThermalExp',${i},'pop_${prefix}CTE_${i}')"><span class="tia" style="color:#b45309;">×10⁻⁶/°C</span></div>
+                    <div class="tiw" style="border-color:rgba(245,158,11,0.3);"><input type="number" class="ti" step="0.1" id="pop_${prefix}CTE_${i}" value="${cte}" ${dimmed} onchange="syncThermal('${prefix}_ThermalExp',${i},'pop_${prefix}CTE_${i}')"><span class="tia" style="color:#b45309;">×10⁻⁶/°C</span></div>
                 </td></tr>`;
                 }
 
                 if (parseFloat(dens) > 0 && !isCustom) {
                     rows += `
                 <tr style="background:rgba(59,130,246,0.03);"><td class="tl" style="color:#2563eb;">Density</td><td class="tv">
-                    <div class="tiw" style="border-color:rgba(59,130,246,0.3);"><input type="number" class="ti" id="pop_${prefix}Dens_${i}" value="${dens}" onchange="syncPop('${prefix}Density',${i},'pop_${prefix}Dens_${i}')"><span class="tia" style="color:#2563eb;">kg/m³</span></div>
+                    <div class="tiw" style="border-color:rgba(59,130,246,0.3);"><input type="number" class="ti" id="pop_${prefix}Dens_${i}" value="${dens}" onchange="syncPop('${prefix}_Density',${i},'pop_${prefix}Dens_${i}')"><span class="tia" style="color:#2563eb;">kg/m³</span></div>
                 </td></tr>`;
                 }
 
@@ -1239,23 +1244,26 @@
                 </div>`;
             }).join('');
 
-            const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
-            const matModelVal = isLimitLoad ? (document.getElementById(`LimitLoadModel_${i}`)?.value || 'Elastic') : '';
-            
+            const matModelVal = isLimitLoad ? (document.getElementById(`Material_Type_${i}`)?.value || 'Elastic') : '';
+            const isLLElasticPlastic = isLimitLoad && matModelVal.toLowerCase().includes('plastic');
+
             let loadFactor = '1.0×';
             if (isEP) {
                 loadFactor = '2.4×';
             } else if (isLimitLoad) {
-                if (matModelVal.toLowerCase().includes('plastic') || matModelVal.toLowerCase().includes('elastic-plastic')) {
-                    loadFactor = '1.5× (Local Failure)';
-                } else {
+                if (isLLElasticPlastic) {
                     loadFactor = '1.7×';
+                } else {
+                    loadFactor = '1.5×';
                 }
             }
 
-            const solverNote = isEP        ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
-                               isLimitLoad ? (loadFactor.includes('1.5') ? 'Elastic-Plastic Material Model (LF = 1.5) · Local Failure' : 'Elastic Material Model (LF = 1.7) · Lower Bound Limit Load') :
-                                             'Linear elastic analysis · Stress linearisation (SCL)';
+            const tDes = document.getElementById(`DesignTemp_${i}`)?.value || '—';
+
+            const solverNote = isEP           ? 'Multilinear Isotropic Hardening · Non-linear geometry ON' :
+                               isLLElasticPlastic ? 'Elastic-Plastic Material Model (LF = 1.7×) · Multilinear Hardening' :
+                               isLimitLoad    ? 'Elastic Material Model (LF = 1.5×) · Lower Bound Limit Load' :
+                                                'Linear elastic analysis · Stress linearisation (SCL)';
             const infoCard = `<div class="mat-rect-card">
                 <div class="mat-rect-header" style="background:#eef2ff; color:#3730a3; border-bottom:1.5px solid #e0e7ff;">
                     <span class="rdot" style="background:#4f46e5;"></span>
@@ -1320,23 +1328,25 @@
             document.getElementById('customMaterialTargetPrefix').value = prefix;
             document.getElementById('customMaterialTargetIndex').value = index;
 
-            const analysisType = document.getElementById(`TypeOfAnalysis_${index}`)?.value || 'Elastic Analysis';
-            const opCondition = document.getElementById(`OperatingCondition_${index}`)?.value || 'No';
+            const analysisType = document.getElementById(`Analysis_Type_${index}`)?.value || 'Elastic Analysis';
+            const opCondition = document.getElementById(`Thermal_Required_${index}`)?.value || 'No';
             const showThermal = opCondition === 'Yes';
 
-            document.getElementById('modalOtherName').value = document.getElementById(`${prefix}OtherName_${index}`)?.value || 'Custom_Material';
-            document.getElementById('modalYM').value = document.getElementById(`${prefix}YM_${index}`)?.value || '200000';
-            document.getElementById('modalPR').value = document.getElementById(`${prefix}PR_${index}`)?.value || '0.3';
-            document.getElementById('modalAllowable').value = document.getElementById(`${prefix}Allowable_${index}`)?.value || '138';
-            document.getElementById('modalYield').value = document.getElementById(`${prefix}Yield_${index}`)?.value || '260';
-            document.getElementById('modalUTS').value = document.getElementById(`${prefix}UTS_${index}`)?.value || '485';
-            document.getElementById('modalConductivity').value = document.getElementById(`${prefix}Conductivity_${index}`)?.value || (prefix === 'Nozzle' ? '52' : '48');
-            document.getElementById('modalThermalExp').value = document.getElementById(`${prefix}ThermalExp_${index}`)?.value || '12';
-            document.getElementById('modalDensity').value = document.getElementById(`${prefix}Density_${index}`)?.value || '7850';
+            document.getElementById('modalOtherName').value = document.getElementById(`${prefix}_OtherName_${index}`)?.value || 'Custom_Material';
+            document.getElementById('modalYM').value = document.getElementById(`${prefix}_YM_${index}`)?.value || '200000';
+            document.getElementById('modalPR').value = document.getElementById(`${prefix}_PR_${index}`)?.value || '0.3';
+            document.getElementById('modalAllowable').value = document.getElementById(`${prefix}_Allowable_${index}`)?.value || '138';
+            document.getElementById('modalYield').value = document.getElementById(`${prefix}_Yield_${index}`)?.value || '260';
+            document.getElementById('modalUTS').value = document.getElementById(`${prefix}_UTS_${index}`)?.value || '485';
+            document.getElementById('modalConductivity').value = document.getElementById(`${prefix}_Conductivity_${index}`)?.value || (prefix === 'Nozzle' ? '52' : '48');
+            document.getElementById('modalThermalExp').value = document.getElementById(`${prefix}_ThermalExp_${index}`)?.value || '12';
+            document.getElementById('modalDensity').value = document.getElementById(`${prefix}_Density_${index}`)?.value || '7850';
 
             const showAllowable = analysisType === 'Elastic Analysis';
             const showYield = ['Limit-Load Analysis', 'Elastic-Plastic Analysis'].includes(analysisType);
-            const showUTS = analysisType === 'Elastic-Plastic Analysis';
+            const isLLModal = analysisType === 'Limit-Load Analysis';
+            const matModelModal = isLLModal ? (document.getElementById(`Material_Type_${index}`)?.value || 'Elastic') : '';
+            const showUTS = analysisType === 'Elastic-Plastic Analysis' || (isLLModal && matModelModal.toLowerCase().includes('plastic'));
             
             document.getElementById('modalGrpAllowable').style.display = showAllowable ? 'flex' : 'none';
             document.getElementById('modalGrpYield').style.display = showYield ? 'flex' : 'none';
@@ -1367,15 +1377,15 @@
                 el.value = val;
             }
 
-            setOrMakeHidden(`${prefix}OtherName_${index}`, document.getElementById('modalOtherName').value);
-            setOrMakeHidden(`${prefix}YM_${index}`, document.getElementById('modalYM').value);
-            setOrMakeHidden(`${prefix}PR_${index}`, document.getElementById('modalPR').value);
-            setOrMakeHidden(`${prefix}Allowable_${index}`, document.getElementById('modalAllowable').value);
-            setOrMakeHidden(`${prefix}Yield_${index}`, document.getElementById('modalYield').value);
-            setOrMakeHidden(`${prefix}UTS_${index}`, document.getElementById('modalUTS').value);
-            setOrMakeHidden(`${prefix}Conductivity_${index}`, document.getElementById('modalConductivity').value);
-            setOrMakeHidden(`${prefix}ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
-            setOrMakeHidden(`${prefix}Density_${index}`, document.getElementById('modalDensity').value);
+            setOrMakeHidden(`${prefix}_OtherName_${index}`, document.getElementById('modalOtherName').value);
+            setOrMakeHidden(`${prefix}_YM_${index}`, document.getElementById('modalYM').value);
+            setOrMakeHidden(`${prefix}_PR_${index}`, document.getElementById('modalPR').value);
+            setOrMakeHidden(`${prefix}_Allowable_${index}`, document.getElementById('modalAllowable').value);
+            setOrMakeHidden(`${prefix}_Yield_${index}`, document.getElementById('modalYield').value);
+            setOrMakeHidden(`${prefix}_UTS_${index}`, document.getElementById('modalUTS').value);
+            setOrMakeHidden(`${prefix}_Conductivity_${index}`, document.getElementById('modalConductivity').value);
+            setOrMakeHidden(`${prefix}_ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
+            setOrMakeHidden(`${prefix}_Density_${index}`, document.getElementById('modalDensity').value);
             
             closeCustomMaterialModal();
         }
@@ -1606,10 +1616,10 @@
         }
 
         function recalculateAllMaterials(i) {
-            const shellMat = document.getElementById(`ShellMaterial_${i}`)?.value;
-            const nozzleMat = document.getElementById(`NozzleMaterial_${i}`)?.value;
-            const padMat = document.getElementById(`PadMaterial_${i}`)?.value;
-            const padReq = document.getElementById(`PadRequired_${i}`)?.value;
+            const shellMat = document.getElementById(`Shell_Material_${i}`)?.value;
+            const nozzleMat = document.getElementById(`Nozzle_Material_${i}`)?.value;
+            const padMat = document.getElementById(`Pad_Material_${i}`)?.value;
+            const padReq = document.getElementById(`pad_${i}`)?.value;
 
             if(shellMat && shellMat !== "other material") autoFillProperties(shellMat, `ShellMaterial_${i}`, i);
             if(nozzleMat && nozzleMat !== "other material") autoFillProperties(nozzleMat, `NozzleMaterial_${i}`, i);
@@ -1656,7 +1666,7 @@
                 
                 block.querySelectorAll('input, select').forEach(el => {
                     const group = el.closest('.form-group');
-                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp") || el.name.includes("Density") || el.name.includes("LimitLoadModel") || el.name.includes("LocalFailureMethod"));
+                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp") || el.name.includes("Density") || el.name.includes("Material_Type") || el.name.includes("LocalFailureMethod"));
                     
                     if (el.name && (isCustomField || !el.closest('.hidden') || el.type === 'hidden')) {
                         let cleanName = el.name.replace(`_${i}`, '');
@@ -1665,36 +1675,36 @@
                 });
 
                 if (currentAnalysis === 'head') {
-                    const hType = payload.HeadType || document.getElementById(`HeadType_${i}`)?.value || 'Ellipsoidal Head';
-                    payload.HeadType = hType;
+                    const hType = payload.Head_TYPE || document.getElementById(`Head_TYPE_${i}`)?.value || 'Ellipsoidal Head';
+                    payload.Head_TYPE = hType;
                     
 
                     if (hType === 'Flat Head') {
-                        if (payload.FH_HeadTHK !== undefined) payload.HeadTHK = payload.FH_HeadTHK;
-                        if (payload.FH_ShellHeight !== undefined) payload.ShellHeight = payload.FH_ShellHeight;
-                        if (payload.FH_ShellTHK !== undefined) payload.ShellTHK = payload.FH_ShellTHK;
-                        if (payload.HeadTransitionLength !== undefined) payload.TransitionLength = payload.HeadTransitionLength;
+                        if (payload.FH_H_THK !== undefined) payload.H_THK = payload.FH_H_THK;
+                        if (payload.FH_S_H !== undefined) payload.S_H = payload.FH_S_H;
+                        if (payload.FH_S_THK !== undefined) payload.S_THK = payload.FH_S_THK;
+                        if (payload.T_LEN !== undefined) payload.T_LEN = payload.T_LEN;
                     } else if (hType === 'Torispherical Head') {
-                        if (payload.TH_HeadID !== undefined) payload.HeadID = payload.TH_HeadID;
-                        if (payload.TH_HeadTHK !== undefined) payload.HeadTHK = payload.TH_HeadTHK;
-                        if (payload.TH_StraightFlangeOffset !== undefined) payload.StraightFlangeOffset = payload.TH_StraightFlangeOffset;
-                        if (payload.TH_ShellHeight !== undefined) payload.ShellHeight = payload.TH_ShellHeight;
-                        if (payload.TH_ShellTHK !== undefined) payload.ShellTHK = payload.TH_ShellTHK;
+                        if (payload.TH_H_ID !== undefined) payload.H_ID = payload.TH_H_ID;
+                        if (payload.TH_H_THK !== undefined) payload.H_THK = payload.TH_H_THK;
+                        if (payload.TH_S_OFF !== undefined) payload.S_OFF = payload.TH_S_OFF;
+                        if (payload.TH_S_H !== undefined) payload.S_H = payload.TH_S_H;
+                        if (payload.TH_S_THK !== undefined) payload.S_THK = payload.TH_S_THK;
                     }
                 }
 
-                if (payload.PadRequired !== 'Yes' && payload.PadRequired !== 'YES') {
-                    payload.PadRequired = 'No';
-                    delete payload.PadMaterial;
+                if (payload.pad !== 'Yes' && payload.pad !== 'YES') {
+                    payload.pad = 'No';
+                    delete payload.Pad_Material;
                     delete payload.PadOD;
-                    delete payload.PadWidth;
-                    delete payload.PadTHK;
-                    delete payload.PadOtherName;
-                    delete payload.PadYM;
-                    delete payload.PadPR;
-                    delete payload.PadAllowable;
-                    delete payload.PadYield;
-                    delete payload.PadUTS;
+                    delete payload.P_W;
+                    delete payload.P_THK;
+                    delete payload.Pad_OtherName;
+                    delete payload.Pad_YM;
+                    delete payload.Pad_PR;
+                    delete payload.Pad_Allowable;
+                    delete payload.Pad_Yield;
+                    delete payload.Pad_UTS;
                     delete payload.PadConductivity;
                     delete payload.PadThermalExp;
                     delete payload.PadDensity;
@@ -1720,7 +1730,7 @@
                     runs: payloadArr,
                     inputMethod: 'manual',
                     ui_code_edition: '2025',
-                    shellPressure: payloadArr[0].InternalPressure || 'N/A',
+                    shellPressure: payloadArr[0].p || 'N/A',
                     shellTemp: payloadArr[0].DesignTemp || 'N/A',
                     upset_selected: 'No'
                 },
