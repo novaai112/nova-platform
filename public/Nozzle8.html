@@ -1847,9 +1847,16 @@
                     } else if (hType === 'Torispherical Head') {
                         if (payload.TH_H_ID !== undefined) payload.H_ID = payload.TH_H_ID;
                         if (payload.TH_H_THK !== undefined) payload.H_THK = payload.TH_H_THK;
-                        if (payload.TH_S_OFF !== undefined) payload.S_OFF = payload.TH_S_OFF;
+                        if (payload.TH_S_OFF !== undefined) {
+                            payload.S_OFF = payload.TH_S_OFF;
+                            payload.SF = payload.TH_S_OFF;
+                        }
                         if (payload.TH_S_H !== undefined) payload.S_H = payload.TH_S_H;
                         if (payload.TH_S_THK !== undefined) payload.S_THK = payload.TH_S_THK;
+                    } else if (hType === 'Ellipsoidal Head') {
+                        if (payload.H_ID !== undefined) payload.a = payload.H_ID;
+                        if (payload.H_THK !== undefined) payload.THK = payload.H_THK;
+                        if (payload.S_OFF !== undefined) payload.SF = payload.S_OFF;
                     }
                 }
 
