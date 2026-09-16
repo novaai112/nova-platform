@@ -1429,7 +1429,7 @@ export default function App() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
@@ -1444,7 +1444,7 @@ export default function App() {
               </span>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl sm:col-span-2">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
               <span className="font-bold text-slate-700 text-xs mt-1 block">
                 {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
@@ -1503,20 +1503,12 @@ export default function App() {
           )}
 
           {isProcessing && (
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3 animate-in fade-in">
-              <div className="flex items-center justify-between text-xs font-black text-blue-900">
-                <span>Solver Progress</span>
-                <span className="text-blue-600 font-bold">{statusLabel}</span>
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shrink-0 inline-block" />
+              <div>
+                <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Solver Status</span>
+                <span className="font-bold text-blue-800 text-sm mt-0.5 block">{statusLabel}</span>
               </div>
-              <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-                  style={{ width: '100%', animation: 'solverProgress 2.5s ease-in-out infinite' }}
-                />
-              </div>
-              <p className="text-[11px] text-blue-700 font-semibold">
-                Simulation is running on the backend. Downloads appear automatically as soon as each file is ready.
-              </p>
             </div>
           )}
 
@@ -1529,26 +1521,17 @@ export default function App() {
 
           <div className="pt-4 border-t border-slate-200 flex items-center justify-start gap-3 flex-wrap">
 
-            {selectedJobDetails.pdf_url ? (
+            {(isSuccess || isFailed) && selectedJobDetails.pdf_url && (
               <a
                 href={selectedJobDetails.pdf_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Download Best User Input Parameters PDF"
+                title="Download User Input Parameters PDF"
                 className="px-4 py-2.5 rounded-xl text-xs font-black text-violet-800 bg-violet-50 hover:bg-violet-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-violet-300"
               >
                 <FileText className="w-4 h-4 text-violet-600" />
                 User Input Parameters PDF
               </a>
-            ) : (
-              <button
-                onClick={() => downloadJobJson(selectedJobDetails)}
-                title="Download input parameters as JSON"
-                className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-700 bg-slate-50 hover:bg-slate-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-slate-300"
-              >
-                <FileJson className="w-4 h-4 text-slate-500" />
-                User Input Parameters PDF
-              </button>
             )}
 
             {selectedJobDetails.json_url && (
@@ -2081,10 +2064,10 @@ export default function App() {
                          </td>
                          <td className="px-6 py-4 flex items-center justify-end gap-2 last:rounded-r-xl">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
-                              isJobSuccess ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
+                              isJobSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-400' :
                               isJobProcessing ? 'bg-blue-50 text-blue-800 border-blue-300' :
                               isJobPending ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
-                              'bg-red-100 text-red-800 border-red-300'
+                              'bg-red-100 text-red-800 border-red-400'
                             }`}>
                               {isJobProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block shrink-0" />}
                               {isJobSuccess && <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />}
@@ -2533,11 +2516,7 @@ export default function App() {
           66% { transform: translate(-30px, 30px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
         }
-        @keyframes solverProgress {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(0%); }
-          100% { transform: translateX(100%); }
-        }
+
         .animate-blob { animation: blob 10s infinite alternate; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
