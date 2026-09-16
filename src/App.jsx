@@ -211,7 +211,7 @@ export default function App() {
         if (!currentUser.isApproved) {
           checkApprovalStatus();
         }
-      }, 2500);
+      }, 1000);
 
       return () => {
         supabase.removeChannel(channel);
@@ -1389,41 +1389,39 @@ export default function App() {
     const isPending = selectedJobDetails.status === 'Pending';
     const isProcessing = !isSuccess && !isFailed && !isPending;
 
+    const statusLabel = selectedJobDetails.status || 'Unknown';
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        {/* Transparent Frosted Glass Backdrop */}
-        <div 
-          className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300" 
+        <div
+          className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
           onClick={() => setIsJobDetailsOpen(false)}
         />
-        
-        {/* Single Seamless Rectangular Glass Card (Spacious & High-Contrast) */}
+
         <div className="w-full max-w-2xl sm:max-w-3xl rounded-3xl p-7 sm:p-9 relative z-10 border border-slate-200/90 shadow-[0_30px_90px_rgba(15,23,42,0.24)] bg-white animate-in zoom-in-95 space-y-6">
-          
-          {/* Top Row: Job Summary Info + Close 'X' Button on the Right */}
+
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</span>
               <span className="px-3 py-1 text-xs font-extrabold text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full">
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
-              <span className={`inline-flex items-center px-3.5 py-1 rounded-full text-xs font-black border shadow-sm ${
+              <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black border shadow-sm ${
                 isSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                isProcessing ? 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse' :
+                isProcessing ? 'bg-blue-50 text-blue-800 border-blue-200' :
                 isPending ? 'bg-amber-100 text-amber-800 border-amber-300' :
                 'bg-red-100 text-red-800 border-red-300'
               }`}>
-                {isProcessing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600" />}
-                {isSuccess && <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />}
-                {isPending && <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-600" />}
-                {isFailed && <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-red-600" />}
-                {selectedJobDetails.status}
+                {isSuccess && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                {isProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block" />}
+                {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
+                {isFailed && <XCircle className="w-3.5 h-3.5 text-red-600" />}
+                {statusLabel}
               </span>
             </div>
-            
-            {/* Direct Close Button in the top-right of the rectangular box */}
-            <button 
-              onClick={() => setIsJobDetailsOpen(false)} 
+
+            <button
+              onClick={() => setIsJobDetailsOpen(false)}
               title="Close"
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all shrink-0"
             >
@@ -1431,22 +1429,13 @@ export default function App() {
             </button>
           </div>
 
-          {/* Rectangular Information Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            
-            {/* Project Name */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Project Name</span>
-              <span className="font-black text-slate-900 text-sm mt-1 block truncate">{selectedJobDetails.name || 'Analysis Project'}</span>
-            </div>
 
-            {/* Job ID */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
               <span className="font-black text-[#2563eb] text-sm mt-1 block">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
             </div>
 
-            {/* Type of Analysis */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Type of Analysis</span>
               <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5 mt-1">
@@ -1455,8 +1444,7 @@ export default function App() {
               </span>
             </div>
 
-            {/* Submitted Date & Time */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl sm:col-span-2">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
               <span className="font-bold text-slate-700 text-xs mt-1 block">
                 {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
@@ -1465,32 +1453,35 @@ export default function App() {
 
           </div>
 
-          {/* Status Row */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs">
+          <div className={`p-4 border rounded-2xl flex items-center justify-between text-xs ${
+            isSuccess ? 'bg-emerald-50 border-emerald-200' :
+            isFailed ? 'bg-red-50 border-red-200' :
+            isPending ? 'bg-amber-50 border-amber-200' :
+            'bg-blue-50 border-blue-200'
+          }`}>
             <div>
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Execution Status</span>
               <span className="font-bold text-slate-600 mt-0.5 block">Real-time status of backend simulation solver</span>
             </div>
-            <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black border shadow-sm ${
+            <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black border shadow-sm ${
               isSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-              isProcessing ? 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse' :
+              isProcessing ? 'bg-blue-50 text-blue-800 border-blue-200' :
               isPending ? 'bg-amber-100 text-amber-800 border-amber-300' :
               'bg-red-100 text-red-800 border-red-300'
             }`}>
-              {isProcessing && <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600" />}
-              {isSuccess && <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />}
-              {isPending && <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-600" />}
-              {isFailed && <AlertTriangle className="w-3.5 h-3.5 mr-1.5 text-red-600" />}
-              {selectedJobDetails.status}
+              {isSuccess && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+              {isProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block" />}
+              {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
+              {isFailed && <XCircle className="w-3.5 h-3.5 text-red-600" />}
+              {statusLabel}
             </span>
           </div>
 
-          {/* Error Diagnostics (Shown directly if Failed / Error) */}
           {isFailed && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-red-800 font-black text-xs">
-                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <XCircle className="w-4 h-4 text-red-600" />
                   <span>Error Diagnostics:</span>
                 </div>
                 <button
@@ -1511,41 +1502,60 @@ export default function App() {
             </div>
           )}
 
-          {/* In Progress Notices */}
           {isProcessing && (
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3 text-xs text-blue-900 font-bold">
-              <Loader2 className="w-5 h-5 text-blue-600 animate-spin shrink-0" />
-              <span>ANSYS Solver is executing analysis. Downloads will become available immediately upon completion.</span>
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3 animate-in fade-in">
+              <div className="flex items-center justify-between text-xs font-black text-blue-900">
+                <span>Solver Progress</span>
+                <span className="text-blue-600 font-bold">{statusLabel}</span>
+              </div>
+              <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                  style={{ width: '100%', animation: 'solverProgress 2.5s ease-in-out infinite' }}
+                />
+              </div>
+              <p className="text-[11px] text-blue-700 font-semibold">
+                Simulation is running on the backend. Downloads appear automatically as soon as each file is ready.
+              </p>
             </div>
           )}
 
           {isPending && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-900 font-bold">
               <Clock className="w-5 h-5 text-amber-600 shrink-0" />
-              <span>Job is queued in database waiting for backend simulation worker.</span>
+              <span>Job is queued. The backend simulation worker will pick it up shortly.</span>
             </div>
           )}
 
-          {/* Action Buttons: Directly inside the rectangular box ON SUCCESS */}
-          {/* Action Buttons: Download Deliverables */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 flex-wrap">
-            
-            {/* Input JSON */}
-            <button 
-              onClick={() => downloadJobJson(selectedJobDetails)} 
-              title="Download input nozzle_batch_data.json"
-              className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-800 bg-white hover:bg-slate-50 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-slate-300"
-            >
-              <FileJson className="w-4 h-4 text-slate-600" />
-              Input JSON
-            </button>
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-start gap-3 flex-wrap">
 
-            {/* Results JSON */}
+            {selectedJobDetails.pdf_url ? (
+              <a
+                href={selectedJobDetails.pdf_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download Best User Input Parameters PDF"
+                className="px-4 py-2.5 rounded-xl text-xs font-black text-violet-800 bg-violet-50 hover:bg-violet-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-violet-300"
+              >
+                <FileText className="w-4 h-4 text-violet-600" />
+                User Input Parameters PDF
+              </a>
+            ) : (
+              <button
+                onClick={() => downloadJobJson(selectedJobDetails)}
+                title="Download input parameters as JSON"
+                className="px-4 py-2.5 rounded-xl text-xs font-black text-slate-700 bg-slate-50 hover:bg-slate-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-slate-300"
+              >
+                <FileJson className="w-4 h-4 text-slate-500" />
+                User Input Parameters PDF
+              </button>
+            )}
+
             {selectedJobDetails.json_url && (
-              <a 
-                href={selectedJobDetails.json_url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={selectedJobDetails.json_url}
+                target="_blank"
+                rel="noopener noreferrer"
                 title="Download FEA Results JSON"
                 className="px-4 py-2.5 rounded-xl text-xs font-black text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-amber-300"
               >
@@ -1554,38 +1564,34 @@ export default function App() {
               </a>
             )}
 
-            {/* Download Word Report */}
-            {(selectedJobDetails.report_url || isSuccess) && (
-              selectedJobDetails.report_url ? (
-                <a 
-                  href={selectedJobDetails.report_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  title="Download MS Word FEA Report (.docx)"
-                  className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
-                >
-                  <FileText className="w-4 h-4 text-emerald-600" />
-                  Word Report (.docx)
-                </a>
-              ) : (
-                <button 
-                  onClick={() => generateAndOpenReport(selectedJobDetails)}
-                  title="Download / View Analysis Report"
-                  className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
-                >
-                  <FileText className="w-4 h-4 text-emerald-600" />
-                  View Report
-                </button>
-              )
-            )}
-
-            {/* Full Analysis ZIP */}
-            {selectedJobDetails.result_url && (
-              <a 
-                href={selectedJobDetails.result_url} 
-                target="_blank" 
+            {selectedJobDetails.report_url ? (
+              <a
+                href={selectedJobDetails.report_url}
+                target="_blank"
                 rel="noopener noreferrer"
-                title="Download complete ANSYS simulation archive from Google Drive"
+                title="Download MS Word FEA Report (.docx)"
+                className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+              >
+                <FileText className="w-4 h-4 text-emerald-600" />
+                FEA Report (.docx)
+              </a>
+            ) : isSuccess ? (
+              <button
+                onClick={() => generateAndOpenReport(selectedJobDetails)}
+                title="View Analysis Report"
+                className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+              >
+                <FileText className="w-4 h-4 text-emerald-600" />
+                View Report
+              </button>
+            ) : null}
+
+            {selectedJobDetails.result_url && (
+              <a
+                href={selectedJobDetails.result_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download complete ANSYS simulation archive"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
               >
                 <Download className="w-4 h-4" />
@@ -2074,16 +2080,16 @@ export default function App() {
                            </span>
                          </td>
                          <td className="px-6 py-4 flex items-center justify-end gap-2 last:rounded-r-xl">
-                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
                               isJobSuccess ? 'bg-emerald-500/20 text-emerald-800 border-emerald-500/30' :
-                              isJobProcessing ? 'bg-blue-500/20 text-blue-800 border-blue-500/30 animate-pulse' :
+                              isJobProcessing ? 'bg-blue-50 text-blue-800 border-blue-300' :
                               isJobPending ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
-                              'bg-red-500/20 text-red-800 border-red-500/30'
+                              'bg-red-100 text-red-800 border-red-300'
                             }`}>
-                              {isJobProcessing && <Loader2 className="w-3 h-3 mr-1.5 animate-spin text-blue-600" />} 
-                              {isJobSuccess && <CheckCircle className="w-3 h-3 mr-1.5 text-emerald-600" />}
-                              {isJobPending && <Clock className="w-3 h-3 mr-1.5 text-orange-600" />}
-                              {isJobFailed && <AlertTriangle className="w-3 h-3 mr-1.5 text-red-600" />}
+                              {isJobProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block shrink-0" />}
+                              {isJobSuccess && <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />}
+                              {isJobPending && <Clock className="w-3 h-3 text-orange-600 shrink-0" />}
+                              {isJobFailed && <XCircle className="w-3 h-3 text-red-600 shrink-0" />}
                               {job.status}
                             </span>
                             
@@ -2526,6 +2532,11 @@ export default function App() {
           33% { transform: translate(40px, -60px) scale(1.1); }
           66% { transform: translate(-30px, 30px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
+        }
+        @keyframes solverProgress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(0%); }
+          100% { transform: translateX(100%); }
         }
         .animate-blob { animation: blob 10s infinite alternate; }
         .animation-delay-2000 { animation-delay: 2s; }
