@@ -52,9 +52,10 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
 
 
 const AnimatedStatusBadge = ({ status }) => {
-  const isSuccess = status === 'Completed' || status === 'Success';
-  const isFailed = status === 'Failed';
-  const isPending = status === 'Pending';
+  const normStatus = (status || '').toLowerCase();
+  const isSuccess = normStatus === 'completed' || normStatus === 'success';
+  const isFailed = normStatus === 'failed';
+  const isPending = normStatus === 'pending';
 
   if (isSuccess) {
     return (
@@ -85,7 +86,7 @@ const AnimatedStatusBadge = ({ status }) => {
   return (
     <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-black bg-white border-[1.5px] border-indigo-200 shadow-[0_2px_12px_rgba(99,102,241,0.10)]">
       <div className="orbit-spinner" />
-      <span className="processing-text tracking-wide uppercase">{status || 'Processing'}</span>
+      <span className="processing-text tracking-wide uppercase">{status}</span>
     </span>
   );
 };
@@ -1328,49 +1329,52 @@ export default function App() {
 
       const W = 210, margin = 14, contentW = W - 28;
 
+      // ── Pre-compute all conditions (mirrors Nozzle8.html evaluateDependencies) ──
+      const analysisType = p.Analysis_Type || '';
+      const isLimitLoad  = analysisType === 'Limit-Load Analysis';
+
+      const thermalReq   = p.Thermal_Required || 'No';
+      const showThermal  = thermalReq === 'Yes';
+
+      const nType        = p.N_TYPE ?? p.Nozzle_Type ?? '';
+      const isBarrel     = String(nType).toLowerCase() === 'barrel' || String(nType).toLowerCase() === 'srn';
+
+      const padVal       = p.Pad_Required ?? p.pad ?? 'No';
+      const isPad        = String(padVal).toLowerCase() === 'yes';
+
       // ── HEADER (black bar) ──
       doc.setFillColor(20, 20, 20);
-      doc.rect(0, 0, W, 34, 'F');
+      doc.rect(0, 0, W, 28, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(17); doc.setFont("helvetica", "bold");
-      doc.text("NOVA", margin, 14);
-      doc.setFontSize(8); doc.setFont("helvetica", "normal");
+      doc.setFontSize(16); doc.setFont("helvetica", "bold");
+      doc.text("NOVA", margin, 12);
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
       doc.setTextColor(180, 180, 180);
-      doc.text("ENGINEERING ANALYSIS PLATFORM", margin, 20);
+      doc.text("ENGINEERING ANALYSIS PLATFORM", margin, 18);
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(11); doc.setFont("helvetica", "bold");
-      doc.text("INPUT PARAMETERS", W - margin, 14, { align: 'right' });
+      doc.setFontSize(10.5); doc.setFont("helvetica", "bold");
+      doc.text("INPUT PARAMETERS", W - margin, 12, { align: 'right' });
       doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
       doc.setTextColor(200, 200, 200);
-      doc.text((job.type || 'Nozzle Analysis') + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 20, { align: 'right' });
-      doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 26, { align: 'right' });
+      doc.text((job.type || 'Nozzle Analysis') + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 18, { align: 'right' });
+      doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 24, { align: 'right' });
 
-      // Status pill (white outline only)
-      const statusTxt = (job.status || 'UNKNOWN').toUpperCase();
-      doc.setDrawColor(255, 255, 255);
-      doc.setFillColor(20, 20, 20);
-      doc.roundedRect(margin, 23, 32, 7, 1.5, 1.5, 'FD');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
-      doc.text(statusTxt, margin + 16, 27.5, { align: 'center' });
+      let y = 36;
 
-      let y = 42;
-
-      // ── Section header: bold line + number + title ──
+      // ── Section divider ──
       const addSection = (num, title) => {
         if (y > 265) { doc.addPage(); y = 18; }
         doc.setDrawColor(20, 20, 20);
         doc.setLineWidth(0.6);
         doc.line(margin, y, margin + contentW, y);
         doc.setLineWidth(0.2);
-        doc.setFillColor(20, 20, 20);
         doc.setTextColor(20, 20, 20);
         doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
         doc.text(num + '.  ' + title.toUpperCase(), margin, y + 5.5);
         y += 9;
       };
 
-      // ── Row: label left, value right, tight spacing ──
+      // ── Row: label left, value right, tight rows ──
       let rowAlt = false;
       const addRow = (label, value, unit) => {
         if (y > 276) { doc.addPage(); y = 18; rowAlt = false; }
@@ -1392,71 +1396,96 @@ export default function App() {
         rowAlt = !rowAlt;
       };
 
-      // ── SECTION 1: PROJECT & CONDITIONS ──
+      // ─────────────────────────────────────────────────────────────────────────
+      // SECTION 1: PROJECT & CONDITIONS
+      // ─────────────────────────────────────────────────────────────────────────
       addSection(1, 'Project & Conditions'); rowAlt = false;
-      if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
-      if (p.Analysis_Type)       addRow('Analysis Type', p.Analysis_Type);
-      if (p.DesignTemp != null)  addRow('Design Temperature', p.DesignTemp, '\u00b0C');
-      if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
-      if (p.Thermal_Required)    addRow('Thermal Required', p.Thermal_Required);
-      if (p.Thermal_Required === 'Yes' && p.T_op != null)
-                                  addRow('Operating Temperature', p.T_op, '\u00b0C');
-      y += 4;
 
-      // ── SECTION 2: MATERIALS ──
+      if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
+      if (analysisType)          addRow('Analysis Type', analysisType);
+      // Material Model — only visible when Limit-Load Analysis
+      if (isLimitLoad && p.Material_Type) addRow('Material Model', p.Material_Type);
+      if (p.DesignTemp != null)  addRow('Design Temp.', p.DesignTemp, '\u00b0C');
+      if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
+      // Thermal section — Thermal_Required always shown
+      addRow('Thermal Required', thermalReq);
+      // HTC fields — only shown when Thermal_Required = Yes
+      if (showThermal) {
+        if (p.T_op != null)           addRow('Operating Temperature', p.T_op, '\u00b0C');
+        if (p.shell_id_htc != null)   addRow('Shell ID HTC', p.shell_id_htc, 'W/m\u00b2\u00b7\u00b0C');
+        if (p.nozzle_id_htc != null)  addRow('Nozzle ID HTC', p.nozzle_id_htc, 'W/m\u00b2\u00b7\u00b0C');
+        if (p.outside_id_htc != null) addRow('Outside Surface HTC', p.outside_id_htc, 'W/m\u00b2\u00b7\u00b0C');
+      }
+      y += 3;
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // SECTION 2: MATERIALS
+      // ─────────────────────────────────────────────────────────────────────────
       addSection(2, 'Materials'); rowAlt = false;
+
       if (p.Shell_Material)      addRow('Shell Material', p.Shell_Material);
       if (p.Nozzle_Material)     addRow('Nozzle Material', p.Nozzle_Material);
-      const padVal = p.Pad_Required ?? p.pad;
-      const isPad  = padVal && String(padVal).toLowerCase() === 'yes';
+      // Pad — Pad Required always shown; Pad Material only if Yes
       addRow('Pad Required', isPad ? 'Yes' : 'No');
       if (isPad && p.Pad_Material) addRow('Pad Material', p.Pad_Material);
-      y += 4;
+      y += 3;
 
-      // ── SECTION 3: GEOMETRY ──
+      // ─────────────────────────────────────────────────────────────────────────
+      // SECTION 3: GEOMETRY
+      // ─────────────────────────────────────────────────────────────────────────
       addSection(3, 'Shell & Nozzle Geometry'); rowAlt = false;
+
+      // Shell dims — always shown
       const sOD  = p.S_OD  ?? p.Shell_D_o;
       const sTHK = p.S_THK ?? p.Shell_T;
       const sH   = p.S_H   ?? p.Shell_L;
       const nOff = p.N_OFF ?? p.Offset;
       const corr = p.CorrosionAllowance ?? p.Corrosion;
-      const nType= p.N_TYPE ?? p.Nozzle_Type;
-      const nL1  = p.N_L1  ?? p.h;
-      const nOD  = p.N_OD  ?? p.Nozzle_D_o;
-      const nTHK = p.N_THK ?? p.Nozzle_T;
-      const nP   = p.N_P   ?? p.Nozzle_L;
       if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
       if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
       if (sH   != null) addRow('Shell Height', sH, 'mm');
       if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
       if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
-      if (nType != null) addRow('Nozzle Type', nType);
+
+      // Nozzle dims — always shown
+      const nL1  = p.N_L1  ?? p.h;
+      const nOD  = p.N_OD  ?? p.Nozzle_D_o;
+      const nTHK = p.N_THK ?? p.Nozzle_T;
+      const nP   = p.N_P   ?? p.Nozzle_L;
+      if (nType) addRow('Nozzle Type', nType);
       if (nL1  != null) addRow('Nozzle Location Height', nL1, 'mm');
       if (nOD  != null) addRow('Neck OD', nOD, 'mm');
       if (nTHK != null) addRow('Neck Thickness', nTHK, 'mm');
       if (nP   != null) addRow('Nozzle Projection', nP, 'mm');
-      const isBarrel = nType && String(nType).toLowerCase().includes('barrel');
+
+      // Barrel/SRN-only fields — only shown when Nozzle Type = Barrel or SRN
       if (isBarrel) {
         if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
         if (p.Hub_LEN != null) addRow('Hub Length', p.Hub_LEN, 'mm');
         if (p.T_LEN   != null) addRow('Transition Length', p.T_LEN, 'mm');
       }
+
       if (p.Fillet_Radius  != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
       if (p.Nozzle_In_Proj != null) addRow('Inward Projection', p.Nozzle_In_Proj, 'mm');
+
+      // Pad dims — only shown when Pad Required = Yes
       if (isPad) {
         const pW   = p.P_W   ?? p.Pad_Width;
         const pTHK = p.P_THK ?? p.Pad_T;
         if (pW   != null) addRow('Pad Width', pW, 'mm');
         if (pTHK != null) addRow('Pad Thickness', pTHK, 'mm');
       }
-      y += 4;
+      y += 3;
 
-      // ── SECTION 4: MESHING & LOADING ──
+      // ─────────────────────────────────────────────────────────────────────────
+      // SECTION 4: MESHING & LOADING
+      // ─────────────────────────────────────────────────────────────────────────
       addSection(4, 'Meshing & Loading'); rowAlt = false;
-      const bSize   = p.B_size    ?? p.Mesh_Size;
-      const mMeth   = p.m_method  ?? p.Mesh_Method;
-      const nDiv    = p.N_D       ?? p.Edge_Divisions;
-      const nThrust = p.N_analysis ?? p.Nozzle_Thrust;
+
+      const bSize     = p.B_size    ?? p.Mesh_Size;
+      const mMeth     = p.m_method  ?? p.Mesh_Method;
+      const nDiv      = p.N_D       ?? p.Edge_Divisions;
+      const nThrust   = p.N_analysis ?? p.Nozzle_Thrust;
       const loadBound = p.N_Location ?? p.Load_Boundary;
       const fL = p.FX ?? p.F_L;
       const mT = p.MY ?? p.M_T;
@@ -1464,10 +1493,11 @@ export default function App() {
       const mC = p.MZ ?? p.M_C;
       const fA = p.FY ?? p.F_A ?? p.P;
       const mL = p.MX ?? p.M_L;
-      if (bSize   != null) addRow('Global Body Sizing', bSize, 'mm');
-      if (mMeth   != null) addRow('Mesh Method', mMeth);
-      if (nDiv    != null) addRow('Edge Divisions', nDiv);
-      if (nThrust != null) addRow('Nozzle Thrust Analysis', nThrust);
+
+      if (bSize     != null) addRow('Global Body Sizing', bSize, 'mm');
+      if (mMeth     != null) addRow('Mesh Method', mMeth);
+      if (nDiv      != null) addRow('Edge Divisions', nDiv);
+      if (nThrust   != null) addRow('Nozzle Thrust Analysis', nThrust);
       if (loadBound != null) addRow('Load Boundary', loadBound);
       if (fL != null) addRow('FL  Longitudinal Shear Force', fL, 'N');
       if (mT != null) addRow('MT  Torsional Moment', mT, 'N mm');
@@ -1480,10 +1510,10 @@ export default function App() {
       const totalPages = doc.internal.getNumberOfPages();
       for (let pg = 1; pg <= totalPages; pg++) {
         doc.setPage(pg);
-        doc.setDrawColor(20, 20, 20);
-        doc.setLineWidth(0.4);
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
         doc.line(margin, 285, margin + contentW, 285);
-        doc.setTextColor(120, 120, 120);
+        doc.setTextColor(140, 140, 140);
         doc.setFontSize(6.5); doc.setFont("helvetica", "normal");
         doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2", margin, 290);
         doc.text('Page ' + pg + ' / ' + totalPages, W - margin, 290, { align: 'right' });
@@ -1613,7 +1643,7 @@ export default function App() {
     const isPending = selectedJobDetails.status === 'Pending';
     const isProcessing = !isSuccess && !isFailed && !isPending;
 
-    const statusLabel = selectedJobDetails.status || 'Unknown';
+    const statusLabel = selectedJobDetails.status;
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1630,18 +1660,7 @@ export default function App() {
               <span className="px-3 py-1 text-xs font-extrabold text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full">
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
-              <span className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black border shadow-sm ${
-                isSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                isProcessing ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                isPending ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                'bg-red-100 text-red-800 border-red-300'
-              }`}>
-                {isSuccess && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                {isProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block" />}
-                {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
-                {isFailed && <XCircle className="w-3.5 h-3.5 text-red-600" />}
-                {statusLabel}
-              </span>
+              <AnimatedStatusBadge status={statusLabel} />
             </div>
 
             <button
@@ -2240,7 +2259,7 @@ export default function App() {
                            </span>
                          </td>
                          <td className="px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                            <AnimatedStatusBadge status={job.status || 'Unknown'} />
+                            <AnimatedStatusBadge status={job.status} />
                             
                             {/* Word FEA Report */}
                             {(job.report_url || isJobSuccess) && (
