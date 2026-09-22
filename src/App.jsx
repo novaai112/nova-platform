@@ -82,11 +82,14 @@ const AnimatedStatusBadge = ({ status }) => {
     );
   }
   
+  // Clean up status text (remove 'Processing - ' prefix if present)
+  const displayStatus = (status || '').replace(/^Processing\s*-\s*/i, '');
+
   // Processing state with dual-orbit spinner + shimmer text
   return (
     <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-black bg-white border-[1.5px] border-indigo-200 shadow-[0_2px_12px_rgba(99,102,241,0.10)]">
       <div className="orbit-spinner" />
-      <span className="processing-text tracking-wide uppercase">{status}</span>
+      <span className="processing-text tracking-wide uppercase">{displayStatus}</span>
     </span>
   );
 };
@@ -1316,16 +1319,19 @@ export default function App() {
     downloadAnchor.remove();
   };
 
-  const generateInputPDF = (job) => {
+  const generateInputPDF = (job, index = 0) => {
     if (!job || !job.json_payload) {
       alert("No input data available to generate PDF.");
       return;
     }
     try {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      let p = job.json_payload;
-      if (typeof p === 'string') p = JSON.parse(p);
-      if (Array.isArray(p)) p = p[0];
+      let payloads = job.json_payload;
+      if (typeof payloads === 'string') {
+        try { payloads = JSON.parse(payloads); } catch (e) {}
+      }
+      let p = Array.isArray(payloads) ? payloads[index] : payloads;
+      if (!p) p = Array.isArray(payloads) ? payloads[0] : payloads;
 
       const W = 210, margin = 14, contentW = W - 28;
 
@@ -1342,6 +1348,8 @@ export default function App() {
       const padVal       = p.Pad_Required ?? p.pad ?? 'No';
       const isPad        = String(padVal).toLowerCase() === 'yes';
 
+      const isHead       = !!p.Head_TYPE; // True if it's a Vessel Head analysis
+
       // ── HEADER (black bar) ──
       doc.setFillColor(20, 20, 20);
       doc.rect(0, 0, W, 28, 'F');
@@ -1356,7 +1364,9 @@ export default function App() {
       doc.text("INPUT PARAMETERS", W - margin, 12, { align: 'right' });
       doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
       doc.setTextColor(200, 200, 200);
-      doc.text((job.type || 'Nozzle Analysis') + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 18, { align: 'right' });
+      
+      const typeStr = isHead ? `Vessel Head Analysis ${index+1}` : `Shell Nozzle Analysis ${index+1}`;
+      doc.text(typeStr + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 18, { align: 'right' });
       doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 24, { align: 'right' });
 
       let y = 36;
@@ -1402,11 +1412,14 @@ export default function App() {
       addSection(1, 'Project & Conditions'); rowAlt = false;
 
       if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
+      if (isHead && p.Head_TYPE) addRow('Head Type', p.Head_TYPE);
       if (analysisType)          addRow('Analysis Type', analysisType);
+      
       // Material Model — only visible when Limit-Load Analysis
       if (isLimitLoad && p.Material_Type) addRow('Material Model', p.Material_Type);
       if (p.DesignTemp != null)  addRow('Design Temp.', p.DesignTemp, '\u00b0C');
       if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
+      
       // Thermal section — Thermal_Required always shown
       addRow('Thermal Required', thermalReq);
       // HTC fields — only shown when Thermal_Required = Yes
@@ -1433,19 +1446,46 @@ export default function App() {
       // ─────────────────────────────────────────────────────────────────────────
       // SECTION 3: GEOMETRY
       // ─────────────────────────────────────────────────────────────────────────
-      addSection(3, 'Shell & Nozzle Geometry'); rowAlt = false;
+      addSection(3, isHead ? 'Head & Nozzle Geometry' : 'Shell & Nozzle Geometry'); rowAlt = false;
 
-      // Shell dims — always shown
-      const sOD  = p.S_OD  ?? p.Shell_D_o;
-      const sTHK = p.S_THK ?? p.Shell_T;
-      const sH   = p.S_H   ?? p.Shell_L;
-      const nOff = p.N_OFF ?? p.Offset;
-      const corr = p.CorrosionAllowance ?? p.Corrosion;
-      if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
-      if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
-      if (sH   != null) addRow('Shell Height', sH, 'mm');
-      if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
-      if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
+      if (!isHead) {
+        // Shell dims
+        const sOD  = p.S_OD  ?? p.Shell_D_o;
+        const sTHK = p.S_THK ?? p.Shell_T;
+        const sH   = p.S_H   ?? p.Shell_L;
+        const nOff = p.N_OFF ?? p.Offset;
+        const corr = p.CorrosionAllowance ?? p.Corrosion;
+        if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
+        if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
+        if (sH   != null) addRow('Shell Height', sH, 'mm');
+        if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
+        if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
+      } else {
+        // Head dims
+        const hType = p.Head_TYPE;
+        if (hType === 'Ellipsoidal Head') {
+            if (p.H_ID != null) addRow('Head Inner Dia (ID)', p.H_ID, 'mm');
+            if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
+            if (p.ratio != null) addRow('a:b Ratio', p.ratio);
+            if (p.S_OFF != null) addRow('Straight Flange Offset', p.S_OFF, 'mm');
+            if (p.S_THK != null) addRow('Attached Shell Thickness', p.S_THK, 'mm');
+            if (p.S_H != null) addRow('Attached Shell Height', p.S_H, 'mm');
+        } else if (hType === 'Flat Head') {
+            if (p.H_OD != null) addRow('Head Outer Dia (OD)', p.H_OD, 'mm');
+            if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
+            if (p.S_ID != null) addRow('Shell Inner Dia (ID)', p.S_ID, 'mm');
+            if (p.T_LEN != null) addRow('Transition Length', p.T_LEN, 'mm');
+            if (p.S_H != null) addRow('Shell Height', p.S_H, 'mm');
+            if (p.S_THK != null) addRow('Shell Thickness', p.S_THK, 'mm');
+        } else if (hType === 'Torispherical Head') {
+            if (p.TH_H_ID != null) addRow('Crown Radius (Head ID)', p.TH_H_ID, 'mm');
+            if (p.TH_H_THK != null) addRow('Head Thickness', p.TH_H_THK, 'mm');
+            if (p.H_KR != null) addRow('Knuckle Radius', p.H_KR, 'mm');
+            if (p.TH_S_OFF != null) addRow('Straight Flange Offset', p.TH_S_OFF, 'mm');
+            if (p.TH_S_H != null) addRow('Shell Height', p.TH_S_H, 'mm');
+            if (p.TH_S_THK != null) addRow('Shell Thickness', p.TH_S_THK, 'mm');
+        }
+      }
 
       // Nozzle dims — always shown
       const nL1  = p.N_L1  ?? p.h;
@@ -1453,22 +1493,22 @@ export default function App() {
       const nTHK = p.N_THK ?? p.Nozzle_T;
       const nP   = p.N_P   ?? p.Nozzle_L;
       if (nType) addRow('Nozzle Type', nType);
-      if (nL1  != null) addRow('Nozzle Location Height', nL1, 'mm');
+      if (nL1  != null && !isHead) addRow('Nozzle Location Height', nL1, 'mm');
       if (nOD  != null) addRow('Neck OD', nOD, 'mm');
       if (nTHK != null) addRow('Neck Thickness', nTHK, 'mm');
       if (nP   != null) addRow('Nozzle Projection', nP, 'mm');
 
-      // Barrel/SRN-only fields — only shown when Nozzle Type = Barrel or SRN
+      // Barrel/SRN-only fields
       if (isBarrel) {
         if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
         if (p.Hub_LEN != null) addRow('Hub Length', p.Hub_LEN, 'mm');
-        if (p.T_LEN   != null) addRow('Transition Length', p.T_LEN, 'mm');
+        if (p.T_LEN   != null && hType !== 'Flat Head') addRow('Transition Length', p.T_LEN, 'mm');
       }
 
       if (p.Fillet_Radius  != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
       if (p.Nozzle_In_Proj != null) addRow('Inward Projection', p.Nozzle_In_Proj, 'mm');
 
-      // Pad dims — only shown when Pad Required = Yes
+      // Pad dims
       if (isPad) {
         const pW   = p.P_W   ?? p.Pad_Width;
         const pTHK = p.P_THK ?? p.Pad_T;
@@ -1519,7 +1559,7 @@ export default function App() {
         doc.text('Page ' + pg + ' / ' + totalPages, W - margin, 290, { align: 'right' });
       }
 
-      doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '.pdf');
+      doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '_' + (index+1) + '.pdf');
     } catch (err) {
       console.error("Error generating PDF:", err);
       alert("Failed to generate PDF. Check console for details.");
@@ -1644,6 +1684,25 @@ export default function App() {
     const isProcessing = !isSuccess && !isFailed && !isPending;
 
     const statusLabel = selectedJobDetails.status;
+    let payloads = selectedJobDetails.json_payload;
+    if (typeof payloads === 'string') {
+      try { payloads = JSON.parse(payloads); } catch (e) {}
+    }
+    if (!Array.isArray(payloads)) payloads = [payloads];
+    const isBatch = payloads.length > 1;
+
+    // Helper to get status or url for a specific index
+    const getBatchItem = (arrStr, idx, fallback) => {
+      try {
+        if (typeof arrStr === 'string' && arrStr.startsWith('[')) {
+          const arr = JSON.parse(arrStr);
+          if (Array.isArray(arr) && arr.length > idx) return arr[idx];
+        } else if (Array.isArray(arrStr) && arrStr.length > idx) {
+          return arrStr[idx];
+        }
+      } catch (e) {}
+      return fallback;
+    };
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1660,7 +1719,7 @@ export default function App() {
               <span className="px-3 py-1 text-xs font-extrabold text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full">
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
-              <AnimatedStatusBadge status={statusLabel} />
+              {!isBatch && <AnimatedStatusBadge status={statusLabel} />}
             </div>
 
             <button
@@ -1730,54 +1789,70 @@ export default function App() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-start gap-3 w-full">
+          <div className="pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
+            {payloads.map((p, idx) => {
+              const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
+              const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
+              const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
+              const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
+              const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
+              
+              return (
+                <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                  {isBatch && (
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                      <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
+                      <AnimatedStatusBadge status={pStatus} />
+                    </div>
+                  )}
+                  <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
+                    <button
+                      onClick={() => generateInputPDF(selectedJobDetails, idx)}
+                      title="Download User Input Parameters PDF"
+                      className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-violet-600" />
+                      Input Parameters PDF{labelSuffix}
+                    </button>
 
-            {selectedJobDetails.json_payload && (
-              <button
-                onClick={() => generateInputPDF(selectedJobDetails)}
-                title="Download User Input Parameters PDF"
-                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
-              >
-                <FileText className="w-4 h-4 text-violet-600" />
-                User Input Parameters PDF
-              </button>
-            )}
+                    {pReportUrl ? (
+                      <a
+                        href={pReportUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download MS Word FEA Report (.docx)"
+                        className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        View Report{labelSuffix}
+                      </a>
+                    ) : isPSuccess ? (
+                      <button
+                        onClick={() => generateAndOpenReport(selectedJobDetails)}
+                        title="View Analysis Report"
+                        className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        View Report{labelSuffix}
+                      </button>
+                    ) : null}
 
-            {selectedJobDetails.report_url ? (
-              <a
-                href={selectedJobDetails.report_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download MS Word FEA Report (.docx)"
-                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-              >
-                <FileText className="w-4 h-4 text-emerald-600" />
-                View Report
-              </a>
-            ) : isSuccess ? (
-              <button
-                onClick={() => generateAndOpenReport(selectedJobDetails)}
-                title="View Analysis Report"
-                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-              >
-                <FileText className="w-4 h-4 text-emerald-600" />
-                View Report
-              </button>
-            ) : null}
-
-            {selectedJobDetails.result_url && (
-              <a
-                href={selectedJobDetails.result_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download complete ANSYS simulation archive"
-                className="glass-card w-full sm:w-auto justify-center text-blue-900 px-4 py-2.5 text-xs font-black transition-all hover:scale-105 flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Full Analysis (.zip)
-              </a>
-            )}
-
+                    {pResultUrl && (
+                      <a
+                        href={pResultUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download complete ANSYS simulation archive"
+                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-4 py-2.5 text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Full Analysis{labelSuffix} (.zip)
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
         </div>
