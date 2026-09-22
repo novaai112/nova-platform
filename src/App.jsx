@@ -81,11 +81,11 @@ const AnimatedStatusBadge = ({ status }) => {
     );
   }
   
-  // Processing state with Arrow Loader
+  // Processing state with dual-orbit spinner + shimmer text
   return (
-    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black bg-white text-[#334155] border-[1.5px] border-[#cbd5e1] shadow-[0_2px_10px_rgba(100,116,139,0.06)]">
-      <div className="arrow-loader"></div>
-      <span className="tracking-wide uppercase">{status || 'Processing'}</span>
+    <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-black bg-white border-[1.5px] border-indigo-200 shadow-[0_2px_12px_rgba(99,102,241,0.10)]">
+      <div className="orbit-spinner" />
+      <span className="processing-text tracking-wide uppercase">{status || 'Processing'}</span>
     </span>
   );
 };
@@ -1320,129 +1320,168 @@ export default function App() {
       alert("No input data available to generate PDF.");
       return;
     }
-    
     try {
-      const doc = new jsPDF();
-      let payload = job.json_payload;
-      if (typeof payload === 'string') {
-        payload = JSON.parse(payload);
-      }
-      if (Array.isArray(payload)) {
-        payload = payload[0];
-      }
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      let p = job.json_payload;
+      if (typeof p === 'string') p = JSON.parse(p);
+      if (Array.isArray(p)) p = p[0];
 
-      // Add Header
-      doc.setFillColor(37, 99, 235); // Blue
-      doc.rect(0, 0, 210, 20, 'F');
+      const W = 210, margin = 14, contentW = W - 28;
+
+      // GRADIENT HEADER
+      doc.setFillColor(15, 23, 60); doc.rect(0, 0, W, 42, 'F');
+      doc.setFillColor(30, 64, 175); doc.rect(0, 0, W * 0.6, 42, 'F');
+      doc.setFillColor(37, 99, 235); doc.rect(0, 0, W * 0.35, 42, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("NOVA Analysis Input Parameters", 15, 13);
-      
-      doc.setFontSize(10);
-      doc.setTextColor(50, 50, 50);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Job ID: ${job.job_id_display || job.id.substring(0,8)}`, 15, 30);
-      doc.text(`Type: ${job.type || 'Nozzle Analysis'}`, 15, 36);
-      doc.text(`Date: ${new Date(job.created_at).toLocaleString()}`, 15, 42);
+      doc.setFontSize(20); doc.setFont("helvetica", "bold");
+      doc.text("NOVA", margin, 16);
+      doc.setFontSize(9); doc.setFont("helvetica", "normal");
+      doc.setTextColor(147, 197, 253);
+      doc.text("ENGINEERING ANALYSIS PLATFORM", margin, 22);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      doc.text("INPUT PARAMETERS REPORT", W - margin, 16, { align: 'right' });
+      doc.setFontSize(8); doc.setFont("helvetica", "normal");
+      doc.setTextColor(191, 219, 254);
+      doc.text((job.type || 'Nozzle Analysis') + '   |   ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 22, { align: 'right' });
+      doc.text('Generated: ' + new Date().toLocaleString('en-IN'), W - margin, 28, { align: 'right' });
+      const isSucc = job.status === 'Completed' || job.status === 'Success';
+      const isFail = job.status === 'Failed';
+      const bColor = isSucc ? [22,163,74] : isFail ? [220,38,38] : [37,99,235];
+      doc.setFillColor(...bColor);
+      doc.roundedRect(margin, 28, 36, 8, 2, 2, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont("helvetica","bold");
+      doc.text((job.status||'UNKNOWN').toUpperCase(), margin+18, 33.2, { align:'center' });
 
-      const addSectionHeader = (title) => {
-        return [{ content: title, colSpan: 2, styles: { fillColor: [240, 245, 250], textColor: [37, 99, 235], fontStyle: 'bold' } }];
+      let y = 52;
+
+      const addSection = (num, title, c=[37,99,235]) => {
+        if (y > 265) { doc.addPage(); y = 18; }
+        doc.setFillColor(...c); doc.rect(margin, y, 4, 7, 'F');
+        doc.setFillColor(240,245,255); doc.rect(margin+4, y, contentW-4, 7, 'F');
+        doc.setTextColor(...c); doc.setFontSize(8.5); doc.setFont("helvetica","bold");
+        doc.text(num + '. ' + title.toUpperCase(), margin+8, y+5);
+        y += 9;
+      };
+      const addSubLabel = (label, c=[100,116,139]) => {
+        if (y > 270) { doc.addPage(); y = 18; }
+        doc.setTextColor(...c); doc.setFontSize(7.5); doc.setFont("helvetica","bold");
+        doc.text(label.toUpperCase(), margin+2, y+4);
+        y += 7;
+      };
+      let rowAlt = false;
+      const addRow = (label, value, unit='') => {
+        if (y > 272) { doc.addPage(); y = 18; rowAlt = false; }
+        if (rowAlt) { doc.setFillColor(248,250,252); doc.rect(margin, y, contentW, 6.5, 'F'); }
+        doc.setTextColor(71,85,105); doc.setFontSize(8); doc.setFont("helvetica","bold");
+        doc.text(String(label), margin+3, y+4.5);
+        doc.setFont("helvetica","normal"); doc.setTextColor(15,23,42);
+        doc.text(unit ? String(value)+'  '+unit : String(value), margin+contentW-3, y+4.5, { align:'right' });
+        doc.setDrawColor(226,232,240); doc.line(margin, y+6.5, margin+contentW, y+6.5);
+        y += 6.5; rowAlt = !rowAlt;
       };
 
-      const tableData = [];
-      const p = payload; // for brevity
+      // SECTION 1: PROJECT & CONDITIONS
+      addSection(1, 'Project & Conditions', [37,99,235]); rowAlt = false;
+      if (p.File_Path) addRow('Analysis Folder', p.File_Path);
+      if (p.Analysis_Type) addRow('Analysis Type', p.Analysis_Type);
+      if (p.DesignTemp != null) addRow('Design Temperature', p.DesignTemp, '\u00b0C');
+      if (p.p != null) addRow('Internal Pressure', p.p, 'MPa');
+      if (p.Thermal_Required) addRow('Thermal Required', p.Thermal_Required);
+      if (p.Thermal_Required === 'Yes' && p.T_op != null) addRow('Operating Temperature', p.T_op, '\u00b0C');
+      y += 3;
 
-      // 1. PROJECT & CONDITIONS
-      tableData.push(addSectionHeader('1. PROJECT & CONDITIONS'));
-      if (p.File_Path) tableData.push(['Analysis Folder', p.File_Path]);
-      if (p.Analysis_Type) tableData.push(['Analysis Type', p.Analysis_Type]);
-      if (p.DesignTemp !== undefined) tableData.push(['Design Temp. (°C)', String(p.DesignTemp)]);
-      if (p.p !== undefined) tableData.push(['Internal Pressure (MPa)', String(p.p)]);
-      if (p.Thermal_Required) tableData.push(['Thermal Required', p.Thermal_Required]);
-      if (p.Thermal_Required === 'Yes' && p.T_op !== undefined) {
-        tableData.push(['Operating Temp. (°C)', String(p.T_op)]);
+      // SECTION 2: MATERIALS
+      addSection(2, 'Materials', [109,40,217]); rowAlt = false;
+      addSubLabel('Shell', [109,40,217]);
+      if (p.Shell_Material) addRow('Shell Material Name', p.Shell_Material);
+      addSubLabel('Nozzle', [109,40,217]);
+      if (p.Nozzle_Material) addRow('Nozzle Material Name', p.Nozzle_Material);
+      const padVal = p.Pad_Required ?? p.pad;
+      const isPad = padVal && String(padVal).toLowerCase() === 'yes';
+      addSubLabel('Reinforcement Pad', [109,40,217]);
+      addRow('Pad Required', isPad ? 'Yes' : 'No');
+      if (isPad && p.Pad_Material) addRow('Pad Material Name', p.Pad_Material);
+      y += 3;
+
+      // SECTION 3: SHELL & NOZZLE GEOMETRY
+      addSection(3, 'Shell & Nozzle Geometry', [5,150,105]); rowAlt = false;
+      addSubLabel('Shell Dimensions', [5,150,105]);
+      const sOD  = p.S_OD  ?? p.Shell_D_o;
+      const sTHK = p.S_THK ?? p.Shell_T;
+      const sH   = p.S_H   ?? p.Shell_L;
+      const nOff = p.N_OFF ?? p.Offset;
+      const corr = p.CorrosionAllowance ?? p.Corrosion;
+      if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
+      if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
+      if (sH   != null) addRow('Shell Height', sH, 'mm');
+      if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
+      if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
+      addSubLabel('Nozzle & Pad Dimensions', [5,150,105]);
+      const nType = p.N_TYPE ?? p.Nozzle_Type;
+      const nL1   = p.N_L1  ?? p.h;
+      const nOD   = p.N_OD  ?? p.Nozzle_D_o;
+      const nTHK  = p.N_THK ?? p.Nozzle_T;
+      const nP    = p.N_P   ?? p.Nozzle_L;
+      if (nType != null) addRow('Nozzle Type', nType);
+      if (nL1   != null) addRow('Nozzle Location (Height)', nL1, 'mm');
+      if (nOD   != null) addRow('Neck OD', nOD, 'mm');
+      if (nTHK  != null) addRow('Neck Thickness', nTHK, 'mm');
+      if (nP    != null) addRow('Nozzle Projection', nP, 'mm');
+      const isBarrel = nType && String(nType).toLowerCase().includes('barrel');
+      if (isBarrel) {
+        if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
+        if (p.Hub_LEN != null) addRow('Hub Length', p.Hub_LEN, 'mm');
+        if (p.T_LEN   != null) addRow('Transition Length', p.T_LEN, 'mm');
+      }
+      if (p.Fillet_Radius  != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
+      if (p.Nozzle_In_Proj != null) addRow('Inward Projection', p.Nozzle_In_Proj, 'mm');
+      if (isPad) {
+        const pW   = p.P_W   ?? p.Pad_Width;
+        const pTHK = p.P_THK ?? p.Pad_T;
+        if (pW   != null) addRow('Pad Width', pW, 'mm');
+        if (pTHK != null) addRow('Pad Thickness', pTHK, 'mm');
+      }
+      y += 3;
+
+      // SECTION 4: MESHING & BCS
+      addSection(4, 'Meshing & Boundary Conditions', [180,83,9]); rowAlt = false;
+      addSubLabel('Meshing', [180,83,9]);
+      const bSize   = p.B_size    ?? p.Mesh_Size;
+      const mMeth   = p.m_method  ?? p.Mesh_Method;
+      const nDiv    = p.N_D       ?? p.Edge_Divisions;
+      const nThrust = p.N_analysis ?? p.Nozzle_Thrust;
+      if (bSize   != null) addRow('Global Body Sizing', bSize, 'mm');
+      if (mMeth   != null) addRow('Mesh Method', mMeth);
+      if (nDiv    != null) addRow('Edge Divisions', nDiv);
+      if (nThrust != null) addRow('Nozzle Thrust Analysis', nThrust);
+      addSubLabel('Loading Conditions', [180,83,9]);
+      const loadBound = p.N_Location ?? p.Load_Boundary;
+      const fL = p.FX ?? p.F_L;
+      const mT = p.MY ?? p.M_T;
+      const fC = p.FZ ?? p.F_C;
+      const mC = p.MZ ?? p.M_C;
+      const fA = p.FY ?? p.F_A ?? p.P;
+      const mL = p.MX ?? p.M_L;
+      if (loadBound != null) addRow('Load Boundary', loadBound);
+      if (fL != null) addRow('FL \u2014 Longitudinal Shear Force', fL, 'N');
+      if (mT != null) addRow('MT \u2014 Torsional Moment', mT, 'N\u00b7mm');
+      if (fC != null) addRow('FC \u2014 Circumferential Shear Force', fC, 'N');
+      if (mC != null) addRow('MC \u2014 Circumferential Bending Moment', mC, 'N\u00b7mm');
+      if (fA != null) addRow('P \u2014 Axial / Thrust Force', fA, 'N');
+      if (mL != null) addRow('ML \u2014 Longitudinal Bending Moment', mL, 'N\u00b7mm');
+
+      // FOOTER
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let pg = 1; pg <= totalPages; pg++) {
+        doc.setPage(pg);
+        doc.setFillColor(15,23,60); doc.rect(0, 287, W, 10, 'F');
+        doc.setTextColor(147,197,253); doc.setFontSize(7); doc.setFont("helvetica","normal");
+        doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2 Compliant", margin, 293);
+        doc.text('Page ' + pg + ' of ' + totalPages, W-margin, 293, { align:'right' });
       }
 
-      // 2. MATERIALS
-      tableData.push(addSectionHeader('2. MATERIALS'));
-      if (p.Shell_Material) tableData.push(['Shell Material Name', p.Shell_Material]);
-      if (p.Nozzle_Material) tableData.push(['Nozzle Material Name', p.Nozzle_Material]);
-      if (p.Pad_Required) tableData.push(['Pad Required', p.Pad_Required]);
-      if (p.Pad_Required === 'Yes' && p.Pad_Material) {
-        tableData.push(['Pad Material Name', p.Pad_Material]);
-      }
-
-      // 3. SHELL & NOZZLE GEOMETRY
-      tableData.push(addSectionHeader('3. SHELL & NOZZLE GEOMETRY'));
-      if (p.Shell_D_o !== undefined) tableData.push(['Shell Outer Dia (OD) [mm]', String(p.Shell_D_o)]);
-      if (p.Shell_T !== undefined) tableData.push(['Shell Thickness [mm]', String(p.Shell_T)]);
-      if (p.Shell_L !== undefined) tableData.push(['Shell Height [mm]', String(p.Shell_L)]);
-      if (p.Offset !== undefined) tableData.push(['Nozzle Offset [mm]', String(p.Offset)]);
-      if (p.Corrosion !== undefined) tableData.push(['Corrosion Allowance [mm]', String(p.Corrosion)]);
-      
-      if (p.Nozzle_Type) tableData.push(['Nozzle Type', p.Nozzle_Type]);
-      if (p.h !== undefined) tableData.push(['Nozzle Location (Height) [mm]', String(p.h)]);
-      if (p.Nozzle_D_o !== undefined) tableData.push(['Neck OD [mm]', String(p.Nozzle_D_o)]);
-      if (p.Nozzle_T !== undefined) tableData.push(['Neck Thickness [mm]', String(p.Nozzle_T)]);
-      if (p.Nozzle_L !== undefined) tableData.push(['Nozzle Projection [mm]', String(p.Nozzle_L)]);
-      if (p.Fillet_Radius !== undefined) tableData.push(['Weld Fillet Radius [mm]', String(p.Fillet_Radius)]);
-      
-      if (p.Nozzle_Type && p.Nozzle_Type !== 'Flush' && p.Nozzle_In_Proj !== undefined) {
-        tableData.push(['Inward Projection [mm]', String(p.Nozzle_In_Proj)]);
-      }
-      if (p.Pad_Required === 'Yes') {
-        if (p.Pad_Width !== undefined) tableData.push(['Pad Width [mm]', String(p.Pad_Width)]);
-        if (p.Pad_T !== undefined) tableData.push(['Pad Thickness [mm]', String(p.Pad_T)]);
-      }
-
-      // 4. MESHING & BCS
-      tableData.push(addSectionHeader('4. MESHING & BCS'));
-      if (p.Mesh_Size !== undefined) tableData.push(['Global Body Sizing [mm]', String(p.Mesh_Size)]);
-      if (p.Mesh_Method) tableData.push(['Mesh Method', p.Mesh_Method]);
-      if (p.Edge_Divisions !== undefined) tableData.push(['Edge Divisions', String(p.Edge_Divisions)]);
-      if (p.Nozzle_Thrust !== undefined) tableData.push(['Nozzle Thrust Analysis', String(p.Nozzle_Thrust)]);
-      if (p.Load_Boundary) tableData.push(['Load Boundary', p.Load_Boundary]);
-      
-      if (p.F_L !== undefined) tableData.push(['Longitudinal shear force (F_L)', String(p.F_L)]);
-      if (p.M_T !== undefined) tableData.push(['Torsional moment (M_T)', String(p.M_T)]);
-      if (p.F_C !== undefined) tableData.push(['Circumferential shear force (F_C)', String(p.F_C)]);
-      if (p.M_C !== undefined) tableData.push(['Circumferential bending moment (M_C)', String(p.M_C)]);
-      if (p.F_A !== undefined) tableData.push(['Axial tension or compression force (F_A / P)', String(p.F_A)]);
-      // Notice: In the user's form, 'P' or 'F_A' might be used for Axial Tension. Using whatever is in payload.
-      if (p.M_L !== undefined) tableData.push(['Longitudinal bending moment (M_L)', String(p.M_L)]);
-
-      // If any other unmapped keys exist (e.g. from vessel head analysis), dump them at the bottom
-      const mappedKeys = ['File_Path', 'Analysis_Type', 'DesignTemp', 'p', 'Thermal_Required', 'T_op',
-        'Shell_Material', 'Nozzle_Material', 'Pad_Required', 'Pad_Material',
-        'Shell_D_o', 'Shell_T', 'Shell_L', 'Offset', 'Corrosion',
-        'Nozzle_Type', 'h', 'Nozzle_D_o', 'Nozzle_T', 'Nozzle_L', 'Fillet_Radius', 'Nozzle_In_Proj',
-        'Pad_Width', 'Pad_T',
-        'Mesh_Size', 'Mesh_Method', 'Edge_Divisions', 'Nozzle_Thrust', 'Load_Boundary',
-        'F_L', 'M_T', 'F_C', 'M_C', 'F_A', 'M_L'
-      ];
-      let hasOther = false;
-      for (const [key, value] of Object.entries(payload)) {
-        if (!mappedKeys.includes(key) && typeof value !== 'object') {
-          if (!hasOther) {
-            tableData.push(addSectionHeader('OTHER PARAMETERS'));
-            hasOther = true;
-          }
-          tableData.push([key.replace(/_/g, ' '), String(value)]);
-        }
-      }
-
-      autoTable(doc, {
-        startY: 50,
-        head: [['Parameter', 'Value']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 } }
-      });
-
-      doc.save(`NOVA_Input_${job.job_id_display || job.id.substring(0,8)}.pdf`);
+      doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '.pdf');
     } catch (err) {
       console.error("Error generating PDF:", err);
       alert("Failed to generate PDF. Check console for details.");
