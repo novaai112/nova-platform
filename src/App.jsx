@@ -11,6 +11,7 @@ import {
 import emailjs from '@emailjs/browser';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import './cube.css';
 
 const CosmicLogo = ({ className = "w-10 h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -49,46 +50,59 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
+const CubeAnimation = () => (
+  <div className="cube-container">
+    {[1, 2, 3].map(h => (
+      <div key={`h${h}`} className={`h${h}Container`}>
+        {[1, 2, 3].map(w => 
+          [1, 2, 3].map(l => (
+            <div key={`cube-${h}-${w}-${l}`} className={`cube-box h${h} w${w} l${l}`}>
+              <div className="cube-face cube-top"></div>
+              <div className="cube-face cube-left"></div>
+              <div className="cube-face cube-right"></div>
+            </div>
+          ))
+        )}
+      </div>
+    ))}
+  </div>
+);
+
 const AnimatedStatusBadge = ({ status }) => {
   const isSuccess = status === 'Completed' || status === 'Success';
   const isFailed = status === 'Failed';
   const isPending = status === 'Pending';
-  const isProcessing = !isSuccess && !isFailed && !isPending;
 
   if (isSuccess) {
     return (
-      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
-        <CheckCircle className="w-4 h-4 text-emerald-500" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#f0fdf4] text-[#166534] border border-[#86efac]">
+        <CheckCircle className="w-4 h-4 text-[#16a34a]" />
         <span className="tracking-wide uppercase">{status}</span>
       </span>
     );
   }
   if (isFailed) {
     return (
-      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-50 text-red-700 border border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all">
-        <XCircle className="w-4 h-4 text-red-500" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#fef2f2] text-[#991b1b] border border-[#fca5a5]">
+        <AlertTriangle className="w-4 h-4 text-[#dc2626]" />
         <span className="tracking-wide uppercase">{status}</span>
       </span>
     );
   }
   if (isPending) {
     return (
-      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all">
-        <Clock className="w-4 h-4 text-amber-500 animate-pulse" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#fffbeb] text-[#92400e] border border-[#fde68a]">
+        <Clock className="w-4 h-4 text-[#d97706] animate-pulse" />
         <span className="tracking-wide uppercase">{status}</span>
       </span>
     );
   }
   
-  // Processing state (highly animated)
+  // Processing state with Cube Animation
   return (
-    <span className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:scale-105 hover:bg-white cursor-default">
-      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-      <span className="tracking-wide uppercase animate-pulse">{status || 'Processing'}</span>
-      <span className="absolute flex h-2.5 w-2.5 -top-1 -right-1">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-      </span>
+    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-[#f8fafc] text-[#334155] border border-[#cbd5e1]">
+      <CubeAnimation />
+      <span className="tracking-wide uppercase">{status || 'Processing'}</span>
     </span>
   );
 };
@@ -1578,7 +1592,7 @@ export default function App() {
           onClick={() => setIsJobDetailsOpen(false)}
         />
 
-        <div className="w-full max-w-2xl sm:max-w-3xl rounded-3xl p-7 sm:p-9 relative z-10 border border-slate-200/90 shadow-[0_30px_90px_rgba(15,23,42,0.24)] bg-white animate-in zoom-in-95 space-y-6">
+        <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-7 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
 
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
@@ -1633,18 +1647,6 @@ export default function App() {
 
           </div>
 
-          <div className={`p-4 border rounded-2xl flex items-center justify-between text-xs ${
-            isSuccess ? 'bg-emerald-50 border-emerald-200' :
-            isFailed ? 'bg-red-50 border-red-200' :
-            isPending ? 'bg-amber-50 border-amber-200' :
-            'bg-blue-50 border-blue-200'
-          }`}>
-            <div>
-              <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Execution Status</span>
-              <span className="font-bold text-slate-600 mt-0.5 block">Real-time status of backend simulation solver</span>
-            </div>
-            <AnimatedStatusBadge status={statusLabel} />
-          </div>
 
           {isFailed && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in">
@@ -1671,15 +1673,6 @@ export default function App() {
             </div>
           )}
 
-          {isProcessing && (
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shrink-0 inline-block" />
-              <div>
-                <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Solver Status</span>
-                <span className="font-bold text-blue-800 text-sm mt-0.5 block">{statusLabel}</span>
-              </div>
-            </div>
-          )}
 
           {isPending && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-900 font-bold">
@@ -1694,7 +1687,7 @@ export default function App() {
               <button
                 onClick={() => generateInputPDF(selectedJobDetails)}
                 title="Download User Input Parameters PDF"
-                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-violet-800 bg-violet-50 hover:bg-violet-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-violet-300"
+                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
               >
                 <FileText className="w-4 h-4 text-violet-600" />
                 User Input Parameters PDF
@@ -1707,7 +1700,7 @@ export default function App() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Download MS Word FEA Report (.docx)"
-                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
                 View Report
@@ -1716,7 +1709,7 @@ export default function App() {
               <button
                 onClick={() => generateAndOpenReport(selectedJobDetails)}
                 title="View Analysis Report"
-                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+                className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-xs font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
                 View Report
@@ -1729,7 +1722,7 @@ export default function App() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Download complete ANSYS simulation archive"
-                className="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+                className="glass-card w-full sm:w-auto justify-center text-blue-900 px-4 py-2.5 text-xs font-black transition-all hover:scale-105 flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Full Analysis (.zip)
