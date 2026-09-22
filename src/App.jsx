@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const CosmicLogo = ({ className = "w-10 h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1312,7 +1312,7 @@ export default function App() {
         }
       }
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: 50,
         head: [['Parameter', 'Value']],
         body: tableData,
