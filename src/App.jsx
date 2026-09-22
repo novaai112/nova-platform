@@ -13,7 +13,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './cube.css';
 
-const CosmicLogo = ({ className = "w-10 h-10" }) => (
+const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="novaGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -795,8 +795,8 @@ export default function App() {
         @keyframes loadProgress { 0% { width: 0%; left: 0%; } 50% { width: 100%; left: 0%; } 100% { width: 0%; left: 100%; } }
       `}</style>
       
-      <div className="glass-panel-splash relative flex flex-col items-center justify-center p-12 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(60,100,214,0.3)]">
-        <svg className="w-32 h-32 mb-6 drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div className="glass-panel-splash relative flex flex-col items-center justify-center p-6 md:p-12 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(60,100,214,0.3)]">
+        <svg className="w-20 md:w-32 h-20 md:h-32 mb-6 drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="splashGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ec4899" /><stop offset="50%" stopColor="#8b5cf6" /><stop offset="100%" stopColor="#3b82f6" />
@@ -820,11 +820,11 @@ export default function App() {
         </svg>
 
         <div className="flex flex-col items-center text-reveal">
-          <h1 className="mb-2 text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 drop-shadow-lg">NOVA</h1>
+          <h1 className="mb-2 text-xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 drop-shadow-lg">NOVA</h1>
           <p className="text-sm font-medium tracking-widest uppercase text-slate-300">Initializing Platform</p>
         </div>
         
-        <div className="w-48 h-1 mt-8 overflow-hidden rounded-full text-reveal bg-white/10">
+        <div className="w-32 md:w-48 h-1 mt-4 md:mt-8 overflow-hidden rounded-full text-reveal bg-white/10">
            <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-1/2 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full relative" style={{animation: 'loadProgress 2s ease-out infinite'}}></div>
         </div>
       </div>
@@ -833,45 +833,45 @@ export default function App() {
 
   const renderLanding = () => (
     <div className="relative min-h-screen pt-20 overflow-x-hidden font-sans text-slate-800 scroll-smooth">
-      <section className="relative max-w-5xl px-6 pt-16 pb-20 mx-auto text-center">
+      <section className="relative max-w-5xl px-4 md:px-6 pt-16 pb-20 mx-auto text-center">
         <div className="relative z-10 transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-sm font-semibold text-slate-700 mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-sm font-semibold text-slate-700 mb-4 md:mb-8">
             <Cpu className="w-4 h-4 text-[#3C64D6] animate-pulse" /> Advanced AI-Driven FEA Automation
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-[#1E293B] to-[#3C64D6] tracking-tight mb-8 drop-shadow-sm">NOVA</h1>
+          <h1 className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-[#1E293B] to-[#3C64D6] tracking-tight mb-4 md:mb-8 drop-shadow-sm">NOVA</h1>
           
-          <div className="flex flex-col items-center justify-center gap-4 mb-12 sm:flex-row sm:gap-6">
-            <div className="glass-panel px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(60,100,214,0.2)] transition-shadow">
+          <div className="flex flex-col items-center justify-center gap-4 mb-6 md:mb-12 sm:flex-row sm:gap-6">
+            <div className="glass-panel px-4 md:px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(60,100,214,0.2)] transition-shadow">
                <FileText className="w-6 h-6 text-blue-500" />
                <span className="text-lg font-bold text-slate-800">Input Parameters</span>
             </div>
             <ArrowRight className="w-8 h-8 text-[#3C64D6] hidden sm:block animate-[pulse_2s_ease-in-out_infinite]" />
-            <div className="glass-panel px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(16,163,74,0.2)] transition-shadow">
+            <div className="glass-panel px-4 md:px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(16,163,74,0.2)] transition-shadow">
                <FileCheck className="w-6 h-6 text-emerald-500" />
                <span className="text-lg font-bold text-slate-800">FE Report</span>
             </div>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-bold text-[#3C64D6] mb-6">Automated FEA. Zero Manual Setup.</h2>
+          <h2 className="text-lg md:text-3xl font-bold text-[#3C64D6] mb-6">Automated FEA. Zero Manual Setup.</h2>
           <p className="max-w-2xl mx-auto mb-6 text-lg font-medium text-slate-700">Input your design specifications. Receive a fully code-compliant FEA stress report in record time directly from the cloud.</p>
           
-          <div className="mb-12 text-sm font-semibold text-slate-600">
+          <div className="mb-6 md:mb-12 text-sm font-semibold text-slate-600">
              Eliminate the bottlenecks: <span className="font-normal text-slate-500">Manual Meshing | Tedious Modeling | Repetitive Iterations | Report Drafting</span>
           </div>
 
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-             <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
+             <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-4 md:px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
                 <Shield className="relative z-10 w-5 h-5" /> <span className="relative z-10">Start Analysis</span>
              </button>
-             <button onClick={() => scrollToSection('how-it-works')} className="px-8 py-4 font-bold transition-colors border rounded-full shadow-sm bg-white/50 backdrop-blur-md border-white/50 hover:bg-white/80 text-slate-800">
+             <button onClick={() => scrollToSection('how-it-works')} className="px-4 md:px-8 py-4 font-bold transition-colors border rounded-full shadow-sm bg-white/50 backdrop-blur-md border-white/50 hover:bg-white/80 text-slate-800">
                 See How It Works ↓
              </button>
           </div>
         </div>
       </section>
 
-      <section id="solution" className="relative z-10 px-6 py-24">
+      <section id="solution" className="relative z-10 px-4 md:px-6 py-6 md:py-24">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob"></div>
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-4000"></div>
@@ -879,18 +879,18 @@ export default function App() {
         <div className="relative z-10 max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <div className="mb-16 text-center">
             <span className="bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-[#3C64D6] px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase">Solutions</span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">Engineering Components</h2>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">Engineering Components</h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:gap-8 md:grid-cols-2">
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group">
                 <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-blue-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
                 
-                <div className="flex items-center self-start gap-1 px-3 py-1 mb-8 text-xs font-bold border rounded-full shadow-sm bg-emerald-500/20 border-emerald-500/30 text-emerald-700 backdrop-blur-sm">
+                <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-emerald-500/20 border-emerald-500/30 text-emerald-700 backdrop-blur-sm">
                    <CheckCircle className="w-3 h-3" /> Available Now
                 </div>
                 
-                <div className="glass-icon-container w-20 h-20 rounded-[1.25rem] flex items-center justify-center mb-6">
+                <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6">
                   <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                      <rect x="20" y="15" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
                      <rect x="20" y="75" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
@@ -904,10 +904,10 @@ export default function App() {
                   </svg>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA</h3>
-                <p className="mb-8 text-sm font-medium text-slate-600">Thick Convolute (Flanged & Flued)</p>
+                <h3 className="text-lg md:text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA</h3>
+                <p className="mb-4 md:mb-8 text-sm font-medium text-slate-600">Thick Convolute (Flanged & Flued)</p>
                 
-                <div className="space-y-4 mb-8 flex-1 bg-white/40 border border-white/50 p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
+                <div className="space-y-4 mb-4 md:mb-8 flex-1 bg-white/40 border border-white/50 p-4 md:p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
                    <div className="flex items-start gap-3">
                      <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
                      <span className="text-sm font-semibold text-slate-700">Phase 1: Automated TEMA-based spring rate</span>
@@ -935,11 +935,11 @@ export default function App() {
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group opacity-95">
                 <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-amber-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
                 
-                <div className="flex items-center self-start gap-1 px-3 py-1 mb-8 text-xs font-bold border rounded-full shadow-sm bg-amber-500/20 border-amber-500/30 text-amber-700 backdrop-blur-sm">
+                <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-amber-500/20 border-amber-500/30 text-amber-700 backdrop-blur-sm">
                    <Clock className="w-3 h-3" /> In Development
                 </div>
                 
-                <div className="glass-icon-container w-20 h-20 rounded-[1.25rem] flex items-center justify-center mb-6 opacity-80 mix-blend-luminosity">
+                <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6 opacity-80 mix-blend-luminosity">
                   <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                      <path d="M 10 80 Q 50 100, 90 80" stroke="#f59e0b" strokeWidth="8" strokeLinecap="round" fill="none" />
                      <path d="M 10 90 Q 50 110, 90 90" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round" opacity="0.5" fill="none" />
@@ -952,10 +952,10 @@ export default function App() {
                   </svg>
                 </div>
                 
-                <h3 className="mb-2 text-2xl font-bold text-slate-700 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
-                <p className="mb-8 text-sm font-medium text-slate-500">Local Load Analysis for Vessels</p>
+                <h3 className="mb-2 text-lg md:text-2xl font-bold text-slate-700 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
+                <p className="mb-4 md:mb-8 text-sm font-medium text-slate-500">Local Load Analysis for Vessels</p>
                 
-                <div className="flex-1 p-6 mb-8 space-y-4 border bg-white/20 border-white/30 rounded-2xl">
+                <div className="flex-1 p-4 md:p-6 mb-4 md:mb-8 space-y-4 border bg-white/20 border-white/30 rounded-2xl">
                    <div className="flex items-start gap-3 opacity-80">
                      <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                      <span className="text-sm font-semibold text-slate-700">High-fidelity local stress evaluation</span>
@@ -974,29 +974,29 @@ export default function App() {
         </div>
       </section>
 
-      <section id="why-nova" className="py-24 bg-white/40 backdrop-blur-md px-6 border-y border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)]">
+      <section id="why-nova" className="py-6 md:py-24 bg-white/40 backdrop-blur-md px-4 md:px-6 border-y border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)]">
         <div className="max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <div className="mb-16 text-center">
             <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">About</span>
-            <h2 className="text-4xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">What is NOVA?</h2>
+            <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">What is NOVA?</h2>
           </div>
 
           <div className="grid items-center grid-cols-1 gap-16 md:grid-cols-2">
              <div className="space-y-6">
                 <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">N</div>
+                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">N</div>
                   <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Numerical</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">O</div>
+                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">O</div>
                   <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Optimization &</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">V</div>
+                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">V</div>
                   <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Virtual</div>
                 </div>
                 <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">A</div>
+                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">A</div>
                   <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Analysis</div>
                 </div>
              </div>
@@ -1012,13 +1012,13 @@ export default function App() {
         </div>
       </section>
 
-      <section id="how-it-works" className="relative z-10 px-6 py-24">
+      <section id="how-it-works" className="relative z-10 px-4 md:px-6 py-6 md:py-24">
         <div className="max-w-6xl mx-auto text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">Methodology</span>
-          <h2 className="text-4xl font-extrabold text-[#1E293B] mt-6 mb-4 drop-shadow-sm">How NOVA Works</h2>
+          <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 mb-4 drop-shadow-sm">How NOVA Works</h2>
           <p className="mb-20 text-lg font-medium text-slate-600">A streamlined 6-step workflow that transforms your engineering data into a compliant FE report</p>
 
-          <div className="relative flex flex-col items-center justify-between gap-8 md:flex-row md:items-start md:gap-4">
+          <div className="relative flex flex-col items-center justify-between gap-4 md:gap-8 md:flex-row md:items-start md:gap-4">
              <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-gradient-to-r from-blue-300/50 via-purple-300/50 to-emerald-300/50 z-0"></div>
 
              {[
@@ -1032,7 +1032,7 @@ export default function App() {
                 const Icon = item.icon;
                 return (
                   <div key={idx} className="relative z-10 flex flex-col items-center max-w-[150px] group">
-                     <div className="relative flex items-center justify-center w-20 h-20 mb-6 transition-all duration-300 shadow-md glass-panel group-hover:bg-white/60 rounded-2xl group-hover:-translate-y-2">
+                     <div className="relative flex items-center justify-center w-14 md:w-20 h-14 md:h-20 mb-6 transition-all duration-300 shadow-md glass-panel group-hover:bg-white/60 rounded-2xl group-hover:-translate-y-2">
                         <Icon className="w-8 h-8 text-[#1E293B] group-hover:text-[#3C64D6] transition-colors drop-shadow-sm" />
                      </div>
                      <h4 className="font-extrabold text-slate-800 mb-2 group-hover:text-[#3C64D6] transition-colors text-center drop-shadow-sm">{item.title}</h4>
@@ -1044,10 +1044,10 @@ export default function App() {
         </div>
       </section>
 
-      <section className="relative z-10 px-6 py-24 text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
+      <section className="relative z-10 px-4 md:px-6 py-6 md:py-24 text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
          <div className="glass-panel max-w-4xl mx-auto rounded-[3rem] p-16 relative overflow-hidden shadow-[0_20px_60px_rgba(60,100,214,0.15)]">
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full filter blur-[80px] -z-10"></div>
-           <h2 className="text-4xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
+           <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
            <p className="relative z-10 mb-10 text-lg font-medium text-slate-600">From Days to Hours. Code-Compliant. Fully Automated.</p>
            <button onClick={handleRouteToAuth} className="relative z-10 flex items-center justify-center gap-3 px-10 py-5 mx-auto text-lg font-bold transition-all rounded-full glass-btn-blue hover:scale-105">
              Access Dashboard <ArrowRight className="w-6 h-6" />
@@ -1055,8 +1055,8 @@ export default function App() {
          </div>
       </section>
 
-      <footer className="glass-panel text-slate-600 py-12 px-6 relative z-10 mt-12 border-b-0 rounded-t-[3rem] shadow-[0_-8px_32px_rgba(31,38,135,0.05)]">
-        <div className="grid max-w-6xl grid-cols-1 gap-8 pb-8 mx-auto mb-8 border-b md:grid-cols-3 border-slate-300/50">
+      <footer className="glass-panel text-slate-600 py-6 md:py-12 px-4 md:px-6 relative z-10 mt-6 md:mt-12 border-b-0 rounded-t-[3rem] shadow-[0_-8px_32px_rgba(31,38,135,0.05)]">
+        <div className="grid max-w-6xl grid-cols-1 gap-4 md:gap-8 pb-8 mx-auto mb-4 md:mb-8 border-b md:grid-cols-3 border-slate-300/50">
            <div>
               <h3 className="font-bold text-[#1E293B] text-xl mb-4 flex items-center gap-2 cursor-pointer hover:text-[#3C64D6] transition-colors" onClick={handleLogoClick}>
                 <CosmicLogo className="w-8 h-8" /> NOVA
@@ -1101,7 +1101,7 @@ export default function App() {
   const renderAuthContainer = (children) => (
     <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
+        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
            <CheckCircle className="w-5 h-5" /> {notification.message}
         </div>
       )}
@@ -1113,11 +1113,11 @@ export default function App() {
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/30 rounded-full filter blur-[40px]"></div>
         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400/30 rounded-full filter blur-[40px]"></div>
         
-        <div className="relative z-10 mb-8 space-y-2 text-center">
+        <div className="relative z-10 mb-4 md:mb-8 space-y-2 text-center">
           <div className="flex justify-center mb-4 cursor-pointer" onClick={handleLogoClick}>
-             <CosmicLogo className="w-20 h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
+             <CosmicLogo className="w-14 md:w-20 h-14 md:h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
           </div>
-          <h1 className="text-3xl font-extrabold text-[#1E293B] tracking-tight">NOVA 1.0</h1>
+          <h1 className="text-xl md:text-3xl font-extrabold text-[#1E293B] tracking-tight">NOVA 1.0</h1>
           <p className="text-sm font-semibold tracking-wider uppercase text-slate-600">Authentication</p>
         </div>
         <div className="relative z-10">
@@ -1153,7 +1153,7 @@ export default function App() {
           {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-5 h-5" /></>}
         </button>
       </form>
-      <div className="mt-8 text-sm font-medium text-center text-slate-600">
+      <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
         Don't have an account? <button onClick={() => setCurrentView('signup')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign up here</button>
       </div>
     </>
@@ -1187,7 +1187,7 @@ export default function App() {
           {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
         </button>
       </form>
-      <div className="mt-8 text-sm font-medium text-center text-slate-600">
+      <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
         Already have an account? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
@@ -1221,7 +1221,7 @@ export default function App() {
         <form onSubmit={handleForgotCodeSubmit} className="space-y-5">
            <div className="space-y-1.5">
             <label className="block pl-1 text-sm font-bold text-center text-slate-700">Verification Code</label>
-            <input type="text" maxLength="6" placeholder="••••••" value={forgotCode} onChange={(e) => { setForgotCode(e.target.value.replace(/\D/g, '')); setForgotErrors({...forgotErrors, code: null}); }} className={`w-full px-4 py-4 glass-input rounded-xl text-center text-3xl tracking-[0.5em] font-extrabold text-[#3C64D6] ${forgotErrors.code ? '!border-red-500' : ''}`} required />
+            <input type="text" maxLength="6" placeholder="••••••" value={forgotCode} onChange={(e) => { setForgotCode(e.target.value.replace(/\D/g, '')); setForgotErrors({...forgotErrors, code: null}); }} className={`w-full px-4 py-4 glass-input rounded-xl text-center text-xl md:text-3xl tracking-[0.5em] font-extrabold text-[#3C64D6] ${forgotErrors.code ? '!border-red-500' : ''}`} required />
             {forgotErrors.code && <p className="mt-2 text-xs font-bold text-center text-red-500">{forgotErrors.code}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading || forgotCode.length !== 6} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
@@ -1260,7 +1260,7 @@ export default function App() {
         </form>
       )}
 
-      <div className="mt-8 text-sm font-medium text-center text-slate-600">
+      <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
          Remember your password? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
@@ -1270,7 +1270,7 @@ export default function App() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
       <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-        <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+        <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
           <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
             <Sparkles className="w-6 h-6" /> Executive Insights
           </h3>
@@ -1278,16 +1278,16 @@ export default function App() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6">
            <div className="mb-2">
               <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
-              <p className="text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
+              <p className="text-lg md:text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
               <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
            </div>
-           <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
+           <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
               {isInsightLoading ? (
-                 <div className="flex flex-col items-center justify-center h-full py-8 space-y-4 text-purple-600">
-                    <Loader2 className="w-10 h-10 animate-spin" />
+                 <div className="flex flex-col items-center justify-center h-full py-4 md:py-8 space-y-4 text-purple-600">
+                    <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
                     <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
                  </div>
               ) : (
@@ -1296,8 +1296,8 @@ export default function App() {
                  </div>
               )}
            </div>
-           <div className="flex justify-end mt-8">
-             <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
+           <div className="flex justify-end mt-4 md:mt-8">
+             <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
            </div>
         </div>
       </div>
@@ -1693,10 +1693,19 @@ export default function App() {
 
     // Helper to get status or url for a specific index
     const getBatchItem = (arrStr, idx, fallback) => {
+      if (!arrStr) return fallback;
       try {
-        if (typeof arrStr === 'string' && arrStr.startsWith('[')) {
-          const arr = JSON.parse(arrStr);
-          if (Array.isArray(arr) && arr.length > idx) return arr[idx];
+        if (typeof arrStr === 'string') {
+          if (arrStr.startsWith('[')) {
+            const arr = JSON.parse(arrStr);
+            if (Array.isArray(arr) && arr.length > idx) return arr[idx];
+          } else {
+            // Might be comma separated
+            const arr = arrStr.split(',');
+            if (arr.length > 1 && arr.length > idx) return arr[idx].trim();
+            // If it's a single string and we want index 0, return it
+            if (idx === 0) return arrStr;
+          }
         } else if (Array.isArray(arrStr) && arrStr.length > idx) {
           return arrStr[idx];
         }
@@ -1711,7 +1720,7 @@ export default function App() {
           onClick={() => setIsJobDetailsOpen(false)}
         />
 
-        <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-7 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
+        <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-4 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
 
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
@@ -1809,7 +1818,7 @@ export default function App() {
                     <button
                       onClick={() => generateInputPDF(selectedJobDetails, idx)}
                       title="Download User Input Parameters PDF"
-                      className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
                     >
                       <FileText className="w-3.5 h-3.5 text-violet-600" />
                       Input Parameters PDF{labelSuffix}
@@ -1821,7 +1830,7 @@ export default function App() {
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Download MS Word FEA Report (.docx)"
-                        className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
                       >
                         <FileText className="w-3.5 h-3.5 text-emerald-600" />
                         View Report{labelSuffix}
@@ -1830,7 +1839,7 @@ export default function App() {
                       <button
                         onClick={() => generateAndOpenReport(selectedJobDetails)}
                         title="View Analysis Report"
-                        className="glass-card w-full sm:w-auto justify-center px-4 py-2.5 text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
                       >
                         <FileText className="w-3.5 h-3.5 text-emerald-600" />
                         View Report{labelSuffix}
@@ -1843,7 +1852,7 @@ export default function App() {
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Download complete ANSYS simulation archive"
-                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-4 py-2.5 text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
+                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
                       >
                         <Download className="w-3.5 h-3.5" />
                         Full Analysis{labelSuffix} (.zip)
@@ -1861,17 +1870,17 @@ export default function App() {
   };
 
   const DashboardHeader = ({ isProfile }) => (
-    <div className="relative z-50 flex flex-col items-start justify-between p-6 mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
+    <div className="relative z-50 flex flex-col items-start justify-between p-4 md:p-6 mb-4 md:mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
       <div className="flex items-center gap-4">
         <div className="items-center justify-center hidden p-3 transition-all border shadow-sm cursor-pointer sm:flex bg-white/40 border-white/50 rounded-2xl hover:bg-white/60 hover:scale-105" onClick={handleLogoClick}>
-          <CosmicLogo className="w-10 h-10" />
+          <CosmicLogo className="w-8 h-8 sm:w-10 sm:h-10" />
         </div>
         <div>
           {isProfile ? (
-            <h1 className="text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">About Me</h1>
+            <h1 className="text-lg md:text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">About Me</h1>
           ) : (
             <>
-              <h1 className="text-2xl font-extrabold text-[#1E293B] tracking-wide drop-shadow-sm">Welcome, {currentUser.name}!</h1>
+              <h1 className="text-lg md:text-2xl font-extrabold text-[#1E293B] tracking-wide drop-shadow-sm">Welcome, {currentUser.name}!</h1>
               <div className="flex items-center text-sm mt-1.5 font-bold text-slate-600">
                 <span>NOVA Dashboard - {jobs.length} Jobs</span>
                 <span className={`ml-3 flex items-center px-2.5 py-1 rounded-full text-xs shadow-sm border ${currentUser.isApproved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-800' : 'bg-amber-500/20 border-amber-500/30 text-amber-800'}`}>
@@ -1888,13 +1897,13 @@ export default function App() {
       </div>
 
       {isProfile ? (
-        <button onClick={() => setCurrentView('dashboard')} className="glass-input hover:bg-white/70 text-slate-800 px-6 py-2.5 rounded-xl text-sm font-bold transition-colors mt-4 md:mt-0 shadow-sm border-white/80">
+        <button onClick={() => setCurrentView('dashboard')} className="glass-input hover:bg-white/70 text-slate-800 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-colors mt-4 md:mt-0 shadow-sm border-white/80">
           Back to Dashboard
         </button>
       ) : (
         <div className="relative mt-4 md:mt-0 z-[60]">
           <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
-            <div className="bg-[#3C64D6] text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
+            <div className="bg-[#3C64D6] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
               {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : currentUser.initial}
             </div>
             <div className="hidden pr-2 sm:block">
@@ -1922,7 +1931,7 @@ export default function App() {
   const renderDashboard = () => (
       <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
         {notification && (
-          <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
+          <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
             <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
           </div>
         )}
@@ -1931,7 +1940,7 @@ export default function App() {
           <DashboardHeader isProfile={false} />
 
           {!currentUser.isApproved && (
-            <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
+            <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-4 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
               <div className="flex items-start gap-4">
                 <Shield className="w-8 h-8 mt-1 text-amber-600 shrink-0 sm:mt-0" />
                 <div>
@@ -1942,7 +1951,7 @@ export default function App() {
               <button 
                 onClick={handleRequestAccess} 
                 disabled={isRequestingAccess}
-                className="flex items-center gap-2 px-6 py-3 font-bold text-white transition-colors shadow-md bg-amber-600 hover:bg-amber-700 rounded-xl whitespace-nowrap disabled:opacity-70"
+                className="flex items-center gap-2 px-4 md:px-6 py-3 font-bold text-white transition-colors shadow-md bg-amber-600 hover:bg-amber-700 rounded-xl whitespace-nowrap disabled:opacity-70"
               >
                 {isRequestingAccess ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
                 {isRequestingAccess ? 'Sending...' : 'Request Access'}
@@ -1950,8 +1959,8 @@ export default function App() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1100px] mx-auto mb-10">
-            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10">
+            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
             </h3>
@@ -1969,7 +1978,7 @@ export default function App() {
             )}
           </div>
             
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
             </h3>
@@ -1987,7 +1996,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
+            <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
             </h3>
@@ -2005,7 +2014,7 @@ export default function App() {
             )}
           </div>
             
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
               <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
                 <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
               </h3>
@@ -2022,7 +2031,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
+            <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
             </h3>
@@ -2040,7 +2049,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
+            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
             </h3>
@@ -2058,7 +2067,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <CircleDot className="w-6 h-6 text-purple-600" />Stiffener Analysis
             </h3>
@@ -2076,7 +2085,7 @@ export default function App() {
             )}
           </div>
             
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
             </h3>
@@ -2094,7 +2103,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
+            <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
             </h3>
@@ -2112,7 +2121,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
+            <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
             </h3>
@@ -2131,7 +2140,7 @@ export default function App() {
           </div>
 
             
-            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
+            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Database className="w-6 h-6 text-blue-600" /> ASME Materials
             </h3>
@@ -2149,7 +2158,7 @@ export default function App() {
             )}
           </div>
 
-            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
+            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
             </h3>
@@ -2168,7 +2177,7 @@ export default function App() {
           </div>
 
 
-            <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
+            <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
             <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
               <Box className="w-6 h-6 text-teal-600" /> CAD AI
             </h3>
@@ -2187,7 +2196,7 @@ export default function App() {
           </div>
             
 
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
               <div>
                 <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
                   <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
@@ -2202,9 +2211,9 @@ export default function App() {
 
           
 
-        <div className="glass-panel rounded-[2rem] p-8 shadow-sm mb-8">
-          <div className="flex flex-col items-center justify-between gap-4 mb-8 sm:flex-row">
-            <h2 className="text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
+        <div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
+          <div className="flex flex-col items-center justify-between gap-4 mb-4 md:mb-8 sm:flex-row">
+            <h2 className="text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="glass-input text-[#3C64D6] text-sm rounded-xl px-5 py-2.5 outline-none font-bold cursor-pointer shadow-sm border-white/60 focus:ring-2 focus:ring-blue-500">
               <option value={`All Analysis (${jobs.length})`}>All Analysis ({jobs.length})</option>
               <option value="Nozzle Analysis">Nozzle Analysis</option>
@@ -2222,48 +2231,48 @@ export default function App() {
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="p-5 text-center border shadow-sm bg-emerald-500/20 border-emerald-500/30 backdrop-blur-md rounded-2xl">
-              <div className="mb-1 text-3xl font-extrabold text-emerald-800">{stats.total}</div>
+              <div className="mb-1 text-xl md:text-3xl font-extrabold text-emerald-800">{stats.total}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-emerald-700 opacity-90">Total</div>
             </div>
             <div className="p-5 text-center border shadow-sm bg-blue-500/20 border-blue-500/30 backdrop-blur-md rounded-2xl">
-              <div className="mb-1 text-3xl font-extrabold text-blue-800">{stats.completed}</div>
+              <div className="mb-1 text-xl md:text-3xl font-extrabold text-blue-800">{stats.completed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-blue-700 opacity-90">Completed</div>
             </div>
             <div className="p-5 text-center border shadow-sm bg-sky-500/20 border-sky-500/30 backdrop-blur-md rounded-2xl">
-              <div className="mb-1 text-3xl font-extrabold text-sky-800">{stats.processing}</div>
+              <div className="mb-1 text-xl md:text-3xl font-extrabold text-sky-800">{stats.processing}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-sky-700 opacity-90">Processing</div>
             </div>
             <div className="p-5 text-center border shadow-sm bg-orange-500/20 border-orange-500/30 backdrop-blur-md rounded-2xl">
-              <div className="mb-1 text-3xl font-extrabold text-orange-800">{stats.pending}</div>
+              <div className="mb-1 text-xl md:text-3xl font-extrabold text-orange-800">{stats.pending}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-orange-700 opacity-90">Pending</div>
             </div>
             <div className="p-5 text-center border shadow-sm bg-red-500/20 border-red-500/30 backdrop-blur-md rounded-2xl">
-              <div className="mb-1 text-3xl font-extrabold text-red-800">{stats.failed}</div>
+              <div className="mb-1 text-xl md:text-3xl font-extrabold text-red-800">{stats.failed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-red-700 opacity-90">Failed</div>
             </div>
           </div>
         </div>
 
         {jobs.length === 0 ? (
-          <div className="glass-panel rounded-[2.5rem] py-24 px-6 text-center border-t border-l border-white/80 flex flex-col items-center justify-center">
-            <div className="relative flex items-center justify-center w-24 h-24 mb-8 glass-icon-container rounded-3xl">
-              <Database className="w-12 h-12 text-[#3C64D6] opacity-80" />
+          <div className="glass-panel rounded-[2.5rem] py-6 md:py-24 px-4 md:px-6 text-center border-t border-l border-white/80 flex flex-col items-center justify-center">
+            <div className="relative flex items-center justify-center w-24 h-24 mb-4 md:mb-8 glass-icon-container rounded-3xl">
+              <Database className="w-8 h-8 sm:w-12 sm:h-12 text-[#3C64D6] opacity-80" />
             </div>
-            <h3 className="mb-3 text-2xl font-extrabold text-slate-800 drop-shadow-sm">No Analysis Jobs Yet</h3>
-            <p className="max-w-sm mx-auto mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
+            <h3 className="mb-3 text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">No Analysis Jobs Yet</h3>
+            <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
             {currentUser.isApproved ? (
-              <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
+              <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
                  <Plus className="w-5 h-5 mr-2" /> Start First Job
               </button>
             ) : (
-              <button disabled className="flex items-center px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
+              <button disabled className="flex items-center px-4 md:px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
                  <Lock className="w-5 h-5 mr-2" /> Account Locked
               </button>
             )}
           </div>
         ) : (
           <div className="glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
-             <div className="flex flex-wrap items-center justify-between gap-3 px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
+             <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
                 <div className="flex items-center gap-3">
                   <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
                   <span className="text-xs font-bold text-slate-500 bg-white/60 px-2.5 py-1 rounded-full border border-slate-200/60">
@@ -2294,10 +2303,10 @@ export default function App() {
                          title="Select / Deselect All" 
                        />
                      </th>
-                     <th className="px-6 py-2.5">Job ID</th>
-                     <th className="px-6 py-2.5">Type</th>
-                     <th className="px-6 py-2.5">Date &amp; Time</th>
-                     <th className="px-6 py-2.5 text-right">Actions</th>
+                     <th className="px-4 md:px-6 py-2.5">Job ID</th>
+                     <th className="px-4 md:px-6 py-2.5">Type</th>
+                     <th className="px-4 md:px-6 py-2.5">Date &amp; Time</th>
+                     <th className="px-4 md:px-6 py-2.5 text-right">Actions</th>
                    </tr>
                  </thead>
                  <tbody>
@@ -2318,22 +2327,22 @@ export default function App() {
                              title="Select Job" 
                            />
                          </td>
-                         <td className="px-6 py-4 font-black text-[#3C64D6]">
+                         <td className="px-4 md:px-6 py-4 font-black text-[#3C64D6]">
                            {job.job_id_display || job.id.substring(0,8)}
                          </td>
-                         <td className="px-6 py-4 font-semibold text-slate-700">
+                         <td className="px-4 md:px-6 py-4 font-semibold text-slate-700">
                            <span className="inline-flex items-center gap-1.5">
                              <Box className="w-3.5 h-3.5 text-indigo-500" />
                              {job.type}
                            </span>
                          </td>
-                         <td className="px-6 py-4 font-medium text-slate-600 text-xs">
+                         <td className="px-4 md:px-6 py-4 font-medium text-slate-600 text-xs">
                            {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                            <span className="block text-[11px] text-slate-400 font-semibold">
                              {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                            </span>
                          </td>
-                         <td className="px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
+                         <td className="px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
                             <AnimatedStatusBadge status={job.status} />
                             
                             {/* Word FEA Report */}
@@ -2414,11 +2423,11 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSubmitJobOpen(false)}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden animate-in zoom-in-95 relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
-              <div className={`p-6 text-white font-extrabold flex justify-between items-center bg-gradient-to-r ${selectedJobType === 'Nozzle Analysis' ? 'from-emerald-600/90 to-emerald-500/90' : selectedJobType === 'Local PWHT' ? 'from-orange-600/90 to-orange-500/90' : 'from-blue-600/90 to-blue-500/90'} backdrop-blur-md`}>
+              <div className={`p-4 md:p-6 text-white font-extrabold flex justify-between items-center bg-gradient-to-r ${selectedJobType === 'Nozzle Analysis' ? 'from-emerald-600/90 to-emerald-500/90' : selectedJobType === 'Local PWHT' ? 'from-orange-600/90 to-orange-500/90' : 'from-blue-600/90 to-blue-500/90'} backdrop-blur-md`}>
                 <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Plus className="w-6 h-6" /> New {selectedJobType}</span>
                 <button onClick={() => setIsSubmitJobOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5" /></button>
               </div>
-              <form onSubmit={handleJobSubmit} className="p-8 space-y-4">
+              <form onSubmit={handleJobSubmit} className="p-4 md:p-8 space-y-4">
                 <div className="space-y-2">
                   <label className="pl-1 text-sm font-bold text-slate-800">Project Name</label>
                   <input name="jobName" type="text" className="w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium" required autoFocus placeholder="e.g. Shell Nozzle Analysis" />
@@ -2432,7 +2441,7 @@ export default function App() {
                   {showMaterialConsultant && (
                     <div className="p-4 mt-4 border bg-purple-500/10 border-purple-500/20 rounded-xl backdrop-blur-sm animate-in fade-in slide-in-from-top-2">
                       <textarea
-                        className="w-full h-20 p-3 mb-3 text-sm font-medium rounded-lg resize-none glass-input focus:ring-purple-500/50"
+                        className="w-full h-14 md:h-20 p-3 mb-3 text-sm font-medium rounded-lg resize-none glass-input focus:ring-purple-500/50"
                         placeholder="E.g., High pressure steam, 450°C, corrosive environment..."
                         value={materialPrompt}
                         onChange={(e) => setMaterialPrompt(e.target.value)}
@@ -2467,7 +2476,7 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAiModalOpen(false)}></div>
             <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80">
-              <div className="flex items-center justify-between p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+              <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
                 <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
                   <Sparkles className="w-6 h-6" /> AI Analysis Recommender
                 </h3>
@@ -2476,11 +2485,11 @@ export default function App() {
                 </button>
               </div>
               
-              <div className="flex-1 p-8 space-y-6 overflow-y-auto">
-                <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+              <div className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+                <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                   <p className="pl-1 mb-3 text-sm font-bold text-purple-900 drop-shadow-sm">Describe your engineering scenario below:</p>
                   <textarea
-                    className="w-full h-32 p-4 text-sm font-medium resize-none glass-input rounded-xl focus:ring-purple-500/50"
+                    className="w-full h-20 md:h-32 p-4 text-sm font-medium resize-none glass-input rounded-xl focus:ring-purple-500/50"
                     placeholder="E.g., I have a high-pressure steam pipe attached to a thin-walled cylindrical vessel. I need to know if the junction is safe."
                     value={aiSetupPrompt}
                     onChange={(e) => setAiSetupPrompt(e.target.value)}
@@ -2489,7 +2498,7 @@ export default function App() {
                     <button 
                       onClick={handleAiSetupSubmit}
                       disabled={isAiSetupLoading || !aiSetupPrompt.trim()}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-6 rounded-xl flex items-center gap-2 transition-all hover:scale-[1.02] shadow-md"
+                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-4 md:px-6 rounded-xl flex items-center gap-2 transition-all hover:scale-[1.02] shadow-md"
                     >
                       {isAiSetupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       {isAiSetupLoading ? "Analyzing..." : "Analyze Scenario"}
@@ -2498,7 +2507,7 @@ export default function App() {
                 </div>
 
                 {aiSetupResponse && (
-                  <div className="p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
+                  <div className="p-4 md:p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
                     <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
                       <Bot className="w-4 h-4"/> AI Recommendation
                     </h4>
@@ -2518,7 +2527,7 @@ export default function App() {
   const renderProfile = () => (
     <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
+        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
            <CheckCircle className="w-5 h-5" /> {notification.message}
         </div>
       )}
@@ -2526,7 +2535,7 @@ export default function App() {
       <div className="max-w-[1200px] mx-auto">
         <DashboardHeader isProfile={true} />
 
-        <div className="flex flex-col gap-8 md:flex-row">
+        <div className="flex flex-col gap-4 md:gap-8 md:flex-row">
           <div className="w-full md:w-[280px] shrink-0">
             <div className="py-4 overflow-hidden border-t border-l shadow-sm glass-panel rounded-3xl border-white/80">
               <nav className="flex flex-col gap-1 px-3">
@@ -2543,16 +2552,16 @@ export default function App() {
             {profileTab === 'info' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center justify-between pb-6 mb-10 border-b border-white/50">
-                  <h2 className="text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">Profile Information</h2>
-                  <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="glass-btn-blue text-white text-sm font-bold py-2.5 px-6 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2">
+                  <h2 className="text-lg md:text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">Profile Information</h2>
+                  <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="glass-btn-blue text-white text-sm font-bold py-2.5 px-4 md:px-6 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2">
                     <Settings className="w-4 h-4"/> Edit Profile
                   </button>
                 </div>
 
                 <div className="flex flex-col gap-12 lg:flex-row lg:gap-20">
                   <div className="flex flex-col items-center pl-4 space-y-4 shrink-0">
-                    <div className="w-32 h-32 rounded-[2rem] glass-input flex items-center justify-center overflow-hidden relative group cursor-pointer shadow-md">
-                       {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : <div className="text-5xl font-extrabold text-[#3C64D6] drop-shadow-sm">{currentUser.initial}</div>}
+                    <div className="w-20 md:w-32 h-20 md:h-32 rounded-[2rem] glass-input flex items-center justify-center overflow-hidden relative group cursor-pointer shadow-md">
+                       {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : <div className="text-xl md:text-5xl font-extrabold text-[#3C64D6] drop-shadow-sm">{currentUser.initial}</div>}
                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
                     </div>
                     <label className="text-[#3C64D6] text-sm font-bold hover:underline cursor-pointer bg-white/40 px-4 py-1.5 rounded-full border border-white/60 shadow-sm transition-colors hover:bg-white/60">
@@ -2561,7 +2570,7 @@ export default function App() {
                     </label>
                   </div>
 
-                  <div className="flex-1 bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                  <div className="flex-1 bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
                     <div className="grid grid-cols-1 text-sm md:grid-cols-2 gap-y-8 gap-x-6">
                       <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Full Name</div><div className="font-medium text-slate-600">{currentUser.name}</div></div>
                       <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Email Address</div><div className="font-medium text-slate-600">{currentUser.email}</div></div>
@@ -2580,14 +2589,14 @@ export default function App() {
 
             {profileTab === 'security' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                <div className="pb-4 mb-10 border-b border-white/50"><h2 className="text-2xl font-extrabold text-red-600 drop-shadow-sm">Security Settings</h2></div>
+                <div className="pb-4 mb-10 border-b border-white/50"><h2 className="text-lg md:text-2xl font-extrabold text-red-600 drop-shadow-sm">Security Settings</h2></div>
                 <div className="bg-white/40 border border-white/60 backdrop-blur-md rounded-3xl p-16 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                  <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 border shadow-sm bg-amber-500/20 rounded-2xl border-amber-500/30 backdrop-blur-sm">
-                     <Lock className="w-10 h-10 text-amber-600 drop-shadow-sm" />
+                  <div className="flex items-center justify-center w-14 md:w-20 h-14 md:h-20 mx-auto mb-6 border shadow-sm bg-amber-500/20 rounded-2xl border-amber-500/30 backdrop-blur-sm">
+                     <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 drop-shadow-sm" />
                   </div>
                   <h3 className="mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">Password Management</h3>
-                  <p className="max-w-sm mx-auto mb-8 text-sm font-medium text-slate-600">Keep your account secure by using a strong password and updating it regularly.</p>
-                  <button onClick={() => setIsChangePasswordOpen(true)} className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold py-3.5 px-8 rounded-xl mx-auto flex items-center shadow-lg transition-transform hover:scale-105">
+                  <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium text-slate-600">Keep your account secure by using a strong password and updating it regularly.</p>
+                  <button onClick={() => setIsChangePasswordOpen(true)} className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold py-3.5 px-4 md:px-8 rounded-xl mx-auto flex items-center shadow-lg transition-transform hover:scale-105">
                      <Lock className="w-4 h-4 mr-2" /> Change Password
                   </button>
                 </div>
@@ -2597,19 +2606,19 @@ export default function App() {
             {profileTab === 'payment' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                 <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm">
-                  <h2 className="pb-4 mb-8 text-2xl font-extrabold border-b text-emerald-700 border-white/50 drop-shadow-sm">Payment Summary ({jobs.length} Jobs)</h2>
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <div className="bg-white/40 border border-red-500/30 backdrop-blur-md rounded-3xl py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="mb-2 text-3xl font-extrabold text-red-600 drop-shadow-sm">₹{paymentData.unpaid.toLocaleString()}</div>
+                  <h2 className="pb-4 mb-4 md:mb-8 text-lg md:text-2xl font-extrabold border-b text-emerald-700 border-white/50 drop-shadow-sm">Payment Summary ({jobs.length} Jobs)</h2>
+                  <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-3">
+                    <div className="bg-white/40 border border-red-500/30 backdrop-blur-md rounded-3xl py-4 md:py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                       <div className="mb-2 text-xl md:text-3xl font-extrabold text-red-600 drop-shadow-sm">₹{paymentData.unpaid.toLocaleString()}</div>
                        <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Unpaid</div>
                     </div>
-                    <div className="bg-white/40 border border-emerald-500/30 backdrop-blur-md rounded-3xl py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="mb-2 text-3xl font-extrabold text-emerald-600 drop-shadow-sm">0</div>
+                    <div className="bg-white/40 border border-emerald-500/30 backdrop-blur-md rounded-3xl py-4 md:py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                       <div className="mb-2 text-xl md:text-3xl font-extrabold text-emerald-600 drop-shadow-sm">0</div>
                        <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Paid</div>
                     </div>
-                    <div className="relative py-8 overflow-hidden text-center shadow-lg glass-btn-blue border-blue-500/50 rounded-3xl">
+                    <div className="relative py-4 md:py-8 overflow-hidden text-center shadow-lg glass-btn-blue border-blue-500/50 rounded-3xl">
                        <div className="absolute inset-0 bg-white/10"></div>
-                       <div className="relative z-10 mb-2 text-3xl font-extrabold text-white drop-shadow-sm">₹{paymentData.total.toLocaleString()}</div>
+                       <div className="relative z-10 mb-2 text-xl md:text-3xl font-extrabold text-white drop-shadow-sm">₹{paymentData.total.toLocaleString()}</div>
                        <div className="relative z-10 text-xs font-bold tracking-widest text-blue-100 uppercase">Total</div>
                     </div>
                   </div>
@@ -2619,15 +2628,15 @@ export default function App() {
 
             {profileTab === 'help' && (
               <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                 <h2 className="text-2xl font-extrabold text-[#0EA5E9] mb-8 pb-4 border-b border-white/50 drop-shadow-sm">Need Help?</h2>
-                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    <div className="bg-white/40 border border-sky-500/30 backdrop-blur-md p-12 text-center rounded-3xl flex flex-col justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
+                 <h2 className="text-lg md:text-2xl font-extrabold text-[#0EA5E9] mb-4 md:mb-8 pb-4 border-b border-white/50 drop-shadow-sm">Need Help?</h2>
+                 <div className="grid grid-cols-1 gap-4 md:gap-8 md:grid-cols-2">
+                    <div className="bg-white/40 border border-sky-500/30 backdrop-blur-md p-6 md:p-12 text-center rounded-3xl flex flex-col justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
                       <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 border bg-sky-500/20 rounded-2xl border-sky-500/30">
                          <Mail className="w-8 h-8 text-sky-600" />
                       </div>
                       <h3 className="mb-3 text-xl font-extrabold text-slate-800 drop-shadow-sm">Contact Support</h3>
                       <p className="mb-6 text-sm font-medium text-slate-600">Email us directly for technical assistance and licensing queries:</p>
-                      <a href="mailto:analysis.ai.nova@gmail.com" className="inline-flex items-center justify-center gap-2 px-6 py-3 mx-auto text-sm font-bold text-white transition-transform shadow-md glass-btn-blue hover:scale-105 rounded-xl">
+                      <a href="mailto:analysis.ai.nova@gmail.com" className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-3 mx-auto text-sm font-bold text-white transition-transform shadow-md glass-btn-blue hover:scale-105 rounded-xl">
                         analysis.ai.nova@gmail.com
                       </a>
                     </div>
@@ -2671,11 +2680,11 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-              <div className="flex items-center justify-between p-6 font-extrabold text-white bg-gradient-to-r from-blue-600/90 to-blue-500/90 backdrop-blur-md">
+              <div className="flex items-center justify-between p-4 md:p-6 font-extrabold text-white bg-gradient-to-r from-blue-600/90 to-blue-500/90 backdrop-blur-md">
                  <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Settings className="w-6 h-6"/> Edit Profile</span>
                  <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
               </div>
-              <form onSubmit={handleEditProfile} className="p-8 space-y-5">
+              <form onSubmit={handleEditProfile} className="p-4 md:p-8 space-y-5">
                 <div className="space-y-2">
                   <label className="pl-1 text-sm font-bold text-slate-800">Company / Institute</label>
                   <input type="text" value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} className="w-full glass-input p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" required />
@@ -2697,14 +2706,14 @@ export default function App() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-              <div className={`p-6 text-white font-extrabold flex justify-between items-center backdrop-blur-md transition-colors duration-300 ${isPwdSuccess ? 'bg-emerald-600/90' : 'bg-red-600/90'}`}>
+              <div className={`p-4 md:p-6 text-white font-extrabold flex justify-between items-center backdrop-blur-md transition-colors duration-300 ${isPwdSuccess ? 'bg-emerald-600/90' : 'bg-red-600/90'}`}>
                 <span className="flex items-center gap-3 text-lg drop-shadow-sm">
                   {isPwdSuccess ? <CheckCircle className="w-6 h-6"/> : <Lock className="w-6 h-6"/>} 
                   {isPwdSuccess ? 'Password Changed!' : 'Change Password'}
                 </span>
                 <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current: '', new: '', confirm: ''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
               </div>
-              <form onSubmit={handlePasswordChange} className="p-8 space-y-5">
+              <form onSubmit={handlePasswordChange} className="p-4 md:p-8 space-y-5">
                 <div className="space-y-2">
                    <div className="relative">
                      <input 
