@@ -9,6 +9,8 @@ import {
   FileJson, AlertCircle, ExternalLink, RefreshCw, Copy, CheckCheck, Trash2, Trash, CheckSquare, Square
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const CosmicLogo = ({ className = "w-10 h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1272,6 +1274,61 @@ export default function App() {
     downloadAnchor.remove();
   };
 
+  const generateInputPDF = (job) => {
+    if (!job || !job.json_payload) {
+      alert("No input data available to generate PDF.");
+      return;
+    }
+    
+    try {
+      const doc = new jsPDF();
+      let payload = job.json_payload;
+      if (typeof payload === 'string') {
+        payload = JSON.parse(payload);
+      }
+      if (Array.isArray(payload)) {
+        payload = payload[0];
+      }
+
+      // Add Header
+      doc.setFillColor(37, 99, 235); // Blue
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("NOVA Analysis Input Parameters", 15, 13);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Job ID: ${job.job_id_display || job.id.substring(0,8)}`, 15, 30);
+      doc.text(`Type: ${job.type || 'Nozzle Analysis'}`, 15, 36);
+      doc.text(`Date: ${new Date(job.created_at).toLocaleString()}`, 15, 42);
+
+      const tableData = [];
+      for (const [key, value] of Object.entries(payload)) {
+        if (key !== 'File_Path' && typeof value !== 'object') {
+          tableData.push([key.replace(/_/g, ' '), String(value)]);
+        }
+      }
+
+      doc.autoTable({
+        startY: 50,
+        head: [['Parameter', 'Value']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 } }
+      });
+
+      doc.save(`NOVA_Input_${job.job_id_display || job.id.substring(0,8)}.pdf`);
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("Failed to generate PDF. Check console for details.");
+    }
+  };
+
   const generateAndOpenReport = (job) => {
     if (!job) return;
     if (job.report_url) {
@@ -1519,32 +1576,17 @@ export default function App() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-start gap-3 flex-wrap">
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-start gap-3 w-full">
 
-            {(isSuccess || isFailed) && selectedJobDetails.pdf_url && (
-              <a
-                href={selectedJobDetails.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
+            {selectedJobDetails.json_payload && (
+              <button
+                onClick={() => generateInputPDF(selectedJobDetails)}
                 title="Download User Input Parameters PDF"
-                className="px-4 py-2.5 rounded-xl text-xs font-black text-violet-800 bg-violet-50 hover:bg-violet-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-violet-300"
+                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-violet-800 bg-violet-50 hover:bg-violet-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-violet-300"
               >
                 <FileText className="w-4 h-4 text-violet-600" />
                 User Input Parameters PDF
-              </a>
-            )}
-
-            {selectedJobDetails.json_url && (
-              <a
-                href={selectedJobDetails.json_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download FEA Results JSON"
-                className="px-4 py-2.5 rounded-xl text-xs font-black text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-amber-300"
-              >
-                <FileJson className="w-4 h-4 text-amber-600" />
-                Results JSON
-              </a>
+              </button>
             )}
 
             {selectedJobDetails.report_url ? (
@@ -1553,16 +1595,16 @@ export default function App() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Download MS Word FEA Report (.docx)"
-                className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
-                FEA Report (.docx)
+                View Report
               </a>
             ) : isSuccess ? (
               <button
                 onClick={() => generateAndOpenReport(selectedJobDetails)}
                 title="View Analysis Report"
-                className="px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
+                className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-black text-emerald-800 hover:bg-emerald-100 transition-all hover:scale-105 flex items-center gap-2 shadow-sm border border-emerald-300 bg-emerald-50"
               >
                 <FileText className="w-4 h-4 text-emerald-600" />
                 View Report
@@ -1575,7 +1617,7 @@ export default function App() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Download complete ANSYS simulation archive"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
+                className="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-black transition-all hover:scale-105 flex items-center gap-2 shadow-md"
               >
                 <Download className="w-4 h-4" />
                 Full Analysis (.zip)
@@ -2062,7 +2104,7 @@ export default function App() {
                              {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                            </span>
                          </td>
-                         <td className="px-6 py-4 flex items-center justify-end gap-2 last:rounded-r-xl">
+                         <td className="px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
                               isJobSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-400' :
                               isJobProcessing ? 'bg-blue-50 text-blue-800 border-blue-300' :
@@ -2084,32 +2126,19 @@ export default function App() {
                                   target="_blank" 
                                   rel="noopener noreferrer" 
                                   title="Download MS Word FEA Report (.docx)"
-                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                                 >
-                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Word Report
+                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                                 </a>
                               ) : (
                                 <button 
                                   onClick={() => generateAndOpenReport(job)} 
                                   title="Download / View Analysis Report"
-                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-emerald-300/60 bg-emerald-50/40"
+                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                                 >
                                   <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                                 </button>
                               )
-                            )}
-
-                            {/* JSON Results */}
-                            {job.json_url && (
-                              <a 
-                                href={job.json_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                title="Download FEA Results JSON"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-amber-700 hover:bg-amber-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-amber-300/60 bg-amber-50/40"
-                              >
-                                <FileJson className="w-3.5 h-3.5 text-amber-600" /> JSON Results
-                              </a>
                             )}
 
                             {/* Full Analysis ZIP */}
@@ -2119,7 +2148,7 @@ export default function App() {
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 title="Download Full Analysis ZIP Archive"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border-blue-300/60 bg-blue-50/40"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
                               >
                                 <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
                               </a>
@@ -2136,8 +2165,8 @@ export default function App() {
                               title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
                               className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${
                                 job.status === 'Failed' 
-                                  ? 'text-red-700 hover:bg-red-50/80 border-red-300/70 bg-red-50/30' 
-                                  : 'text-slate-700 hover:bg-white/80 border-slate-200/70'
+                                  ? 'text-red-700 hover:bg-red-50/80 border border-red-300' 
+                                  : 'text-slate-700 hover:bg-white/80 border border-slate-300'
                               }`}
                             >
                               {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
@@ -2149,7 +2178,7 @@ export default function App() {
                               onClick={(e) => handleDeleteJob(job.id, e)}
                               disabled={isDeletingJobs}
                               title="Delete Job"
-                              className="p-1.5 text-red-600 transition-all border rounded-lg shadow-sm glass-panel hover:bg-red-50/80 border-red-200/70 hover:scale-105 disabled:opacity-50"
+                              className="p-1.5 text-red-600 transition-all border border-red-200 hover:bg-red-50 rounded-lg shadow-sm hover:scale-105 disabled:opacity-50 bg-white"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
