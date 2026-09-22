@@ -49,6 +49,50 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
+const AnimatedStatusBadge = ({ status }) => {
+  const isSuccess = status === 'Completed' || status === 'Success';
+  const isFailed = status === 'Failed';
+  const isPending = status === 'Pending';
+  const isProcessing = !isSuccess && !isFailed && !isPending;
+
+  if (isSuccess) {
+    return (
+      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+        <CheckCircle className="w-4 h-4 text-emerald-500" />
+        <span className="tracking-wide uppercase">{status}</span>
+      </span>
+    );
+  }
+  if (isFailed) {
+    return (
+      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-50 text-red-700 border border-red-200 shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all">
+        <XCircle className="w-4 h-4 text-red-500" />
+        <span className="tracking-wide uppercase">{status}</span>
+      </span>
+    );
+  }
+  if (isPending) {
+    return (
+      <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all">
+        <Clock className="w-4 h-4 text-amber-500 animate-pulse" />
+        <span className="tracking-wide uppercase">{status}</span>
+      </span>
+    );
+  }
+  
+  // Processing state (highly animated)
+  return (
+    <span className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all hover:scale-105 hover:bg-white cursor-default">
+      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+      <span className="tracking-wide uppercase animate-pulse">{status || 'Processing'}</span>
+      <span className="absolute flex h-2.5 w-2.5 -top-1 -right-1">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+      </span>
+    </span>
+  );
+};
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
@@ -1305,9 +1349,88 @@ export default function App() {
       doc.text(`Type: ${job.type || 'Nozzle Analysis'}`, 15, 36);
       doc.text(`Date: ${new Date(job.created_at).toLocaleString()}`, 15, 42);
 
+      const addSectionHeader = (title) => {
+        return [{ content: title, colSpan: 2, styles: { fillColor: [240, 245, 250], textColor: [37, 99, 235], fontStyle: 'bold' } }];
+      };
+
       const tableData = [];
+      const p = payload; // for brevity
+
+      // 1. PROJECT & CONDITIONS
+      tableData.push(addSectionHeader('1. PROJECT & CONDITIONS'));
+      if (p.File_Path) tableData.push(['Analysis Folder', p.File_Path]);
+      if (p.Analysis_Type) tableData.push(['Analysis Type', p.Analysis_Type]);
+      if (p.DesignTemp !== undefined) tableData.push(['Design Temp. (°C)', String(p.DesignTemp)]);
+      if (p.p !== undefined) tableData.push(['Internal Pressure (MPa)', String(p.p)]);
+      if (p.Thermal_Required) tableData.push(['Thermal Required', p.Thermal_Required]);
+      if (p.Thermal_Required === 'Yes' && p.T_op !== undefined) {
+        tableData.push(['Operating Temp. (°C)', String(p.T_op)]);
+      }
+
+      // 2. MATERIALS
+      tableData.push(addSectionHeader('2. MATERIALS'));
+      if (p.Shell_Material) tableData.push(['Shell Material Name', p.Shell_Material]);
+      if (p.Nozzle_Material) tableData.push(['Nozzle Material Name', p.Nozzle_Material]);
+      if (p.Pad_Required) tableData.push(['Pad Required', p.Pad_Required]);
+      if (p.Pad_Required === 'Yes' && p.Pad_Material) {
+        tableData.push(['Pad Material Name', p.Pad_Material]);
+      }
+
+      // 3. SHELL & NOZZLE GEOMETRY
+      tableData.push(addSectionHeader('3. SHELL & NOZZLE GEOMETRY'));
+      if (p.Shell_D_o !== undefined) tableData.push(['Shell Outer Dia (OD) [mm]', String(p.Shell_D_o)]);
+      if (p.Shell_T !== undefined) tableData.push(['Shell Thickness [mm]', String(p.Shell_T)]);
+      if (p.Shell_L !== undefined) tableData.push(['Shell Height [mm]', String(p.Shell_L)]);
+      if (p.Offset !== undefined) tableData.push(['Nozzle Offset [mm]', String(p.Offset)]);
+      if (p.Corrosion !== undefined) tableData.push(['Corrosion Allowance [mm]', String(p.Corrosion)]);
+      
+      if (p.Nozzle_Type) tableData.push(['Nozzle Type', p.Nozzle_Type]);
+      if (p.h !== undefined) tableData.push(['Nozzle Location (Height) [mm]', String(p.h)]);
+      if (p.Nozzle_D_o !== undefined) tableData.push(['Neck OD [mm]', String(p.Nozzle_D_o)]);
+      if (p.Nozzle_T !== undefined) tableData.push(['Neck Thickness [mm]', String(p.Nozzle_T)]);
+      if (p.Nozzle_L !== undefined) tableData.push(['Nozzle Projection [mm]', String(p.Nozzle_L)]);
+      if (p.Fillet_Radius !== undefined) tableData.push(['Weld Fillet Radius [mm]', String(p.Fillet_Radius)]);
+      
+      if (p.Nozzle_Type && p.Nozzle_Type !== 'Flush' && p.Nozzle_In_Proj !== undefined) {
+        tableData.push(['Inward Projection [mm]', String(p.Nozzle_In_Proj)]);
+      }
+      if (p.Pad_Required === 'Yes') {
+        if (p.Pad_Width !== undefined) tableData.push(['Pad Width [mm]', String(p.Pad_Width)]);
+        if (p.Pad_T !== undefined) tableData.push(['Pad Thickness [mm]', String(p.Pad_T)]);
+      }
+
+      // 4. MESHING & BCS
+      tableData.push(addSectionHeader('4. MESHING & BCS'));
+      if (p.Mesh_Size !== undefined) tableData.push(['Global Body Sizing [mm]', String(p.Mesh_Size)]);
+      if (p.Mesh_Method) tableData.push(['Mesh Method', p.Mesh_Method]);
+      if (p.Edge_Divisions !== undefined) tableData.push(['Edge Divisions', String(p.Edge_Divisions)]);
+      if (p.Nozzle_Thrust !== undefined) tableData.push(['Nozzle Thrust Analysis', String(p.Nozzle_Thrust)]);
+      if (p.Load_Boundary) tableData.push(['Load Boundary', p.Load_Boundary]);
+      
+      if (p.F_L !== undefined) tableData.push(['Longitudinal shear force (F_L)', String(p.F_L)]);
+      if (p.M_T !== undefined) tableData.push(['Torsional moment (M_T)', String(p.M_T)]);
+      if (p.F_C !== undefined) tableData.push(['Circumferential shear force (F_C)', String(p.F_C)]);
+      if (p.M_C !== undefined) tableData.push(['Circumferential bending moment (M_C)', String(p.M_C)]);
+      if (p.F_A !== undefined) tableData.push(['Axial tension or compression force (F_A / P)', String(p.F_A)]);
+      // Notice: In the user's form, 'P' or 'F_A' might be used for Axial Tension. Using whatever is in payload.
+      if (p.M_L !== undefined) tableData.push(['Longitudinal bending moment (M_L)', String(p.M_L)]);
+
+      // If any other unmapped keys exist (e.g. from vessel head analysis), dump them at the bottom
+      const mappedKeys = ['File_Path', 'Analysis_Type', 'DesignTemp', 'p', 'Thermal_Required', 'T_op',
+        'Shell_Material', 'Nozzle_Material', 'Pad_Required', 'Pad_Material',
+        'Shell_D_o', 'Shell_T', 'Shell_L', 'Offset', 'Corrosion',
+        'Nozzle_Type', 'h', 'Nozzle_D_o', 'Nozzle_T', 'Nozzle_L', 'Fillet_Radius', 'Nozzle_In_Proj',
+        'Pad_Width', 'Pad_T',
+        'Mesh_Size', 'Mesh_Method', 'Edge_Divisions', 'Nozzle_Thrust', 'Load_Boundary',
+        'F_L', 'M_T', 'F_C', 'M_C', 'F_A', 'M_L'
+      ];
+      let hasOther = false;
       for (const [key, value] of Object.entries(payload)) {
-        if (key !== 'File_Path' && typeof value !== 'object') {
+        if (!mappedKeys.includes(key) && typeof value !== 'object') {
+          if (!hasOther) {
+            tableData.push(addSectionHeader('OTHER PARAMETERS'));
+            hasOther = true;
+          }
           tableData.push([key.replace(/_/g, ' '), String(value)]);
         }
       }
@@ -1319,7 +1442,7 @@ export default function App() {
         theme: 'grid',
         headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
         styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 } }
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 } }
       });
 
       doc.save(`NOVA_Input_${job.job_id_display || job.id.substring(0,8)}.pdf`);
@@ -1520,18 +1643,7 @@ export default function App() {
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Execution Status</span>
               <span className="font-bold text-slate-600 mt-0.5 block">Real-time status of backend simulation solver</span>
             </div>
-            <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black border shadow-sm ${
-              isSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-              isProcessing ? 'bg-blue-50 text-blue-800 border-blue-200' :
-              isPending ? 'bg-amber-100 text-amber-800 border-amber-300' :
-              'bg-red-100 text-red-800 border-red-300'
-            }`}>
-              {isSuccess && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-              {isProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block" />}
-              {isPending && <Clock className="w-3.5 h-3.5 text-amber-600" />}
-              {isFailed && <XCircle className="w-3.5 h-3.5 text-red-600" />}
-              {statusLabel}
-            </span>
+            <AnimatedStatusBadge status={statusLabel} />
           </div>
 
           {isFailed && (
@@ -2105,18 +2217,7 @@ export default function App() {
                            </span>
                          </td>
                          <td className="px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold border shadow-sm ${
-                              isJobSuccess ? 'bg-emerald-100 text-emerald-800 border-emerald-400' :
-                              isJobProcessing ? 'bg-blue-50 text-blue-800 border-blue-300' :
-                              isJobPending ? 'bg-orange-500/20 text-orange-800 border-orange-500/30' :
-                              'bg-red-100 text-red-800 border-red-400'
-                            }`}>
-                              {isJobProcessing && <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block shrink-0" />}
-                              {isJobSuccess && <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />}
-                              {isJobPending && <Clock className="w-3 h-3 text-orange-600 shrink-0" />}
-                              {isJobFailed && <XCircle className="w-3 h-3 text-red-600 shrink-0" />}
-                              {job.status}
-                            </span>
+                            <AnimatedStatusBadge status={job.status || 'Unknown'} />
                             
                             {/* Word FEA Report */}
                             {(job.report_url || isJobSuccess) && (
