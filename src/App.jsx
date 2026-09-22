@@ -1,12 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
-import { supabaseJob } from './supabaseClient';
-import {
-  ChevronDown, AlertTriangle, Lock, User, CheckCircle, Loader2, X, Plus, FileText, Link,
-  Settings, Bot, Send, ArrowRight, Check, FileCheck, Clock, Shield, Settings2, Dumbbell,Target,
-  BookOpen, Shapes, GitMerge, Database, Brain, UploadCloud, Cpu, Box, Award, CircleDashed,CircleDot,
-  Download, PlayCircle, Menu, XCircle, Mail, Sparkles, Eye, EyeOff, Flame,Cylinder, Waves , LineChart,
-  FileJson, AlertCircle, ExternalLink, RefreshCw, Copy, CheckCheck, Trash2, Trash, CheckSquare, Square
+import { 
+  supabase}from'./supabaseClient';import{supabaseJob}from'./supabaseClient';import{ChevronDown,
+  AlertTriangle,
+  Lock,
+  User,
+  CheckCircle,
+  Loader2,
+  X,
+  Plus,
+  FileText,
+  Link,
+  Settings,
+  Bot,
+  Send,
+  ArrowRight,
+  Check,
+  FileCheck,
+  Clock,
+  Shield,
+  Settings2,
+  Dumbbell,
+  Target,
+  BookOpen,
+  Shapes,
+  GitMerge,
+  Database,
+  Brain,
+  UploadCloud,
+  Cpu,
+  Box,
+  Award,
+  CircleDashed,
+  CircleDot,
+  Download,
+  PlayCircle,
+  Menu,
+  XCircle,
+  Mail,
+  Sparkles,
+  Eye,
+  EyeOff,
+  Flame,
+  Cylinder,
+  Waves,
+  LineChart,
+  FileJson,
+  AlertCircle,
+  ExternalLink,
+  RefreshCw,
+  Copy,
+  CheckCheck,
+  Trash2,
+  Trash,
+  CheckSquare,
+  Square,
+  Package,
+  Users,
+  HelpCircle,
+  CreditCard,
+  MessageSquare,
+  Heart,
+  Share2,
+  ThumbsUp,
+  DollarSign,
+  Video,
+  ShoppingCart,
+  Star,
+  Disc,
+  Thermometer,
+  Activity
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import jsPDF from 'jspdf';
@@ -135,6 +197,11 @@ export default function App() {
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 
   const [jobs, setJobs] = useState([]);
+  const [communityPosts, setCommunityPosts] = useState([]);
+  const [newPostText, setNewPostText] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [selectedJobIds, setSelectedJobIds] = useState([]);
   const [isDeletingJobs, setIsDeletingJobs] = useState(false);
   const [jobFilter, setJobFilter] = useState('All Analysis');
@@ -220,6 +287,39 @@ export default function App() {
     }
   };
 
+  
+  const fetchCommunityPosts = async () => {
+    try {
+      const { data, error } = await supabase.from('nova_community_posts').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        setCommunityPosts(data);
+      }
+    } catch (e) {}
+  };
+
+  const handlePostCommunity = async () => {
+    if (!newPostText.trim()) return;
+    setIsPosting(true);
+    try {
+      const { error } = await supabase.from('nova_community_posts').insert([
+        { 
+          user_name: currentUser?.name || 'Anonymous User',
+          user_initial: currentUser?.initial || 'U',
+          content: newPostText,
+          likes: 0
+        }
+      ]);
+      if (!error) {
+        setNewPostText('');
+        fetchCommunityPosts();
+      } else {
+        console.error("Supabase insert error:", error);
+        alert("Failed to post. Have you created the 'nova_community_posts' table in Supabase yet? Schema: id(uuid), user_name(text), user_initial(text), content(text), likes(int), created_at(timestamp)");
+      }
+    } catch(e) {}
+    setIsPosting(false);
+  };
+  
   const fetchJobs = async () => {
     try {
       const { data, error } = await supabase.from('ansys_jobs').select('*').order('created_at', { ascending: false });
@@ -239,6 +339,7 @@ export default function App() {
   useEffect(() => {
     if (isLoggedIn) {
       fetchJobs();
+      fetchCommunityPosts();
 
       // Realtime listener for immediate database updates
       const channel = supabase
@@ -2616,6 +2717,120 @@ export default function App() {
     </div>
   );
 
+
+  const renderWizardCheckout = () => {
+    const plan = checkoutPlan || {name: '6 Month License', price: '$399'};
+    
+    return (
+      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8 bg-slate-50/50">
+        <div className="max-w-[900px] mx-auto animate-in fade-in slide-in-from-bottom-4">
+          <button onClick={() => setCurrentView('wizard_buy')} className="flex items-center gap-2 mb-6 md:mb-8 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
+            <ArrowRight className="w-4 h-4 rotate-180" /> Back to Plans
+          </button>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2 space-y-6">
+              <div className="glass-panel p-6 sm:p-8 rounded-3xl border-white/60 shadow-md">
+                <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-3">
+                  <CreditCard className="w-6 h-6 text-indigo-600" /> Payment Details
+                </h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Name on Card</label>
+                    <input type="text" placeholder="John Doe" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Card Number</label>
+                    <div className="relative">
+                       <input type="text" placeholder="0000 0000 0000 0000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
+                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60">
+                          <div className="w-8 h-5 bg-slate-300 rounded-sm"></div>
+                          <div className="w-8 h-5 bg-slate-300 rounded-sm"></div>
+                       </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Expiry (MM/YY)</label>
+                      <input type="text" placeholder="12/26" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CVC</label>
+                      <input type="text" placeholder="123" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-1 space-y-6">
+               <div className="glass-panel p-6 rounded-3xl border-white/60 shadow-md">
+                 <h3 className="text-lg font-bold text-slate-800 mb-4">Order Summary</h3>
+                 <div className="flex items-center justify-between mb-3 text-sm">
+                   <span className="text-slate-600 font-medium">{plan.name}</span>
+                   <span className="text-slate-800 font-bold">{plan.price}</span>
+                 </div>
+                 <div className="flex items-center justify-between mb-4 text-sm">
+                   <span className="text-slate-600 font-medium">Taxes (Calculated at checkout)</span>
+                   <span className="text-slate-800 font-bold">$0.00</span>
+                 </div>
+                 <div className="h-px bg-slate-200 w-full mb-4"></div>
+                 <div className="flex items-center justify-between mb-6">
+                   <span className="text-slate-800 font-black">Total Due</span>
+                   <span className="text-xl text-slate-800 font-black">{plan.price}</span>
+                 </div>
+
+                 <button 
+                   onClick={() => {
+                     setIsProcessingPayment(true);
+                     setTimeout(() => { setIsProcessingPayment(false); setCurrentView('wizard_success'); }, 2500);
+                   }}
+                   disabled={isProcessingPayment}
+                   className="w-full py-4 rounded-xl text-white font-bold bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                 >
+                   {isProcessingPayment ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-4 h-4" />}
+                   {isProcessingPayment ? 'Processing Securely...' : `Pay ${plan.price}`}
+                 </button>
+                 <div className="mt-4 text-center text-[10px] text-slate-400 font-medium uppercase tracking-widest flex items-center justify-center gap-1">
+                   <Shield className="w-3 h-3" /> 256-bit SSL Encrypted
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderWizardSuccess = () => (
+    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8 flex items-center justify-center">
+      <div className="max-w-[600px] w-full mx-auto animate-in fade-in slide-in-from-bottom-8">
+         <div className="glass-panel p-8 md:p-12 rounded-[2rem] border-white/60 shadow-2xl text-center">
+           <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-200">
+             <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-emerald-500" />
+           </div>
+           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-3">Payment Successful!</h2>
+           <p className="text-slate-500 mb-8 max-w-sm mx-auto">Thank you for your purchase. Your Ansys ACT Wizard (.WBEX) license is now active and ready for download.</p>
+           
+           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 text-left flex flex-col md:flex-row items-center justify-between gap-4">
+             <div>
+               <h4 className="font-bold text-slate-800 flex items-center gap-2"><Package className="w-4 h-4 text-violet-600" /> NOVA_Wizards_Bundle.zip</h4>
+               <p className="text-xs text-slate-500 mt-1">Includes Shell, Head, and Full Nozzle .WBEX files + Installation Guide.</p>
+             </div>
+             <a href="#" download onClick={(e) => { e.preventDefault(); alert('Downloading WBEX bundle...'); }} className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors flex items-center gap-2 shrink-0">
+               <Download className="w-4 h-4" /> Download
+             </a>
+           </div>
+
+           <button onClick={() => setCurrentView('dashboard')} className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
+             Return to Dashboard
+           </button>
+         </div>
+      </div>
+    </div>
+  );
+
   const renderWizardBuy = () => (
     <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
       <div className="max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4">
@@ -2634,7 +2849,7 @@ export default function App() {
             <h3 className="text-lg md:text-xl font-bold text-slate-500 mb-2">1 Month License</h3>
             <div className="text-3xl md:text-4xl font-black text-slate-800 mb-4">$99<span className="text-sm md:text-lg font-bold text-slate-400">/mo</span></div>
             <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">Perfect for short-term projects or evaluating the extension in your workflow.</p>
-            <button onClick={() => alert('Checkout flow mock: Redirecting to payment gateway...')} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+            <button onClick={() => { setCheckoutPlan({name: '1 Month License', price: '$99'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
               <CreditCard className="w-4 h-4" /> Buy 1 Month
             </button>
           </div>
@@ -2649,7 +2864,7 @@ export default function App() {
               <div className="text-4xl md:text-5xl font-black text-slate-800 mb-2">$399<span className="text-sm md:text-lg font-bold text-slate-400">/6mo</span></div>
               <div className="text-[10px] md:text-xs font-bold text-emerald-600 mb-6 bg-emerald-50 inline-block px-2 py-1 rounded-md self-start">Save 33% compared to monthly</div>
               <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">Our most popular tier. Maximize your ROI and ensure you're covered for all major project cycles.</p>
-              <button onClick={() => alert('Checkout flow mock: Redirecting to payment gateway...')} className="w-full py-3 md:py-4 rounded-xl text-white font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30">
+              <button onClick={() => { setCheckoutPlan({name: '6 Month License', price: '$399'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-white font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30">
                 <CreditCard className="w-4 h-4" /> Buy 6 Months
               </button>
             </div>
@@ -2660,7 +2875,7 @@ export default function App() {
             <h3 className="text-lg md:text-xl font-bold text-slate-500 mb-2">3 Month License</h3>
             <div className="text-3xl md:text-4xl font-black text-slate-800 mb-4">$249<span className="text-sm md:text-lg font-bold text-slate-400">/3mo</span></div>
             <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">A balanced plan for medium-term engagements requiring extensive FEA automation.</p>
-            <button onClick={() => alert('Checkout flow mock: Redirecting to payment gateway...')} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+            <button onClick={() => { setCheckoutPlan({name: '3 Month License', price: '$249'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
               <CreditCard className="w-4 h-4" /> Buy 3 Months
             </button>
           </div>
@@ -2736,9 +2951,18 @@ export default function App() {
         </div>
 
         <div className="glass-panel p-5 sm:p-10 rounded-3xl border-white/60">
-          <div className="mb-6 md:mb-10 pb-4 md:pb-6 border-b border-slate-200">
-            <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 md:mb-3">Nozzle Analysis (Shell & Head)</h3>
-            <p className="text-xs md:text-sm text-slate-600">The NOVA platform currently supports complex limit-load and elastic stress analyses for pressure vessel nozzles under ASME Section VIII Div 2 standards.</p>
+          <div className="mb-6 md:mb-10 pb-4 md:pb-6 border-b border-slate-200 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1">
+               <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 md:mb-3">Nozzle Analysis (Shell & Head)</h3>
+               <p className="text-xs md:text-sm text-slate-600 mb-4">The NOVA platform currently supports complex limit-load and elastic stress analyses for pressure vessel nozzles under ASME Section VIII Div 2 standards.</p>
+               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200"><CheckCircle className="w-3.5 h-3.5" /> ASME Sec VIII Div 2 Compliant</div>
+            </div>
+            <div className="w-full md:w-1/3 shrink-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative aspect-video md:aspect-auto md:h-32">
+               <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Finite_element_method_2D_illustration.png" alt="FEA Mesh Example" className="object-cover w-full h-full" />
+               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-2">
+                 <span className="text-white text-[10px] font-bold tracking-wider">MAPPED HEX MESH</span>
+               </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
@@ -2809,6 +3033,8 @@ export default function App() {
             </div>
             <div className="flex-1">
               <textarea 
+                value={newPostText}
+                onChange={(e) => setNewPostText(e.target.value)}
                 className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl p-3 md:p-4 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" 
                 rows="3" 
                 placeholder="Share a simulation error, ask a question, or post a video link..."
@@ -2818,8 +3044,12 @@ export default function App() {
                   <button className="p-1.5 md:p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors" title="Attach Image/Video"><Video className="w-4 h-4 md:w-5 md:h-5" /></button>
                   <button className="p-1.5 md:p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors" title="Share Code/Error"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
                 </div>
-                <button onClick={() => alert('Community mockup: Feature coming soon!')} className="bg-emerald-600 text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs md:text-sm shadow-sm">
-                  Post <Send className="w-3.5 h-3.5" />
+                <button 
+                  onClick={handlePostCommunity} 
+                  disabled={isPosting || !newPostText.trim()}
+                  className="bg-emerald-600 text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs md:text-sm shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post'} <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -2829,7 +3059,31 @@ export default function App() {
         {/* Feed */}
         <div className="space-y-4 md:space-y-6">
           
-          {/* Post 1 */}
+          {communityPosts.length > 0 ? communityPosts.map((post) => (
+             <div key={post.id} className="glass-panel p-4 sm:p-6 rounded-3xl border-white/60 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2">
+               <div className="flex items-center justify-between mb-4">
+                 <div className="flex items-center gap-3">
+                   <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#3C64D6] text-white flex items-center justify-center font-bold text-xs md:text-sm">{post.user_initial}</div>
+                   <div>
+                     <h4 className="font-bold text-slate-800 text-xs md:text-sm">{post.user_name}</h4>
+                     <p className="text-[10px] md:text-xs text-slate-500">{new Date(post.created_at).toLocaleString()}</p>
+                   </div>
+                 </div>
+               </div>
+               <p className="text-xs md:text-sm text-slate-700 mb-4 whitespace-pre-wrap">{post.content}</p>
+               <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-slate-100 text-slate-500">
+                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><Heart className="w-3.5 h-3.5 md:w-4 md:h-4" /> {post.likes || 0}</button>
+                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4" /> 0</button>
+                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium ml-auto"><Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> Share</button>
+               </div>
+             </div>
+          )) : (
+             <div className="text-center py-10 text-slate-500 text-sm">
+                No posts yet. Be the first to start a discussion!
+             </div>
+          )}
+
+          {/* Fallback Mock Post 1 (Just to show structure if db fails/is empty) */}
           <div className="glass-panel p-4 sm:p-6 rounded-3xl border-white/60 shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -3213,6 +3467,8 @@ export default function App() {
           {currentView === 'dashboard' && renderDashboard()}
           {currentView === 'profile' && renderProfile()}
           {currentView === 'wizard_products' && renderWizardProducts()}
+          {currentView === 'wizard_checkout' && renderWizardCheckout()}
+          {currentView === 'wizard_success' && renderWizardSuccess()}
           {currentView === 'wizard_buy' && renderWizardBuy()}
           {currentView === 'wizard_demo' && renderWizardDemo()}
           {currentView === 'nova_help' && renderNovaHelp()}
