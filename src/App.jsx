@@ -1328,106 +1328,113 @@ export default function App() {
 
       const W = 210, margin = 14, contentW = W - 28;
 
-      // GRADIENT HEADER
-      doc.setFillColor(15, 23, 60); doc.rect(0, 0, W, 42, 'F');
-      doc.setFillColor(30, 64, 175); doc.rect(0, 0, W * 0.6, 42, 'F');
-      doc.setFillColor(37, 99, 235); doc.rect(0, 0, W * 0.35, 42, 'F');
+      // ── HEADER (black bar) ──
+      doc.setFillColor(20, 20, 20);
+      doc.rect(0, 0, W, 34, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(20); doc.setFont("helvetica", "bold");
-      doc.text("NOVA", margin, 16);
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.setTextColor(147, 197, 253);
-      doc.text("ENGINEERING ANALYSIS PLATFORM", margin, 22);
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(13); doc.setFont("helvetica", "bold");
-      doc.text("INPUT PARAMETERS REPORT", W - margin, 16, { align: 'right' });
+      doc.setFontSize(17); doc.setFont("helvetica", "bold");
+      doc.text("NOVA", margin, 14);
       doc.setFontSize(8); doc.setFont("helvetica", "normal");
-      doc.setTextColor(191, 219, 254);
-      doc.text((job.type || 'Nozzle Analysis') + '   |   ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 22, { align: 'right' });
-      doc.text('Generated: ' + new Date().toLocaleString('en-IN'), W - margin, 28, { align: 'right' });
-      const isSucc = job.status === 'Completed' || job.status === 'Success';
-      const isFail = job.status === 'Failed';
-      const bColor = isSucc ? [22,163,74] : isFail ? [220,38,38] : [37,99,235];
-      doc.setFillColor(...bColor);
-      doc.roundedRect(margin, 28, 36, 8, 2, 2, 'F');
-      doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont("helvetica","bold");
-      doc.text((job.status||'UNKNOWN').toUpperCase(), margin+18, 33.2, { align:'center' });
+      doc.setTextColor(180, 180, 180);
+      doc.text("ENGINEERING ANALYSIS PLATFORM", margin, 20);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11); doc.setFont("helvetica", "bold");
+      doc.text("INPUT PARAMETERS", W - margin, 14, { align: 'right' });
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      doc.setTextColor(200, 200, 200);
+      doc.text((job.type || 'Nozzle Analysis') + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 20, { align: 'right' });
+      doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 26, { align: 'right' });
 
-      let y = 52;
+      // Status pill (white outline only)
+      const statusTxt = (job.status || 'UNKNOWN').toUpperCase();
+      doc.setDrawColor(255, 255, 255);
+      doc.setFillColor(20, 20, 20);
+      doc.roundedRect(margin, 23, 32, 7, 1.5, 1.5, 'FD');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
+      doc.text(statusTxt, margin + 16, 27.5, { align: 'center' });
 
-      const addSection = (num, title, c=[37,99,235]) => {
+      let y = 42;
+
+      // ── Section header: bold line + number + title ──
+      const addSection = (num, title) => {
         if (y > 265) { doc.addPage(); y = 18; }
-        doc.setFillColor(...c); doc.rect(margin, y, 4, 7, 'F');
-        doc.setFillColor(240,245,255); doc.rect(margin+4, y, contentW-4, 7, 'F');
-        doc.setTextColor(...c); doc.setFontSize(8.5); doc.setFont("helvetica","bold");
-        doc.text(num + '. ' + title.toUpperCase(), margin+8, y+5);
+        doc.setDrawColor(20, 20, 20);
+        doc.setLineWidth(0.6);
+        doc.line(margin, y, margin + contentW, y);
+        doc.setLineWidth(0.2);
+        doc.setFillColor(20, 20, 20);
+        doc.setTextColor(20, 20, 20);
+        doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+        doc.text(num + '.  ' + title.toUpperCase(), margin, y + 5.5);
         y += 9;
       };
-      const addSubLabel = (label, c=[100,116,139]) => {
-        if (y > 270) { doc.addPage(); y = 18; }
-        doc.setTextColor(...c); doc.setFontSize(7.5); doc.setFont("helvetica","bold");
-        doc.text(label.toUpperCase(), margin+2, y+4);
-        y += 7;
-      };
+
+      // ── Row: label left, value right, tight spacing ──
       let rowAlt = false;
-      const addRow = (label, value, unit='') => {
-        if (y > 272) { doc.addPage(); y = 18; rowAlt = false; }
-        if (rowAlt) { doc.setFillColor(248,250,252); doc.rect(margin, y, contentW, 6.5, 'F'); }
-        doc.setTextColor(71,85,105); doc.setFontSize(8); doc.setFont("helvetica","bold");
-        doc.text(String(label), margin+3, y+4.5);
-        doc.setFont("helvetica","normal"); doc.setTextColor(15,23,42);
-        doc.text(unit ? String(value)+'  '+unit : String(value), margin+contentW-3, y+4.5, { align:'right' });
-        doc.setDrawColor(226,232,240); doc.line(margin, y+6.5, margin+contentW, y+6.5);
-        y += 6.5; rowAlt = !rowAlt;
+      const addRow = (label, value, unit) => {
+        if (y > 276) { doc.addPage(); y = 18; rowAlt = false; }
+        if (rowAlt) {
+          doc.setFillColor(245, 245, 245);
+          doc.rect(margin, y, contentW, 5.8, 'F');
+        }
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(7.8); doc.setFont("helvetica", "normal");
+        doc.text(String(label), margin + 2, y + 4);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(10, 10, 10);
+        const val = unit ? String(value) + ' ' + unit : String(value);
+        doc.text(val, margin + contentW - 2, y + 4, { align: 'right' });
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.1);
+        doc.line(margin, y + 5.8, margin + contentW, y + 5.8);
+        y += 5.8;
+        rowAlt = !rowAlt;
       };
 
-      // SECTION 1: PROJECT & CONDITIONS
-      addSection(1, 'Project & Conditions', [37,99,235]); rowAlt = false;
-      if (p.File_Path) addRow('Analysis Folder', p.File_Path);
-      if (p.Analysis_Type) addRow('Analysis Type', p.Analysis_Type);
-      if (p.DesignTemp != null) addRow('Design Temperature', p.DesignTemp, '\u00b0C');
-      if (p.p != null) addRow('Internal Pressure', p.p, 'MPa');
-      if (p.Thermal_Required) addRow('Thermal Required', p.Thermal_Required);
-      if (p.Thermal_Required === 'Yes' && p.T_op != null) addRow('Operating Temperature', p.T_op, '\u00b0C');
-      y += 3;
+      // ── SECTION 1: PROJECT & CONDITIONS ──
+      addSection(1, 'Project & Conditions'); rowAlt = false;
+      if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
+      if (p.Analysis_Type)       addRow('Analysis Type', p.Analysis_Type);
+      if (p.DesignTemp != null)  addRow('Design Temperature', p.DesignTemp, '\u00b0C');
+      if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
+      if (p.Thermal_Required)    addRow('Thermal Required', p.Thermal_Required);
+      if (p.Thermal_Required === 'Yes' && p.T_op != null)
+                                  addRow('Operating Temperature', p.T_op, '\u00b0C');
+      y += 4;
 
-      // SECTION 2: MATERIALS
-      addSection(2, 'Materials', [109,40,217]); rowAlt = false;
-      addSubLabel('Shell', [109,40,217]);
-      if (p.Shell_Material) addRow('Shell Material Name', p.Shell_Material);
-      addSubLabel('Nozzle', [109,40,217]);
-      if (p.Nozzle_Material) addRow('Nozzle Material Name', p.Nozzle_Material);
+      // ── SECTION 2: MATERIALS ──
+      addSection(2, 'Materials'); rowAlt = false;
+      if (p.Shell_Material)      addRow('Shell Material', p.Shell_Material);
+      if (p.Nozzle_Material)     addRow('Nozzle Material', p.Nozzle_Material);
       const padVal = p.Pad_Required ?? p.pad;
-      const isPad = padVal && String(padVal).toLowerCase() === 'yes';
-      addSubLabel('Reinforcement Pad', [109,40,217]);
+      const isPad  = padVal && String(padVal).toLowerCase() === 'yes';
       addRow('Pad Required', isPad ? 'Yes' : 'No');
-      if (isPad && p.Pad_Material) addRow('Pad Material Name', p.Pad_Material);
-      y += 3;
+      if (isPad && p.Pad_Material) addRow('Pad Material', p.Pad_Material);
+      y += 4;
 
-      // SECTION 3: SHELL & NOZZLE GEOMETRY
-      addSection(3, 'Shell & Nozzle Geometry', [5,150,105]); rowAlt = false;
-      addSubLabel('Shell Dimensions', [5,150,105]);
+      // ── SECTION 3: GEOMETRY ──
+      addSection(3, 'Shell & Nozzle Geometry'); rowAlt = false;
       const sOD  = p.S_OD  ?? p.Shell_D_o;
       const sTHK = p.S_THK ?? p.Shell_T;
       const sH   = p.S_H   ?? p.Shell_L;
       const nOff = p.N_OFF ?? p.Offset;
       const corr = p.CorrosionAllowance ?? p.Corrosion;
+      const nType= p.N_TYPE ?? p.Nozzle_Type;
+      const nL1  = p.N_L1  ?? p.h;
+      const nOD  = p.N_OD  ?? p.Nozzle_D_o;
+      const nTHK = p.N_THK ?? p.Nozzle_T;
+      const nP   = p.N_P   ?? p.Nozzle_L;
       if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
       if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
       if (sH   != null) addRow('Shell Height', sH, 'mm');
       if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
       if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
-      addSubLabel('Nozzle & Pad Dimensions', [5,150,105]);
-      const nType = p.N_TYPE ?? p.Nozzle_Type;
-      const nL1   = p.N_L1  ?? p.h;
-      const nOD   = p.N_OD  ?? p.Nozzle_D_o;
-      const nTHK  = p.N_THK ?? p.Nozzle_T;
-      const nP    = p.N_P   ?? p.Nozzle_L;
       if (nType != null) addRow('Nozzle Type', nType);
-      if (nL1   != null) addRow('Nozzle Location (Height)', nL1, 'mm');
-      if (nOD   != null) addRow('Neck OD', nOD, 'mm');
-      if (nTHK  != null) addRow('Neck Thickness', nTHK, 'mm');
-      if (nP    != null) addRow('Nozzle Projection', nP, 'mm');
+      if (nL1  != null) addRow('Nozzle Location Height', nL1, 'mm');
+      if (nOD  != null) addRow('Neck OD', nOD, 'mm');
+      if (nTHK != null) addRow('Neck Thickness', nTHK, 'mm');
+      if (nP   != null) addRow('Nozzle Projection', nP, 'mm');
       const isBarrel = nType && String(nType).toLowerCase().includes('barrel');
       if (isBarrel) {
         if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
@@ -1442,20 +1449,14 @@ export default function App() {
         if (pW   != null) addRow('Pad Width', pW, 'mm');
         if (pTHK != null) addRow('Pad Thickness', pTHK, 'mm');
       }
-      y += 3;
+      y += 4;
 
-      // SECTION 4: MESHING & BCS
-      addSection(4, 'Meshing & Boundary Conditions', [180,83,9]); rowAlt = false;
-      addSubLabel('Meshing', [180,83,9]);
+      // ── SECTION 4: MESHING & LOADING ──
+      addSection(4, 'Meshing & Loading'); rowAlt = false;
       const bSize   = p.B_size    ?? p.Mesh_Size;
       const mMeth   = p.m_method  ?? p.Mesh_Method;
       const nDiv    = p.N_D       ?? p.Edge_Divisions;
       const nThrust = p.N_analysis ?? p.Nozzle_Thrust;
-      if (bSize   != null) addRow('Global Body Sizing', bSize, 'mm');
-      if (mMeth   != null) addRow('Mesh Method', mMeth);
-      if (nDiv    != null) addRow('Edge Divisions', nDiv);
-      if (nThrust != null) addRow('Nozzle Thrust Analysis', nThrust);
-      addSubLabel('Loading Conditions', [180,83,9]);
       const loadBound = p.N_Location ?? p.Load_Boundary;
       const fL = p.FX ?? p.F_L;
       const mT = p.MY ?? p.M_T;
@@ -1463,22 +1464,29 @@ export default function App() {
       const mC = p.MZ ?? p.M_C;
       const fA = p.FY ?? p.F_A ?? p.P;
       const mL = p.MX ?? p.M_L;
+      if (bSize   != null) addRow('Global Body Sizing', bSize, 'mm');
+      if (mMeth   != null) addRow('Mesh Method', mMeth);
+      if (nDiv    != null) addRow('Edge Divisions', nDiv);
+      if (nThrust != null) addRow('Nozzle Thrust Analysis', nThrust);
       if (loadBound != null) addRow('Load Boundary', loadBound);
-      if (fL != null) addRow('FL \u2014 Longitudinal Shear Force', fL, 'N');
-      if (mT != null) addRow('MT \u2014 Torsional Moment', mT, 'N\u00b7mm');
-      if (fC != null) addRow('FC \u2014 Circumferential Shear Force', fC, 'N');
-      if (mC != null) addRow('MC \u2014 Circumferential Bending Moment', mC, 'N\u00b7mm');
-      if (fA != null) addRow('P \u2014 Axial / Thrust Force', fA, 'N');
-      if (mL != null) addRow('ML \u2014 Longitudinal Bending Moment', mL, 'N\u00b7mm');
+      if (fL != null) addRow('FL  Longitudinal Shear Force', fL, 'N');
+      if (mT != null) addRow('MT  Torsional Moment', mT, 'N mm');
+      if (fC != null) addRow('FC  Circumferential Shear Force', fC, 'N');
+      if (mC != null) addRow('MC  Circumferential Bending Moment', mC, 'N mm');
+      if (fA != null) addRow('P   Axial / Thrust Force', fA, 'N');
+      if (mL != null) addRow('ML  Longitudinal Bending Moment', mL, 'N mm');
 
-      // FOOTER
+      // ── FOOTER ──
       const totalPages = doc.internal.getNumberOfPages();
       for (let pg = 1; pg <= totalPages; pg++) {
         doc.setPage(pg);
-        doc.setFillColor(15,23,60); doc.rect(0, 287, W, 10, 'F');
-        doc.setTextColor(147,197,253); doc.setFontSize(7); doc.setFont("helvetica","normal");
-        doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2 Compliant", margin, 293);
-        doc.text('Page ' + pg + ' of ' + totalPages, W-margin, 293, { align:'right' });
+        doc.setDrawColor(20, 20, 20);
+        doc.setLineWidth(0.4);
+        doc.line(margin, 285, margin + contentW, 285);
+        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(6.5); doc.setFont("helvetica", "normal");
+        doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2", margin, 290);
+        doc.text('Page ' + pg + ' / ' + totalPages, W - margin, 290, { align: 'right' });
       }
 
       doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '.pdf');
