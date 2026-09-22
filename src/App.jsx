@@ -51,20 +51,22 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
 );
 
 const CubeAnimation = () => (
-  <div className="cube-container">
-    {[1, 2, 3].map(h => (
-      <div key={`h${h}`} className={`h${h}Container`}>
-        {[1, 2, 3].map(w => 
-          [1, 2, 3].map(l => (
-            <div key={`cube-${h}-${w}-${l}`} className={`cube-box h${h} w${w} l${l}`}>
-              <div className="cube-face cube-top"></div>
-              <div className="cube-face cube-left"></div>
-              <div className="cube-face cube-right"></div>
-            </div>
-          ))
-        )}
-      </div>
-    ))}
+  <div className="cube-wrapper">
+    <div className="cube-container">
+      {[1, 2, 3].map(h => (
+        <div key={`h${h}`} className={`h${h}Container`}>
+          {[1, 2, 3].map(w => 
+            [1, 2, 3].map(l => (
+              <div key={`cube-${h}-${w}-${l}`} className={`cube-box h${h} w${w} l${l}`}>
+                <div className="cube-face cube-top"></div>
+                <div className="cube-face cube-left"></div>
+                <div className="cube-face cube-right"></div>
+              </div>
+            ))
+          )}
+        </div>
+      ))}
+    </div>
   </div>
 );
 
@@ -75,16 +77,16 @@ const AnimatedStatusBadge = ({ status }) => {
 
   if (isSuccess) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#f0fdf4] text-[#166534] border border-[#86efac]">
-        <CheckCircle className="w-4 h-4 text-[#16a34a]" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-white text-[#15803d] border-[1.5px] border-[#86efac] shadow-[0_2px_10px_rgba(22,163,74,0.06)]">
+        <CheckCircle className="w-3.5 h-3.5 text-[#16a34a]" />
         <span className="tracking-wide uppercase">{status}</span>
       </span>
     );
   }
   if (isFailed) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#fef2f2] text-[#991b1b] border border-[#fca5a5]">
-        <AlertTriangle className="w-4 h-4 text-[#dc2626]" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-white text-[#b91c1c] border-[1.5px] border-[#fca5a5] shadow-[0_2px_10px_rgba(220,38,38,0.06)]">
+        <AlertTriangle className="w-3.5 h-3.5 text-[#dc2626]" />
         <span className="tracking-wide uppercase">{status}</span>
       </span>
     );
@@ -100,7 +102,7 @@ const AnimatedStatusBadge = ({ status }) => {
   
   // Processing state with Cube Animation
   return (
-    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-[#f8fafc] text-[#334155] border border-[#cbd5e1]">
+    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black bg-white text-[#334155] border-[1.5px] border-[#cbd5e1] shadow-[0_2px_10px_rgba(100,116,139,0.06)]">
       <CubeAnimation />
       <span className="tracking-wide uppercase">{status || 'Processing'}</span>
     </span>
