@@ -50,25 +50,6 @@ const CosmicLogo = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-const CubeAnimation = () => (
-  <div className="cube-wrapper">
-    <div className="cube-container">
-      {[1, 2, 3].map(h => (
-        <div key={`h${h}`} className={`h${h}Container`}>
-          {[1, 2, 3].map(w => 
-            [1, 2, 3].map(l => (
-              <div key={`cube-${h}-${w}-${l}`} className={`cube-box h${h} w${w} l${l}`}>
-                <div className="cube-face cube-top"></div>
-                <div className="cube-face cube-left"></div>
-                <div className="cube-face cube-right"></div>
-              </div>
-            ))
-          )}
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 const AnimatedStatusBadge = ({ status }) => {
   const isSuccess = status === 'Completed' || status === 'Success';
@@ -100,10 +81,10 @@ const AnimatedStatusBadge = ({ status }) => {
     );
   }
   
-  // Processing state with Cube Animation
+  // Processing state with Arrow Loader
   return (
     <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black bg-white text-[#334155] border-[1.5px] border-[#cbd5e1] shadow-[0_2px_10px_rgba(100,116,139,0.06)]">
-      <CubeAnimation />
+      <div className="arrow-loader"></div>
       <span className="tracking-wide uppercase">{status || 'Processing'}</span>
     </span>
   );
