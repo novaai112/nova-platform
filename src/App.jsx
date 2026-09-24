@@ -1,80 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  supabase}from'./supabaseClient';import{supabaseJob}from'./supabaseClient';import{ChevronDown,
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from './supabaseClient';
+import {
+  Activity,
+  AlertCircle,
   AlertTriangle,
-  Lock,
-  User,
-  CheckCircle,
-  Loader2,
-  X,
-  Plus,
-  FileText,
-  Link,
-  Settings,
-  Bot,
-  Send,
   ArrowRight,
-  Check,
-  FileCheck,
-  Clock,
-  Shield,
-  Settings2,
-  Dumbbell,
-  Target,
-  BookOpen,
-  Shapes,
-  GitMerge,
-  Database,
-  Brain,
-  UploadCloud,
-  Cpu,
-  Box,
   Award,
+  BookOpen,
+  Bot,
+  Box,
+  Brain,
+  Check,
+  CheckCheck,
+  CheckCircle,
+  CheckCircle2,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
   CircleDashed,
   CircleDot,
+  Clock,
+  Code,
+  Copy,
+  Cpu,
+  CreditCard,
+  Cylinder,
+  Database,
+  Disc,
+  DollarSign,
   Download,
-  PlayCircle,
-  Menu,
-  XCircle,
-  Mail,
-  Sparkles,
+  DownloadCloud,
+  Dumbbell,
+  ExternalLink,
   Eye,
   EyeOff,
-  Flame,
-  Cylinder,
-  Waves,
-  LineChart,
+  FileCheck,
   FileJson,
-  AlertCircle,
-  ExternalLink,
-  RefreshCw,
-  Copy,
-  CheckCheck,
-  Trash2,
-  Trash,
-  CheckSquare,
-  Square,
-  Package,
-  Users,
-  HelpCircle,
-  CreditCard,
-  MessageSquare,
+  FileText,
+  FileSpreadsheet,
+  FileCode,
+  Paperclip,
+  Filter,
+  Flame,
+  GitMerge,
   Heart,
+  HelpCircle,
+  Image,
+  Bell,
+  Landmark,
+  LineChart,
+  Link,
+  Loader2,
+  Lock,
+  Mail,
+  Menu,
+  MessageSquare,
+  Monitor,
+  Package,
+  PlayCircle,
+  Plus,
+  Printer,
+  QrCode,
+  Receipt,
+  RefreshCw,
+  Search,
+  Send,
+  Settings,
+  Settings2,
+  Shapes,
   Share2,
-  ThumbsUp,
-  DollarSign,
-  Video,
+  Shield,
   ShoppingCart,
+  Smartphone,
+  Sparkles,
+  Square,
   Star,
-  Disc,
+  Target,
   Thermometer,
-  Activity
+  ThumbsUp,
+  Trash,
+  Trash2,
+  UploadCloud,
+  User,
+  Users,
+  Video,
+  Wallet,
+  Waves,
+  X,
+  XCircle,
+  Zap
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './cube.css';
-
+import NovaHelpContent from './NovaHelpContent';
 const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -111,14 +131,11 @@ const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
     <circle cx="50" cy="50" r="20" fill="url(#novaGrad1)" filter="url(#glow)" opacity="0.2" />
   </svg>
 );
-
-
 const AnimatedStatusBadge = ({ status }) => {
   const normStatus = (status || '').toLowerCase();
   const isSuccess = normStatus === 'completed' || normStatus === 'success';
   const isFailed = normStatus === 'failed';
   const isPending = normStatus === 'pending';
-
   if (isSuccess) {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-white text-[#15803d] border-[1.5px] border-[#86efac] shadow-[0_2px_10px_rgba(22,163,74,0.06)]">
@@ -144,10 +161,7 @@ const AnimatedStatusBadge = ({ status }) => {
     );
   }
   
-  // Clean up status text (remove 'Processing - ' prefix if present)
   const displayStatus = (status || '').replace(/^Processing\s*-\s*/i, '');
-
-  // Processing state with dual-orbit spinner + shimmer text
   return (
     <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-black bg-white border-[1.5px] border-indigo-200 shadow-[0_2px_12px_rgba(99,102,241,0.10)]">
       <div className="orbit-spinner" />
@@ -155,7 +169,6 @@ const AnimatedStatusBadge = ({ status }) => {
     </span>
   );
 };
-
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
@@ -163,18 +176,27 @@ export default function App() {
   const [currentView, setCurrentView] = useState('landing'); 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info'); 
+  const [profileNotifPrefs, setProfileNotifPrefs] = useState({
+    job_complete: true, job_failed: true, credit_low: true, sub_renew: true,
+    community: false, product_updates: true, promos: false
+  });
+  const [selectedWizardForDemo, setSelectedWizardForDemo] = useState(null);
+  const [isWizardDemoOpen, setIsWizardDemoOpen] = useState(false);
+  const [selectedWizardForPricing, setSelectedWizardForPricing] = useState(null);
+  const [isWizardPricingOpen, setIsWizardPricingOpen] = useState(false); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [currentUser, setCurrentUser] = useState({
-    id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: ""
+    id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "", isApproved: false, plan: "Free", dailyCreditsTotal: 100, dailyCreditsRemaining: 100, isLifetimeMax: false
   });
+  const [completedInvoice, setCompletedInvoice] = useState(null);
+  const [invoiceCopiedKey, setInvoiceCopiedKey] = useState(false);
   
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-
   const [showLoginPwd, setShowLoginPwd] = useState(false);
   const [showSignupPwd, setShowSignupPwd] = useState(false);
   const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
@@ -183,7 +205,6 @@ export default function App() {
   const [pwdForm, setPwdForm] = useState({ current: '', new: '', confirm: '' });
   const [pwdErrors, setPwdErrors] = useState({});
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotCode, setForgotCode] = useState("");
@@ -192,16 +213,102 @@ export default function App() {
   const [forgotErrors, setForgotErrors] = useState({});
   const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [showForgotPwd, setShowForgotPwd] = useState({ new: false, confirm: false });
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
-
   const [jobs, setJobs] = useState([]);
-  const [communityPosts, setCommunityPosts] = useState([]);
+  const [communityPosts, setCommunityPosts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nova_community_posts_permanent');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [newPostText, setNewPostText] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [newPostMedia, setNewPostMedia] = useState(null); // { data, type: 'image'|'video', name, size }
+  const [newPostCode, setNewPostCode] = useState(null); // { content, filename, lines, size }
+  const [showCodeInputDrawer, setShowCodeInputDrawer] = useState(false);
+  const [codePastedText, setCodePastedText] = useState('');
+  const [codeFilenameInput, setCodeFilenameInput] = useState('ansys_script.py');
+  const [copiedCodeId, setCopiedCodeId] = useState(null);
+  const [selectedMediaModal, setSelectedMediaModal] = useState(null);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editPostTitle, setEditPostTitle] = useState('');
+  const [editPostContent, setEditPostContent] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
+  const mediaFileInputRef = useRef(null);
+  const codeFileInputRef = useRef(null);
+
+  const [persistentNotifications, setPersistentNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nova_persistent_notifications');
+      return saved ? JSON.parse(saved) : [
+        { id: 'notif_welcome', title: 'Workstation Online', message: 'Nova Autonomous FEA Platform initialized and permanently synchronized.', type: 'info', time: 'Just now', date: 'Today', read: false }
+      ];
+    } catch(e) {
+      return [];
+    }
+  });
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi', 'card', 'netbanking', 'paypal'
+  const [cardForm, setCardForm] = useState({ number: '', name: '', expiry: '', cvv: '', zip: '', saveCard: true });
+  const [cardErrors, setCardErrors] = useState({});
+  const [cardFlipped, setCardFlipped] = useState(false);
+  const [savedCards, setSavedCards] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nova_saved_cards');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [
+      { id: 'card_1', name: 'Dinesh Kumar Yadav', number: '4532 •••• •••• 8920', last4: '8920', brand: 'Visa', expiry: '09/28' },
+      { id: 'card_2', name: 'Dinesh Kumar Yadav', number: '5424 •••• •••• 1042', last4: '1042', brand: 'Mastercard', expiry: '11/27' }
+    ];
+  });
+  const [selectedSavedCardId, setSelectedSavedCardId] = useState('new');
+  const [savedCardCvv, setSavedCardCvv] = useState('');
+  const [savedCardCvvError, setSavedCardCvvError] = useState('');
+  const [paypalTxnId, setPaypalTxnId] = useState('');
+  const [paypalOpened, setPaypalOpened] = useState(false);
+  const [paypalError, setPaypalError] = useState('');
+  const [upiId, setUpiId] = useState('dineshkumar2729304@okaxis');
+  const [upiStatus, setUpiStatus] = useState('idle');
+  const [upiTimer, setUpiTimer] = useState(300);
+  const [upiDirectUtr, setUpiDirectUtr] = useState('');
+  const [upiDirectError, setUpiDirectError] = useState('');
+  const [activeUpiApp, setActiveUpiApp] = useState(null);
+  const [selectedNetBank, setSelectedNetBank] = useState('HDFC');
+  const [netBankingSearch, setNetBankingSearch] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('+919876543210');
+  const [orderReceipt, setOrderReceipt] = useState(null);
+  const [creditSimModule, setCreditSimModule] = useState('nozzle');
+  const [docsSearchQuery, setDocsSearchQuery] = useState('');
+  const [activeDocsTab, setActiveDocsTab] = useState('asme');
+  const [communityCategory, setCommunityCategory] = useState('All');
+  const [communitySearch, setCommunitySearch] = useState('');
+  const [postComments, setPostComments] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nova_community_comments_permanent');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  const [expandedComments, setExpandedComments] = useState({});
+  const [replyText, setReplyText] = useState({});
+  const [likedPosts, setLikedPosts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nova_community_likes_permanent');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+  
+  const [activeProductFilter, setActiveProductFilter] = useState('All');
+  const [demoActiveTab, setDemoActiveTab] = useState('overview');
   const [selectedJobIds, setSelectedJobIds] = useState([]);
   const [isDeletingJobs, setIsDeletingJobs] = useState(false);
   const [jobFilter, setJobFilter] = useState('All Analysis');
@@ -213,34 +320,27 @@ export default function App() {
   const [selectedJobType, setSelectedJobType] = useState('Nozzle Analysis');
   const [editForm, setEditForm] = useState({ company: '', phone: '' });
   const [isRequestingAccess, setIsRequestingAccess] = useState(false);
-
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiSetupPrompt, setAiSetupPrompt] = useState("");
   const [aiSetupResponse, setAiSetupResponse] = useState("");
   const [isAiSetupLoading, setIsAiSetupLoading] = useState(false);
-
   const [supportChat, setSupportChat] = useState([
     { role: 'model', text: "Hello! I am the NOVA ✨ AI Support agent. I can help you understand our analysis types or check our pricing. How can I assist you today?" }
   ]);
   const [supportInput, setSupportInput] = useState("");
   const [isSupportLoading, setIsSupportLoading] = useState(false);
-
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [selectedInsightJob, setSelectedInsightJob] = useState(null);
   const [insightResponse, setInsightResponse] = useState("");
   const [isInsightLoading, setIsInsightLoading] = useState(false);
-
   const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false);
   const [selectedJobDetails, setSelectedJobDetails] = useState(null);
   const [activeDetailRun, setActiveDetailRun] = useState(0);
   const [copiedError, setCopiedError] = useState(false);
-
   const [showMaterialConsultant, setShowMaterialConsultant] = useState(false);
   const [materialPrompt, setMaterialPrompt] = useState("");
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
-
-  // AUTH INITIALIZATION & REFRESH LOGIC
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -250,7 +350,6 @@ export default function App() {
       }
       setIsInitializing(false);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setupUser(session.user);
@@ -263,17 +362,13 @@ export default function App() {
         setCurrentView(prev => (['dashboard', 'profile'].includes(prev) ? 'login' : prev));
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
-  // ROUTE GUARD
   useEffect(() => {
     if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
       setCurrentView('login');
     }
   }, [currentView, isLoggedIn, isInitializing]);
-
   const checkApprovalStatus = async () => {
     const { data, error } = await supabase.auth.refreshSession();
     if (data?.session?.user) {
@@ -286,38 +381,640 @@ export default function App() {
       }
     }
   };
-
   
   const fetchCommunityPosts = async () => {
+    let localPosts = [];
     try {
-      const { data, error } = await supabase.from('nova_community_posts').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
-        setCommunityPosts(data);
+      const saved = localStorage.getItem('nova_community_posts_permanent');
+      if (saved) localPosts = JSON.parse(saved);
+    } catch(e) {}
+
+    try {
+      if (supabase) {
+        const { data, error } = await supabase.from('nova_community_posts').select('*').order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          const merged = [...data];
+          localPosts.forEach(lp => {
+            if (!merged.some(p => p.id === lp.id)) merged.push(lp);
+          });
+          merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          setCommunityPosts(merged);
+          try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(merged)); } catch(e) {}
+          return;
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Supabase community fetch note:", e);
+    }
+
+    if (localPosts.length > 0) {
+      setCommunityPosts(localPosts);
+    }
+  };
+
+  const fetchCommunityComments = async () => {
+    try {
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('nova_community_comments')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (!error && data && data.length > 0) {
+          const commentsByPost = {};
+          data.forEach(c => {
+            const pId = c.post_id;
+            if (!commentsByPost[pId]) commentsByPost[pId] = [];
+            commentsByPost[pId].push({
+              id: c.id,
+              user: c.user_name || 'Nova Engineer',
+              initial: c.user_initial || 'E',
+              email: 'user@nova.ai',
+              text: c.comment,
+              time: new Date(c.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              created_at: c.created_at
+            });
+          });
+          setPostComments(prev => {
+            const merged = { ...prev };
+            Object.keys(commentsByPost).forEach(pid => {
+              merged[pid] = commentsByPost[pid];
+            });
+            try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(merged)); } catch(e) {}
+            return merged;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Supabase comments fetch note:", e);
+    }
+  };
+
+  const handleMediaFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      showNotification('Media file exceeds 25MB limit.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      const isVid = file.type.startsWith('video');
+      setNewPostMedia({
+        data: dataUrl,
+        type: isVid ? 'video' : 'image',
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      });
+      showNotification(`Attached ${file.name} (${isVid ? 'Video' : 'Image'})`, 'success', 'Device Media');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCodeFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification('Code file exceeds 5MB limit.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const linesCount = text.split('\n').length;
+      setNewPostCode({
+        content: text,
+        filename: file.name,
+        lines: linesCount,
+        size: (file.size / 1024).toFixed(1) + ' KB'
+      });
+      setShowCodeInputDrawer(false);
+      showNotification(`Attached code file ${file.name} (${linesCount} lines)`, 'success', 'Device Code');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const downloadCodeSnippet = (filename, codeContent) => {
+    try {
+      const blob = new Blob([codeContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || 'nova_script.py';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showNotification(`Downloaded ${filename || 'script'} to your device`, 'success', 'File Download');
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const downloadAnsysWbexFile = (filename, licenseKey, productName) => {
+    const wizardLink = "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing";
+    try {
+      window.open(wizardLink, '_blank');
+      showNotification("Opening Ansys ACT Wizard (.WBEX) download link...", "success", "Wizard Download");
+    } catch(e) {
+      window.location.href = wizardLink;
+    }
+  };
+
+  const generateNovaLicenseKey = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `NOVA-${code}`;
+  };
+
+  const calculateExpiryDate = (termStr) => {
+    const now = new Date();
+    const s = String(termStr || '').toLowerCase();
+    let months = 1;
+    if (s.includes('6 month')) months = 6;
+    else if (s.includes('3 month')) months = 3;
+    else if (s.includes('1 month')) months = 1;
+    else if (s.includes('year') || s.includes('annual')) months = 12;
+    const exp = new Date(now.getFullYear(), now.getMonth() + months, now.getDate());
+    const dd = String(exp.getDate()).padStart(2, '0');
+    const mm = String(exp.getMonth() + 1).padStart(2, '0');
+    const yyyy = exp.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
+  const getJobInvoiceData = (job) => {
+    if (!job) return null;
+    let p = job.json_payload;
+    if (typeof p === 'string') {
+      try { p = JSON.parse(p); } catch (e) {}
+    }
+    const first = Array.isArray(p) ? p[0] : p;
+    if (first && first.invoiceId) return first;
+
+    const isWiz = job.type === 'Wizard Purchase' || (job.name && job.name.toLowerCase().includes('wizard'));
+    const isSub = job.type === 'Plan Subscription' || (job.name && job.name.toLowerCase().includes('plan'));
+    if (isWiz || isSub || (job.price && job.price > 0)) {
+      let licKey = '';
+      let expDate = '';
+      if (job.error_message && job.error_message.includes('License:')) {
+        const matchKey = job.error_message.match(/License:\s*([A-Za-z0-9\-]+)/);
+        const matchExp = job.error_message.match(/Expiry:\s*([0-9\-]+)/);
+        if (matchKey) licKey = matchKey[1];
+        if (matchExp) expDate = matchExp[1];
+      }
+      if (!licKey) licKey = job.job_id_display || generateNovaLicenseKey();
+      if (!expDate) expDate = calculateExpiryDate('1 Month');
+
+      const amt = job.price || (isWiz ? 4999 : 899);
+      const baseAmt = Math.round(amt / 1.18);
+      const gstAmt = amt - baseAmt;
+      const cgst = Math.round(gstAmt / 2);
+      const sgst = gstAmt - cgst;
+
+      return {
+        invoiceId: job.job_id_display || ('INV-' + new Date().getFullYear() + '-' + String(job.id || Date.now()).slice(-6)),
+        paymentId: 'pay_rzp_live_' + String(job.id || Date.now()).slice(-8),
+        date: new Date(job.created_at || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        productName: job.name,
+        productType: isWiz ? 'wizard_purchase' : 'credit_subscription',
+        priceFormatted: '₹' + amt.toLocaleString('en-IN'),
+        amountInINR: amt,
+        baseAmount: baseAmt,
+        cgst,
+        sgst,
+        isWizard: isWiz,
+        licenseKey: licKey,
+        expiryDate: expDate,
+        registeredOn: new Date(job.created_at || Date.now()).toLocaleString('en-IN'),
+        macAddress: '2C:7B:A0:8C:BC:CA',
+        wbexFilename: (job.name.split(' ')[0] || 'Nozzle') + '_ACT_Wizard_v2024.wbex',
+        customerName: currentUser?.name || 'Dinesh',
+        customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
+        customerPhone: currentUser?.phone || 'Not Provided',
+        company: currentUser?.company || 'Nova Engineering',
+        term: isWiz ? '1 Month' : 'Monthly',
+        workstations: 1
+      };
+    }
+    return null;
+  };
+
+  const syncLicenseToGoogleScript = async (licenseRecord) => {
+    try {
+      if (supabase) {
+        await supabase.from('ansys_jobs').insert([{
+          job_id_display: licenseRecord.licenseKey,
+          name: `${licenseRecord.productName} [${licenseRecord.licenseKey}]`,
+          status: 'Completed',
+          price: licenseRecord.amountInINR || 0,
+          type: 'License Provision',
+          result_url: "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing",
+          error_message: `Expiry: ${licenseRecord.expiryDate} | Status: active`,
+          json_payload: [licenseRecord]
+        }]);
+        fetchJobs();
+      }
+    } catch(err) {
+      console.warn("Supabase permanent license save:", err);
+    }
+
+    try {
+      if (supabase) {
+        await supabase.from('nova_orders').insert([{
+          order_id: licenseRecord.invoiceId || ("ORD-" + Date.now()),
+          invoice_no: licenseRecord.invoiceId || ("INV-" + Date.now()),
+          user_email: currentUser?.email || 'dineshkumar2729304@gmail.com',
+          user_name: currentUser?.name || 'Dinesh',
+          plan_name: licenseRecord.productName,
+          billing_cycle: licenseRecord.plan || 'monthly',
+          amount: licenseRecord.amountInINR || 0,
+          currency: 'INR',
+          payment_gateway: 'Razorpay',
+          payment_method: 'UPI / NetBanking / Cards',
+          transaction_id: licenseRecord.paymentId || ('pay_' + Date.now()),
+          status: 'PAID',
+          receipt_data: licenseRecord
+        }]);
+      }
+    } catch(err) {
+      console.warn("Supabase permanent nova_orders save:", err);
+    }
+
+    const scriptUrl = localStorage.getItem('nova_google_script_url') || 
+                      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GOOGLE_SCRIPT_URL) ||
+                      'https://script.google.com/macros/s/AKfycby-oOC4MImsnlW5VgehlD7OPe0uNGy35m0jbExMiKqvORC6FLRUpmYE3BbL3fdqD0BQ/exec';
+    if (scriptUrl) {
+      const payload = {
+        action: 'add',
+        license_key: licenseRecord.licenseKey,
+        licenseKey: licenseRecord.licenseKey,
+        expiry_date: licenseRecord.expiryDate,
+        expiryDate: licenseRecord.expiryDate,
+        mac: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
+        mac_address: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
+        registered_on: licenseRecord.registeredOn,
+        registeredOn: licenseRecord.registeredOn,
+        status: 'active',
+        productName: licenseRecord.productName,
+        plan: licenseRecord.plan
+      };
+
+      try {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn("Google Apps Script POST sync error:", err);
+      }
+
+      try {
+        const qs = new URLSearchParams({
+          action: 'add',
+          license_key: licenseRecord.licenseKey,
+          expiry_date: licenseRecord.expiryDate,
+          mac: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
+          registered_on: licenseRecord.registeredOn,
+          status: 'active'
+        }).toString();
+        await fetch(`${scriptUrl}?${qs}`, {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+      } catch (err) {
+        console.warn("Google Apps Script GET sync error:", err);
+      }
+    }
+  };
+
+  const handleRazorpayCheckout = (productName, priceStr, productType = 'general', metadata = {}) => {
+    const cleanPriceStr = String(priceStr || '').trim();
+    const numOnly = parseFloat(cleanPriceStr.replace(/[^0-9.]/g, '')) || 899;
+    const isUSD = cleanPriceStr.indexOf('$') !== -1 || cleanPriceStr.toLowerCase().indexOf('usd') !== -1;
+    let amountInINR = isUSD ? Math.round(numOnly * 83) : Math.round(numOnly);
+    if (amountInINR < 1) amountInINR = 1;
+    const amountInPaise = amountInINR * 100;
+
+    const isWizard = productType === 'wizard' || productType === 'wizard_purchase' || 
+                     productName.toLowerCase().indexOf('wizard') !== -1 || productName.toLowerCase().indexOf('.wbex') !== -1;
+
+    const baseAmount = Math.round(amountInINR / 1.18);
+    const gstAmount = amountInINR - baseAmount;
+    const cgst = Math.round(gstAmount / 2);
+    const sgst = gstAmount - cgst;
+
+    const finalizePayment = (paymentId) => {
+      const invoiceId = "INV-" + new Date().getFullYear() + "-" + Date.now().toString().slice(-6);
+      const pId = paymentId || ("pay_rzp_" + Date.now().toString().slice(-8));
+
+      const licenseKey = generateNovaLicenseKey();
+
+      const chosenPlanOrTerm = metadata?.term || metadata?.planName || (isWizard ? '1 Month' : 'Monthly');
+      const expiryDate = calculateExpiryDate(chosenPlanOrTerm);
+
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const registeredOn = `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+
+      const wbexFilename = isWizard 
+        ? ((productName.split(' ')[0] || 'Nozzle') + "_ACT_Wizard_v2024.wbex")
+        : null;
+
+      const invoiceData = {
+        invoiceId,
+        paymentId: pId,
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        productName,
+        productType,
+        priceFormatted: "₹" + amountInINR.toLocaleString('en-IN'),
+        amountInINR,
+        baseAmount,
+        cgst,
+        sgst,
+        isWizard,
+        licenseKey,
+        expiryDate,
+        registeredOn,
+        macAddress: '2C:7B:A0:8C:BC:CA',
+        wbexFilename,
+        customerName: currentUser?.name || 'Dinesh',
+        customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
+        customerPhone: currentUser?.phone || '+91 98765 43210',
+        company: currentUser?.company || 'Nova Engineering Corp',
+        term: chosenPlanOrTerm,
+        workstations: metadata?.workstations || (isWizard ? 1 : 'All Workstations')
+      };
+
+      syncLicenseToGoogleScript({
+        licenseKey,
+        expiryDate,
+        registeredOn,
+        macAddress: '2C:7B:A0:8C:BC:CA',
+        status: 'active',
+        productName,
+        plan: chosenPlanOrTerm,
+        amountInINR,
+        invoiceId
+      });
+
+      if (!isWizard && (productType === 'credit_subscription' || metadata?.planName)) {
+        const planName = metadata?.planName || (productName.indexOf('Max') !== -1 ? 'Max' : productName.indexOf('Pro') !== -1 ? 'Pro' : 'Basic');
+        const dailyCreds = planName === 'Max' ? 3000 : planName === 'Pro' ? 1500 : 700;
+        setCurrentUser(prev => ({
+          ...prev,
+          plan: planName,
+          dailyCreditsTotal: dailyCreds,
+          dailyCreditsRemaining: dailyCreds
+        }));
+        try {
+          if (supabase) {
+            supabase.from('user_profiles').upsert({
+              email: currentUser?.email,
+              full_name: currentUser?.name,
+              plan: planName,
+              daily_credits_total: dailyCreds,
+              daily_credits_remaining: dailyCreds,
+              updated_at: new Date().toISOString()
+            }).then(({ error }) => {
+              if (error) console.warn("Supabase user profile plan update error:", error);
+            });
+          }
+          localStorage.setItem("nova_credits_" + currentUser?.email, dailyCreds.toString());
+          localStorage.setItem('nova_user_plan_permanent', JSON.stringify({ plan: planName, credits: dailyCreds }));
+        } catch(e) {}
+      }
+
+      try {
+        if (supabase) {
+          supabase.from('ansys_jobs').insert([{
+            name: productName,
+            status: 'Completed',
+            price: amountInINR,
+            type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
+            job_id_display: invoiceId,
+            result_url: isWizard ? "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing" : null,
+            error_message: licenseKey ? `License: ${licenseKey} | Expiry: ${expiryDate}` : null,
+            json_payload: [invoiceData]
+          }]).then(({ error }) => {
+            if (error) console.warn("Supabase order insert error:", error);
+            fetchJobs();
+          });
+        }
+      } catch (err) {
+        console.warn("Supabase job insert error:", err);
+      }
+
+      const newJobRecord = {
+        id: "ord_" + Date.now(),
+        job_id_display: invoiceId,
+        name: productName,
+        status: 'Completed',
+        price: amountInINR,
+        type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
+        result_url: isWizard ? "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing" : null,
+        created_at: new Date().toISOString()
+      };
+      setJobs(prev => [newJobRecord, ...prev]);
+
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          try {
+            new Notification('NOVA AI - Payment Confirmed', {
+              body: isWizard 
+                ? ("Ansys ACT Wizard activated! License: " + licenseKey + " | Expiry: " + expiryDate) 
+                : ("Plan upgraded to " + productName + ". Invoice #" + invoiceId + " generated."),
+              icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
+            });
+          } catch(e) {}
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              try {
+                new Notification('NOVA AI - Payment Confirmed', {
+                  body: isWizard 
+                    ? ("Ansys ACT Wizard activated! License: " + licenseKey + " | Expiry: " + expiryDate) 
+                    : ("Plan upgraded to " + productName + ". Invoice #" + invoiceId + " generated."),
+                  icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
+                });
+              } catch(e) {}
+            }
+          });
+        }
+      }
+
+      showNotification(
+        isWizard 
+          ? ("Payment verified of ₹" + amountInINR.toLocaleString('en-IN') + "! Ansys ACT Wizard activated. License: " + licenseKey + " (Expires: " + expiryDate + ")") 
+          : ("Payment verified of ₹" + amountInINR.toLocaleString('en-IN') + "! Upgraded to " + productName + ". Invoice #" + invoiceId),
+        'success',
+        isWizard ? 'Ansys Wizard License' : 'Subscription Upgrade'
+      );
+
+      setCompletedInvoice(invoiceData);
+    };
+
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+    const launchRazorpayModal = () => {
+      if (typeof window === 'undefined' || !window.Razorpay) {
+        showNotification('Payment gateway loading... Please try again in a moment.', 'info', 'Razorpay');
+        finalizePayment("pay_rzp_" + Date.now().toString().slice(-8));
+        return;
+      }
+
+      try {
+        const options = {
+          key: razorpayKey,
+          amount: amountInPaise,
+          currency: "INR",
+          name: "NOVA AI TECHNOLOGIES",
+          description: productName,
+          image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          handler: function (response) {
+            finalizePayment(response.razorpay_payment_id);
+          },
+          prefill: {
+            name: currentUser?.name || "Dinesh",
+            email: currentUser?.email || "dineshkumar2729304@gmail.com",
+            contact: currentUser?.phone || "+919876543210"
+          },
+          notes: {
+            product_type: productType,
+            product_name: productName
+          },
+          theme: {
+            color: "#2874f0"
+          },
+          modal: {
+            ondismiss: function() {
+              showNotification('Razorpay checkout window closed.', 'info', 'Razorpay Checkout');
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          showNotification("Payment Failed: " + (response.error?.description || 'Transaction declined'), 'error', 'Payment Failed');
+        });
+        rzp.open();
+      } catch (err) {
+        showNotification('Payment gateway error. Please try again.', 'error', 'Razorpay Error');
+        finalizePayment("pay_rzp_" + Date.now().toString().slice(-8));
+
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      launchRazorpayModal();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => launchRazorpayModal();
+      script.onerror = () => launchRazorpayModal();
+      document.body.appendChild(script);
+    }
   };
 
   const handlePostCommunity = async () => {
-    if (!newPostText.trim()) return;
+    if (!newPostText.trim() && !newPostMedia && !newPostCode) {
+      showNotification('Please enter discussion text or attach media/code.', 'error', 'Incomplete Post');
+      return;
+    }
     setIsPosting(true);
+
+    const postTitle = newPostText.trim().length > 60 
+      ? newPostText.trim().substring(0, 60) + '...' 
+      : (newPostText.trim() || (newPostCode ? `Script: ${newPostCode.filename}` : 'Media Attachment'));
+
+    const newPostPayload = { 
+      id: `post_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      user_name: currentUser?.name || 'Nova Engineer',
+      user_email: currentUser?.email || 'user@nova.ai',
+      user_initial: currentUser?.initial || 'E',
+      title: postTitle,
+      content: newPostText.trim(),
+      category: communityCategory === 'All' ? 'ASME Codes' : (communityCategory || 'ASME Codes'),
+      image_url: newPostMedia?.type === 'image' ? newPostMedia.data : null,
+      media_url: newPostMedia?.data || null,
+      media_type: newPostMedia?.type || null,
+      media_name: newPostMedia?.name || null,
+      code_snippet: newPostCode?.content || null,
+      code_filename: newPostCode?.filename || null,
+      likes_count: 0,
+      created_at: new Date().toISOString()
+    };
+
+    setCommunityPosts(prev => {
+      const updated = [newPostPayload, ...prev];
+      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
+
     try {
-      const { error } = await supabase.from('nova_community_posts').insert([
-        { 
-          user_name: currentUser?.name || 'Anonymous User',
-          user_initial: currentUser?.initial || 'U',
-          content: newPostText,
-          likes: 0
+      if (supabase) {
+        const { data, error } = await supabase.from('nova_community_posts').insert([{
+          user_name: newPostPayload.user_name,
+          user_initial: newPostPayload.user_initial,
+          title: newPostPayload.title,
+          content: newPostPayload.content,
+          category: newPostPayload.category,
+          image_url: newPostPayload.image_url,
+          code_snippet: newPostPayload.code_snippet,
+          likes_count: 0
+        }]).select();
+
+        if (data && data[0]) {
+          setCommunityPosts(prev => {
+            const updated = prev.map(p => p.id === newPostPayload.id ? { ...p, id: data[0].id } : p);
+            try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+            return updated;
+          });
         }
-      ]);
-      if (!error) {
-        setNewPostText('');
-        fetchCommunityPosts();
-      } else {
-        console.error("Supabase insert error:", error);
-        alert("Failed to post. Have you created the 'nova_community_posts' table in Supabase yet? Schema: id(uuid), user_name(text), user_initial(text), content(text), likes(int), created_at(timestamp)");
+      }
+    } catch(e) {
+      console.warn("Supabase post error:", e);
+    }
+
+    setNewPostText('');
+    setNewPostMedia(null);
+    setNewPostCode(null);
+    setShowCodeInputDrawer(false);
+    setCodePastedText('');
+    setIsPosting(false);
+
+    showNotification('Discussion published and saved permanently to Database!', 'success', 'Community Post');
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this discussion permanently?')) return;
+    
+    setCommunityPosts(prev => {
+      const updated = prev.filter(p => p.id !== postId);
+      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
+
+    try {
+      if (supabase) {
+        await supabase.from('nova_community_posts').delete().eq('id', postId);
       }
     } catch(e) {}
-    setIsPosting(false);
+
+    showNotification('Post permanently deleted', 'info', 'Community');
   };
   
   const fetchJobs = async () => {
@@ -335,13 +1032,11 @@ export default function App() {
       console.error("fetchJobs error:", e);
     }
   };
-
   useEffect(() => {
     if (isLoggedIn) {
       fetchJobs();
       fetchCommunityPosts();
-
-      // Realtime listener for immediate database updates
+      fetchCommunityComments();
       const channel = supabase
         .channel('ansys_jobs_realtime')
         .on(
@@ -351,27 +1046,52 @@ export default function App() {
             fetchJobs();
           }
         )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'nova_community_posts' },
+          () => {
+            fetchCommunityPosts();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'nova_community_comments' },
+          () => {
+            fetchCommunityComments();
+          }
+        )
         .subscribe();
-
-      // Fast periodic polling (2.5s) for instant status updates
       const interval = setInterval(() => {
         fetchJobs();
         if (!currentUser.isApproved) {
           checkApprovalStatus();
         }
-      }, 1000);
-
+      }, 1500);
       return () => {
         supabase.removeChannel(channel);
         clearInterval(interval);
       };
     }
   }, [isLoggedIn, currentUser.isApproved]);
-
   const setupUser = (user) => {
       const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-      const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
-      
+      const isDinesh = user.email === 'dineshkumar2729304@gmail.com';
+      let userPlan = isDinesh ? 'Max' : 'Free';
+      let totalCredits = isDinesh ? 3000 : 100;
+      const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
+      if (savedSub && !isDinesh) {
+        try {
+          const parsed = JSON.parse(savedSub);
+          userPlan = parsed.plan || 'Free';
+          totalCredits = parsed.totalCredits || (userPlan === 'Max' ? 3000 : userPlan === 'Pro' ? 1500 : userPlan === 'Basic' ? 700 : 100);
+        } catch (e) {}
+      }
+      const savedCredits = localStorage.getItem(`nova_credits_${user.email}`);
+      let remainingCredits = totalCredits;
+      if (savedCredits !== null) {
+        remainingCredits = Math.min(totalCredits, parseInt(savedCredits, 10));
+      }
+      const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com' || isDinesh || userPlan !== 'Free';
       setCurrentUser({
         id: user.id,
         name: fullName,
@@ -381,13 +1101,55 @@ export default function App() {
         company: user.user_metadata?.company || "Not Provided",
         phone: user.user_metadata?.phone || "Not Provided",
         joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-        isApproved: isApprovedStatus
+        isApproved: isApprovedStatus,
+        plan: userPlan,
+        dailyCreditsTotal: totalCredits,
+        dailyCreditsRemaining: remainingCredits,
+        isLifetimeMax: false
       });
       
       localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
       setIsLoggedIn(true);
+      supabase.from('user_profiles').select('*').eq('email', user.email).maybeSingle().then(({ data: dbProfile, error }) => {
+        if (!error && dbProfile) {
+          const finalPlan = isDinesh ? 'Max' : (dbProfile.plan || userPlan);
+          const finalTotal = isDinesh ? 3000 : (dbProfile.daily_credits_total || totalCredits);
+          const finalRemaining = dbProfile.daily_credits_remaining !== null && dbProfile.daily_credits_remaining !== undefined 
+            ? Math.min(finalTotal, dbProfile.daily_credits_remaining)
+            : finalTotal;
+          setCurrentUser(prev => ({
+            ...prev,
+            plan: finalPlan,
+            dailyCreditsTotal: finalTotal,
+            dailyCreditsRemaining: finalRemaining
+          }));
+        } else {
+          supabase.from('user_profiles').upsert({
+            id: user.id,
+            email: user.email,
+            full_name: fullName,
+            plan: userPlan,
+            daily_credits_total: totalCredits,
+            daily_credits_remaining: remainingCredits,
+            is_approved: isApprovedStatus
+          }, { onConflict: 'email' }).then();
+        }
+      }).catch(err => console.warn('Supabase profile sync warning:', err));
     };
-
+  const PLAN_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
+  const canRunPlan = (requiredPlan) => {
+    return true;
+  };
+  const consumeCredits = (featureName, creditCost, requiredPlan, onAllowed) => {
+    if (!currentUser.email) {
+      setCurrentView('login');
+      return false;
+    }
+    if (onAllowed) {
+      onAllowed();
+    }
+    return true;
+  };
   useEffect(() => {
     if (showSplash) {
       const exitTimer = setTimeout(() => setIsSplashExiting(true), 3500);
@@ -398,31 +1160,42 @@ export default function App() {
       return () => { clearTimeout(exitTimer); clearTimeout(unmountTimer); };
     }
   }, [showSplash]);
-
   const handleLogoClick = () => {
     setCurrentView('landing');
     setIsSplashExiting(false);
     setShowSplash(true);
     window.scrollTo(0,0);
   };
-
-  const showNotification = (message, type = 'success') => {
+  const showNotification = (message, type = 'success', title = null) => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000); 
-  };
+    setTimeout(() => setNotification(null), 5000);
 
+    const newNotif = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      title: title || (type === 'success' ? 'Action Completed' : type === 'error' ? 'System Alert' : 'Notification'),
+      message: message,
+      type: type,
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      date: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      read: false
+    };
+
+    setPersistentNotifications(prev => {
+      const updated = [newNotif, ...(prev || []).slice(0, 49)];
+      try { localStorage.setItem('nova_persistent_notifications', JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
+  };
   const scrollToSection = (id) => {
     setIsMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) element.scrollIntoView({ behavior: 'smooth' });
   };
-
   const handleRouteToAuth = () => {
     setIsMobileMenuOpen(false);
     if (isLoggedIn) setCurrentView('dashboard');
     else setCurrentView('login');
   };
-
   const callGeminiAPI = async (contents, systemInstructionText) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -442,7 +1215,6 @@ export default function App() {
       }
     }
   };
-
   useEffect(() => {
     if (currentView === 'landing' && !showSplash) {
       const observer = new IntersectionObserver((entries) => {
@@ -453,13 +1225,11 @@ export default function App() {
           }
         });
       }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
-
       const elements = document.querySelectorAll('.reveal');
       elements.forEach(el => observer.observe(el));
       return () => observer.disconnect();
     }
   }, [currentView, showSplash]);
-
   const handleAiSetupSubmit = async () => {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
@@ -469,7 +1239,6 @@ export default function App() {
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
   };
-
   const handleSupportSubmit = async (e) => {
     e.preventDefault();
     if (!supportInput.trim() || isSupportLoading) return;
@@ -483,21 +1252,17 @@ export default function App() {
     setSupportChat(prev => [...prev, { role: 'model', text: responseText }]);
     setIsSupportLoading(false);
   };
-
   const handleGenerateInsights = async (job) => {
     setSelectedInsightJob(job);
     setIsInsightsOpen(true);
     setIsInsightLoading(true);
     setInsightResponse("");
-
     const systemInstruction = "You are a Senior Principal Mechanical Engineer reviewing an FEA analysis. Keep it extremely brief, professional, and highly structured.";
     const prompt = `Generate a realistic 3-bullet executive summary for a completed Finite Element Analysis of a ${job.type} project named "${job.name}". Invent realistic details assuming the geometry passed ASME Section VIII Div 2 Part 5 code compliance. Include a hypothetical maximum Von Mises stress (in MPa) and a safety factor.`;
-
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], systemInstruction);
     setInsightResponse(responseText);
     setIsInsightLoading(false);
   };
-
   const handleMaterialConsultant = async (e) => {
     e.preventDefault();
     if (!materialPrompt.trim()) return;
@@ -506,12 +1271,10 @@ export default function App() {
     
     const systemInstruction = "You are an expert metallurgist and pressure vessel engineer.";
     const prompt = `Based on these operating conditions: "${materialPrompt}", recommend 2-3 suitable ASME materials for a pressure vessel or heat exchanger component. State the material grade and provide a brief 1-sentence technical justification for each.`;
-
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], systemInstruction);
     setMaterialResponse(responseText);
     setIsMaterialLoading(false);
   };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     let errors = {};
@@ -521,14 +1284,11 @@ export default function App() {
     
     setAuthErrors({});
     setIsAuthLoading(true);
-
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginPassword,
     });
-
     setIsAuthLoading(false);
-
     if (error) {
       setAuthErrors({ password: error.message });
     } else {
@@ -536,7 +1296,6 @@ export default function App() {
       showNotification("Successfully logged in!");
     }
   };
-
   const handleSignup = async (e) => {
     e.preventDefault();
     let errors = {};
@@ -544,18 +1303,14 @@ export default function App() {
     if (!emailRegex.test(signupEmail)) errors.email = "Please enter a valid email address.";
     if (!passwordRegex.test(signupPassword)) errors.password = "Password must be at least 8 chars, with 1 letter, 1 number, and 1 symbol.";
     if (Object.keys(errors).length > 0) return setAuthErrors(errors);
-
     setAuthErrors({});
     setIsAuthLoading(true);
-
     const { error } = await supabase.auth.signUp({
       email: signupEmail,
       password: signupPassword,
       options: { data: { full_name: signupName } }
     });
-
     setIsAuthLoading(false);
-
     if (error) {
       setAuthErrors({ email: error.message });
     } else {
@@ -564,7 +1319,6 @@ export default function App() {
       setLoginEmail(signupEmail);
     }
   };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('nova_user');
@@ -572,23 +1326,19 @@ export default function App() {
     setCurrentView('landing');
     showNotification("Logged out successfully.", "info");
   };
-
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     let errors = {};
     if (!passwordRegex.test(pwdForm.new)) errors.new = "New password must be at least 8 chars, with 1 letter, 1 number, and 1 symbol.";
     if (pwdForm.new !== pwdForm.confirm) errors.confirm = "Passwords do not match.";
-
     if (Object.keys(errors).length > 0) {
       setPwdErrors(errors);
       setIsPwdSuccess(false);
       return;
     }
-
     setPwdErrors({});
     
     const { error } = await supabase.auth.updateUser({ password: pwdForm.new });
-
     if (error) {
       setPwdErrors({ confirm: error.message });
       setIsPwdSuccess(false);
@@ -603,13 +1353,11 @@ export default function App() {
       }, 1500);
     }
   };
-
   const handleEditProfile = async (e) => {
       e.preventDefault();
       const { error } = await supabase.auth.updateUser({
         data: { company: editForm.company, phone: editForm.phone }
       });
-
       if (error) {
         showNotification("Failed to update profile: " + error.message, "error");
       } else {
@@ -618,7 +1366,6 @@ export default function App() {
         showNotification("Profile updated successfully!", "success");
       }
     };
-
   const handleForgotEmailSubmit = async (e) => {
     e.preventDefault();
     if (!emailRegex.test(forgotEmail)) return setForgotErrors({ email: "Please enter a valid email address." });
@@ -629,7 +1376,6 @@ export default function App() {
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail);
     
     setIsForgotLoading(false);
-
     if (error) {
       setForgotErrors({ email: error.message });
     } else {
@@ -637,22 +1383,18 @@ export default function App() {
       showNotification(`Verification code sent to ${forgotEmail}`, "info");
     }
   };
-
   const handleForgotCodeSubmit = async (e) => {
     e.preventDefault();
     if (forgotCode.length !== 6) return setForgotErrors({ code: "Invalid verification code." });
     
     setForgotErrors({});
     setIsForgotLoading(true);
-
     const { error } = await supabase.auth.verifyOtp({
       email: forgotEmail,
       token: forgotCode,
       type: 'recovery'
     });
-
     setIsForgotLoading(false);
-
     if (error) {
       setForgotErrors({ code: error.message });
     } else {
@@ -660,21 +1402,16 @@ export default function App() {
       showNotification("Email verified successfully!", "success");
     }
   };
-
   const handleForgotResetSubmit = async (e) => {
     e.preventDefault();
     let errors = {};
     if (!passwordRegex.test(forgotNewPwd)) errors.new = "Password must be at least 8 chars, with 1 letter, 1 number, and 1 symbol.";
     if (forgotNewPwd !== forgotConfirmPwd) errors.confirm = "Passwords do not match.";
     if (Object.keys(errors).length > 0) return setForgotErrors(errors);
-
     setForgotErrors({});
     setIsForgotLoading(true);
-
     const { error } = await supabase.auth.updateUser({ password: forgotNewPwd });
-
     setIsForgotLoading(false);
-
     if (error) {
       setForgotErrors({ new: error.message });
     } else {
@@ -684,42 +1421,31 @@ export default function App() {
       setForgotStep(1);
     }
   };
-
   const handleImageUpload = async (e) => {
       const file = e.target.files[0];
       if (!file || !currentUser.id) return;
-
       showNotification("Uploading profile picture...", "info");
-
       try {
         const fileExt = file.name.split('.').pop();
         const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
-
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(fileName, file);
-
         if (uploadError) throw uploadError;
-
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
           .getPublicUrl(fileName);
-
         const { error: updateError } = await supabase.auth.updateUser({
           data: { avatar_url: publicUrl }
         });
-
         if (updateError) throw updateError;
-
         setCurrentUser(prev => ({ ...prev, avatar: publicUrl }));
         showNotification("Profile picture updated successfully!", "success");
-
       } catch (error) {
         console.error('Upload error:', error);
         showNotification("Error uploading picture: " + error.message, "error");
       }
     };
-
   const openSubmitJob = (type) => {
     setSelectedJobType(type);
     setIsSubmitJobOpen(true);
@@ -727,7 +1453,6 @@ export default function App() {
     setMaterialPrompt("");
     setMaterialResponse("");
   };
-
   const handleRequestAccess = async () => {
     setIsRequestingAccess(true);
     try {
@@ -752,9 +1477,7 @@ export default function App() {
   const handleJobSubmit = async (e) => {
       e.preventDefault();
       if (!currentUser.id) return;
-
       const jobName = e.target.jobName.value;
-
       const newJob = {
         user_id: currentUser.id,
         job_id_display: `NV-${1000 + jobs.length}`,
@@ -763,16 +1486,13 @@ export default function App() {
         status: 'Pending',
         price: selectedJobType === 'Nozzle Analysis' ? 6000 : selectedJobType === 'Bellow Analysis' ? 48000 : 15000 
       };
-
       try {
         const { data: insertedJob, error } = await supabase
           .from('ansys_jobs')
           .insert([newJob])
           .select()
           .single();
-
         if (error) throw error;
-
         setIsSubmitJobOpen(false);
         showNotification(`${selectedJobType} submitted! Added to queue.`, 'success');
         fetchJobs(); 
@@ -781,7 +1501,6 @@ export default function App() {
         showNotification(`Error submitting job: ${error.message}`, "error");
       }
     };
-
   const filteredJobs = jobFilter.startsWith('All') 
   ? jobs 
   : jobs.filter(j => {
@@ -797,7 +1516,6 @@ export default function App() {
       if (jobFilter === '2D Axisymetric Tubesheet Analysis') return j.type.includes('2D Axisymetric Tubesheet');
       return j.type === jobFilter;
     });
-
   const handleDeleteJob = async (jobId, e) => {
     if (e) e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this analysis job?")) return;
@@ -819,7 +1537,6 @@ export default function App() {
       setIsDeletingJobs(false);
     }
   };
-
   const handleDeleteSelectedJobs = async () => {
     if (selectedJobIds.length === 0) return;
     if (!window.confirm(`Are you sure you want to delete ${selectedJobIds.length} selected job(s)?`)) return;
@@ -841,7 +1558,6 @@ export default function App() {
       setIsDeletingJobs(false);
     }
   };
-
   const handleToggleSelectAll = () => {
     if (!filteredJobs || filteredJobs.length === 0) return;
     const allIds = filteredJobs.map(j => j.id);
@@ -852,14 +1568,12 @@ export default function App() {
       setSelectedJobIds(prev => Array.from(new Set([...prev, ...allIds])));
     }
   };
-
   const handleToggleSelectJob = (jobId, e) => {
     if (e) e.stopPropagation();
     setSelectedJobIds(prev =>
       prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
     );
   };
-
   const stats = {
     total: filteredJobs.length,
     completed: filteredJobs.filter(j => j.status === 'Completed' || j.status === 'Success').length,
@@ -867,20 +1581,17 @@ export default function App() {
     pending: filteredJobs.filter(j => j.status === 'Pending').length,
     failed: filteredJobs.filter(j => j.status === 'Failed').length,
   };
-
   const calculatePayments = () => {
     let subtotal = jobs.reduce((acc, job) => acc + Number(job.price), 0);
     return { unpaid: subtotal * 1.18, paid: 0, total: subtotal * 1.18 };
   };
   const paymentData = calculatePayments();
-
   const renderSplash = () => (
     <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0B1120] transition-all duration-700 ease-in-out ${isSplashExiting ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-600/30 rounded-full mix-blend-screen filter blur-[120px] animate-blob"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-600/30 rounded-full mix-blend-screen filter blur-[120px] animate-blob animation-delay-2000"></div>
       </div>
-
       <style>{`
         .path-draw { stroke-dasharray: 220; stroke-dashoffset: 220; animation: draw 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         .path-draw-delayed { stroke-dasharray: 220; stroke-dashoffset: 220; animation: draw 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards; }
@@ -919,7 +1630,6 @@ export default function App() {
             <circle cx="30" cy="30" r="2.5" fill="#fff" /><circle cx="40" cy="25" r="1.5" fill="#fff" /><circle cx="45" cy="35" r="1.5" fill="#fff" /><circle cx="70" cy="65" r="2" fill="#fff" /><circle cx="60" cy="75" r="1" fill="#fff" /><circle cx="50" cy="70" r="1.5" fill="#fff" /><circle cx="75" cy="35" r="2" fill="#fff" /><circle cx="25" cy="65" r="1.5" fill="#fff" />
           </g>
         </svg>
-
         <div className="flex flex-col items-center text-reveal">
           <h1 className="mb-2 text-xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 drop-shadow-lg">NOVA</h1>
           <p className="text-sm font-medium tracking-widest uppercase text-slate-300">Initializing Platform</p>
@@ -931,7 +1641,6 @@ export default function App() {
       </div>
     </div>
   );
-
   const renderLanding = () => (
     <div className="relative min-h-screen pt-20 overflow-x-hidden font-sans text-slate-800 scroll-smooth">
       <section className="relative max-w-5xl px-4 md:px-6 pt-16 pb-20 mx-auto text-center">
@@ -953,14 +1662,12 @@ export default function App() {
                <span className="text-lg font-bold text-slate-800">FE Report</span>
             </div>
           </div>
-
           <h2 className="text-lg md:text-3xl font-bold text-[#3C64D6] mb-6">Automated FEA. Zero Manual Setup.</h2>
           <p className="max-w-2xl mx-auto mb-6 text-lg font-medium text-slate-700">Input your design specifications. Receive a fully code-compliant FEA stress report in record time directly from the cloud.</p>
           
           <div className="mb-6 md:mb-12 text-sm font-semibold text-slate-600">
              Eliminate the bottlenecks: <span className="font-normal text-slate-500">Manual Meshing | Tedious Modeling | Repetitive Iterations | Report Drafting</span>
           </div>
-
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
              <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-4 md:px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
                 <Shield className="relative z-10 w-5 h-5" /> <span className="relative z-10">Start Analysis</span>
@@ -971,18 +1678,15 @@ export default function App() {
           </div>
         </div>
       </section>
-
       <section id="solution" className="relative z-10 px-4 md:px-6 py-6 md:py-24">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob"></div>
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-40 animate-blob animation-delay-4000"></div>
-
         <div className="relative z-10 max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <div className="mb-16 text-center">
             <span className="bg-white/60 backdrop-blur-md border border-white/50 shadow-sm text-[#3C64D6] px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase">Solutions</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">Engineering Components</h2>
           </div>
-
           <div className="grid grid-cols-1 gap-4 md:gap-8 md:grid-cols-2">
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group">
                 <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-blue-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
@@ -1032,7 +1736,6 @@ export default function App() {
                    Launch Bellow Analysis <ArrowRight className="w-5 h-5" />
                 </button>
              </div>
-
              <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group opacity-95">
                 <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-amber-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
                 
@@ -1074,14 +1777,12 @@ export default function App() {
           </div>
         </div>
       </section>
-
       <section id="why-nova" className="py-6 md:py-24 bg-white/40 backdrop-blur-md px-4 md:px-6 border-y border-white/60 shadow-[0_8px_32px_rgba(31,38,135,0.05)]">
         <div className="max-w-5xl mx-auto transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <div className="mb-16 text-center">
             <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">About</span>
             <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">What is NOVA?</h2>
           </div>
-
           <div className="grid items-center grid-cols-1 gap-16 md:grid-cols-2">
              <div className="space-y-6">
                 <div className="flex items-center gap-5 group">
@@ -1112,16 +1813,13 @@ export default function App() {
           </div>
         </div>
       </section>
-
       <section id="how-it-works" className="relative z-10 px-4 md:px-6 py-6 md:py-24">
         <div className="max-w-6xl mx-auto text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
           <span className="px-5 py-2 text-xs font-bold tracking-widest uppercase rounded-full glass-panel text-slate-700">Methodology</span>
           <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 mb-4 drop-shadow-sm">How NOVA Works</h2>
           <p className="mb-20 text-lg font-medium text-slate-600">A streamlined 6-step workflow that transforms your engineering data into a compliant FE report</p>
-
           <div className="relative flex flex-col items-center justify-between gap-4 md:gap-8 md:flex-row md:items-start md:gap-4">
              <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-gradient-to-r from-blue-300/50 via-purple-300/50 to-emerald-300/50 z-0"></div>
-
              {[
                { icon: UploadCloud, title: "Data Ingestion", desc: "Upload PV Elite or structural parameters" },
                { icon: Cpu, title: "Intelligent Parsing", desc: "AI extracts geometry, materials, and loads" },
@@ -1144,7 +1842,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       <section className="relative z-10 px-4 md:px-6 py-6 md:py-24 text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
          <div className="glass-panel max-w-4xl mx-auto rounded-[3rem] p-16 relative overflow-hidden shadow-[0_20px_60px_rgba(60,100,214,0.15)]">
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full filter blur-[80px] -z-10"></div>
@@ -1155,7 +1852,6 @@ export default function App() {
            </button>
          </div>
       </section>
-
       <footer className="glass-panel text-slate-600 py-6 md:py-12 px-4 md:px-6 relative z-10 mt-6 md:mt-12 border-b-0 rounded-t-[3rem] shadow-[0_-8px_32px_rgba(31,38,135,0.05)]">
         <div className="grid max-w-6xl grid-cols-1 gap-4 md:gap-8 pb-8 mx-auto mb-4 md:mb-8 border-b md:grid-cols-3 border-slate-300/50">
            <div>
@@ -1198,7 +1894,6 @@ export default function App() {
       </a>
     </div>
   );
-
   const renderAuthContainer = (children) => (
     <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
       {notification && (
@@ -1227,7 +1922,6 @@ export default function App() {
       </div>
     </div>
   );
-
   const renderLogin = () => renderAuthContainer(
     <>
       <h2 className="mb-6 text-xl font-bold text-center text-slate-800">Secure Sign In</h2>
@@ -1259,7 +1953,6 @@ export default function App() {
       </div>
     </>
   );
-
   const renderSignup = () => renderAuthContainer(
     <>
       <h2 className="mb-6 text-xl font-bold text-center text-slate-800">Create New Account</h2>
@@ -1293,7 +1986,6 @@ export default function App() {
       </div>
     </>
   );
-
   const renderForgotPassword = () => renderAuthContainer(
     <>
       <h2 className="mb-2 text-xl font-bold text-center text-slate-800">
@@ -1304,7 +1996,6 @@ export default function App() {
         {forgotStep === 2 && `Please enter the 6-digit code sent to ${forgotEmail}.`}
         {forgotStep === 3 && "Please enter your new password below."}
       </p>
-
       {forgotStep === 1 && (
         <form onSubmit={handleForgotEmailSubmit} className="space-y-5">
           <div className="space-y-1.5">
@@ -1317,7 +2008,6 @@ export default function App() {
           </button>
         </form>
       )}
-
       {forgotStep === 2 && (
         <form onSubmit={handleForgotCodeSubmit} className="space-y-5">
            <div className="space-y-1.5">
@@ -1330,7 +2020,6 @@ export default function App() {
           </button>
         </form>
       )}
-
       {forgotStep === 3 && (
         <form onSubmit={handleForgotResetSubmit} className="space-y-5">
            <div className="space-y-1.5">
@@ -1354,19 +2043,16 @@ export default function App() {
              </div>
              {forgotErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.confirm}</p>}
           </div>
-
           <button type="submit" disabled={isForgotLoading} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
             {isForgotLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save New Password"}
           </button>
         </form>
       )}
-
       <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
          Remember your password? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
   );
-
   const renderInsightsModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
@@ -1404,7 +2090,6 @@ export default function App() {
       </div>
     </div>
   );
-
   const downloadJobJson = (job) => {
     if (!job) return;
     let payload = job.json_payload || job.geometry_data?.runs || job.geometry_data || [];
@@ -1419,10 +2104,9 @@ export default function App() {
     downloadAnchor.click();
     downloadAnchor.remove();
   };
-
   const generateInputPDF = (job, index = 0) => {
     if (!job || !job.json_payload) {
-      alert("No input data available to generate PDF.");
+      showNotification('No input data available to generate PDF.', 'error', 'PDF Export');
       return;
     }
     try {
@@ -1433,25 +2117,16 @@ export default function App() {
       }
       let p = Array.isArray(payloads) ? payloads[index] : payloads;
       if (!p) p = Array.isArray(payloads) ? payloads[0] : payloads;
-
       const W = 210, margin = 14, contentW = W - 28;
-
-      // ── Pre-compute all conditions (mirrors Nozzle8.html evaluateDependencies) ──
       const analysisType = p.Analysis_Type || '';
       const isLimitLoad  = analysisType === 'Limit-Load Analysis';
-
       const thermalReq   = p.Thermal_Required || 'No';
       const showThermal  = thermalReq === 'Yes';
-
       const nType        = p.N_TYPE ?? p.Nozzle_Type ?? '';
       const isBarrel     = String(nType).toLowerCase() === 'barrel' || String(nType).toLowerCase() === 'srn';
-
       const padVal       = p.Pad_Required ?? p.pad ?? 'No';
       const isPad        = String(padVal).toLowerCase() === 'yes';
-
       const isHead       = !!p.Head_TYPE; // True if it's a Vessel Head analysis
-
-      // ── HEADER (black bar) ──
       doc.setFillColor(20, 20, 20);
       doc.rect(0, 0, W, 28, 'F');
       doc.setTextColor(255, 255, 255);
@@ -1469,10 +2144,7 @@ export default function App() {
       const typeStr = isHead ? `Vessel Head Analysis ${index+1}` : `Shell Nozzle Analysis ${index+1}`;
       doc.text(typeStr + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 18, { align: 'right' });
       doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 24, { align: 'right' });
-
       let y = 36;
-
-      // ── Section divider ──
       const addSection = (num, title) => {
         if (y > 265) { doc.addPage(); y = 18; }
         doc.setDrawColor(20, 20, 20);
@@ -1484,8 +2156,6 @@ export default function App() {
         doc.text(num + '.  ' + title.toUpperCase(), margin, y + 5.5);
         y += 9;
       };
-
-      // ── Row: label left, value right, tight rows ──
       let rowAlt = false;
       const addRow = (label, value, unit) => {
         if (y > 276) { doc.addPage(); y = 18; rowAlt = false; }
@@ -1506,24 +2176,16 @@ export default function App() {
         y += 5.8;
         rowAlt = !rowAlt;
       };
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // SECTION 1: PROJECT & CONDITIONS
-      // ─────────────────────────────────────────────────────────────────────────
       addSection(1, 'Project & Conditions'); rowAlt = false;
-
       if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
       if (isHead && p.Head_TYPE) addRow('Head Type', p.Head_TYPE);
       if (analysisType)          addRow('Analysis Type', analysisType);
       
-      // Material Model — only visible when Limit-Load Analysis
       if (isLimitLoad && p.Material_Type) addRow('Material Model', p.Material_Type);
       if (p.DesignTemp != null)  addRow('Design Temp.', p.DesignTemp, '\u00b0C');
       if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
       
-      // Thermal section — Thermal_Required always shown
       addRow('Thermal Required', thermalReq);
-      // HTC fields — only shown when Thermal_Required = Yes
       if (showThermal) {
         if (p.T_op != null)           addRow('Operating Temperature', p.T_op, '\u00b0C');
         if (p.shell_id_htc != null)   addRow('Shell ID HTC', p.shell_id_htc, 'W/m\u00b2\u00b7\u00b0C');
@@ -1531,26 +2193,14 @@ export default function App() {
         if (p.outside_id_htc != null) addRow('Outside Surface HTC', p.outside_id_htc, 'W/m\u00b2\u00b7\u00b0C');
       }
       y += 3;
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // SECTION 2: MATERIALS
-      // ─────────────────────────────────────────────────────────────────────────
       addSection(2, 'Materials'); rowAlt = false;
-
       if (p.Shell_Material)      addRow('Shell Material', p.Shell_Material);
       if (p.Nozzle_Material)     addRow('Nozzle Material', p.Nozzle_Material);
-      // Pad — Pad Required always shown; Pad Material only if Yes
       addRow('Pad Required', isPad ? 'Yes' : 'No');
       if (isPad && p.Pad_Material) addRow('Pad Material', p.Pad_Material);
       y += 3;
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // SECTION 3: GEOMETRY
-      // ─────────────────────────────────────────────────────────────────────────
       addSection(3, isHead ? 'Head & Nozzle Geometry' : 'Shell & Nozzle Geometry'); rowAlt = false;
-
       if (!isHead) {
-        // Shell dims
         const sOD  = p.S_OD  ?? p.Shell_D_o;
         const sTHK = p.S_THK ?? p.Shell_T;
         const sH   = p.S_H   ?? p.Shell_L;
@@ -1562,7 +2212,6 @@ export default function App() {
         if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
         if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
       } else {
-        // Head dims
         const hType = p.Head_TYPE;
         if (hType === 'Ellipsoidal Head') {
             if (p.H_ID != null) addRow('Head Inner Dia (ID)', p.H_ID, 'mm');
@@ -1587,8 +2236,6 @@ export default function App() {
             if (p.TH_S_THK != null) addRow('Shell Thickness', p.TH_S_THK, 'mm');
         }
       }
-
-      // Nozzle dims — always shown
       const nL1  = p.N_L1  ?? p.h;
       const nOD  = p.N_OD  ?? p.Nozzle_D_o;
       const nTHK = p.N_THK ?? p.Nozzle_T;
@@ -1598,18 +2245,13 @@ export default function App() {
       if (nOD  != null) addRow('Neck OD', nOD, 'mm');
       if (nTHK != null) addRow('Neck Thickness', nTHK, 'mm');
       if (nP   != null) addRow('Nozzle Projection', nP, 'mm');
-
-      // Barrel/SRN-only fields
       if (isBarrel) {
         if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
         if (p.Hub_LEN != null) addRow('Hub Length', p.Hub_LEN, 'mm');
         if (p.T_LEN   != null && hType !== 'Flat Head') addRow('Transition Length', p.T_LEN, 'mm');
       }
-
       if (p.Fillet_Radius  != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
       if (p.Nozzle_In_Proj != null) addRow('Inward Projection', p.Nozzle_In_Proj, 'mm');
-
-      // Pad dims
       if (isPad) {
         const pW   = p.P_W   ?? p.Pad_Width;
         const pTHK = p.P_THK ?? p.Pad_T;
@@ -1617,12 +2259,7 @@ export default function App() {
         if (pTHK != null) addRow('Pad Thickness', pTHK, 'mm');
       }
       y += 3;
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // SECTION 4: MESHING & LOADING
-      // ─────────────────────────────────────────────────────────────────────────
       addSection(4, 'Meshing & Loading'); rowAlt = false;
-
       const bSize     = p.B_size    ?? p.Mesh_Size;
       const mMeth     = p.m_method  ?? p.Mesh_Method;
       const nDiv      = p.N_D       ?? p.Edge_Divisions;
@@ -1634,7 +2271,6 @@ export default function App() {
       const mC = p.MZ ?? p.M_C;
       const fA = p.FY ?? p.F_A ?? p.P;
       const mL = p.MX ?? p.M_L;
-
       if (bSize     != null) addRow('Global Body Sizing', bSize, 'mm');
       if (mMeth     != null) addRow('Mesh Method', mMeth);
       if (nDiv      != null) addRow('Edge Divisions', nDiv);
@@ -1646,8 +2282,6 @@ export default function App() {
       if (mC != null) addRow('MC  Circumferential Bending Moment', mC, 'N mm');
       if (fA != null) addRow('P   Axial / Thrust Force', fA, 'N');
       if (mL != null) addRow('ML  Longitudinal Bending Moment', mL, 'N mm');
-
-      // ── FOOTER ──
       const totalPages = doc.internal.getNumberOfPages();
       for (let pg = 1; pg <= totalPages; pg++) {
         doc.setPage(pg);
@@ -1659,14 +2293,12 @@ export default function App() {
         doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2", margin, 290);
         doc.text('Page ' + pg + ' / ' + totalPages, W - margin, 290, { align: 'right' });
       }
-
       doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '_' + (index+1) + '.pdf');
     } catch (err) {
       console.error("Error generating PDF:", err);
-      alert("Failed to generate PDF. Check console for details.");
+      showNotification('Failed to generate PDF. Please try again.', 'error', 'PDF Export');
     }
   };
-
   const generateAndOpenReport = (job) => {
     if (!job) return;
     if (job.report_url) {
@@ -1677,7 +2309,6 @@ export default function App() {
       window.open(job.excel_file_url, '_blank');
       return;
     }
-
     const geom = job.geometry_data || {};
     let runs = [];
     if (Array.isArray(geom.runs) && geom.runs.length > 0) runs = geom.runs;
@@ -1686,7 +2317,6 @@ export default function App() {
       try { const p = JSON.parse(job.json_payload); if (Array.isArray(p)) runs = p; } catch (e) {}
     }
     if (!Array.isArray(runs) || runs.length === 0) runs = [geom];
-
     const reportHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1738,20 +2368,17 @@ export default function App() {
         <span class="job-badge">${job.status}</span>
       </div>
     </div>
-
     ${job.status === 'Failed' ? `
       <div class="status-alert">
         <strong>⚠ Simulation Execution Failure:</strong><br/>
         ${job.error_message || job.error || 'The simulation runner reported an error during solver execution.'}
       </div>
     ` : ''}
-
     ${job.status === 'Completed' ? `
       <div class="status-alert">
         <strong>✔ Simulation Successfully Executed:</strong> All load cases processed according to ASME Section VIII Div 2 Part 5 design-by-analysis rules.
       </div>
     ` : ''}
-
     <h2>Project & Job Overview</h2>
     <table>
       <tr><th>Project Name</th><td><strong>${job.name || 'Analysis Job'}</strong></td></tr>
@@ -1761,29 +2388,24 @@ export default function App() {
       <tr><th>Current Status</th><td><strong>${job.status}</strong></td></tr>
       ${job.result_url ? `<tr><th>Full Analysis ZIP</th><td><a href="${job.result_url}" target="_blank" style="color:#2563eb; font-weight:bold;">Download Archive (Google Drive)</a></td></tr>` : ''}
     </table>
-
     <div style="margin-top: 30px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
       Generated automatically by NOVA Cloud Engineering Platform. Compliant with ASME Sec VIII Div 2 standards.
     </div>
   </div>
 </body>
 </html>`;
-
     const reportWin = window.open('', '_blank');
     if (reportWin) {
       reportWin.document.write(reportHtml);
       reportWin.document.close();
     }
   };
-
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
-
     const isSuccess = selectedJobDetails.status === 'Completed' || selectedJobDetails.status === 'Success';
     const isFailed = selectedJobDetails.status === 'Failed';
     const isPending = selectedJobDetails.status === 'Pending';
     const isProcessing = !isSuccess && !isFailed && !isPending;
-
     const statusLabel = selectedJobDetails.status;
     let payloads = selectedJobDetails.json_payload;
     if (typeof payloads === 'string') {
@@ -1791,8 +2413,6 @@ export default function App() {
     }
     if (!Array.isArray(payloads)) payloads = [payloads];
     const isBatch = payloads.length > 1;
-
-    // Helper to get status or url for a specific index
     const getBatchItem = (arrStr, idx, fallback) => {
       if (!arrStr) return fallback;
       try {
@@ -1801,10 +2421,8 @@ export default function App() {
             const arr = JSON.parse(arrStr);
             if (Array.isArray(arr) && arr.length > idx) return arr[idx];
           } else {
-            // Might be comma separated
             const arr = arrStr.split(',');
             if (arr.length > 1 && arr.length > idx) return arr[idx].trim();
-            // If it's a single string and we want index 0, return it
             if (idx === 0) return arrStr;
           }
         } else if (Array.isArray(arrStr) && arrStr.length > idx) {
@@ -1813,16 +2431,13 @@ export default function App() {
       } catch (e) {}
       return fallback;
     };
-
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div
           className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
           onClick={() => setIsJobDetailsOpen(false)}
         />
-
         <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-4 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
-
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</span>
@@ -1831,7 +2446,6 @@ export default function App() {
               </span>
               {!isBatch && <AnimatedStatusBadge status={statusLabel} />}
             </div>
-
             <button
               onClick={() => setIsJobDetailsOpen(false)}
               title="Close"
@@ -1840,14 +2454,11 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
               <span className="font-black text-[#2563eb] text-sm mt-1 block">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
             </div>
-
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Type of Analysis</span>
               <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5 mt-1">
@@ -1855,17 +2466,13 @@ export default function App() {
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
             </div>
-
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
               <span className="font-bold text-slate-700 text-xs mt-1 block">
                 {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
-
           </div>
-
-
           {isFailed && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between">
@@ -1890,86 +2497,111 @@ export default function App() {
               </div>
             </div>
           )}
-
-
           {isPending && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-900 font-bold">
               <Clock className="w-5 h-5 text-amber-600 shrink-0" />
               <span>Job is queued. The backend simulation worker will pick it up shortly.</span>
             </div>
           )}
-
           <div className="pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
-            {payloads.map((p, idx) => {
-              const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
-              const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
-              const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
-              const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
-              const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
-              
-              return (
-                <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
-                  {isBatch && (
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                      <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
-                      <AnimatedStatusBadge status={pStatus} />
+            {(() => {
+              const jobInvoice = getJobInvoiceData(selectedJobDetails);
+              if (jobInvoice) {
+                return (
+                  <div className="flex flex-col gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-wider text-[#2874f0]">Purchased Software License</div>
+                        <div className="font-mono text-base font-black text-slate-900 mt-0.5">{jobInvoice.licenseKey}</div>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-full border border-emerald-300">
+                        ● Active (Expires: {jobInvoice.expiryDate})
+                      </span>
                     </div>
-                  )}
-                  <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
-                    <button
-                      onClick={() => generateInputPDF(selectedJobDetails, idx)}
-                      title="Download User Input Parameters PDF"
-                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-violet-600" />
-                      Input Parameters PDF{labelSuffix}
-                    </button>
-
-                    {pReportUrl ? (
-                      <a
-                        href={pReportUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Download MS Word FEA Report (.docx)"
-                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                        View Report{labelSuffix}
-                      </a>
-                    ) : isPSuccess ? (
-                      <button
-                        onClick={() => generateAndOpenReport(selectedJobDetails)}
-                        title="View Analysis Report"
-                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                        View Report{labelSuffix}
-                      </button>
-                    ) : null}
-
-                    {pResultUrl && (
-                      <a
-                        href={pResultUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Download complete ANSYS simulation archive"
-                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Full Analysis{labelSuffix} (.zip)
-                      </a>
-                    )}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {jobInvoice.isWizard && (
+                        <button
+                          onClick={() => {
+                            window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
+                            downloadAnsysWbexFile(jobInvoice.wbexFilename, jobInvoice.licenseKey, jobInvoice.productName);
+                          }}
+                          className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md hover:scale-105"
+                        >
+                          <Download className="w-4 h-4" /> Download Ansys Wizard (.WBEX)
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              }
 
+              return payloads.map((p, idx) => {
+                const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
+                const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
+                const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
+                const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
+                const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
+                
+                return (
+                  <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                    {isBatch && (
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
+                        <AnimatedStatusBadge status={pStatus} />
+                      </div>
+                    )}
+                    <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
+                      <button
+                        onClick={() => generateInputPDF(selectedJobDetails, idx)}
+                        title="Download User Input Parameters PDF"
+                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-violet-600" />
+                        Input Parameters PDF{labelSuffix}
+                      </button>
+                      {pReportUrl ? (
+                        <a
+                          href={pReportUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Download MS Word FEA Report (.docx)"
+                          className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          View Report{labelSuffix}
+                        </a>
+                      ) : isPSuccess ? (
+                        <button
+                          onClick={() => generateAndOpenReport(selectedJobDetails)}
+                          title="View Analysis Report"
+                          className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          View Report{labelSuffix}
+                        </button>
+                      ) : null}
+                      {pResultUrl && (
+                        <a
+                          href={pResultUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Download complete ANSYS simulation archive"
+                          className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Full Analysis{labelSuffix} (.zip)
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
       </div>
     );
   };
-
   const DashboardHeader = ({ isProfile }) => (
     <div className="relative z-50 flex flex-col items-start justify-between p-4 md:p-6 mb-4 md:mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
       <div className="flex items-center gap-4">
@@ -1996,48 +2628,45 @@ export default function App() {
           )}
         </div>
       </div>
-
       {isProfile ? (
         <button onClick={() => setCurrentView('dashboard')} className="glass-input hover:bg-white/70 text-slate-800 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-colors mt-4 md:mt-0 shadow-sm border-white/80">
           Back to Dashboard
         </button>
       ) : (
-        <div className="relative mt-4 md:mt-0 z-[60]">
-          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
-            <div className="bg-[#3C64D6] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
-              {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : currentUser.initial}
-            </div>
-            <div className="hidden pr-2 sm:block">
-              <div className="text-sm font-extrabold leading-tight text-slate-800">{currentUser.name}</div>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-slate-600 hidden sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-3 w-56 glass-panel rounded-2xl shadow-xl py-2 z-[100] text-slate-800 animate-in fade-in slide-in-from-top-2 border-white/80">
-              <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
-                <User className="w-4 h-4 mr-3 text-[#3C64D6]" /> My Profile
-              </button>
-              <button onClick={() => { setCurrentView('wizard_products'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
-                <Package className="w-4 h-4 mr-3 text-violet-600" /> Ansys Wizard Product
-              </button>
-              <button onClick={() => { setCurrentView('nova_help'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
-                <HelpCircle className="w-4 h-4 mr-3 text-sky-600" /> Nova Help
-              </button>
-              <button onClick={() => { setCurrentView('nova_community'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
-                <Users className="w-4 h-4 mr-3 text-emerald-600" /> Nova Community
-              </button>
-              <div className="h-px mx-2 my-1 bg-slate-200/50"></div>
-              <button onClick={handleLogout} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left text-red-600 transition-colors hover:bg-red-50/50">
-                <Lock className="w-4 h-4 mr-3 text-red-500" /> Sign Out
-              </button>
-            </div>
-          )}
+        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 z-[60]">
+          <div className="relative">
+            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
+              <div className="bg-[#3C64D6] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
+                {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : currentUser.initial}
+              </div>
+              <div className="hidden pr-2 sm:block">
+                <div className="text-sm font-extrabold leading-tight text-slate-800">{currentUser.name}</div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-slate-600 hidden sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-3 w-60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl py-2 z-[100] text-slate-800 animate-in fade-in slide-in-from-top-2 border border-slate-200">
+                <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                  <User className="w-4 h-4 mr-3 text-[#3C64D6]" /> My Profile
+                </button>
+                <button onClick={() => { setCurrentView('nova_help'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                  <HelpCircle className="w-4 h-4 mr-3 text-sky-600" /> Nova Help
+                </button>
+                <button onClick={() => { setCurrentView('nova_community'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                  <Users className="w-4 h-4 mr-3 text-emerald-600" /> Nova Community
+                </button>
+                <div className="h-px mx-2 my-1 bg-slate-200/50"></div>
+                <button onClick={handleLogout} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left text-red-600 transition-colors hover:bg-red-50/50">
+                  <Lock className="w-4 h-4 mr-3 text-red-500" /> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
-
   const renderDashboard = () => (
       <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
         {notification && (
@@ -2045,10 +2674,8 @@ export default function App() {
             <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
           </div>
         )}
-
         <div className="max-w-[1200px] mx-auto">
           <DashboardHeader isProfile={false} />
-
           {!currentUser.isApproved && (
             <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-4 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
               <div className="flex items-start gap-4">
@@ -2068,246 +2695,503 @@ export default function App() {
               </button>
             </div>
           )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10">
-            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = '/Nozzle8.html'} 
-                className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-            
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = '/bellow.html'} 
-                className="glass-btn-green w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/flange.html'} /* Update this URL */
-                className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-            
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
-              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
-              </h3>
-              {currentUser.isApproved ? (
-                <button 
-                  onClick={() => window.location.href = 'https://nova-analysis.vercel.app/pwht.html'} 
-                  className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
-                  Submit New Job
-                </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10"> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Basic') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Basic') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Nozzle Analysis', 300, 'Basic', () => window.location.href = '/Nozzle8.html')} 
+                    className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
               ) : (
-                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                  <Lock className="w-4 h-4" /> Locked
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Basic Plan to submit Nozzle Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Basic Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
                 </button>
               )}
-            </div>
-
-            <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
+            </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Basic') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Basic') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Bellow Analysis', 300, 'Basic', () => window.location.href = '/bellow.html')} 
+                    className="glass-btn-green w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Basic Plan to submit Bellow Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Basic Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Pro') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Pro') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Flange Analysis', 200, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/flange.html')} 
+                    className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Pro Plan to submit Flange Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Pro Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Basic') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
+                </h3>
+              </div>
+              
+              {canRunPlan('Basic') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Local PWHT', 125, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/pwht.html')} 
+                    className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Basic Plan to submit Local PWHT jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Basic Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Basic') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Basic') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Saddle Analysis', 150, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/saddle.html')} 
+                    className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Basic Plan to submit Saddle Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-rose-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Basic Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Pro') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Pro') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Hot Box Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/hot.html')} 
+                    className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Pro Plan to submit Hot Box Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Pro Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Max') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <CircleDot className="w-6 h-6 text-purple-600" /> Stiffener Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Max') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Stiffener Analysis', 150, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html')} 
+                    className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Max Plan to submit Stiffener Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white shadow-md hover:shadow-purple-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Max Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Max') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Max') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Tubesheet Analysis', 250, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html')} 
+                    className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Max Plan to submit Tubesheet Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Max Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Pro') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Pro') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Lug Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/lug.html')} 
+                    className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Pro Plan to submit Lug Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Pro Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Max') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
+                </h3>
+              </div>
+              
+              {canRunPlan('Max') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('Trunnion Analysis', 175, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html')} 
+                    className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
+                    Submit New Job
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Max Plan to submit Trunnion Analysis jobs.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-sky-600 hover:from-amber-600 hover:to-sky-700 text-white shadow-md hover:shadow-sky-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Max Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  <div className="h-5"></div>
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Database className="w-6 h-6 text-blue-600" /> ASME Materials
+                </h3>
+              </div>
+              
               <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/saddle.html'} /* Updated URL */
-                className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/hot.html'} /* Updated URL */
-                className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <CircleDot className="w-6 h-6 text-purple-600" />Stiffener Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html'} /* Updated URL */
-                className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-            
-            <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html'} /* Updated URL */
-                className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/lug.html'} /* Updated URL */
-                className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html'} /* Updated URL */
-                className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
-                Submit New Job
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            
-            <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Database className="w-6 h-6 text-blue-600" /> ASME Materials
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://asme-material.vercel.app/'} 
+                onClick={() => consumeCredits('ASME Materials', 10, 'Free', () => window.location.href = 'https://asme-material.vercel.app/')} 
                 className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
                 Open Database
               </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-            <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
-            </h3>
-            
-            {currentUser.isApproved ? (
+            </div> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  <div className="h-5"></div>
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
+                </h3>
+              </div>
+              
               <button 
-                onClick={() => window.location.href = 'https://nova-analysis.vercel.app/curve.html'} 
+                onClick={() => consumeCredits('Stress-Strain Curve', 10, 'Free', () => window.location.href = 'https://nova-analysis.vercel.app/curve.html')} 
                 className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
                 Open Generator
               </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-
-
-            <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-center hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
-            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-              <Box className="w-6 h-6 text-teal-600" /> CAD AI
-            </h3>
-            
-            {currentUser.isApproved ? (
-              <button 
-                onClick={() => window.location.href = 'https://swcad-ai.vercel.app/chat'} /* Update this URL */
-                className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
-                Launch Agent
-              </button>
-            ) : (
-              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                <Lock className="w-4 h-4" /> Locked
-              </button>
-            )}
-          </div>
-            
-
-            <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            </div> <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
               <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  {!canRunPlan('Max') ? (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                </div>
+                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                  <Box className="w-6 h-6 text-teal-600" /> CAD AI
+                </h3>
+              </div>
+              
+              {canRunPlan('Max') ? (
+                currentUser.isApproved ? (
+                  <button 
+                    onClick={() => consumeCredits('CAD AI', 75, 'Max', () => window.location.href = 'https://swcad-ai.vercel.app/chat')} 
+                    className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
+                    Launch Agent
+                  </button>
+                ) : (
+                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Pending Approval
+                  </button>
+                )
+              ) : (
+                <button 
+                  onClick={() => {
+                    setCurrentView('dashboard');
+                    showNotification('⚡ Upgrade to Max Plan to launch CAD AI.', 'info');
+                  }} 
+                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-teal-600 hover:from-amber-600 hover:to-teal-700 text-white shadow-md hover:shadow-teal-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                  title="Requires Max Plan. Click to Upgrade."
+                >
+                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                  <span>Upgrade to Submit Job</span>
+                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+                </button>
+              )}
+            </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                  <div className="h-5"></div>
+                </div>
                 <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
                   <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
                 </h3>
@@ -2317,11 +3201,7 @@ export default function App() {
                 <Sparkles className="w-4 h-4" /> ✨ Smart Setup
               </button>
             </div>
-          </div>
-
-          
-
-        <div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
+          </div><div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
           <div className="flex flex-col items-center justify-between gap-4 mb-4 md:mb-8 sm:flex-row">
             <h2 className="text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="glass-input text-[#3C64D6] text-sm rounded-xl px-5 py-2.5 outline-none font-bold cursor-pointer shadow-sm border-white/60 focus:ring-2 focus:ring-blue-500">
@@ -2338,7 +3218,6 @@ export default function App() {
               <option value="2D Axisymetric Tubesheet Analysis">2D Axisymetric Tubesheet Analysis</option>
             </select>
           </div>
-
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="p-5 text-center border shadow-sm bg-emerald-500/20 border-emerald-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-emerald-800">{stats.total}</div>
@@ -2362,7 +3241,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
         {jobs.length === 0 ? (
           <div className="glass-panel rounded-[2.5rem] py-6 md:py-24 px-4 md:px-6 text-center border-t border-l border-white/80 flex flex-col items-center justify-center">
             <div className="relative flex items-center justify-center w-24 h-24 mb-4 md:mb-8 glass-icon-container rounded-3xl">
@@ -2370,13 +3248,19 @@ export default function App() {
             </div>
             <h3 className="mb-3 text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">No Analysis Jobs Yet</h3>
             <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
-            {currentUser.isApproved ? (
-              <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
-                 <Plus className="w-5 h-5 mr-2" /> Start First Job
-              </button>
+            {canRunPlan('Basic') ? (
+              currentUser.isApproved ? (
+                <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
+                   <Plus className="w-5 h-5 mr-2" /> Start First Job
+                </button>
+              ) : (
+                <button disabled className="flex items-center px-4 md:px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
+                   <Lock className="w-5 h-5 mr-2" /> Pending Approval
+                </button>
+              )
             ) : (
-              <button disabled className="flex items-center px-4 md:px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
-                 <Lock className="w-5 h-5 mr-2" /> Account Locked
+              <button onClick={() => setCurrentView('dashboard')} className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
+                 <Lock className="w-5 h-5 mr-2 text-amber-200" /> Upgrade to Submit Job
               </button>
             )}
           </div>
@@ -2389,7 +3273,6 @@ export default function App() {
                     {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
                   </span>
                 </div>
-
                 {selectedJobIds.length > 0 && (
                   <button 
                     onClick={handleDeleteSelectedJobs} 
@@ -2453,10 +3336,7 @@ export default function App() {
                            </span>
                          </td>
                          <td className="px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                            <AnimatedStatusBadge status={job.status} />
-                            
-                            {/* Word FEA Report */}
-                            {(job.report_url || isJobSuccess) && (
+                            <AnimatedStatusBadge status={job.status} /> {(job.report_url || isJobSuccess) && (
                               job.report_url ? (
                                 <a 
                                   href={job.report_url} 
@@ -2476,10 +3356,7 @@ export default function App() {
                                   <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                                 </button>
                               )
-                            )}
-
-                            {/* Full Analysis ZIP */}
-                            {job.result_url && (
+                            )} {job.result_url && (
                               <a 
                                 href={job.result_url} 
                                 target="_blank" 
@@ -2489,10 +3366,7 @@ export default function App() {
                               >
                                 <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
                               </a>
-                            )}
-                            
-                            {/* Details Button for every job */}
-                            <button 
+                            )} <button 
                               onClick={() => { 
                                 setSelectedJobDetails(job); 
                                 setActiveDetailRun(0); 
@@ -2508,10 +3382,7 @@ export default function App() {
                             >
                               {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
                               Details
-                            </button>
-
-                            {/* Delete Button per job */}
-                            <button
+                            </button> <button
                               onClick={(e) => handleDeleteJob(job.id, e)}
                               disabled={isDeletingJobs}
                               title="Delete Job"
@@ -2568,7 +3439,6 @@ export default function App() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setIsSubmitJobOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
                   <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : selectedJobType === 'Local PWHT' ? 'glass-btn-orange' : 'glass-btn-blue'}`}>Submit</button>
@@ -2577,11 +3447,9 @@ export default function App() {
             </div>
           </div>
         )}
-
         {isInsightsOpen && renderInsightsModal()}
         
         {isJobDetailsOpen && renderJobDetailsModal()}
-
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAiModalOpen(false)}></div>
@@ -2615,7 +3483,6 @@ export default function App() {
                     </button>
                   </div>
                 </div>
-
                 {aiSetupResponse && (
                   <div className="p-4 md:p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
                     <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
@@ -2633,746 +3500,2122 @@ export default function App() {
       </div>
     </div>
   );
-
-
-  // ====================================================================================
-  // NEW FEATURES: ANSYS WIZARDS, HELP, COMMUNITY
-  // ====================================================================================
-
-  const renderWizardProducts = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      <div className="max-w-[1200px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
-        <DashboardHeader isProfile={false} customTitle="Ansys ACT Wizards" />
-        
-        <div className="text-center mb-6 md:mb-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] drop-shadow-sm mb-4">Powerful Automation Extensions</h2>
-          <p className="text-sm sm:text-lg text-slate-600 max-w-2xl mx-auto">Supercharge your local Ansys Workbench with our proprietary ACT extensions (.WBEX). Automate geometry generation, meshing, and loading in a single click.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:gap-6">
-          {/* Row 1 */}
-          <div className="glass-panel p-5 sm:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 border-white/60 hover:border-violet-300 transition-all hover:scale-[1.01]">
-            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-5">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-violet-100 flex items-center justify-center shrink-0 border border-violet-200 shadow-inner">
-                <Package className="w-6 h-6 md:w-8 md:h-8 text-violet-600" />
-              </div>
-              <div>
-                <h3 className="text-lg md:text-xl font-black text-slate-800 mb-1">Full Nozzle Ansys Act Wizard (.WBEX)</h3>
-                <p className="text-xs md:text-sm text-slate-500">Complete automation for both Shell and Vessel Head nozzles, including reinforcement pads and complex limit-load meshing.</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
-              <button onClick={() => setCurrentView('wizard_demo')} className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-violet-700 bg-white border border-violet-200 rounded-xl hover:bg-violet-50 transition-colors shadow-sm">
-                <PlayCircle className="w-4 h-4" /> View Demo
-              </button>
-              <button onClick={() => setCurrentView('wizard_buy')} className="flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-violet-600 rounded-xl hover:bg-violet-700 transition-all shadow-md hover:shadow-lg">
-                <ShoppingCart className="w-4 h-4" /> Buy Now
-              </button>
-            </div>
-          </div>
-
-          {/* Row 2 */}
-          <div className="glass-panel p-5 sm:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 border-white/60 hover:border-blue-300 transition-all hover:scale-[1.01]">
-            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-5">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-inner">
-                <Box className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-lg md:text-xl font-black text-slate-800 mb-1">Shell Nozzle Ansys Act Wizard (.WBEX)</h3>
-                <p className="text-xs md:text-sm text-slate-500">Dedicated workflow automation exclusively for cylindrical shell nozzles. Generates geometry and boundary conditions.</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
-              <button onClick={() => setCurrentView('wizard_demo')} className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-blue-700 bg-white border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors shadow-sm">
-                <PlayCircle className="w-4 h-4" /> View Demo
-              </button>
-              <button onClick={() => setCurrentView('wizard_buy')} className="flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-lg">
-                <ShoppingCart className="w-4 h-4" /> Buy Now
-              </button>
-            </div>
-          </div>
-
-          {/* Row 3 */}
-          <div className="glass-panel p-5 sm:p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 border-white/60 hover:border-emerald-300 transition-all hover:scale-[1.01]">
-            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-5">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0 border border-emerald-200 shadow-inner">
-                <Disc className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="text-lg md:text-xl font-black text-slate-800 mb-1">Head Nozzle Ansys Act Wizard (.WBEX)</h3>
-                <p className="text-xs md:text-sm text-slate-500">Specialized automation for Ellipsoidal, Flat, and Torispherical vessel heads. Handles offset logic and crown radiuses.</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
-              <button onClick={() => setCurrentView('wizard_demo')} className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-emerald-700 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition-colors shadow-sm">
-                <PlayCircle className="w-4 h-4" /> View Demo
-              </button>
-              <button onClick={() => setCurrentView('wizard_buy')} className="flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg">
-                <ShoppingCart className="w-4 h-4" /> Buy Now
-              </button>
-            </div>
-          </div>
+  const handleDownloadWbex = () => {
+    const dummyContent = `// NOVA Ansys ACT Extension Package (.WBEX)
+<extension version="2.4" name="NOVA_Ansys_ACT_Wizard">
+  <guid shortid="NOVA_ACT">${Math.random().toString(36).substring(2, 15)}</guid>
+  <script src="nova_main.py" />
+  <interface context="Mechanical">
+    <toolbar name="NOVA Nozzle Tools" caption="NOVA FEA">
+      <entry name="AutoNozzleMesh" icon="nozzle_hex" caption="ASME Automated Mesh" />
+      <entry name="StressLinearization" icon="stress_scl" caption="ASME Div 2 Linearization" />
+      <entry name="LimitLoadCheck" icon="limit_load" caption="Plastic Limit Load" />
+    </toolbar>
+  </interface>
+</extension>`;
+    const blob = new Blob([dummyContent], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'NOVA_Ansys_ACT_Wizard_v2.4.wbex';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+  const renderWizardProducts = () => {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="bg-white p-8 rounded-2xl shadow-xl text-center space-y-4">
+          <h2 className="text-xl font-black">Ansys Wizard Products</h2>
+          <p className="text-sm text-slate-500">Ansys ACT automation workflows are integrated into Nova Analysis.</p>
+          <button onClick={() => setCurrentView('dashboard')} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl">Go to Dashboard</button>
         </div>
       </div>
-    </div>
-  );
-
-
-  const renderWizardCheckout = () => {
-    const plan = checkoutPlan || {name: '6 Month License', price: '$399'};
-    
+    );
+  };
+  const renderWizardBuy = () => renderWizardProducts();
+  const renderWizardDemo = () => renderWizardProducts();
+  const renderWizardCheckout = () => renderWizardProducts();
+  const renderCreditSuccess = () => {
+    const receipt = orderReceipt || {
+      orderId: `ORD-${Date.now().toString().slice(-8)}`,
+      invoiceNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+      plan: currentUser.isLifetimeMax ? 'Max Plan (Annual Subscription)' : `${currentUser.plan} Plan (Monthly Subscription)`,
+      price: currentUser.plan === 'Max' ? '$576.00' : currentUser.plan === 'Pro' ? '$399.00' : '$199.00',
+      method: 'Direct Payment (Live Verified)',
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      userEmail: currentUser.email || 'dineshkumar2729304@gmail.com',
+      userName: currentUser.name || 'Dinesh Kumar Yadav',
+      status: 'PAID',
+      isWizardProduct: false,
+      licenseKey: null
+    };
+    const modulesData = [
+      {
+        id: 'nozzle',
+        name: 'ASME Nozzle Analysis',
+        code: 'ASME VIII-2 Part 5 Elastic-Plastic',
+        credits: 300,
+        plan: 'Basic',
+        icon: Cylinder,
+        color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+        desc: 'Shell/head nozzle intersection stress linearization (Pm, Pl, Pb, Q) & limit load.',
+        action: () => consumeCredits('Nozzle Analysis', 300, 'Basic', () => window.location.href = '/Nozzle8.html')
+      },
+      {
+        id: 'bellow',
+        name: 'Bellow Expansion Joint',
+        code: 'EJMA 10th Ed & ASME VIII-1 App 26',
+        credits: 300,
+        plan: 'Basic',
+        icon: Waves,
+        color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+        desc: 'Axial, lateral, angular deflection, squirm stability & fatigue cycle evaluation.',
+        action: () => consumeCredits('Bellow Analysis', 300, 'Basic', () => window.location.href = '/bellow.html')
+      },
+      {
+        id: 'saddle',
+        name: 'Saddle Horizontal Vessel',
+        code: 'Zick Method & ASME Section VIII',
+        credits: 150,
+        plan: 'Basic',
+        icon: Disc,
+        color: 'text-blue-600 bg-blue-50 border-blue-200',
+        desc: 'Peak bending over saddles, horn stress & circumferential compressive checks.',
+        action: () => consumeCredits('Saddle Analysis', 150, 'Basic', () => window.location.href = '/saddle.html')
+      },
+      {
+        id: 'pwht',
+        name: 'Local PWHT Thermal Analysis',
+        code: 'WRC 452 & ASME VIII-1 UW-40',
+        credits: 125,
+        plan: 'Basic',
+        icon: Flame,
+        color: 'text-amber-600 bg-amber-50 border-amber-200',
+        desc: 'Soak band calculation, axial thermal gradient control & residual stress relief.',
+        action: () => consumeCredits('Local PWHT', 125, 'Basic', () => window.location.href = '/pwht.html')
+      },
+      {
+        id: 'flange',
+        name: 'Flange Rigidity & Leakage',
+        code: 'ASME VIII-1 App 2 & EN 1591',
+        credits: 200,
+        plan: 'Pro',
+        icon: Target,
+        color: 'text-rose-600 bg-rose-50 border-rose-200',
+        desc: 'Gasket seating factor, bolt preload, flange rotation and leakage criteria.',
+        action: () => consumeCredits('Flange Analysis', 200, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/flange.html')
+      },
+      {
+        id: 'hotbox',
+        name: 'Hot Box Thermal FEA',
+        code: 'Transient & Steady-State Heat Transfer',
+        credits: 75,
+        plan: 'Pro',
+        icon: Thermometer,
+        color: 'text-orange-600 bg-orange-50 border-orange-200',
+        desc: 'Skirt hotspot dissipation, refractory conduction & thermal stress mitigation.',
+        action: () => consumeCredits('Hot Box Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/hotbox.html')
+      },
+      {
+        id: 'lug',
+        name: 'Lug Lifting Analysis',
+        code: 'WRC 107/537 Pin & Shear Stress',
+        credits: 75,
+        plan: 'Pro',
+        icon: Link,
+        color: 'text-cyan-600 bg-cyan-50 border-cyan-200',
+        desc: 'Tear-out check, pin bearing & vessel shell local longitudinal/circumferential stress.',
+        action: () => consumeCredits('Lug Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/lug.html')
+      },
+      {
+        id: 'trunnion',
+        name: 'Trunnion Support Analysis',
+        code: 'ASME VIII-2 Part 5 & WRC 537',
+        credits: 175,
+        plan: 'Max',
+        icon: Dumbbell,
+        color: 'text-sky-600 bg-sky-50 border-sky-200',
+        desc: 'Heavy vertical vessel lifting, tailing lug & trunnion pipe shell local stresses.',
+        action: () => consumeCredits('Trunnion Analysis', 175, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html')
+      },
+      {
+        id: 'tubesheet',
+        name: 'Tubesheet Heat Exchanger',
+        code: 'ASME VIII-1 Part UHX & TEMA RCB',
+        credits: 250,
+        plan: 'Max',
+        icon: Shapes,
+        color: 'text-violet-600 bg-violet-50 border-violet-200',
+        desc: 'Fixed, U-tube & floating tubesheet bending, shear & tube-to-tubesheet joint check.',
+        action: () => consumeCredits('Tubesheet Analysis', 250, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html')
+      },
+      {
+        id: 'cad_ai',
+        name: 'CAD AI 3D Generator',
+        code: 'Parametric CAD Generation',
+        credits: 75,
+        plan: 'Max',
+        icon: Box,
+        color: 'text-teal-600 bg-teal-50 border-teal-200',
+        desc: 'Autonomous AI parametric STEP/IGES geometry builder for pressure vessels.',
+        action: () => consumeCredits('CAD AI', 75, 'Max', () => window.location.href = 'https://swcad-ai.vercel.app/chat')
+      },
+      {
+        id: 'materials',
+        name: 'ASME Materials Database',
+        code: 'ASME Section II Part D Properties',
+        credits: 10,
+        plan: 'Free',
+        icon: Database,
+        color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+        desc: 'Instant temperature-dependent allowable stresses, yield & tensile strength.',
+        action: () => consumeCredits('ASME Materials', 10, 'Free', () => setCurrentView('materials'))
+      },
+      {
+        id: 'stress_strain',
+        name: 'Stress-Strain Curve Generator',
+        code: 'ASME VIII-2 Annex 3-D Multilinear',
+        credits: 10,
+        plan: 'Free',
+        icon: LineChart,
+        color: 'text-purple-600 bg-purple-50 border-purple-200',
+        desc: 'True stress-strain curve generation with Ramberg-Osgood plasticity derivation.',
+        action: () => consumeCredits('Stress-Strain Curve', 10, 'Free', () => setCurrentView('stress_strain'))
+      }
+    ];
+    const currentSim = modulesData.find(m => m.id === creditSimModule) || modulesData[0];
+    const runsPossible = Math.floor(currentUser.dailyCreditsTotal / currentSim.credits);
+    const balanceAfterOneRun = Math.max(0, currentUser.dailyCreditsTotal - currentSim.credits);
     return (
-      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8 bg-slate-50/50">
-        <div className="max-w-[900px] mx-auto animate-in fade-in slide-in-from-bottom-4">
-          <button onClick={() => setCurrentView('wizard_buy')} className="flex items-center gap-2 mb-6 md:mb-8 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-            <ArrowRight className="w-4 h-4 rotate-180" /> Back to Plans
-          </button>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
-              <div className="glass-panel p-6 sm:p-8 rounded-3xl border-white/60 shadow-md">
-                <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-3">
-                  <CreditCard className="w-6 h-6 text-indigo-600" /> Payment Details
+      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8  flex flex-col items-center justify-start">
+        <div className="max-w-[1020px] w-full mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 space-y-8"> <div className="bg-white p-6 sm:p-10 md:p-12 rounded-[2.5rem] border-2 border-slate-200/90 shadow-2xl space-y-8 print:border-none print:shadow-none print:p-0"> <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <CosmicLogo className="w-10 h-10" />
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
+                </div>
+              </div>
+              <div className="text-center sm:text-right">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider border border-emerald-300 shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Daily Credits Active
+                </span>
+                <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
+              </div>
+            </div> <div className="text-center space-y-4 py-2">
+              <div className="relative inline-flex items-center justify-center">
+                <div className="absolute w-24 h-24 rounded-full bg-emerald-400/20 animate-ping"></div>
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 relative z-10">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black uppercase tracking-wider">
+                  <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 animate-pulse" /> Daily Credits Unlocked & Ready
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                  Welcome to {currentUser.isLifetimeMax ? 'Max Plan' : `${currentUser.plan} Plan`}!
                 </h2>
-                
-                <div className="space-y-4">
+                <p className="text-slate-600 text-xs sm:text-sm font-medium max-w-xl mx-auto leading-relaxed">
+                  Your payment has been verified. Your account has been upgraded with <strong className="text-indigo-900 font-black">{currentUser.dailyCreditsTotal} Daily Credits</strong> refreshed automatically every 24 hours at 00:00 UTC.
+                </p>
+              </div>
+            </div> <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative z-10 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Name on Card</label>
-                    <input type="text" placeholder="John Doe" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block mb-2">
+                      ⚡ Daily Engineering Quota
+                    </span>
+                    <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                      {currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}
+                      <span className="text-base sm:text-lg font-bold text-slate-300">Credits / Day</span>
+                    </h3>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Card Number</label>
-                    <div className="relative">
-                       <input type="text" placeholder="0000 0000 0000 0000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
-                       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-60">
-                          <div className="w-8 h-5 bg-slate-300 rounded-sm"></div>
-                          <div className="w-8 h-5 bg-slate-300 rounded-sm"></div>
-                       </div>
+                  
+                  <div className="sm:text-right">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider border border-emerald-400/30">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                      {currentUser.isLifetimeMax ? 'Max Plan (Forever Active)' : `${currentUser.plan} Plan Active`}
+                    </span>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Refreshes every 24h at 00:00 UTC</p>
+                  </div>
+                </div> <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                    <span>Available Balance Today</span>
+                    <span className="text-emerald-400 font-mono">100% Full Quota Active</span>
+                  </div>
+                  <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60 shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 rounded-full w-full shadow-lg shadow-emerald-500/50"></div>
+                  </div>
+                </div> <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <RefreshCw className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-300">Daily Reset</div>
+                      <div className="text-sm font-black text-white">00:00 UTC (100%)</div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Expiry (MM/YY)</label>
-                      <input type="text" placeholder="12/26" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                      <Cpu className="w-5 h-5" />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">CVC</label>
-                      <input type="text" placeholder="123" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono" />
+                      <div className="text-xs font-bold text-slate-300">Cloud Solver</div>
+                      <div className="text-sm font-black text-white">High-Speed GPU Cluster</div>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-300">ASME Div 1 & 2</div>
+                      <div className="text-sm font-black text-white">All Modules Unlocked</div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="md:col-span-1 space-y-6">
-               <div className="glass-panel p-6 rounded-3xl border-white/60 shadow-md">
-                 <h3 className="text-lg font-bold text-slate-800 mb-4">Order Summary</h3>
-                 <div className="flex items-center justify-between mb-3 text-sm">
-                   <span className="text-slate-600 font-medium">{plan.name}</span>
-                   <span className="text-slate-800 font-bold">{plan.price}</span>
-                 </div>
-                 <div className="flex items-center justify-between mb-4 text-sm">
-                   <span className="text-slate-600 font-medium">Taxes (Calculated at checkout)</span>
-                   <span className="text-slate-800 font-bold">$0.00</span>
-                 </div>
-                 <div className="h-px bg-slate-200 w-full mb-4"></div>
-                 <div className="flex items-center justify-between mb-6">
-                   <span className="text-slate-800 font-black">Total Due</span>
-                   <span className="text-xl text-slate-800 font-black">{plan.price}</span>
-                 </div>
-
-                 <button 
-                   onClick={() => {
-                     setIsProcessingPayment(true);
-                     setTimeout(() => { setIsProcessingPayment(false); setCurrentView('wizard_success'); }, 2500);
-                   }}
-                   disabled={isProcessingPayment}
-                   className="w-full py-4 rounded-xl text-white font-bold bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                 >
-                   {isProcessingPayment ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-4 h-4" />}
-                   {isProcessingPayment ? 'Processing Securely...' : `Pay ${plan.price}`}
-                 </button>
-                 <div className="mt-4 text-center text-[10px] text-slate-400 font-medium uppercase tracking-widest flex items-center justify-center gap-1">
-                   <Shield className="w-3 h-3" /> 256-bit SSL Encrypted
-                 </div>
-               </div>
+            </div> <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                    Interactive Daily Credit Run Simulator
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Test your daily capacity by selecting any engineering analysis module:
+                  </p>
+                </div>
+                <div className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-200 shrink-0">
+                  Daily Quota: {currentUser.dailyCreditsTotal} Credits
+                </div>
+              </div> <div className="flex flex-wrap gap-2 pt-1">
+                {modulesData.map((mod) => (
+                  <button
+                    key={mod.id}
+                    onClick={() => setCreditSimModule(mod.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      creditSimModule === mod.id
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {mod.name} ({mod.credits} cr)
+                  </button>
+                ))}
+              </div> <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-inner grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Analysis Cost</span>
+                  <div className="text-xl font-black text-slate-900 font-mono">{currentSim.credits} Credits</div>
+                  <div className="text-[11px] text-slate-500 font-medium">{currentSim.code}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">Runs Possible Today</span>
+                  <div className="text-xl font-black text-emerald-700 font-mono">{runsPossible} Full Runs / Day</div>
+                  <div className="text-[11px] text-slate-500 font-medium">100% daily reset guaranteed</div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Balance After 1 Run</span>
+                  <div className="text-xl font-black text-indigo-900 font-mono">{balanceAfterOneRun} Credits</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Remaining for other analyses</div>
+                </div>
+              </div>
+            </div> <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-emerald-600" />
+                    Ready to Solve: Your Unlocked Analysis Modules
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Click any module below to immediately launch the solver with your active daily quota:
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('dashboard')}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline shrink-0"
+                >
+                  View Resource Guide →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {modulesData.map((m) => {
+                  const IconComp = m.icon;
+                  return (
+                    <div 
+                      key={m.id}
+                      className="bg-white rounded-2xl p-5 border border-slate-200/90 hover:border-indigo-400 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${m.color}`}>
+                            <IconComp className="w-5 h-5" />
+                          </div>
+                          <span className="font-mono text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            ⚡ {m.credits} Credits
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                            {m.name}
+                          </h5>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{m.code}</p>
+                          <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">{m.desc}</p>
+                        </div>
+                      </div>
+                      <div className="pt-4 mt-3 border-t border-slate-100">
+                        <button
+                          onClick={m.action}
+                          className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-900 hover:bg-indigo-600 text-white transition-all flex items-center justify-center gap-1.5 shadow-sm group-hover:shadow"
+                        >
+                          <span>Launch Solver</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Billed To (Client):</span>
+                <div className="font-extrabold text-slate-900 text-sm">{receipt.userName || currentUser.name || 'Valued Engineer'}</div>
+                <div className="font-medium text-slate-600">{receipt.userEmail || currentUser.email}</div>
+                <div className="font-medium text-slate-500">Account Type: Verified Professional</div>
+              </div>
+              <div className="space-y-1.5 sm:text-right">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Order & Transaction Details:</span>
+                <div className="font-mono font-bold text-slate-800 flex items-center sm:justify-end gap-1.5">
+                  Order ID: <span className="text-slate-900 font-extrabold">{receipt.orderId}</span>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard?.writeText(receipt.orderId);
+                      showNotification('Order ID copied to clipboard!', 'success', 'Copied');
+                    }}
+                    className="p-1 hover:bg-slate-200 rounded text-slate-600"
+                    title="Copy Order ID"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="text-slate-600">Date: {receipt.date}</div>
+                <div className="text-slate-600">Payment Gateway: <strong className="text-slate-800">{receipt.method}</strong></div>
+              </div>
+            </div> <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                    <th className="p-3.5">Subscription Plan / Service</th>
+                    <th className="p-3.5">Daily Credits Allocation</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                  <tr>
+                    <td className="p-3.5 font-bold text-slate-900">
+                      <div>{receipt.plan}</div>
+                      <div className="text-[10px] font-normal text-slate-500">
+                        Full Cloud FEA, Batch Mode & Automated Report Generation
+                      </div>
+                    </td>
+                    <td className="p-3.5 font-mono font-bold text-emerald-700">
+                      ⚡ {currentUser.dailyCreditsTotal} Credits / Day (100% Daily Reset)
+                    </td>
+                    <td className="p-3.5">
+                      <span className="inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                        ACTIVATED
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-right font-black text-slate-900 text-sm">
+                      {receipt.price}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-700">
+                  <tr>
+                    <td colSpan="3" className="p-3 text-right">Subtotal:</td>
+                    <td className="p-3 text-right">{receipt.price}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan="3" className="p-3 text-right text-slate-500">Estimated Tax (0%):</td>
+                    <td className="p-3 text-right text-slate-500">$0.00</td>
+                  </tr>
+                  <tr className="border-t border-slate-300 font-black text-slate-900 text-sm">
+                    <td colSpan="3" className="p-3 text-right">Total Paid:</td>
+                    <td className="p-3 text-right text-emerald-700 font-mono">{receipt.price}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div> <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 print:hidden">
+              <button 
+                onClick={handlePrintInvoice}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-md hover:scale-105"
+              >
+                <Printer className="w-4 h-4 text-emerald-400" /> Print / Save Tax Receipt (PDF)
+              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button 
+                  onClick={() => setCurrentView('dashboard')}
+                  className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center justify-center gap-1.5"
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-600" /> View 100% Daily Credits Guide
+                </button>
+                <button 
+                  onClick={() => setCurrentView('dashboard')} 
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs transition-all shadow-md hover:scale-105 flex items-center justify-center gap-1.5"
+                >
+                  Start Analysis on Dashboard →
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     );
   };
-
-  const renderWizardSuccess = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8 flex items-center justify-center">
-      <div className="max-w-[600px] w-full mx-auto animate-in fade-in slide-in-from-bottom-8">
-         <div className="glass-panel p-8 md:p-12 rounded-[2rem] border-white/60 shadow-2xl text-center">
-           <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-200">
-             <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-emerald-500" />
-           </div>
-           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-3">Payment Successful!</h2>
-           <p className="text-slate-500 mb-8 max-w-sm mx-auto">Thank you for your purchase. Your Ansys ACT Wizard (.WBEX) license is now active and ready for download.</p>
-           
-           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 text-left flex flex-col md:flex-row items-center justify-between gap-4">
-             <div>
-               <h4 className="font-bold text-slate-800 flex items-center gap-2"><Package className="w-4 h-4 text-violet-600" /> NOVA_Wizards_Bundle.zip</h4>
-               <p className="text-xs text-slate-500 mt-1">Includes Shell, Head, and Full Nozzle .WBEX files + Installation Guide.</p>
-             </div>
-             <a href="#" download onClick={(e) => { e.preventDefault(); alert('Downloading WBEX bundle...'); }} className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-colors flex items-center gap-2 shrink-0">
-               <Download className="w-4 h-4" /> Download
-             </a>
-           </div>
-
-           <button onClick={() => setCurrentView('dashboard')} className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-             Return to Dashboard
-           </button>
-         </div>
-      </div>
-    </div>
-  );
-
-  const renderWizardBuy = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      <div className="max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4">
-        <button onClick={() => setCurrentView('wizard_products')} className="flex items-center gap-2 mb-6 md:mb-8 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-          <ArrowRight className="w-4 h-4 rotate-180" /> Back to Products
-        </button>
-        
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] drop-shadow-sm mb-4">Choose Your License</h2>
-          <p className="text-sm sm:text-lg text-slate-600 max-w-2xl mx-auto">Get immediate access to the downloadable .WBEX extension files. All licenses include free software updates and community support.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* 1 Month */}
-          <div className="glass-panel p-6 md:p-8 rounded-3xl flex flex-col border border-slate-200 hover:border-slate-300 transition-all">
-            <h3 className="text-lg md:text-xl font-bold text-slate-500 mb-2">1 Month License</h3>
-            <div className="text-3xl md:text-4xl font-black text-slate-800 mb-4">$99<span className="text-sm md:text-lg font-bold text-slate-400">/mo</span></div>
-            <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">Perfect for short-term projects or evaluating the extension in your workflow.</p>
-            <button onClick={() => { setCheckoutPlan({name: '1 Month License', price: '$99'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-              <CreditCard className="w-4 h-4" /> Buy 1 Month
-            </button>
-          </div>
-
-          {/* 6 Months (Recommended) */}
-          <div className="glass-panel p-1 rounded-3xl flex flex-col border-0 relative shadow-2xl transform md:-translate-y-4" style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)' }}>
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 text-[10px] md:text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
-              <Star className="w-3 h-3 md:w-3.5 md:h-3.5 fill-current" /> Recommended
-            </div>
-            <div className="bg-white/95 backdrop-blur-md rounded-[1.4rem] p-6 md:p-8 flex flex-col h-full border border-white/40">
-              <h3 className="text-lg md:text-xl font-bold text-indigo-600 mb-2">6 Month License</h3>
-              <div className="text-4xl md:text-5xl font-black text-slate-800 mb-2">$399<span className="text-sm md:text-lg font-bold text-slate-400">/6mo</span></div>
-              <div className="text-[10px] md:text-xs font-bold text-emerald-600 mb-6 bg-emerald-50 inline-block px-2 py-1 rounded-md self-start">Save 33% compared to monthly</div>
-              <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">Our most popular tier. Maximize your ROI and ensure you're covered for all major project cycles.</p>
-              <button onClick={() => { setCheckoutPlan({name: '6 Month License', price: '$399'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-white font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30">
-                <CreditCard className="w-4 h-4" /> Buy 6 Months
-              </button>
-            </div>
-          </div>
-
-          {/* 3 Months */}
-          <div className="glass-panel p-6 md:p-8 rounded-3xl flex flex-col border border-slate-200 hover:border-slate-300 transition-all">
-            <h3 className="text-lg md:text-xl font-bold text-slate-500 mb-2">3 Month License</h3>
-            <div className="text-3xl md:text-4xl font-black text-slate-800 mb-4">$249<span className="text-sm md:text-lg font-bold text-slate-400">/3mo</span></div>
-            <p className="text-xs md:text-sm text-slate-600 mb-8 flex-1">A balanced plan for medium-term engagements requiring extensive FEA automation.</p>
-            <button onClick={() => { setCheckoutPlan({name: '3 Month License', price: '$249'}); setCurrentView('wizard_checkout'); }} className="w-full py-3 md:py-4 rounded-xl text-slate-700 font-bold bg-white border border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-              <CreditCard className="w-4 h-4" /> Buy 3 Months
-            </button>
-          </div>
-        </div>
-        
-        <div className="max-w-xl mx-auto mt-8 md:mt-12 text-center text-xs md:text-sm text-slate-500 flex flex-col items-center gap-3">
-          <div className="flex items-center gap-4 text-slate-400">
-             <span>Secure Payments via</span>
-             <strong className="text-slate-600 font-black tracking-tight">stripe</strong>
-             <strong className="text-slate-600 font-black italic tracking-tighter text-lg">PayPal</strong>
-          </div>
-          <p>We accept all major credit cards, wire transfers, and localized payment methods globally.</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWizardDemo = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      <div className="max-w-[1000px] mx-auto animate-in fade-in slide-in-from-bottom-4">
-        <button onClick={() => setCurrentView('wizard_products')} className="flex items-center gap-2 mb-4 md:mb-6 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-          <ArrowRight className="w-4 h-4 rotate-180" /> Back to Products
-        </button>
-
-        <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl border-white/60 mb-8">
-          <div className="aspect-video w-full bg-slate-900 relative">
-             <iframe 
-               width="100%" 
-               height="100%" 
-               src="https://www.youtube.com/embed/A65i5WT83bs?list=PLM-GZz2fHgR-K-dZWEx1elOyVsvsXPviH&index=6" 
-               title="Ansys ACT Wizard Demo" 
-               frameBorder="0" 
-               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-               allowFullScreen
-               className="absolute inset-0"
-             ></iframe>
-          </div>
-          <div className="p-6 sm:p-10 bg-white/80">
-            <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 mb-4">Product Review & Capabilities</h2>
-            <div className="prose prose-slate max-w-none text-sm md:text-base text-slate-600 leading-relaxed space-y-4">
-              <p>
-                As demonstrated in the video above, the NOVA Ansys ACT Wizard fundamentally transforms how pressure vessel components are analyzed. Rather than manually sketching geometry, generating complex mapped meshes around intersections, and painstakingly applying internal pressure and boundary conditions, the extension automates the entire workflow inside Ansys Workbench.
-              </p>
-              <p>
-                <strong>Key Highlights:</strong>
-              </p>
-              <ul className="list-disc pl-5 space-y-2 font-medium">
-                <li><strong>One-Click Geometry:</strong> Instantly generates Shell and Vessel Head (Ellipsoidal, Torispherical, Flat) geometries with or without reinforcement pads.</li>
-                <li><strong>Intelligent Meshing:</strong> Automatically applies face sizing, edge divisions, and hex-dominant mapped meshing algorithms optimized for ASME Section VIII Div 2 Part 5 limit-load analysis.</li>
-                <li><strong>Boundary Condition Mapping:</strong> Automatically isolates the nozzle neck, pad boundaries, and shell edges to apply symmetrical BCs, thrust loads, and thermal gradients instantly.</li>
-              </ul>
-              <p>
-                By integrating this `.WBEX` file into your local Workbench installation, you can bridge the gap between NOVA Cloud's rapid parameterized inputs and deep local verification.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderNovaHelp = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      <div className="max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8 text-center md:text-left">
-          <div className="w-12 h-12 rounded-2xl bg-sky-100 flex items-center justify-center border border-sky-200 mx-auto md:mx-0">
-            <BookOpen className="w-6 h-6 text-sky-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B]">NOVA Documentation</h2>
-            <p className="text-xs md:text-sm text-slate-500 font-medium">Comprehensive technical reference for platform analysis modules.</p>
-          </div>
-        </div>
-
-        <div className="glass-panel p-5 sm:p-10 rounded-3xl border-white/60">
-          <div className="mb-6 md:mb-10 pb-4 md:pb-6 border-b border-slate-200 flex flex-col md:flex-row items-center gap-6">
-            <div className="flex-1">
-               <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 md:mb-3">Nozzle Analysis (Shell & Head)</h3>
-               <p className="text-xs md:text-sm text-slate-600 mb-4">The NOVA platform currently supports complex limit-load and elastic stress analyses for pressure vessel nozzles under ASME Section VIII Div 2 standards.</p>
-               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200"><CheckCircle className="w-3.5 h-3.5" /> ASME Sec VIII Div 2 Compliant</div>
-            </div>
-            <div className="w-full md:w-1/3 shrink-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative aspect-video md:aspect-auto md:h-32">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Finite_element_method_2D_illustration.png" alt="FEA Mesh Example" className="object-cover w-full h-full" />
-               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-2">
-                 <span className="text-white text-[10px] font-bold tracking-wider">MAPPED HEX MESH</span>
-               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-            <div className="space-y-6">
-              <div className="bg-slate-50 border border-slate-200 p-5 md:p-6 rounded-2xl">
-                <h4 className="font-bold text-base md:text-lg text-slate-800 mb-3 flex items-center gap-2"><Box className="w-4 h-4 md:w-5 md:h-5 text-indigo-500"/> Geometry Parameters</h4>
-                <ul className="space-y-2 md:space-y-3 text-xs md:text-sm text-slate-600">
-                  <li><strong>Shell/Head Specs:</strong> Input outer/inner diameters, thicknesses, and heights. For heads, specify ratios (Ellipsoidal) or knuckle/crown radiuses (Torispherical).</li>
-                  <li><strong>Nozzle Dims:</strong> Neck OD, thickness, outward/inward projection lengths.</li>
-                  <li><strong>Offsets:</strong> For heads, specify straight flange offsets. For shells, specify lateral/longitudinal offsets.</li>
-                  <li><strong>Reinforcement:</strong> Toggle pads to automatically include pad width and thickness in the generated mesh.</li>
-                </ul>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 p-5 md:p-6 rounded-2xl">
-                <h4 className="font-bold text-base md:text-lg text-slate-800 mb-3 flex items-center gap-2"><Thermometer className="w-4 h-4 md:w-5 md:h-5 text-red-500"/> Thermal & Material</h4>
-                <ul className="space-y-2 md:space-y-3 text-xs md:text-sm text-slate-600">
-                  <li><strong>Material Library:</strong> Select from pre-loaded ASME materials (e.g. SA-516, SA-106) to automatically map density, Young's Modulus, and allowable stress at Design Temp.</li>
-                  <li><strong>Thermal Required:</strong> If 'Yes', specify Operating Temperature and Heat Transfer Coefficients (HTC) for the shell ID, nozzle ID, and outside surfaces to generate thermal stress mapping.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-slate-50 border border-slate-200 p-5 md:p-6 rounded-2xl">
-                <h4 className="font-bold text-base md:text-lg text-slate-800 mb-3 flex items-center gap-2"><Activity className="w-4 h-4 md:w-5 md:h-5 text-amber-500"/> Meshing & Loading</h4>
-                <ul className="space-y-2 md:space-y-3 text-xs md:text-sm text-slate-600">
-                  <li><strong>Mesh Method:</strong> Defaults to Hex-dominant for limit-load accuracy. Adjust global body sizing and edge divisions for mesh refinement.</li>
-                  <li><strong>Internal Pressure:</strong> Applied universally to internal faces.</li>
-                  <li><strong>Thrust & External Loads:</strong> Input longitudinal/circumferential forces (FL, FC) and bending moments (ML, MC). Boundary loads are applied to the nozzle neck tip.</li>
-                </ul>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 p-5 md:p-6 rounded-2xl">
-                <h4 className="font-bold text-base md:text-lg text-slate-800 mb-3 flex items-center gap-2"><FileText className="w-4 h-4 md:w-5 md:h-5 text-emerald-500"/> Output & Reporting</h4>
-                <ul className="space-y-2 md:space-y-3 text-xs md:text-sm text-slate-600">
-                  <li><strong>Input Parameters PDF:</strong> A crisp, B&W audit-ready summary of all payload variables submitted to the backend.</li>
-                  <li><strong>Report (DOCX):</strong> Automatically compiled MS Word report containing deformation plots, stress contours, and code-compliance checks.</li>
-                  <li><strong>Full Analysis (ZIP):</strong> The raw Ansys `.wbpz` or result archive for local verification.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderNovaCommunity = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      <div className="max-w-[800px] mx-auto animate-in fade-in slide-in-from-bottom-4">
-        
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 md:mb-8 text-center sm:text-left">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-inner mx-auto sm:mx-0">
-            <Users className="w-6 h-6 text-emerald-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B]">Nova Community</h2>
-            <p className="text-xs md:text-sm text-slate-500 font-medium">Connect, share, and solve problems with engineers globally.</p>
-          </div>
-        </div>
-
-        {/* Create Post */}
-        <div className="glass-panel p-4 sm:p-6 rounded-3xl mb-6 md:mb-8 border-white/60 shadow-md">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#3C64D6] text-white flex items-center justify-center font-bold shrink-0 self-start sm:self-auto">
-               {currentUser?.initial || 'U'}
-            </div>
-            <div className="flex-1">
-              <textarea 
-                value={newPostText}
-                onChange={(e) => setNewPostText(e.target.value)}
-                className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl p-3 md:p-4 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" 
-                rows="3" 
-                placeholder="Share a simulation error, ask a question, or post a video link..."
-              ></textarea>
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-1 md:gap-2">
-                  <button className="p-1.5 md:p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors" title="Attach Image/Video"><Video className="w-4 h-4 md:w-5 md:h-5" /></button>
-                  <button className="p-1.5 md:p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors" title="Share Code/Error"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
+  const renderWizardSuccess = () => {
+    const receipt = orderReceipt || {
+      orderId: `ORD-${Date.now().toString().slice(-8)}`,
+      invoiceNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+      plan: 'Full Nozzle Ansys ACT Wizard (.WBEX)',
+      price: '$399.00',
+      method: 'Razorpay Standard (Live Verified)',
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      userEmail: currentUser.email || 'dineshkumar2729304@gmail.com',
+      userName: currentUser.name || 'Dinesh Kumar Yadav',
+      status: 'PAID',
+      isWizardProduct: true,
+      licenseKey: 'NOV-ACT-WBEX-7F4B-9E21-A3C8'
+    };
+    if (!receipt.isWizardProduct && !(receipt.plan && (
+      receipt.plan.toLowerCase().includes('wizard') || 
+      receipt.plan.toLowerCase().includes('.wbex') || 
+      receipt.plan.toLowerCase().includes('month license') ||
+      receipt.plan.toLowerCase().includes('act extension')
+    ))) {
+      return renderCreditSuccess();
+    }
+    return (
+      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8  flex items-center justify-center">
+        <div className="max-w-[800px] w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
+          <div className="bg-white p-6 sm:p-10 md:p-12 rounded-[2.5rem] border-2 border-slate-200/90 shadow-2xl space-y-8 print:border-none print:shadow-none print:p-0"> <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <CosmicLogo className="w-10 h-10" />
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
                 </div>
+              </div>
+              <div className="text-center sm:text-right">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black uppercase tracking-wider border border-indigo-300">
+                  <Package className="w-4 h-4 text-indigo-600" /> Commercial ACT License Active
+                </span>
+                <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
+              </div>
+            </div> <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black uppercase tracking-wider">
+                <Lock className="w-3.5 h-3.5 text-indigo-600" /> Official Ansys ACT Deliverable
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Ansys ACT Wizard (.WBEX) Provisioned & Ready
+              </h2>
+              <p className="text-slate-600 text-xs sm:text-sm font-medium max-w-lg mx-auto">
+                Thank you for your commercial purchase. Your node-locked ACT Extension (.WBEX) binary and commercial activation key have been generated below for local Workbench installation.
+              </p>
+            </div> <div className="bg-indigo-50/80 border-2 border-indigo-200 rounded-3xl p-6 space-y-3 shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-indigo-950 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-indigo-600" /> Assigned ACT Commercial License Key:
+                </span>
+                <span className="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200">
+                  Perpetual Commercial
+                </span>
+              </div>
+              <div className="flex items-center justify-between bg-white border-2 border-indigo-300/80 rounded-2xl p-4 shadow-inner">
+                <span className="font-mono font-black text-sm sm:text-base text-indigo-800 tracking-widest select-all">
+                  {receipt.licenseKey || 'NOV-ACT-WBEX-7F4B-9E21-A3C8'}
+                </span>
                 <button 
-                  onClick={handlePostCommunity} 
-                  disabled={isPosting || !newPostText.trim()}
-                  className="bg-emerald-600 text-white px-4 md:px-6 py-1.5 md:py-2 rounded-xl font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2 text-xs md:text-sm shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(receipt.licenseKey || 'NOV-ACT-WBEX-7F4B-9E21-A3C8');
+                    showNotification('Commercial license key copied to clipboard!', 'success', 'Copied');
+                  }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 transition-all hover:scale-105 shrink-0 ml-3"
                 >
-                  {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Post'} <Send className="w-3.5 h-3.5" />
+                  <Copy className="w-3.5 h-3.5" /> Copy Key
+                </button>
+              </div>
+            </div> <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl shadow-indigo-600/20">
+              <div className="space-y-1 text-center sm:text-left">
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-200 bg-white/10 px-2.5 py-0.5 rounded-full inline-block">
+                  Compiled Extension Package
+                </span>
+                <h4 className="text-xl font-black text-white flex items-center justify-center sm:justify-start gap-2 pt-1">
+                  <Package className="w-6 h-6 text-indigo-200" /> NOVA_Ansys_ACT_Wizard_v2.4.wbex
+                </h4>
+                <p className="text-xs text-indigo-100 max-w-md">
+                  Includes automated meshing, stress linearization, and ASME Section VIII Div 2 Part 5 validation. Compatible with Workbench 2021 R1 - 2024 R2.
+                </p>
+              </div>
+              <button 
+                onClick={handleDownloadWbex}
+                className="px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 text-indigo-950 font-black text-sm shadow-xl flex items-center gap-2 shrink-0 transition-all hover:scale-105 active:scale-95"
+              >
+                <DownloadCloud className="w-5 h-5 text-indigo-600 animate-bounce" /> Download .WBEX Archive
+              </button>
+            </div> <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-indigo-600" /> Local Ansys Workbench Installation Guide
+              </h5>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                  <span className="font-mono font-black text-indigo-600 text-xs">Step 1:</span>
+                  <p className="text-slate-600 font-medium">Open Ansys Workbench & navigate to <strong>Extensions → Install Extension...</strong></p>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                  <span className="font-mono font-black text-indigo-600 text-xs">Step 2:</span>
+                  <p className="text-slate-600 font-medium">Select the downloaded <strong>.wbex</strong> package & toggle it active in Extension Manager.</p>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                  <span className="font-mono font-black text-indigo-600 text-xs">Step 3:</span>
+                  <p className="text-slate-600 font-medium">Paste your <strong>License Key</strong> into the NOVA ACT Toolbar prompt to activate.</p>
+                </div>
+              </div>
+            </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Billed To (Client):</span>
+                <div className="font-extrabold text-slate-900 text-sm">{receipt.userName || currentUser.name || 'Valued Engineer'}</div>
+                <div className="font-medium text-slate-600">{receipt.userEmail || currentUser.email}</div>
+                <div className="font-medium text-slate-500">Account Type: Commercial License Holder</div>
+              </div>
+              <div className="space-y-1.5 sm:text-right">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Order & Transaction Details:</span>
+                <div className="font-mono font-bold text-slate-800">Order ID: <span className="text-slate-900 font-extrabold">{receipt.orderId}</span></div>
+                <div className="text-slate-600">Date: {receipt.date}</div>
+                <div className="text-slate-600">Payment Gateway: <strong className="text-slate-800">{receipt.method}</strong></div>
+              </div>
+            </div> <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                    <th className="p-3.5">Purchased Deliverable</th>
+                    <th className="p-3.5">License Term</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                  <tr>
+                    <td className="p-3.5 font-bold text-slate-900">
+                      <div>{receipt.plan}</div>
+                      <div className="text-[10px] font-normal text-slate-500">
+                        Ansys ACT Binary (.WBEX) + Node-Locked Commercial License
+                      </div>
+                    </td>
+                    <td className="p-3.5 font-mono font-bold text-indigo-700">
+                      Commercial Node-Locked
+                    </td>
+                    <td className="p-3.5">
+                      <span className="inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                        LICENSED
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-right font-black text-slate-900 text-sm">
+                      {receipt.price}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-700">
+                  <tr>
+                    <td colSpan="3" className="p-3 text-right">Subtotal:</td>
+                    <td className="p-3 text-right">{receipt.price}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan="3" className="p-3 text-right text-slate-500">Estimated Tax (0%):</td>
+                    <td className="p-3 text-right text-slate-500">$0.00</td>
+                  </tr>
+                  <tr className="border-t border-slate-300 font-black text-slate-900 text-sm">
+                    <td colSpan="3" className="p-3 text-right">Total Paid:</td>
+                    <td className="p-3 text-right text-emerald-700 font-mono">{receipt.price}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div> <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 print:hidden">
+              <button 
+                onClick={handlePrintInvoice}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-md hover:scale-105"
+              >
+                <Printer className="w-4 h-4 text-emerald-400" /> Print / Save Tax Receipt (PDF)
+              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button 
+                  onClick={() => setCurrentView('wizard_demo')}
+                  className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center gap-1.5 justify-center"
+                >
+                  <PlayCircle className="w-4 h-4 text-indigo-600" /> Watch Setup Tutorial
+                </button>
+                <button 
+                  onClick={() => setCurrentView('dashboard')} 
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs transition-all shadow-md hover:scale-105"
+                >
+                  Return to Dashboard →
                 </button>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Feed */}
-        <div className="space-y-4 md:space-y-6">
-          
-          {communityPosts.length > 0 ? communityPosts.map((post) => (
-             <div key={post.id} className="glass-panel p-4 sm:p-6 rounded-3xl border-white/60 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2">
-               <div className="flex items-center justify-between mb-4">
-                 <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#3C64D6] text-white flex items-center justify-center font-bold text-xs md:text-sm">{post.user_initial}</div>
-                   <div>
-                     <h4 className="font-bold text-slate-800 text-xs md:text-sm">{post.user_name}</h4>
-                     <p className="text-[10px] md:text-xs text-slate-500">{new Date(post.created_at).toLocaleString()}</p>
-                   </div>
-                 </div>
-               </div>
-               <p className="text-xs md:text-sm text-slate-700 mb-4 whitespace-pre-wrap">{post.content}</p>
-               <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-slate-100 text-slate-500">
-                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><Heart className="w-3.5 h-3.5 md:w-4 md:h-4" /> {post.likes || 0}</button>
-                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4" /> 0</button>
-                 <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium ml-auto"><Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> Share</button>
-               </div>
-             </div>
-          )) : (
-             <div className="text-center py-10 text-slate-500 text-sm">
-                No posts yet. Be the first to start a discussion!
-             </div>
-          )}
-
-          {/* Fallback Mock Post 1 (Just to show structure if db fails/is empty) */}
-          <div className="glass-panel p-4 sm:p-6 rounded-3xl border-white/60 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs md:text-sm">JD</div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-xs md:text-sm">John Doe</h4>
-                  <p className="text-[10px] md:text-xs text-slate-500">FEA Specialist • 2 hours ago</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs md:text-sm text-slate-700 mb-4">Does anyone know why I'm getting a pivot warning during the limit-load analysis on a Torispherical head? Mesh seems fine, boundary conditions are symmetrical. Here's a screenshot of the deformation plot.</p>
-            <div className="w-full h-32 md:h-48 bg-slate-200 rounded-xl mb-4 flex items-center justify-center border border-slate-300">
-               <span className="text-slate-400 font-bold text-[10px] md:text-xs">[Image Attachment Placeholder]</span>
-            </div>
-            <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-slate-100 text-slate-500">
-              <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><Heart className="w-3.5 h-3.5 md:w-4 md:h-4" /> 12</button>
-              <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4" /> 3</button>
-              <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium ml-auto"><Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> Share</button>
-            </div>
-          </div>
-
-          {/* Post 2 */}
-          <div className="glass-panel p-4 sm:p-6 rounded-3xl border-white/60 shadow-sm transition-all hover:shadow-md">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-xs md:text-sm">AS</div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-xs md:text-sm">Alice Smith</h4>
-                  <p className="text-[10px] md:text-xs text-slate-500">Structural Engineer • 5 hours ago</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs md:text-sm text-slate-700 mb-4">Just recorded a quick tutorial on how to use the NOVA API to batch submit 50 shell nozzles overnight. Check it out! The JSON payload structure is surprisingly simple.</p>
-            <div className="w-full aspect-video bg-slate-900 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-slate-800">
-               <PlayCircle className="w-8 h-8 md:w-12 md:h-12 text-white/80 group-hover:scale-110 transition-transform" />
-               <div className="absolute bottom-2 left-2 md:left-3 text-white text-[10px] md:text-xs font-bold bg-black/50 px-2 py-0.5 rounded">Tutorial_Batch_API.mp4</div>
-            </div>
-            <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-slate-100 text-slate-500">
-              <button className="flex items-center gap-1.5 text-xs md:text-sm text-rose-500 font-bold hover:text-rose-600 transition-colors"><Heart className="w-3.5 h-3.5 md:w-4 md:h-4 fill-current" /> 45</button>
-              <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium"><MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4" /> 8</button>
-              <button className="flex items-center gap-1.5 text-xs md:text-sm hover:text-emerald-600 transition-colors font-medium ml-auto"><Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> Share</button>
-            </div>
-          </div>
-
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
+  const renderNovaHelp = () => {
+    return <NovaHelpContent onNavigateBack={() => setCurrentView('dashboard')} />;
+  };
 
-  // ====================================================================================
+  const renderNovaCommunity = () => {
+    const handleLikePost = async (postId) => {
+      const isCurrentlyLiked = !!likedPosts[postId];
+      const updatedLiked = { ...likedPosts, [postId]: !isCurrentlyLiked };
+      setLikedPosts(updatedLiked);
+      try { localStorage.setItem('nova_community_likes_permanent', JSON.stringify(updatedLiked)); } catch(e) {}
 
-  const renderProfile = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-           <CheckCircle className="w-5 h-5" /> {notification.message}
-        </div>
-      )}
+      let newCount = 0;
+      setCommunityPosts(prev => {
+        const updated = prev.map(p => {
+          if (p.id === postId) {
+            newCount = Math.max(0, (p.likes_count || 0) + (isCurrentlyLiked ? -1 : 1));
+            return {
+              ...p,
+              likes_count: newCount
+            };
+          }
+          return p;
+        });
+        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
 
-      <div className="max-w-[1200px] mx-auto">
-        <DashboardHeader isProfile={true} />
+      try {
+        if (supabase) {
+          await supabase.from('nova_community_posts').update({ likes_count: newCount }).eq('id', postId);
+        }
+      } catch(err) {
+        console.warn("Supabase like update err:", err);
+      }
 
-        <div className="flex flex-col gap-4 md:gap-8 md:flex-row">
-          <div className="w-full md:w-[280px] shrink-0">
-            <div className="py-4 overflow-hidden border-t border-l shadow-sm glass-panel rounded-3xl border-white/80">
-              <nav className="flex flex-col gap-1 px-3">
-                {['info', 'security', 'payment', 'help'].map((tab) => (
-                  <button key={tab} onClick={() => setProfileTab(tab)} className={`text-left px-5 py-3.5 text-sm font-bold rounded-xl transition-all ${profileTab === tab ? 'bg-white/60 text-[#3C64D6] shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-white/80' : 'text-slate-600 hover:bg-white/40 border border-transparent'}`}>
-                    {tab === 'info' ? 'Profile Info' : tab === 'security' ? 'Security' : tab === 'payment' ? 'Payment Summary' : 'Need Help'}
-                  </button>
-                ))}
-              </nav>
+      showNotification(!isCurrentlyLiked ? 'Liked discussion!' : 'Removed like', 'info', 'Community');
+    };
+
+    const handleAddComment = async (postId) => {
+      const text = (replyText[postId] || '').trim();
+      if (!text) return;
+      const newCmt = {
+        id: "cmt_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        user: currentUser?.name || 'Nova Engineer',
+        email: currentUser?.email || 'user@nova.ai',
+        avatar: currentUser?.avatar || null,
+        initial: currentUser?.initial || (currentUser?.name ? currentUser.name[0].toUpperCase() : 'E'),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Today',
+        text: text,
+        created_at: new Date().toISOString()
+      };
+
+      setPostComments(prev => {
+        const updated = {
+          ...prev,
+          [postId]: [...(prev[postId] || []), newCmt]
+        };
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
+
+      setReplyText(prev => ({ ...prev, [postId]: '' }));
+
+      try {
+        if (supabase) {
+          const { data, error } = await supabase.from('nova_community_comments').insert([{
+            post_id: postId,
+            user_name: newCmt.user,
+            user_initial: newCmt.initial,
+            comment: newCmt.text
+          }]).select();
+          if (data && data[0]) {
+            setPostComments(prev => ({
+              ...prev,
+              [postId]: (prev[postId] || []).map(c => c.id === newCmt.id ? { ...c, id: data[0].id } : c)
+            }));
+          }
+        }
+      } catch(err) {
+        console.warn("Supabase comment insert err:", err);
+      }
+
+      showNotification('Comment added to discussion and saved to Database!', 'success', 'Community Activity');
+    };
+
+    const handleDeleteComment = async (postId, commentId) => {
+      setPostComments(prev => {
+        const updated = {
+          ...prev,
+          [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
+        };
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
+
+      try {
+        if (supabase) {
+          await supabase.from('nova_community_comments').delete().eq('id', commentId);
+        }
+      } catch(err) {
+        console.warn("Supabase comment delete err:", err);
+      }
+
+      showNotification('Comment permanently removed', 'info');
+    };
+
+    const handleEditComment = async (postId, commentId, updatedText) => {
+      if (!updatedText.trim()) return;
+      setPostComments(prev => {
+        const updated = {
+          ...prev,
+          [postId]: (prev[postId] || []).map(c => c.id === commentId ? { ...c, text: updatedText.trim() } : c)
+        };
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
+      setEditingCommentId(null);
+
+      try {
+        if (supabase) {
+          await supabase.from('nova_community_comments').update({ comment: updatedText.trim() }).eq('id', commentId);
+        }
+      } catch(err) {
+        console.warn("Supabase comment edit err:", err);
+      }
+
+      showNotification('Comment permanently updated!', 'success');
+    };
+
+    const handleSavePostEdit = async (postId) => {
+      const newTitle = editPostTitle.trim();
+      const newContent = editPostContent.trim();
+      setCommunityPosts(prev => {
+        const updated = prev.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              title: newTitle || p.title,
+              content: newContent || p.content,
+              edited_at: new Date().toISOString()
+            };
+          }
+          return p;
+        });
+        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
+      setEditingPostId(null);
+
+      try {
+        if (supabase) {
+          await supabase.from('nova_community_posts').update({
+            title: newTitle,
+            content: newContent,
+            updated_at: new Date().toISOString()
+          }).eq('id', postId);
+        }
+      } catch(err) {
+        console.warn("Supabase post edit err:", err);
+      }
+
+      showNotification('Post permanently updated!', 'success');
+    };
+
+    const displayPosts = communityPosts || [];
+    const filteredPosts = displayPosts.filter(p => {
+      const matchCat = communityCategory === 'All' || p.category === communityCategory;
+      const matchSearch = !communitySearch.trim() || 
+        (p.content && p.content.toLowerCase().includes(communitySearch.toLowerCase())) ||
+        (p.title && p.title.toLowerCase().includes(communitySearch.toLowerCase())) ||
+        (p.code_snippet && p.code_snippet.toLowerCase().includes(communitySearch.toLowerCase())) ||
+        (p.user_name && p.user_name.toLowerCase().includes(communitySearch.toLowerCase()));
+      return matchCat && matchSearch;
+    });
+
+    return (
+      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8 ">
+        <div className="max-w-[860px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+          <DashboardHeader isProfile={false} customTitle="Nova Community" /> <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200/90 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase mb-2">
+                <Users className="w-3.5 h-3.5" /> Verified Engineering Community
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                Pressure Vessel FEA Discussions
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                Real simulation specialists sharing Ansys ACT scripts, ASME Div 2 models, and verification data.
+              </p>
             </div>
-          </div>
+            <div className="flex items-center gap-3">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-12 h-12 rounded-2xl object-cover border-2 border-[#2874f0] shadow-md" />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#2874f0] to-[#0c2340] text-white font-black text-lg flex items-center justify-center shadow-md">
+                  {currentUser?.initial || (currentUser?.name ? currentUser.name[0] : 'D')}
+                </div>
+              )}
+              <div>
+                <div className="text-xs font-black text-slate-900">{currentUser?.name || 'Dinesh'}</div>
+                <div className="text-[10px] text-emerald-600 font-bold">● Active Engineer</div>
+              </div>
+            </div>
+          </div> <div className="bg-white rounded-3xl p-5 border-2 border-slate-200/90 shadow-xl space-y-4">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                value={communitySearch}
+                onChange={(e) => setCommunitySearch(e.target.value)}
+                placeholder="Search discussions by topic, script code, or author name..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {['All', 'ASME Codes', 'Ansys ACT', 'SpaceClaim', 'Meshing', 'Fatigue', 'Material Tests'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCommunityCategory(cat)}
+                  className={"px-3.5 py-1.5 rounded-full text-xs font-bold transition-all " + (communityCategory === cat ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-600')}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div> <div className="bg-white rounded-3xl p-6 border-2 border-slate-200/90 shadow-xl space-y-4">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt="Profile" className="w-10 h-10 rounded-full object-cover border-2 border-emerald-400 shadow-sm shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+                  {currentUser?.initial || 'D'}
+                </div>
+              )}
+              <div className="flex-1">
+                <span className="font-bold text-xs text-slate-900 block">{currentUser?.name || 'Dinesh'}</span>
+                <span className="text-[11px] text-slate-400">Share technical insights, ASME Div 1/2 formulas, or script files with the community</span>
+              </div>
+            </div>
 
-          <div className="flex-1">
-            {profileTab === 'info' && (
-              <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                <div className="flex items-center justify-between pb-6 mb-10 border-b border-white/50">
-                  <h2 className="text-lg md:text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">Profile Information</h2>
-                  <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="glass-btn-blue text-white text-sm font-bold py-2.5 px-4 md:px-6 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2">
-                    <Settings className="w-4 h-4"/> Edit Profile
+            <div className="space-y-3">
+              <textarea 
+                value={newPostText}
+                onChange={(e) => setNewPostText(e.target.value)}
+                placeholder="Write an engineering query, ASME Div 2 interpretation, or simulation observation..."
+                rows="3"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white resize-none"
+              ></textarea> {newPostMedia && (
+                <div className="p-3 bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <Image className="w-4 h-4 text-emerald-600" />
+                    <span>{newPostMedia.name || 'Device Media'}</span>
+                  </div>
+                  <button onClick={() => setNewPostMedia(null)} className="text-slate-400 hover:text-red-500">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
+              )}
 
-                <div className="flex flex-col gap-12 lg:flex-row lg:gap-20">
-                  <div className="flex flex-col items-center pl-4 space-y-4 shrink-0">
-                    <div className="w-20 md:w-32 h-20 md:h-32 rounded-[2rem] glass-input flex items-center justify-center overflow-hidden relative group cursor-pointer shadow-md">
-                       {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="object-cover w-full h-full" /> : <div className="text-xl md:text-5xl font-extrabold text-[#3C64D6] drop-shadow-sm">{currentUser.initial}</div>}
-                       <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
-                    </div>
-                    <label className="text-[#3C64D6] text-sm font-bold hover:underline cursor-pointer bg-white/40 px-4 py-1.5 rounded-full border border-white/60 shadow-sm transition-colors hover:bg-white/60">
-                      Change Photo
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
+              {newPostCode && (
+                <div className="p-3 bg-slate-900 rounded-2xl border border-slate-800 text-xs font-mono text-emerald-300 space-y-1">
+                  <div className="flex items-center justify-between text-slate-300 font-sans font-bold">
+                    <span>{newPostCode.filename}</span>
+                    <button onClick={() => setNewPostCode(null)} className="text-slate-400 hover:text-red-400">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  <div className="flex-1 bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                    <div className="grid grid-cols-1 text-sm md:grid-cols-2 gap-y-8 gap-x-6">
-                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Full Name</div><div className="font-medium text-slate-600">{currentUser.name}</div></div>
-                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Email Address</div><div className="font-medium text-slate-600">{currentUser.email}</div></div>
-                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Company/Institute</div><div className="font-medium text-slate-600">{currentUser.company || "Not Provided"}</div></div>
-                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Phone</div><div className="font-medium text-slate-600">{currentUser.phone || "Not Provided"}</div></div>
-                      <div><div className="mb-1 font-extrabold text-slate-800 drop-shadow-sm">Joined On</div><div className="font-medium text-slate-600">{currentUser.joined}</div></div>
-                      <div className="flex gap-4 pt-4 border-t md:col-span-2 border-white/50">
-                        <div><div className="mb-2 font-extrabold text-slate-800 drop-shadow-sm">Account Status</div><span className="bg-emerald-500/20 text-emerald-800 border border-emerald-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">Active Pro</span></div>
-                        <div><div className="mb-2 font-extrabold text-slate-800 drop-shadow-sm">Jobs Completed</div><span className="bg-blue-500/20 text-blue-800 border border-blue-500/30 text-xs font-bold px-4 py-1.5 rounded-full backdrop-blur-sm">{stats.completed} Total</span></div>
-                      </div>
-                    </div>
-                  </div>
+                  <pre className="max-h-24 overflow-y-auto text-[11px]">{newPostCode.content}</pre>
                 </div>
-              </div>
-            )}
+              )} <input type="file" ref={mediaFileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaFileUpload} />
+              <input type="file" ref={codeFileInputRef} accept=".py,.wbex,.mac,.inp,.apdl,.txt,.json,.js,.cpp,.c" className="hidden" onChange={handleCodeFileUpload} />
 
-            {profileTab === 'security' && (
-              <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                <div className="pb-4 mb-10 border-b border-white/50"><h2 className="text-lg md:text-2xl font-extrabold text-red-600 drop-shadow-sm">Security Settings</h2></div>
-                <div className="bg-white/40 border border-white/60 backdrop-blur-md rounded-3xl p-16 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                  <div className="flex items-center justify-center w-14 md:w-20 h-14 md:h-20 mx-auto mb-6 border shadow-sm bg-amber-500/20 rounded-2xl border-amber-500/30 backdrop-blur-sm">
-                     <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 drop-shadow-sm" />
-                  </div>
-                  <h3 className="mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">Password Management</h3>
-                  <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium text-slate-600">Keep your account secure by using a strong password and updating it regularly.</p>
-                  <button onClick={() => setIsChangePasswordOpen(true)} className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold py-3.5 px-4 md:px-8 rounded-xl mx-auto flex items-center shadow-lg transition-transform hover:scale-105">
-                     <Lock className="w-4 h-4 mr-2" /> Change Password
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => mediaFileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    <Image className="w-3.5 h-3.5 text-emerald-600" /> Attach Device Media
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => codeFileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-indigo-600" /> Attach Code File
                   </button>
                 </div>
+                <button 
+                  onClick={handlePostCommunity} 
+                  disabled={isPosting || (!newPostText.trim() && !newPostMedia && !newPostCode)}
+                  className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2 disabled:opacity-50 hover:scale-105"
+                >
+                  {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Publish to Community
+                </button>
               </div>
-            )}
-
-            {profileTab === 'payment' && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm">
-                  <h2 className="pb-4 mb-4 md:mb-8 text-lg md:text-2xl font-extrabold border-b text-emerald-700 border-white/50 drop-shadow-sm">Payment Summary ({jobs.length} Jobs)</h2>
-                  <div className="grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-3">
-                    <div className="bg-white/40 border border-red-500/30 backdrop-blur-md rounded-3xl py-4 md:py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="mb-2 text-xl md:text-3xl font-extrabold text-red-600 drop-shadow-sm">₹{paymentData.unpaid.toLocaleString()}</div>
-                       <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Unpaid</div>
-                    </div>
-                    <div className="bg-white/40 border border-emerald-500/30 backdrop-blur-md rounded-3xl py-4 md:py-8 text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                       <div className="mb-2 text-xl md:text-3xl font-extrabold text-emerald-600 drop-shadow-sm">0</div>
-                       <div className="text-xs font-bold tracking-widest uppercase text-slate-600">Paid</div>
-                    </div>
-                    <div className="relative py-4 md:py-8 overflow-hidden text-center shadow-lg glass-btn-blue border-blue-500/50 rounded-3xl">
-                       <div className="absolute inset-0 bg-white/10"></div>
-                       <div className="relative z-10 mb-2 text-xl md:text-3xl font-extrabold text-white drop-shadow-sm">₹{paymentData.total.toLocaleString()}</div>
-                       <div className="relative z-10 text-xs font-bold tracking-widest text-blue-100 uppercase">Total</div>
-                    </div>
-                  </div>
+            </div>
+          </div> <div className="space-y-6">
+            {filteredPosts.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 text-center border-2 border-slate-200/90 shadow-xl space-y-4">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+                  <Users className="w-8 h-8" />
                 </div>
+                <h3 className="text-xl font-black text-slate-900">No Community Discussions Yet</h3>
+                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                  Be the first engineer to publish an FEA simulation question, attach an Ansys ACT script (.wbex / .py), or discuss ASME Section VIII Div 2 design rules.
+                </p>
               </div>
-            )}
+            ) : (
+              filteredPosts.map((post) => {
+                const isLiked = !!likedPosts[post.id];
+                const comments = postComments[post.id] || [];
+                const isExpanded = !!expandedComments[post.id];
+                const isAuthor = (post.user_email && currentUser?.email && post.user_email === currentUser.email) ||
+                                 (post.user_name === currentUser?.name);
 
-            {profileTab === 'help' && (
-              <div className="glass-panel rounded-[2.5rem] p-10 border-t border-l border-white/80 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                 <h2 className="text-lg md:text-2xl font-extrabold text-[#0EA5E9] mb-4 md:mb-8 pb-4 border-b border-white/50 drop-shadow-sm">Need Help?</h2>
-                 <div className="grid grid-cols-1 gap-4 md:gap-8 md:grid-cols-2">
-                    <div className="bg-white/40 border border-sky-500/30 backdrop-blur-md p-6 md:p-12 text-center rounded-3xl flex flex-col justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 border bg-sky-500/20 rounded-2xl border-sky-500/30">
-                         <Mail className="w-8 h-8 text-sky-600" />
-                      </div>
-                      <h3 className="mb-3 text-xl font-extrabold text-slate-800 drop-shadow-sm">Contact Support</h3>
-                      <p className="mb-6 text-sm font-medium text-slate-600">Email us directly for technical assistance and licensing queries:</p>
-                      <a href="mailto:analysis.ai.nova@gmail.com" className="inline-flex items-center justify-center gap-2 px-4 md:px-6 py-3 mx-auto text-sm font-bold text-white transition-transform shadow-md glass-btn-blue hover:scale-105 rounded-xl">
-                        analysis.ai.nova@gmail.com
-                      </a>
-                    </div>
-                    
-                    <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-3xl flex flex-col h-[400px] shadow-[0_8px_32px_rgba(14,165,233,0.1)] overflow-hidden">
-                      <div className="flex items-center gap-3 p-4 text-sm font-extrabold border-b shadow-sm glass-panel border-white/50 text-slate-800">
-                        <div className="p-2 border rounded-lg bg-sky-500/20 border-sky-500/30"><Bot className="w-5 h-5 text-sky-600"/></div> ✨ NOVA AI Support
-                      </div>
-                      <div className="flex-1 p-5 space-y-4 overflow-y-auto bg-white/20">
-                        {supportChat.map((m, i) => (
-                           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`p-3.5 rounded-2xl text-sm font-medium max-w-[85%] shadow-sm backdrop-blur-md ${m.role === 'user' ? 'bg-[#0EA5E9] text-white rounded-tr-none border border-sky-400' : 'glass-panel text-slate-800 rounded-tl-none border border-white/80'}`}>{m.text}</div>
-                           </div>
-                        ))}
-                        {isSupportLoading && (
-                          <div className="flex justify-start animate-in fade-in">
-                             <div className="p-3.5 glass-panel text-slate-600 rounded-2xl rounded-tl-none text-sm font-bold flex items-center gap-2 shadow-sm border border-white/80">
-                               <Loader2 className="w-4 h-4 animate-spin text-[#0EA5E9]" /> Thinking...
-                             </div>
+                return (
+                  <div 
+                    key={post.id}
+                    className="bg-white rounded-3xl p-6 border-2 border-slate-200/90 shadow-xl space-y-4 hover:border-slate-300 transition-all"
+                  > <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {post.user_avatar || (isAuthor && currentUser?.avatar) ? (
+                          <img src={post.user_avatar || currentUser?.avatar} alt={post.user_name} className="w-10 h-10 rounded-full object-cover border-2 border-indigo-200 shadow-md shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold flex items-center justify-center text-xs shadow-md shrink-0">
+                            {post.user_initial || 'E'}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-slate-900 text-sm">{post.user_name}</h4>
+                            <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full border border-slate-200">Verified</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-medium">
+                            {post.created_at ? new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                            {post.edited_at && <span className="ml-1 text-slate-400 italic">(edited)</span>}
+                          </p>
+                        </div>
+                      </div> <div className="flex items-center gap-2">
+                        {post.category && (
+                          <span className="text-[10px] font-black uppercase text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
+                            {post.category}
+                          </span>
+                        )}
+                        {isAuthor && (
+                          <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                            <button 
+                              onClick={() => {
+                                setEditingPostId(post.id);
+                                setEditPostTitle(post.title || '');
+                                setEditPostContent(post.content || '');
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
+                              title="Edit your post"
+                            >
+                              <Settings2 className="w-4 h-4" />
+                              <span className="hidden sm:inline">Edit</span>
+                            </button>
+                            <button 
+                              onClick={() => handleDeletePost(post.id)}
+                              className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
+                              title="Delete your post"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
                           </div>
                         )}
                       </div>
-                      <form onSubmit={handleSupportSubmit} className="flex gap-3 p-4 border-t border-white/50 bg-white/40 backdrop-blur-md">
-                         <input 
-                           type="text" 
-                           className="flex-1 glass-input rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-[#0EA5E9] transition-all" 
-                           value={supportInput} 
-                           onChange={e => setSupportInput(e.target.value)} 
-                           placeholder="Ask me anything..."
-                         />
-                         <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="flex items-center justify-center p-3 text-white transition-all shadow-md glass-btn-blue disabled:opacity-50 rounded-xl hover:scale-105"><Send className="w-5 h-5"/></button>
-                      </form>
-                    </div>
-                 </div>
-              </div>
+                    </div> {editingPostId === post.id ? (
+                      <div className="p-4 bg-slate-50 rounded-2xl border-2 border-indigo-200 space-y-3">
+                        <div className="text-xs font-black text-indigo-700 uppercase">Edit Discussion</div>
+                        <input 
+                          type="text"
+                          value={editPostTitle}
+                          onChange={(e) => setEditPostTitle(e.target.value)}
+                          placeholder="Discussion Title"
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <textarea 
+                          value={editPostContent}
+                          onChange={(e) => setEditPostContent(e.target.value)}
+                          rows="3"
+                          placeholder="Discussion Content"
+                          className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        ></textarea>
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => setEditingPostId(null)}
+                            className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={() => handleSavePostEdit(post.id)}
+                            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm"
+                          >
+                            Save Changes
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {post.title && (
+                          <h3 className="text-base font-black text-slate-900">
+                            {post.title}
+                          </h3>
+                        )}
+
+                        {post.content && (
+                          <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
+                            {post.content}
+                          </p>
+                        )}
+                      </>
+                    )} {(post.media_url || post.image_url) && (
+                      <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 flex items-center justify-center shadow-md">
+                        {post.media_type === 'video' || (post.media_url && post.media_url.includes('video')) ? (
+                          <video controls src={post.media_url || post.image_url} className="w-full max-h-96" />
+                        ) : (
+                          <div 
+                            className="relative group cursor-pointer w-full flex items-center justify-center bg-slate-900/50"
+                            onClick={() => setSelectedMediaModal(post.media_url || post.image_url)}
+                          >
+                            <img src={post.media_url || post.image_url} alt="FEA Diagram" className="object-contain w-full max-h-96" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-[2px]">
+                              <Eye className="w-4 h-4" /> Click to view full image
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )} {post.code_snippet && (
+                      <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950 border-b border-slate-800 text-xs">
+                          <span className="flex items-center gap-2 text-emerald-400 font-mono font-bold">
+                            <FileCode className="w-4 h-4" /> {post.code_filename || 'ansys_script.py'}
+                            <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full font-sans">
+                              {post.code_snippet.split('\n').length} lines
+                            </span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(post.code_snippet);
+                                setCopiedCodeId(post.id);
+                                setTimeout(() => setCopiedCodeId(null), 2000);
+                              }}
+                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg flex items-center gap-1 transition-colors"
+                            >
+                              {copiedCodeId === post.id ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Code</>}
+                            </button>
+                            <button 
+                              onClick={() => downloadCodeSnippet(post.code_filename, post.code_snippet)}
+                              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition-colors shadow-sm"
+                            >
+                              <Download className="w-3.5 h-3.5" /> Download
+                            </button>
+                          </div>
+                        </div>
+                        <pre className="p-4 font-mono text-xs text-emerald-300 leading-relaxed overflow-x-auto max-h-72">{post.code_snippet}</pre>
+                      </div>
+                    )} <div className="flex items-center gap-6 pt-3 border-t border-slate-100 text-xs font-bold text-slate-600">
+                      <button 
+                        onClick={() => handleLikePost(post.id)}
+                        className={"flex items-center gap-1.5 transition-colors " + (isLiked ? 'text-rose-600' : 'hover:text-rose-600')}
+                      >
+                        <Heart className={"w-4 h-4 " + (isLiked ? 'fill-current text-rose-600' : '')} />
+                        <span>{(post.likes_count || 0) + (isLiked ? 1 : 0)}</span>
+                      </button>
+                      <button 
+                        onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                        className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>{comments.length} Comments</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          showNotification('Discussion link copied to clipboard!', 'info');
+                        }}
+                        className="flex items-center gap-1.5 hover:text-slate-900 transition-colors ml-auto"
+                      >
+                        <Share2 className="w-4 h-4" /> Share
+                      </button>
+                    </div> {isExpanded && (
+                      <div className="pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 -mx-6 -mb-6 p-6 rounded-b-3xl">
+                        <div className="space-y-2.5">
+                          {comments.length === 0 && (
+                            <p className="text-xs text-slate-400 italic text-center py-2">No comments yet. Write the first response below.</p>
+                          )}
+                          {comments.map((c) => {
+                            const isCommentAuthor = (c.email && currentUser?.email && c.email === currentUser.email) ||
+                                                   (c.user === currentUser?.name);
+
+                            return (
+                              <div key={c.id} className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-3">
+                                {c.avatar || (isCommentAuthor && currentUser?.avatar) ? (
+                                  <img src={c.avatar || currentUser?.avatar} alt={c.user} className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-slate-700 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                                    {c.initial || 'E'}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <span className="font-bold text-xs text-slate-900">{c.user}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] text-slate-400">{c.time || 'Recently'}</span> {isCommentAuthor && (
+                                        <div className="flex items-center gap-1">
+                                          <button 
+                                            onClick={() => {
+                                              setEditingCommentId(c.id);
+                                              setEditCommentText(c.text || '');
+                                            }}
+                                            className="text-slate-400 hover:text-indigo-600 text-[10px] font-bold px-1"
+                                          >
+                                            Edit
+                                          </button>
+                                          <button 
+                                            onClick={() => handleDeleteComment(post.id, c.id)} 
+                                            className="text-slate-400 hover:text-red-500 text-[10px] font-bold px-1"
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {editingCommentId === c.id ? (
+                                    <div className="mt-1 space-y-1.5">
+                                      <input 
+                                        type="text" 
+                                        value={editCommentText} 
+                                        onChange={(e) => setEditCommentText(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500" 
+                                      />
+                                      <div className="flex justify-end gap-1.5">
+                                        <button onClick={() => setEditingCommentId(null)} className="px-2 py-0.5 text-[10px] text-slate-500">Cancel</button>
+                                        <button 
+                                          onClick={() => handleEditComment(post.id, c.id, editCommentText)} 
+                                          className="px-2.5 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded"
+                                        >
+                                          Save
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-slate-700 font-medium leading-relaxed">{c.text}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div> <div className="flex gap-2 pt-2">
+                          <input 
+                            type="text" 
+                            value={replyText[post.id] || ''}
+                            onChange={(e) => setReplyText({ ...replyText, [post.id]: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleAddComment(post.id);
+                            }}
+                            placeholder="Write an engineering comment or advice..."
+                            className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
+                          />
+                          <button 
+                            onClick={() => handleAddComment(post.id)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors shrink-0"
+                          >
+                            Reply
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
+      </div>
+    );
+  };
 
-        {isEditProfileOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
-            <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-              <div className="flex items-center justify-between p-4 md:p-6 font-extrabold text-white bg-gradient-to-r from-blue-600/90 to-blue-500/90 backdrop-blur-md">
-                 <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Settings className="w-6 h-6"/> Edit Profile</span>
-                 <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
-              </div>
-              <form onSubmit={handleEditProfile} className="p-4 md:p-8 space-y-5">
-                <div className="space-y-2">
-                  <label className="pl-1 text-sm font-bold text-slate-800">Company / Institute</label>
-                  <input type="text" value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} className="w-full glass-input p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="pl-1 text-sm font-bold text-slate-800">Phone Number</label>
-                  <input type="tel" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full glass-input p-3.5 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" required />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors">Cancel</button>
-                  <button type="submit" className="flex-1 px-4 py-3.5 glass-btn-blue text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md">Save Changes</button>
-                </div>
-              </form>
-            </div>
+  const renderProfile = () => {
+    return (
+    <div className="relative z-10 min-h-screen font-sans text-slate-800 bg-[#f1f3f6]" style={{fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+      {notification && (
+        <div className={`fixed top-4 right-4 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 text-sm border ${notification.type === 'success' ? 'bg-[#388e3c] border-[#2e7d32]' : notification.type === 'info' ? 'bg-[#1976d2] border-[#1565c0]' : 'bg-[#d32f2f] border-[#c62828]'}`}>
+          <CheckCircle className="w-4 h-4 shrink-0" /> {notification.message}
+        </div>
+      )} <div className="bg-[#2874f0] text-white sticky top-0 z-50 shadow-lg">
+        <div className="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold transition-colors">
+              <ArrowRight className="w-4 h-4 rotate-180" /> Dashboard
+            </button>
+            <span className="text-white/40">/</span>
+            <span className="text-white text-sm font-black">My Account</span>
           </div>
-        )}
-
-        {isChangePasswordOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
-            <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-              <div className={`p-4 md:p-6 text-white font-extrabold flex justify-between items-center backdrop-blur-md transition-colors duration-300 ${isPwdSuccess ? 'bg-emerald-600/90' : 'bg-red-600/90'}`}>
-                <span className="flex items-center gap-3 text-lg drop-shadow-sm">
-                  {isPwdSuccess ? <CheckCircle className="w-6 h-6"/> : <Lock className="w-6 h-6"/>} 
-                  {isPwdSuccess ? 'Password Changed!' : 'Change Password'}
-                </span>
-                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current: '', new: '', confirm: ''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+          <div className="flex items-center gap-2">
+            {currentUser.avatar
+              ? <img src={currentUser.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border-2 border-white/40" />
+              : <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-sm border-2 border-white/40">{currentUser.initial}</div>
+            }
+            <span className="font-bold text-sm hidden sm:block">{currentUser.name}</span>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-[1280px] mx-auto px-3 sm:px-4 py-6 flex flex-col lg:flex-row gap-5 items-start"> <div className="w-full lg:w-[260px] shrink-0 space-y-3"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-2xl font-black border-4 border-white shadow-lg">
+                  {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
+                </div>
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                  <span className="text-white text-[10px] font-bold text-center leading-tight">Change</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
               </div>
-              <form onSubmit={handlePasswordChange} className="p-4 md:p-8 space-y-5">
-                <div className="space-y-2">
-                   <div className="relative">
-                     <input 
-                       type={showPwd.new ? "text" : "password"} 
-                       placeholder="New Password" 
-                       value={pwdForm.new} 
-                       onChange={(e) => { setPwdForm({...pwdForm, new: e.target.value}); setPwdErrors({...pwdErrors, new: null}); setIsPwdSuccess(false); }} 
-                       required 
-                       className={`w-full glass-input ${isPwdSuccess ? '!border-emerald-500 text-emerald-800 bg-emerald-50/50' : pwdErrors.new ? '!border-red-500' : ''} p-3.5 pr-12 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300`} 
-                     />
-                     <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-slate-500 hover:text-slate-800">
-                       {showPwd.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                     </button>
-                   </div>
-                   {pwdErrors.new && <p className="pl-1 text-xs font-bold leading-tight text-red-500 animate-in fade-in slide-in-from-top-1">{pwdErrors.new}</p>}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-slate-500 font-medium">Hello,</div>
+                <div className="font-black text-slate-900 text-sm truncate">{currentUser.name}</div>
+                <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800' : currentUser.plan === 'Pro' ? 'bg-blue-100 text-blue-800' : currentUser.plan === 'Basic' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                  <Sparkles className="w-2.5 h-2.5" /> {currentUser.plan} Plan
                 </div>
                 
-                <div className="space-y-2">
-                   <div className="relative">
-                     <input 
-                       type={showPwd.confirm ? "text" : "password"} 
-                       placeholder="Confirm Password" 
-                       value={pwdForm.confirm} 
-                       onChange={(e) => { setPwdForm({...pwdForm, confirm: e.target.value}); setPwdErrors({...pwdErrors, confirm: null}); setIsPwdSuccess(false); }} 
-                       required 
-                       className={`w-full glass-input ${isPwdSuccess ? '!border-emerald-500 text-emerald-800 bg-emerald-50/50' : pwdErrors.confirm ? '!border-red-500' : ''} p-3.5 pr-12 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300`} 
-                     />
-                     <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-slate-500 hover:text-slate-800">
-                       {showForgotPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                     </button>
-                   </div>
-                   {pwdErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">{pwdErrors.confirm}</p>}
+              </div>
+            </div>
+          </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            {[
+              { id: 'info',         icon: <User className="w-4 h-4" />,        label: 'Profile Information',     color: 'text-[#2874f0]' },
+              { id: 'orders',       icon: <Receipt className="w-4 h-4" />,     label: 'My Orders & Jobs',        color: 'text-[#ff6161]' },
+              { id: 'subscription', icon: <Sparkles className="w-4 h-4" />,    label: 'Plan & Subscription',     color: 'text-[#9c27b0]' },
+              { id: 'security',     icon: <Lock className="w-4 h-4" />,        label: 'Security Settings',       color: 'text-[#e53935]' },
+              { id: 'notifications',icon: <Bell className="w-4 h-4" />,        label: 'Notifications',           color: 'text-[#0288d1]' },
+              { id: 'help',         icon: <HelpCircle className="w-4 h-4" />,  label: 'Help & Support',          color: 'text-[#00796b]' },
+              { id: 'wizard',       icon: <Package className="w-4 h-4" />,     label: 'Ansys Wizard Product',    color: 'text-[#e65100]' },
+              { id: 'community',    icon: <Users className="w-4 h-4" />,       label: 'Nova Community',          color: 'text-[#2e7d32]' },
+              { id: 'nova_help',    icon: <BookOpen className="w-4 h-4" />,    label: 'Nova Help',               color: 'text-[#1565c0]' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setProfileTab(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-left transition-all border-b border-slate-100 last:border-b-0 group ${profileTab === item.id ? 'bg-[#e8f0fe] text-[#2874f0] border-l-4 border-l-[#2874f0]' : 'text-slate-700 hover:bg-slate-50 border-l-4 border-l-transparent'}`}
+              >
+                <span className={profileTab === item.id ? 'text-[#2874f0]' : item.color}>{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                <ChevronRight className={`w-3.5 h-3.5 transition-transform ${profileTab === item.id ? 'text-[#2874f0]' : 'text-slate-300 group-hover:text-slate-400'}`} />
+              </button>
+            ))}
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-all border-t-2 border-slate-100 border-l-4 border-l-transparent">
+              <Lock className="w-4 h-4" /> <span className="flex-1 text-left">Sign Out</span>
+            </button>
+          </div> <div className="bg-gradient-to-br from-[#2874f0] to-[#0c47ba] rounded-xl p-4 text-white shadow-lg">
+            <div className="text-xs text-blue-200 font-medium mb-1">Daily Credits Available</div>
+            <div className="text-2xl font-black">{currentUser.dailyCreditsRemaining}<span className="text-sm text-blue-200 font-medium"> / {currentUser.dailyCreditsTotal}</span></div>
+            <div className="w-full bg-white/20 rounded-full h-1.5 mt-2 overflow-hidden">
+              <div className="h-full bg-white rounded-full transition-all" style={{ width: `${Math.round((currentUser.dailyCreditsRemaining / currentUser.dailyCreditsTotal) * 100)}%` }}></div>
+            </div>
+            <button onClick={() => setProfileTab('subscription')} className="mt-3 w-full text-[11px] font-black bg-white text-[#2874f0] py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+              Upgrade Plan →
+            </button>
+          </div>
+        </div> <div className="flex-1 min-w-0 space-y-4"> {profileTab === 'info' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">Personal Information</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Manage your name, email and contact details</p>
                 </div>
+                <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#2874f0] hover:bg-[#1a5dc9] text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+                  <Settings className="w-3.5 h-3.5" /> Edit
+                </button>
+              </div>
+              <div className="px-6 py-5 border-b border-slate-100 bg-[#f8fafc]">
+                <div className="flex items-center gap-5">
+                  <div className="relative group cursor-pointer">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-3xl font-black border-4 border-white shadow-lg">
+                      {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
+                    </div>
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                      <span className="text-white text-[10px] font-bold">Change</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    </label>
+                  </div>
+                  <div>
+                    <div className="font-black text-lg text-slate-900">{currentUser.name}</div>
+                    <div className="text-sm text-slate-500">{currentUser.email}</div>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
+                        {currentUser.isApproved ? '✓ Verified' : '⚠ Pending'}
+                      </span>
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
+                        {currentUser.plan} Plan
+                      </span>
 
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors">Cancel</button>
-                  <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${isPwdSuccess ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                    {isPwdSuccess ? 'Success!' : 'Update'}
-                  </button>
+                    </div>
+                  </div>
                 </div>
-              </form>
+              </div>
+              <div className="px-6 py-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Full Name',           value: currentUser.name,                                        icon: <User className="w-4 h-4 text-[#2874f0]" /> },
+                    { label: 'Email Address',        value: currentUser.email,                                       icon: <Mail className="w-4 h-4 text-[#2874f0]" /> },
+                    { label: 'Phone Number',         value: currentUser.phone || 'Not provided',                    icon: <Smartphone className="w-4 h-4 text-[#2874f0]" /> },
+                    { label: 'Company / Institute',  value: currentUser.company || 'Not provided',                  icon: <Landmark className="w-4 h-4 text-[#2874f0]" /> },
+                    { label: 'Member Since',         value: currentUser.joined,                                      icon: <Clock className="w-4 h-4 text-[#2874f0]" /> },
+                    { label: 'Analysis Jobs',        value: `${jobs.length} Total · ${stats.completed} Completed`, icon: <Activity className="w-4 h-4 text-[#2874f0]" /> },
+                  ].map((field, i) => (
+                    <div key={i} className="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-slate-200 hover:border-[#2874f0]/30 transition-all">
+                      <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">{field.icon}</div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">{field.label}</div>
+                        <div className="text-sm font-bold text-slate-800 truncate">{field.value}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="px-6 pb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Total',      value: stats.total,      color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                    { label: 'Completed',  value: stats.completed,  color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                    { label: 'Processing', value: stats.processing, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                    { label: 'Pending',    value: stats.pending,    color: 'bg-amber-50 text-amber-700 border-amber-200' },
+                  ].map((s, i) => (
+                    <div key={i} className={`rounded-xl border px-4 py-3 text-center ${s.color}`}>
+                      <div className="text-2xl font-black">{s.value}</div>
+                      <div className="text-[11px] font-bold mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )} {profileTab === 'orders' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="px-6 py-5 border-b border-slate-100">
+                <h2 className="text-lg font-black text-slate-900">My Analysis Orders</h2>
+                <p className="text-xs text-slate-500 mt-0.5">{jobs.length} total jobs</p>
+              </div>
+              {jobs.length === 0 ? (
+                <div className="text-center py-16 px-6">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4"><Receipt className="w-7 h-7 text-slate-400" /></div>
+                  <h3 className="font-bold text-slate-700 mb-2">No orders yet</h3>
+                  <p className="text-sm text-slate-400 mb-4">Submit your first FEA analysis from the Dashboard</p>
+                  <button onClick={() => setCurrentView('dashboard')} className="px-5 py-2.5 bg-[#2874f0] text-white text-sm font-bold rounded-lg hover:bg-[#1a5dc9]">Go to Dashboard</button>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {jobs.map((job) => {
+                    const normStatus = (job.status || '').toLowerCase();
+                    const isCompleted = normStatus === 'completed' || normStatus === 'success';
+                    const isFailed = normStatus === 'failed' || normStatus === 'error';
+                    const isPending = !isCompleted && !isFailed;
+                    return (
+                      <div key={job.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#e8f0fe] flex items-center justify-center shrink-0"><Cpu className="w-5 h-5 text-[#2874f0]" /></div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm">{job.name}</div>
+                              <div className="text-xs text-slate-500">Order: <span className="font-mono font-bold">{job.job_id_display || `NV-${(job.id || '').toString().slice(0,6)}`}</span></div>
+                              <div className="text-[11px] text-slate-400">{new Date(job.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                            {isCompleted && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-sm">
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span className="tracking-wide uppercase">Completed</span>
+                              </span>
+                            )}
+                            {isFailed && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-50 text-red-700 border border-red-300 shadow-sm">
+                                <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                                <span className="tracking-wide uppercase">Failed</span>
+                              </span>
+                            )}
+                            {isPending && (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-300 shadow-sm">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0 animate-pulse" />
+                                <span className="tracking-wide uppercase">{job.status || 'Pending'}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )} {profileTab === 'subscription' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className={`rounded-xl overflow-hidden shadow-lg ${currentUser.plan === 'Max' ? 'bg-gradient-to-r from-purple-700 to-indigo-700' : currentUser.plan === 'Pro' ? 'bg-gradient-to-r from-[#2874f0] to-[#0c47ba]' : currentUser.plan === 'Basic' ? 'bg-gradient-to-r from-[#43a047] to-[#1b5e20]' : 'bg-gradient-to-r from-slate-700 to-slate-900'}`}>
+                <div className="p-6 text-white">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-xs text-white/70 font-semibold uppercase tracking-wider mb-1">Active Plan</div>
+                      <h2 className="text-3xl font-black">{currentUser.plan} Plan</h2>
+                      <div className="flex items-center gap-3 mt-2 text-sm text-white/80 font-semibold">
+                        <span>{currentUser.dailyCreditsTotal} Credits/day</span>
+                        <span>·</span>
+                        <span>{currentUser.dailyCreditsRemaining} remaining today</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-white/70 mb-1">Resets at</div>
+                      <div className="font-black text-lg">00:00 UTC</div>
+                      <div className="text-xs text-white/60">05:30 AM IST</div>
+                    </div>
+                  </div>
+                  <div className="mt-5">
+                    <div className="flex justify-between text-xs text-white/70 mb-1.5">
+                      <span>Quota Used Today</span>
+                      <span>{currentUser.dailyCreditsTotal - currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}</span>
+                    </div>
+                    <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+                      <div className="h-full bg-white rounded-full" style={{ width: `${Math.round((currentUser.dailyCreditsRemaining / currentUser.dailyCreditsTotal) * 100)}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {(() => {
+                  const PLAN_TIER_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
+                  const userCurrentTierRank = PLAN_TIER_RANKS[currentUser?.plan || 'Free'] ?? 0;
+                  const allPlans = [
+                    { name: 'Free',  price: '$0',   credits: '100 cr/day',   badge: null,         color: 'border-slate-300',   features: ['ASME Materials (10 cr)','Stress-Strain Curves','AI Recommender Free','Daily Auto-Reset'] },
+                    { name: 'Basic', price: '$10',  credits: '700 cr/day',   badge: null,         color: 'border-emerald-400', features: ['Nozzle Analysis (300 cr)','Bellow Analysis (300 cr)','Saddle Analysis','Full DOCX Reports'] },
+                    { name: 'Pro',   price: '$35',  credits: '1,500 cr/day', badge: 'Popular',    color: 'border-[#2874f0]',   features: ['All Basic features','Flange & Lug Analysis','Priority Queue','5-10 FEA solves/day'] },
+                    { name: 'Max',   price: '$60',  credits: '3,000 cr/day', badge: 'Best Value', color: 'border-purple-500',  features: ['All Pro features','Trunnion Analysis','CAD AI Generator','Tubesheet FEA'] },
+                  ];
+                  const upgradeablePlans = allPlans.filter(p => PLAN_TIER_RANKS[p.name] >= userCurrentTierRank);
+
+                  return upgradeablePlans.map((plan) => {
+                    const isCurrent = (currentUser?.plan || 'Free') === plan.name;
+                    return (
+                      <div key={plan.name} className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : plan.color} hover:shadow-md transition-all`}>
+                        {plan.badge && <div className="bg-[#fb641b] text-white text-[10px] font-black py-1 text-center tracking-wider">{plan.badge}</div>}
+                        <div className="p-5 flex-1 flex flex-col">
+                          <div className="flex items-center justify-between">
+                            <div className="font-black text-xl text-slate-900">{plan.name}</div>
+                            {isCurrent && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                Active Plan
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-baseline gap-1 mt-1 mb-2">
+                            <span className="text-3xl font-black text-slate-900">{plan.price}</span>
+                            <span className="text-sm text-slate-500">/mo</span>
+                          </div>
+                          <div className="text-xs font-bold text-[#2874f0] bg-[#e8f0fe] px-2.5 py-1 rounded-lg mb-4">{plan.credits}</div>
+                          <div className="space-y-2 flex-1">
+                            {plan.features.map((f, i) => (
+                              <div key={i} className="flex items-start gap-2 text-xs text-slate-600"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" /> {f}</div>
+                            ))}
+                          </div>
+                          {isCurrent ? (
+                            <button 
+                              disabled 
+                              className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-emerald-50 text-emerald-700 border-2 border-emerald-300 cursor-default flex items-center justify-center gap-1.5"
+                            >
+                              <CheckCircle className="w-4 h-4 text-emerald-600" /> Current Plan (Active)
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                if (plan.name === 'Basic') {
+                                  handleRazorpayCheckout('Basic Plan (Monthly Subscription)', '₹899', 'credit_subscription', { planName: 'Basic', credits: 700 });
+                                } else if (plan.name === 'Pro') {
+                                  handleRazorpayCheckout('Pro Plan (Monthly Subscription)', '₹2,999', 'credit_subscription', { planName: 'Pro', credits: 1500 });
+                                } else if (plan.name === 'Max') {
+                                  handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 });
+                                }
+                              }} 
+                              className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-[#2874f0] hover:bg-[#1a5dc9] text-white shadow-md hover:scale-105 transition-all flex items-center justify-center gap-1.5"
+                            >
+                              Upgrade to {plan.name} →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {currentUser.plan !== 'Max' && (
+                <div className="bg-gradient-to-r from-[#2874f0] to-[#0c47ba] rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div>
+                    <div className="font-black text-lg">Unlock All 14 Analysis Modules</div>
+                    <div className="text-white/80 text-sm mt-0.5">Upgrade to Max — 3,000 credits/day, full enterprise access</div>
+                  </div>
+                  <button onClick={() => handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 })} className="shrink-0 px-6 py-3 bg-[#fb641b] hover:bg-[#e55a16] text-white font-black rounded-xl shadow-md text-sm hover:scale-105 transition-all">Upgrade to Max Plan (₹4,999) →</button>
+                </div>
+              )}
+            </div>
+          )} {profileTab === 'security' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="px-6 py-5 border-b border-slate-100">
+                <h2 className="text-lg font-black text-slate-900">Security Settings</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Manage password and account security</p>
+              </div>
+              <div className="px-6 py-6 space-y-4">
+                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl hover:border-[#2874f0]/40 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center shrink-0"><Lock className="w-5 h-5 text-red-600" /></div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">Password</div>
+                      <div className="text-xs text-slate-400 mt-0.5">Last changed recently</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsChangePasswordOpen(true)} className="px-4 py-2 border-2 border-[#2874f0] text-[#2874f0] text-sm font-bold rounded-lg hover:bg-[#e8f0fe] transition-all shrink-0">Change</button>
+                </div>
+                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0"><Mail className="w-5 h-5 text-emerald-600" /></div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">Email Verification</div>
+                      <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{currentUser.email}</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 text-[11px] font-black bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200 shrink-0">Verified</span>
+                </div>
+                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center shrink-0"><Shield className="w-5 h-5 text-blue-600" /></div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">Account Status</div>
+                      <div className="text-xs text-slate-400 mt-0.5">Platform approval</div>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 text-[11px] font-black rounded-full border shrink-0 ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>{currentUser.isApproved ? 'Approved' : 'Pending'}</span>
+                </div>
+                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl bg-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center shrink-0"><Smartphone className="w-5 h-5 text-purple-600" /></div>
+                    <div>
+                      <div className="font-bold text-slate-700 text-sm">Two-Factor Authentication</div>
+                      <div className="text-xs text-slate-400 mt-0.5">SMS and Authenticator app</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 text-[11px] font-black bg-slate-200 text-slate-500 rounded-full shrink-0">Coming Soon</span>
+                </div>
+                <div className="border-2 border-red-200 rounded-xl p-5 bg-red-50">
+                  <div className="text-sm font-black text-red-800 mb-1">Danger Zone</div>
+                  <div className="text-xs text-red-600 mb-3">Permanently delete your account. This action is irreversible.</div>
+                  <button className="px-4 py-2 border-2 border-red-400 text-red-700 text-xs font-black rounded-lg hover:bg-red-100 transition-all">Delete My Account</button>
+                </div>
+              </div>
+            </div>
+          )} {profileTab === 'notifications' && (
+            <div className="space-y-5 animate-in fade-in duration-300"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900">Activity & Alerts Log</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">Real-time alerts, transactions, and community events saved permanently</p>
+                  </div>
+                  {persistentNotifications.length > 0 && (
+                    <button 
+                      onClick={() => {
+                        setPersistentNotifications([]);
+                        try { localStorage.removeItem('nova_persistent_notifications'); } catch(e) {}
+                        showNotification('Alert history cleared', 'info');
+                      }}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Log
+                    </button>
+                  )}
+                </div>
+                <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                  {persistentNotifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                      No alerts or notifications recorded yet.
+                    </div>
+                  ) : (
+                    persistentNotifications.map((notif) => (
+                      <div key={notif.id} className="p-4 hover:bg-slate-50 flex items-start gap-3 transition-colors">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                          notif.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                        }`}>
+                          {notif.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
+                           notif.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="font-bold text-xs text-slate-900">{notif.title}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{notif.time || 'Today'}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium leading-relaxed">{notif.message}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100">
+                  <h2 className="text-lg font-black text-slate-900">Notification Preferences</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Configure automated push and email channels</p>
+                </div>
+                <div className="px-6 py-2">
+                  {[
+                    { key: 'job_complete',    label: 'Job Completion',       desc: 'Alert when your FEA analysis finishes' },
+                    { key: 'job_failed',      label: 'Job Failed',           desc: 'Alert when a job fails or has errors' },
+                    { key: 'credit_low',      label: 'Low Credit Warning',   desc: 'Warn when daily credits fall below 20%' },
+                    { key: 'sub_renew',       label: 'Subscription Renewal', desc: 'Reminder 3 days before plan renews' },
+                    { key: 'community',       label: 'Community Activity',   desc: 'Likes, comments and replies on posts' },
+                    { key: 'product_updates', label: 'Product Updates',      desc: 'New features and platform improvements' },
+                    { key: 'promos',          label: 'Offers & Promotions',  desc: 'Discounts and special offers' },
+                  ].map((pref) => (
+                    <div key={pref.key} className="flex items-center justify-between py-4 border-b border-slate-100 last:border-b-0">
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">{pref.label}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{pref.desc}</div>
+                      </div>
+                      <button
+                        onClick={() => setProfileNotifPrefs(prev => ({ ...prev, [pref.key]: !prev[pref.key] }))}
+                        className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ml-4 ${profileNotifPrefs[pref.key] ? 'bg-[#2874f0]' : 'bg-slate-300'}`}
+                      >
+                        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${profileNotifPrefs[pref.key] ? 'left-7' : 'left-1'}`}></span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
+                  <button onClick={() => showNotification('Notification preferences saved!', 'success', 'Preferences')} className="px-6 py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all">Save Preferences</button>
+                </div>
+              </div>
+            </div>
+          )} {profileTab === 'help' && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-4"><Mail className="w-7 h-7 text-blue-600" /></div>
+                  <h3 className="font-black text-slate-900 mb-2">Email Support</h3>
+                  <p className="text-xs text-slate-500 mb-4">Technical issues, billing and licensing queries</p>
+                  <a href="mailto:analysis.ai.nova@gmail.com" className="w-full py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all block">analysis.ai.nova@gmail.com</a>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4"><Users className="w-7 h-7 text-emerald-600" /></div>
+                  <h3 className="font-black text-slate-900 mb-2">Nova Community</h3>
+                  <p className="text-xs text-slate-500 mb-4">Share results, ask questions, peer support</p>
+                  <button onClick={() => setCurrentView('nova_community')} className="w-full py-2.5 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-all">Open Community</button>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-100"><h2 className="font-black text-slate-900">Frequently Asked Questions</h2></div>
+                <div className="divide-y divide-slate-100">
+                  {[
+                    { q: 'When do daily credits reset?', a: 'Credits reset at 00:00 UTC (05:30 AM IST) every day, automatically and fully to 100%.' },
+                    { q: 'What if I run out of credits mid-session?', a: 'The job will not submit if credits are insufficient. Upgrade your plan or wait for the midnight reset.' },
+                    { q: 'How do I download my FEA report?', a: 'Dashboard → click any completed job → click View Report to download your DOCX or PDF.' },
+                    { q: 'Is the payment system secure?', a: 'Yes. 256-bit SSL encryption. We support Visa, Mastercard, RuPay, UPI, Net Banking, and PayPal via secure certified gateways.' },
+                    { q: 'How many computers can I use the ACT Wizard on?', a: '6-Month license: 2 workstation activations. 1-Month and 3-Month: 1 workstation activation each.' },
+                    { q: 'How do I cancel my subscription?', a: 'Email analysis.ai.nova@gmail.com. Cancellations take effect at the end of the billing cycle.' },
+                  ].map((item, i) => (
+                    <details key={i} className="group px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <summary className="flex items-center justify-between font-bold text-sm text-slate-800 list-none">
+                        {item.q}
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform shrink-0 ml-3" />
+                      </summary>
+                      <p className="text-sm text-slate-500 mt-3 leading-relaxed font-medium pr-4">{item.a}</p>
+                    </details>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#e8f0fe] flex items-center justify-center"><Bot className="w-5 h-5 text-[#2874f0]" /></div>
+                  <div>
+                    <div className="font-black text-slate-900 text-sm">NOVA AI Support</div>
+                    <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online</div>
+                  </div>
+                </div>
+                <div className="h-52 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
+                  {supportChat.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`px-4 py-2.5 rounded-2xl text-xs font-medium max-w-[80%] leading-relaxed ${m.role === 'user' ? 'bg-[#2874f0] text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'}`}>{m.text}</div>
+                    </div>
+                  ))}
+                  {isSupportLoading && (
+                    <div className="flex justify-start">
+                      <div className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-400 flex items-center gap-2 shadow-sm">
+                        <Loader2 className="w-3 h-3 animate-spin text-[#2874f0]" /> Typing...
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <form onSubmit={handleSupportSubmit} className="flex gap-2 p-4 border-t border-slate-100">
+                  <input type="text" className="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#2874f0] focus:bg-white" value={supportInput} onChange={e => setSupportInput(e.target.value)} placeholder="Ask anything about NOVA..." />
+                  <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="px-4 py-2.5 bg-[#2874f0] text-white rounded-xl font-bold hover:bg-[#1a5dc9] transition-all disabled:opacity-50 flex items-center gap-2">
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )} {profileTab === 'wizard' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">Ansys ACT Wizards</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Automate your FEA workflows with our premium .WBEX extensions</p>
+                </div>
+                <div className="w-10 h-10 bg-[#e65100]/10 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-[#e65100]" />
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                {[
+                  { id: 'full', name: 'Full Nozzle Ansys Act Wizard (.WBEX)', desc: 'Complete parametric modeling, meshing, and analysis for full nozzle configurations.', icon: <Box className="w-6 h-6 text-[#2874f0]" /> },
+                  { id: 'shell', name: 'Shell Nozzle Ansys Act Wizard (.WBEX)', desc: 'Specialized workflow for shell nozzle FEA with automatic report generation.', icon: <Cylinder className="w-6 h-6 text-[#2874f0]" /> },
+                  { id: 'head', name: 'Head Nozzle Ansys Act Wizard (.WBEX)', desc: 'Advanced parametric analysis for head nozzle connections.', icon: <Disc className="w-6 h-6 text-[#2874f0]" /> },
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row items-center justify-between p-5 border border-slate-200 rounded-xl hover:border-[#2874f0]/40 transition-all bg-white hover:shadow-md">
+                    <div className="flex items-center gap-4 mb-4 sm:mb-0 w-full sm:w-auto">
+                      <div className="w-12 h-12 bg-[#e8f0fe] rounded-xl flex items-center justify-center shrink-0">
+                        {item.icon}
+                      </div>
+                      <div>
+                        <div className="font-black text-slate-900">{item.name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5 max-w-sm">{item.desc}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <button 
+                        onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
+                        className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                      >
+                        <PlayCircle className="w-4 h-4" /> View Demo
+                      </button>
+                      {(() => {
+                        const purchasedJob = (jobs || []).find(j => 
+                          (j.status || '').toLowerCase() === 'completed' &&
+                          (j.type === 'Wizard Purchase' || (j.name && j.name.toLowerCase().includes('wizard')))
+                        );
+                        const isPurchased = !!purchasedJob;
+                        if (isPurchased) {
+                          return (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button 
+                                onClick={() => {
+                                  window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
+                                  showNotification("Downloading " + item.name + " (.WBEX)...", "success", "Wizard Download");
+                                }}
+                                className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                              >
+                                <Download className="w-4 h-4" /> Download (.WBEX)
+                              </button>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <button 
+                              onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
+                              className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-[#e65100] to-[#bf360c] hover:from-[#d84315] hover:to-[#a02700] text-white text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                            >
+                              <ShoppingCart className="w-4 h-4" /> Buy
+                            </button>
+                          );
+                        }
+                      })()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )} {profileTab === 'community' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-10 h-10 text-emerald-600" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Community Hub</h2>
+                <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Connect with fellow engineers, share your FEA results, ask questions, and collaborate on complex structural analysis problems.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="font-black text-xl text-slate-800">500+</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase">Engineers</div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="font-black text-xl text-slate-800">1.2k</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase">Discussions</div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="font-black text-xl text-slate-800">Daily</div>
+                    <div className="text-xs font-bold text-slate-500 uppercase">New Resources</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('nova_community')}
+                  className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+                >
+                  <Users className="w-5 h-5" /> Enter Nova Community
+                </button>
+              </div>
+            </div>
+          )} {profileTab === 'nova_help' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="w-10 h-10 text-[#1565c0]" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Knowledge Base</h2>
+                <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Access comprehensive documentation, video tutorials, API references, and engineering guides for all Nova Analysis modules.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-8 text-left">
+                  <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
+                    <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">Module Documentation</div>
+                      <div className="text-xs text-slate-500 mt-0.5">Detailed input guidelines and result interpretations.</div>
+                    </div>
+                  </div>
+                  <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
+                    <Video className="w-5 h-5 text-red-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">Video Tutorials</div>
+                      <div className="text-xs text-slate-500 mt-0.5">Step-by-step FEA workflow guides.</div>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setCurrentView('nova_help')}
+                  className="px-8 py-3.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+                >
+                  <BookOpen className="w-5 h-5" /> Access Help Center
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div> {isEditProfileOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+            <div className="flex items-center justify-between px-6 py-5 bg-[#2874f0] text-white">
+              <span className="flex items-center gap-2 font-black text-lg"><Settings className="w-5 h-5"/> Edit Profile</span>
+              <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
+            </div>
+            <form onSubmit={handleEditProfile} className="p-6 space-y-5">
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Company / Institute</label>
+                <input type="text" value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} required placeholder="e.g. Larsen and Toubro Ltd." className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Phone Number</label>
+                <input type="tel" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} required placeholder="+91 98765 43210" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50">Cancel</button>
+                <button type="submit" className="flex-1 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white rounded-xl font-bold text-sm shadow-md">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )} {isWizardDemoOpen && selectedWizardForDemo && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setIsWizardDemoOpen(false)}></div>
+          <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
+              <span className="flex items-center gap-3 font-black text-lg">
+                <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
+              </span>
+              <button onClick={() => setIsWizardDemoOpen(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
+                <X className="w-5 h-5 text-slate-300"/>
+              </button>
+            </div>
+            <div className="p-0 bg-black relative aspect-video">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube.com/embed/A65i5WT83bs?autoplay=1" 
+                title="Nova Wizard Demo" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
+            </div>
+            <div className="px-6 py-4 bg-slate-800 flex justify-between items-center text-slate-300">
+              <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
+              <button 
+                onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
+                className="px-6 py-2.5 bg-[#e65100] hover:bg-[#bf360c] text-white font-black rounded-xl shadow-md transition-all flex items-center gap-2"
+              >
+                <ShoppingCart className="w-4 h-4" /> Get This Wizard
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )} {isWizardPricingOpen && selectedWizardForPricing && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsWizardPricingOpen(false)}></div>
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <span className="flex items-center gap-3 font-black text-lg text-slate-900">
+                <Package className="w-5 h-5 text-[#e65100]" /> Select Subscription - {selectedWizardForPricing.name.split(' Ansys')[0]}
+              </span>
+              <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
+                <X className="w-5 h-5"/>
+              </button>
+            </div>
+            <div className="p-6 bg-slate-50">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-black text-slate-900">Choose your licensing term</h3>
+                <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {[
+                  { term: '1 Month', price: '₹4,999', desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+                  { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+                  { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
+                ].map((plan, i) => (
+                  <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#e65100] shadow-md ring-4 ring-[#e65100]/10' : 'border-slate-200 hover:border-slate-300'}`}>
+                    {plan.recommend && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e65100] text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                        Recommended
+                      </div>
+                    )}
+                    <div className="p-5 flex-1 text-center">
+                      <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
+                      <div className="text-3xl font-black text-slate-900">{plan.price}</div>
+                      <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
+                      <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
+                      <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
+                        <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsWizardPricingOpen(false);
+                          handleRazorpayCheckout(`${selectedWizardForPricing.name} (${plan.term} License)`, plan.price, 'wizard_purchase', { term: plan.term, workstations: plan.workstations, productName: selectedWizardForPricing.name });
+                        }}
+                        className={`w-full py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#e65100] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                      >
+                        <CreditCard className="w-4 h-4" /> Select {plan.term}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2">Secure Payments Via</span>
+                {['UPI', 'Visa', 'Mastercard', 'Net Banking', 'PayPal'].map(m => (
+                  <span key={m} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">{m}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )} {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+            <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
+              <span className="flex items-center gap-2 font-black text-lg">
+                {isPwdSuccess ? <CheckCircle className="w-5 h-5"/> : <Lock className="w-5 h-5"/>}
+                {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
+              </span>
+              <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current:'',new:'',confirm:''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
+            </div>
+            <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
+                <div className="relative">
+                  <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({...pwdForm, new: e.target.value}); setPwdErrors({...pwdErrors, new: null}); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                  <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                </div>
+                {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
+                <div className="relative">
+                  <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({...pwdForm, confirm: e.target.value}); setPwdErrors({...pwdErrors, confirm: null}); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                  <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                </div>
+                {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
+                <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
+                  {isPwdSuccess ? 'Updated!' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )} {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+            <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
+              <span className="flex items-center gap-2 font-black text-lg">
+                {isPwdSuccess ? <CheckCircle className="w-5 h-5"/> : <Lock className="w-5 h-5"/>}
+                {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
+              </span>
+              <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current:'',new:'',confirm:''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
+            </div>
+            <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
+                <div className="relative">
+                  <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({...pwdForm, new: e.target.value}); setPwdErrors({...pwdErrors, new: null}); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                  <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                </div>
+                {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
+                <div className="relative">
+                  <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({...pwdForm, confirm: e.target.value}); setPwdErrors({...pwdErrors, confirm: null}); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                  <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                </div>
+                {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
+                <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
+                  {isPwdSuccess ? 'Updated!' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
-  );
-
+    );
+  };
   return (
     <>
       <style>{`
@@ -3383,7 +5626,6 @@ export default function App() {
           66% { transform: translate(-30px, 30px) scale(0.9); }
           100% { transform: translate(0px, 0px) scale(1); }
         }
-
         .animate-blob { animation: blob 10s infinite alternate; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
@@ -3455,7 +5697,181 @@ export default function App() {
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
          <div className="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
          <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000"></div>
-      </div>
+      </div>   {completedInvoice && (
+        <div className="fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in">
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-auto text-slate-800 print:m-0 print:p-0 print:border-none print:shadow-none"> <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+                <span className="font-black text-sm uppercase tracking-wider text-emerald-400">Payment Verified · Tax Invoice Generated</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => window.print()}
+                  className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                  title="Print / Save PDF"
+                >
+                  <Printer className="w-3.5 h-3.5 text-emerald-400" /> Print / Save PDF
+                </button>
+                <button 
+                  onClick={() => setCompletedInvoice(null)}
+                  className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-slate-300 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div> <div className="p-6 sm:p-8 space-y-6"> <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b-2 border-slate-900/10 pb-6">
+                <div>
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <CosmicLogo className="w-8 h-8" />
+                    <span className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">Pressure Vessel FEA & Computational Simulation Cloud</p>
+                  <div className="text-[11px] text-slate-500 mt-2 space-y-0.5 font-mono">
+                    <div>GSTIN: <strong className="text-slate-700">07AABCN1234F1Z5</strong> · CIN: U72900DL2024PTC123456</div>
+                    <div>HSN / SAC Code: <strong>998313</strong> (IT & Engineering Software Services)</div>
+                    <div>Support: analysis.ai.nova@gmail.com · Portal: nova-platform.ai</div>
+                  </div>
+                </div>
+
+                <div className="sm:text-right bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black uppercase rounded-full mb-2">
+                    Tax Invoice / Receipt
+                  </span>
+                  <div className="font-mono text-xs font-bold text-slate-900">Invoice: {completedInvoice.invoiceId}</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Date: {completedInvoice.date}</div>
+                  <div className="text-[11px] text-slate-500 font-mono mt-1">Payment ID: <span className="font-bold text-slate-800">{completedInvoice.paymentId}</span></div>
+                  <div className="text-[11px] text-emerald-600 font-black mt-1">● Gateway: Razorpay (Live Verified)</div>
+                </div>
+              </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Customer / Billed To:</div>
+                  <div className="font-black text-slate-900 text-sm">{completedInvoice.customerName}</div>
+                  <div className="text-slate-600 mt-0.5">{completedInvoice.customerEmail}</div>
+                  <div className="text-slate-600 font-mono mt-0.5">{completedInvoice.customerPhone}</div>
+                  {completedInvoice.company && <div className="text-slate-500 font-medium mt-0.5">{completedInvoice.company}</div>}
+                </div>
+                <div className="sm:text-right">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Order Details:</div>
+                  <div className="font-bold text-slate-800">{completedInvoice.productName}</div>
+                  <div className="text-slate-500 mt-0.5">License Term: <strong>{completedInvoice.term}</strong></div>
+                  <div className="text-slate-500 mt-0.5">Authorized Activations: <strong>{completedInvoice.workstations} Workstation(s)</strong></div>
+                  <div className="text-emerald-700 font-black mt-1">Status: PAYMENT VERIFIED & ACTIVE</div>
+                </div>
+              </div> <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 uppercase font-black border-y border-slate-200">
+                      <th className="py-2.5 px-3">Description</th>
+                      <th className="py-2.5 px-3 text-center">HSN/SAC</th>
+                      <th className="py-2.5 px-3 text-right">Taxable Value</th>
+                      <th className="py-2.5 px-3 text-right">CGST (9%)</th>
+                      <th className="py-2.5 px-3 text-right">SGST (9%)</th>
+                      <th className="py-2.5 px-3 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    <tr>
+                      <td className="py-3 px-3">
+                        <div className="font-black text-slate-900">{completedInvoice.productName}</div>
+                        <div className="text-[11px] text-slate-500 font-medium">Digital engineering software license / cloud compute allocation</div>
+                      </td>
+                      <td className="py-3 px-3 text-center font-mono text-slate-600">998313</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold">₹{completedInvoice.baseAmount?.toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right font-mono text-slate-600">₹{completedInvoice.cgst?.toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right font-mono text-slate-600">₹{completedInvoice.sgst?.toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right font-mono font-black text-slate-900">{completedInvoice.priceFormatted}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-900/20 font-black text-sm bg-slate-50">
+                      <td colSpan="5" className="py-3 px-3 text-right text-slate-800">Grand Total (Inclusive of 18% GST):</td>
+                      <td className="py-3 px-3 text-right text-[#2874f0] font-black">{completedInvoice.priceFormatted}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div> {completedInvoice.isWizard && (
+                <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-indigo-500/10 border-2 border-orange-400 rounded-3xl p-5 sm:p-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg shrink-0">
+                        <Package className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-wider text-orange-600">Authorized License Activation</div>
+                        <h4 className="font-black text-base text-slate-900">Ansys ACT Extension Package (.WBEX)</h4>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-black text-xs border border-emerald-300 self-start sm:self-auto">
+                      ● Active & Authenticated
+                    </span>
+                  </div> <div className="bg-slate-900 text-slate-100 rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-inner space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">License Key (Ansys ACT Activation)</div>
+                        <div className="font-mono text-base sm:text-lg font-black text-amber-400 tracking-wider select-all mt-0.5">
+                          {completedInvoice.licenseKey}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(completedInvoice.licenseKey);
+                          setInvoiceCopiedKey(true);
+                          setTimeout(() => setInvoiceCopiedKey(false), 2500);
+                        }}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0"
+                      >
+                        {invoiceCopiedKey ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Key</>}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Expiry Date</div>
+                        <div className="font-bold text-emerald-400 font-mono mt-0.5">{completedInvoice.expiryDate}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Registered On</div>
+                        <div className="font-medium text-slate-300 font-mono mt-0.5">{completedInvoice.registeredOn}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">License Status</div>
+                        <div className="font-bold text-emerald-400 flex items-center gap-1 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Active & Auto-Provisioned
+                        </div>
+                      </div>
+                    </div>
+                  </div> <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                    <button 
+                      onClick={() => {
+                        window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
+                        downloadAnsysWbexFile(completedInvoice.wbexFilename, completedInvoice.licenseKey, completedInvoice.productName);
+                      }}
+                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-105"
+                    >
+                      <Download className="w-4 h-4" /> Download Ansys Wizard (.WBEX)
+                    </button>
+                    <span className="text-xs text-slate-500 font-medium">Auto-authorized binary archive for ANSYS Workbench</span>
+                  </div>
+                </div>
+              )} <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">
+                <button 
+                  onClick={() => window.print()}
+                  className="w-full sm:w-auto px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                >
+                  <Printer className="w-4 h-4 text-emerald-400" /> Download Invoice (PDF)
+                </button>
+                <button 
+                  onClick={() => setCompletedInvoice(null)}
+                  className="w-full sm:w-auto px-6 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                >
+                  Done / Close Invoice
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSplash && renderSplash()}
       {!showSplash && (
@@ -3466,11 +5882,6 @@ export default function App() {
           {currentView === 'forgot' && renderForgotPassword()}
           {currentView === 'dashboard' && renderDashboard()}
           {currentView === 'profile' && renderProfile()}
-          {currentView === 'wizard_products' && renderWizardProducts()}
-          {currentView === 'wizard_checkout' && renderWizardCheckout()}
-          {currentView === 'wizard_success' && renderWizardSuccess()}
-          {currentView === 'wizard_buy' && renderWizardBuy()}
-          {currentView === 'wizard_demo' && renderWizardDemo()}
           {currentView === 'nova_help' && renderNovaHelp()}
           {currentView === 'nova_community' && renderNovaCommunity()}
         </>

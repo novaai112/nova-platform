@@ -1812,6 +1812,45 @@
             
             const user = JSON.parse(userStr);
 
+            // Plan & Daily Credits Validation
+            const isDinesh = user.email === 'dineshkumar2729304@gmail.com';
+            let userPlan = isDinesh ? 'Max' : 'Free';
+            let remainingCredits = isDinesh ? 3000 : 100;
+
+            const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
+            if (savedSub && !isDinesh) {
+                try {
+                    const parsed = JSON.parse(savedSub);
+                    userPlan = parsed.plan || 'Free';
+                } catch(e){}
+            }
+
+            const savedCredits = localStorage.getItem(`nova_credits_${user.email}`);
+            if (savedCredits !== null && !isDinesh) {
+                remainingCredits = parseInt(savedCredits, 10);
+            }
+
+            const PLAN_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
+            const requiredRank = PLAN_RANKS['Basic'];
+            const userRank = PLAN_RANKS[userPlan] || 0;
+
+            if (!isDinesh && userRank < requiredRank) {
+                alert("⚡ Plan Upgrade Required!\n\nNozzle Analysis requires a Basic Plan (700 Daily Credits) or higher.\nYour current tier is " + userPlan + " Plan.\n\nRedirecting to Upgrade & Subscription...");
+                window.location.href = '/?upgrade=Basic';
+                return;
+            }
+
+            if (!isDinesh && remainingCredits < 300) {
+                alert("⚡ Insufficient Daily Credits!\n\nNozzle Analysis requires 300 credits, but you have " + remainingCredits + " credits remaining today.\n\nRedirecting to Upgrade for higher daily limits...");
+                window.location.href = '/?upgrade=Basic';
+                return;
+            }
+
+            if (!isDinesh) {
+                const newCredits = Math.max(0, remainingCredits - 300);
+                localStorage.setItem(`nova_credits_${user.email}`, newCredits.toString());
+            }
+
             const isBatch = document.getElementById('batchToggle').checked;
             const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
             let payloadArr = [];

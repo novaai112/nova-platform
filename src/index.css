@@ -73,3 +73,21 @@
   from { background-position: 200% center; }
   to   { background-position: -200% center; }
 }
+
+/* ==================================================================================== */
+/* REMOVE ALL BLUR EFFECTS ON RAZORPAY AND MODALS (KEEP SCREEN CRISP & SHARP) */
+/* ==================================================================================== */
+.razorpay-container,
+.razorpay-backdrop,
+iframe[name*="razorpay"],
+.razorpay-checkout-frame {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+body,
+#root {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
