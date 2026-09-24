@@ -4633,7 +4633,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
     );
   };
   const renderNovaHelp = () => {
-    return <NovaHelpContent onNavigateBack={() => setCurrentView('dashboard')} />;
+    return (
+      <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
+        <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
+          {/* Top Dashboard Header */}
+          <DashboardHeader isProfile={false} customTitle="Nova Help" />
+          <NovaHelpContent onNavigateBack={() => setCurrentView('dashboard')} />
+        </div>
+      </div>
+    );
   };
 
   const renderNovaCommunity = () => {
