@@ -401,6 +401,97 @@ const DEFAULT_NOVA_COMMUNITY_COMMENTS = {
   ]
 };
 
+export const ANSYS_WIZARDS = [
+  {
+    id: 'shell',
+    name: 'Shell Nozzle Ansys ACT Wizard (.WBEX)',
+    shortName: 'Shell Nozzle ACT Wizard',
+    filename: 'Shell_Nozzle.wbex',
+    tag: 'Base Version',
+    multiplier: 1.0,
+    desc: 'Specialized automated parametric FEA workflow for cylindrical & conical shell nozzle junctions with ASME Section VIII Div 2 Part 5 stress linearization and automated report generation.',
+    badge: 'Standard Base',
+    features: [
+      'Cylindrical & Conical Shell Nozzles',
+      'Automated Hex-Dominant Meshing',
+      'ASME VIII-2 Part 5 Linearization (Pm, Pl, Pb, Q)',
+      'Plastic Limit Load & Collapse Checks',
+      'Instant Word (.docx) FEA Report'
+    ],
+    pricing: [
+      { term: '1 Month', price: '₹4,999', numericPrice: 4999, desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹12,499', numericPrice: 12499, desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹19,999', numericPrice: 19999, desc: 'Best value for continuous usage', workstations: 2, recommend: true }
+    ]
+  },
+  {
+    id: 'head',
+    name: 'Head Nozzle Ansys ACT Wizard (.WBEX)',
+    shortName: 'Head Nozzle ACT Wizard',
+    filename: 'Head_Nozzle.wbex',
+    tag: '1.5X Price',
+    multiplier: 1.5,
+    desc: 'Advanced parametric analysis for vessel head nozzle connections (Hemispherical, 2:1 Ellipsoidal, Torispherical, Conical heads) with automatic ASME stress categorization and validation.',
+    badge: '1.5X Shell Nozzle',
+    features: [
+      'Hemispherical, Ellipsoidal & Torispherical Heads',
+      'Radial & Hillside (Off-Center) Nozzle Connections',
+      'Automated Solid Modeling & Contact Pairing',
+      'ASME Section VIII Div 2 Stress Linearization',
+      'Audit-Ready Mechanical Documentation'
+    ],
+    pricing: [
+      { term: '1 Month', price: '₹7,499', numericPrice: 7499, desc: '1.5X Shell Nozzle — Single project access', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹18,749', numericPrice: 18749, desc: '1.5X Shell Nozzle — Multi-vessel engineering', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹29,999', numericPrice: 29999, desc: '1.5X Shell Nozzle — Best value commercial license', workstations: 2, recommend: true }
+    ]
+  },
+  {
+    id: 'full',
+    name: 'Full Nozzle Ansys ACT Wizard (.WBEX)',
+    shortName: 'Full Nozzle ACT Wizard',
+    filename: 'Full_Nozzle.wbex',
+    tag: '2X Price',
+    multiplier: 2.0,
+    desc: 'Complete parametric modeling, meshing, and elastic-plastic analysis for ALL nozzle configurations (both Shell and all Vessel Head types) with multi-load combinations and full report generation.',
+    badge: '2X Shell Nozzle · Complete Suite',
+    features: [
+      'Includes ALL Shell & ALL Vessel Head Types',
+      'Pad Reinforced, Self-Reinforced & Weldolet',
+      'Multi-Load Case Combinations (P + V + M + T)',
+      'Automated ASME Div 1 & Div 2 Compliance Reports',
+      'Highest Priority Support & Free Version Updates'
+    ],
+    pricing: [
+      { term: '1 Month', price: '₹9,999', numericPrice: 9999, desc: '2X Shell Nozzle — Complete nozzle suite', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹24,999', numericPrice: 24999, desc: '2X Shell Nozzle — Extended engineering term', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹39,999', numericPrice: 39999, desc: '2X Shell Nozzle — Maximum value commercial team license', workstations: 2, recommend: true }
+    ]
+  },
+  {
+    id: 'stress_strain',
+    name: 'Stress-Strain Curve Ansys ACT Wizard (.WBEX)',
+    shortName: 'Stress-Strain Curve ACT Wizard',
+    filename: 'Stress-Strain_Curve.wbex',
+    tag: '₹1,499 / Month',
+    multiplier: null,
+    desc: 'Automates all types of Stress-Strain Curve generation directly inside Ansys Workbench Engineering Data: True Stress-Strain, Multilinear Plasticity (MISO/KINH), Ramberg-Osgood, and ASME VIII-2 Annex 3-D temperature-dependent curves.',
+    badge: 'Material Plasticity Specialist',
+    features: [
+      'All Types of Stress-Strain Curves in Ansys',
+      'Ramberg-Osgood Non-Linear Plasticity Model',
+      'Multilinear Isotropic (MISO) & Kinematic (KINH) Hardening',
+      'ASME Section VIII Div 2 Annex 3-D Plasticity Derivation',
+      'Direct 1-Click Injection into Ansys Engineering Data'
+    ],
+    pricing: [
+      { term: '1 Month', price: '₹1,499', numericPrice: 1499, desc: 'Direct 1-Month Engineering Data automation', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹3,749', numericPrice: 3749, desc: 'Extended 3-Month material modeling term', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹5,999', numericPrice: 5999, desc: 'Best value continuous plasticity workflow', workstations: 2, recommend: true }
+    ]
+  }
+];
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
@@ -651,14 +742,42 @@ export default function App() {
     }
   };
 
-  const downloadAnsysWbexFile = (filename, licenseKey, productName) => {
-    const wizardLink = "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing";
-    try {
-      window.open(wizardLink, '_blank');
-      showNotification("Opening Ansys ACT Wizard (.WBEX) download link...", "success", "Wizard Download");
-    } catch(e) {
-      window.location.href = wizardLink;
+  const downloadSecureWbexFile = (wizardOrFilename, licenseKey, productName) => {
+    let targetFilename = 'Full_Nozzle.wbex';
+    const nameLower = (
+      typeof wizardOrFilename === 'string'
+        ? wizardOrFilename
+        : (wizardOrFilename?.filename || wizardOrFilename?.name || productName || '')
+    ).toLowerCase();
+
+    if (nameLower.includes('stress') || nameLower.includes('curve')) {
+      targetFilename = 'Stress-Strain_Curve.wbex';
+    } else if (nameLower.includes('head')) {
+      targetFilename = 'Head_Nozzle.wbex';
+    } else if (nameLower.includes('shell')) {
+      targetFilename = 'Shell_Nozzle.wbex';
+    } else if (nameLower.includes('full')) {
+      targetFilename = 'Full_Nozzle.wbex';
     }
+
+    const downloadUrl = `/wizards/${targetFilename}`;
+    const anchor = document.createElement('a');
+    anchor.href = downloadUrl;
+    anchor.download = targetFilename;
+    anchor.setAttribute('target', '_self');
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+
+    showNotification(
+      `Secure download initiated for ${targetFilename}. License: ${licenseKey || 'Active'}`,
+      'success',
+      'Secure WBEX Delivery'
+    );
+  };
+
+  const downloadAnsysWbexFile = (filename, licenseKey, productName) => {
+    downloadSecureWbexFile(filename, licenseKey, productName);
   };
 
   const generateNovaLicenseKey = () => {
@@ -714,6 +833,12 @@ export default function App() {
       const cgst = Math.round(gstAmt / 2);
       const sgst = gstAmt - cgst;
 
+      const jobNameLower = (job.name || '').toLowerCase();
+      let targetWbex = 'Full_Nozzle.wbex';
+      if (jobNameLower.includes('stress') || jobNameLower.includes('curve')) targetWbex = 'Stress-Strain_Curve.wbex';
+      else if (jobNameLower.includes('head')) targetWbex = 'Head_Nozzle.wbex';
+      else if (jobNameLower.includes('shell')) targetWbex = 'Shell_Nozzle.wbex';
+
       return {
         invoiceId: job.job_id_display || ('INV-' + new Date().getFullYear() + '-' + String(job.id || Date.now()).slice(-6)),
         paymentId: 'pay_rzp_live_' + String(job.id || Date.now()).slice(-8),
@@ -730,7 +855,8 @@ export default function App() {
         expiryDate: expDate,
         registeredOn: new Date(job.created_at || Date.now()).toLocaleString('en-IN'),
         macAddress: '2C:7B:A0:8C:BC:CA',
-        wbexFilename: (job.name.split(' ')[0] || 'Nozzle') + '_ACT_Wizard_v2024.wbex',
+        wbexFilename: targetWbex,
+        result_url: isWiz ? `/wizards/${targetWbex}` : null,
         customerName: currentUser?.name || 'Dinesh',
         customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
         customerPhone: currentUser?.phone || 'Not Provided',
@@ -743,6 +869,7 @@ export default function App() {
   };
 
   const syncLicenseToGoogleScript = async (licenseRecord) => {
+    const wbexFile = licenseRecord.wbexFilename || 'Full_Nozzle.wbex';
     try {
       if (supabase) {
         await supabase.from('ansys_jobs').insert([{
@@ -751,7 +878,7 @@ export default function App() {
           status: 'Completed',
           price: licenseRecord.amountInINR || 0,
           type: 'License Provision',
-          result_url: "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing",
+          result_url: `/wizards/${wbexFile}`,
           error_message: `Expiry: ${licenseRecord.expiryDate} | Status: active`,
           json_payload: [licenseRecord]
         }]);
@@ -866,9 +993,18 @@ export default function App() {
       const ss = String(now.getSeconds()).padStart(2, '0');
       const registeredOn = `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
 
-      const wbexFilename = isWizard 
-        ? ((productName.split(' ')[0] || 'Nozzle') + "_ACT_Wizard_v2024.wbex")
-        : null;
+      let wbexFilename = null;
+      if (isWizard) {
+        if (metadata?.filename) {
+          wbexFilename = metadata.filename;
+        } else {
+          const pLower = (productName || '').toLowerCase();
+          if (pLower.includes('stress') || pLower.includes('curve')) wbexFilename = 'Stress-Strain_Curve.wbex';
+          else if (pLower.includes('head')) wbexFilename = 'Head_Nozzle.wbex';
+          else if (pLower.includes('shell')) wbexFilename = 'Shell_Nozzle.wbex';
+          else wbexFilename = 'Full_Nozzle.wbex';
+        }
+      }
 
       const invoiceData = {
         invoiceId,
@@ -887,6 +1023,7 @@ export default function App() {
         registeredOn,
         macAddress: '2C:7B:A0:8C:BC:CA',
         wbexFilename,
+        result_url: isWizard ? `/wizards/${wbexFilename}` : null,
         customerName: currentUser?.name || 'Dinesh',
         customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
         customerPhone: currentUser?.phone || '+91 98765 43210',
@@ -904,7 +1041,8 @@ export default function App() {
         productName,
         plan: chosenPlanOrTerm,
         amountInINR,
-        invoiceId
+        invoiceId,
+        wbexFilename
       });
 
       if (!isWizard && (productType === 'credit_subscription' || metadata?.planName)) {
@@ -942,7 +1080,7 @@ export default function App() {
             price: amountInINR,
             type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
             job_id_display: invoiceId,
-            result_url: isWizard ? "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing" : null,
+            result_url: isWizard ? `/wizards/${wbexFilename}` : null,
             error_message: licenseKey ? `License: ${licenseKey} | Expiry: ${expiryDate}` : null,
             json_payload: [invoiceData]
           }]).then(({ error }) => {
@@ -961,7 +1099,7 @@ export default function App() {
         status: 'Completed',
         price: amountInINR,
         type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
-        result_url: isWizard ? "https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing" : null,
+        result_url: isWizard ? `/wizards/${wbexFilename}` : null,
         created_at: new Date().toISOString()
       };
       setJobs(prev => [newJobRecord, ...prev]);
@@ -1030,7 +1168,11 @@ export default function App() {
           },
           notes: {
             product_type: productType,
-            product_name: productName
+            product_name: productName,
+            term: metadata?.term || '',
+            workstations: String(metadata?.workstations || 1),
+            wizard_id: metadata?.wizardId || '',
+            filename: metadata?.filename || ''
           },
           theme: {
             color: "#2874f0"
@@ -1050,7 +1192,6 @@ export default function App() {
       } catch (err) {
         showNotification('Payment gateway error. Please try again.', 'error', 'Razorpay Error');
         finalizePayment("pay_rzp_" + Date.now().toString().slice(-8));
-
       }
     };
 
@@ -1520,7 +1661,34 @@ export default function App() {
     if (!aiSetupPrompt.trim()) return;
     setIsAiSetupLoading(true);
     setAiSetupResponse("");
-    const systemInstruction = "You are an expert mechanical engineering AI assistant for NOVA. Recommend Nozzle, Bellow,Saddle, Flange,Hot Box, Lifting Lug WRC, Trunnion WRC, Vessel Stiffener Ring, 2D Axisymetric Tubesheet or Local PWHT analysis based on scenario. Format with bullet points.";
+    const systemInstruction = `You are an expert Principal Mechanical FEA Engineer and AI Solutions Architect for NOVA AI TECHNOLOGIES.
+Your task is to analyze the user's engineering scenario and recommend the optimal NOVA solution:
+
+1. CLOUD FEA ANALYSIS MODULES (Automated cloud solver, ASME code compliance checks & instant DOCX/PDF reports):
+   - ASME Nozzle Analysis (ASME Section VIII-2 Part 5 Elastic-Plastic, 300 credits)
+   - Bellow Expansion Joint Analysis (EJMA 10th Ed & ASME VIII-1 App 26, 300 credits)
+   - Saddle Horizontal Vessel Support (Zick Method & ASME Section VIII, 150 credits)
+   - Local PWHT Thermal Analysis (WRC 452 & ASME VIII-1 UW-40, 125 credits)
+   - Flange Rigidity & Leakage (ASME VIII-1 App 2 & EN 1591, 200 credits)
+   - Hot Box Skirt Thermal FEA (75 credits)
+   - Lifting Lug Analysis (WRC 107/537, 75 credits)
+   - Heavy Trunnion Vessel Support (ASME VIII-2 Part 5 & WRC 537, 175 credits)
+   - 2D Axisymmetric Tubesheet Heat Exchanger (ASME VIII-1 UHX & TEMA RCB, 250 credits)
+   - CAD AI 3D Parametric STEP Generator (75 credits)
+   - ASME Materials Database (10 credits / Free)
+   - Stress-Strain Curve Generator (10 credits / Free)
+
+2. ANSYS ACT WIZARDS (.WBEX EXTENSIONS FOR LOCAL ANSYS WORKBENCH / MECHANICAL):
+   - Shell Nozzle Ansys ACT Wizard (.WBEX) [Base: ₹4,999/mo | ₹12,499/3mo | ₹19,999/6mo]: Cylindrical & conical shell nozzle parametric FEA and stress linearization.
+   - Head Nozzle Ansys ACT Wizard (.WBEX) [1.5X Price: ₹7,499/mo | ₹18,749/3mo | ₹29,999/6mo]: Hemispherical, 2:1 ellipsoidal, and torispherical head nozzle parametric analysis.
+   - Full Nozzle Ansys ACT Wizard (.WBEX) [2X Price: ₹9,999/mo | ₹24,999/3mo | ₹39,999/6mo]: Complete comprehensive nozzle suite for both Shell and all Vessel Head types.
+   - Stress-Strain Curve Ansys ACT Wizard (.WBEX) [₹1,499/mo | ₹3,749/3mo | ₹5,999/6mo]: Generates all types of stress-strain curves in Ansys (Ramberg-Osgood, MISO, KINH, True Stress-True Strain, ASME VIII-2 Annex 3-D).
+
+Format your recommendation cleanly with:
+- Recommended Solution (Cloud Module vs Ansys ACT Wizard .WBEX)
+- Applicable Governing Standard (e.g. ASME VIII-2 Part 5, EJMA, WRC 537, TEMA)
+- Key Input Data Required (geometry, design pressure, temperature, nozzle loads P/V/M, corrosion allowance, material grade)
+- Verification & Deliverable (Von Mises stress, stress categorization Pm/Pl/Pb/Q, plastic limit load, DOCX report or .WBEX workflow).`;
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: aiSetupPrompt }] }], systemInstruction);
     setAiSetupResponse(responseText);
     setIsAiSetupLoading(false);
@@ -1533,7 +1701,40 @@ export default function App() {
     setSupportInput("");
     setIsSupportLoading(true);
     const contents = newChat.map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: [{ text: msg.text }] }));
-    const systemInstruction = "You are the helpful AI support agent for the NOVA engineering platform. Pricing: Nozzle is ₹6,000+GST, Bellow is ₹48,000+GST.";
+    const systemInstruction = `You are NOVA AI, the authoritative senior mechanical engineering assistant for NOVA AI TECHNOLOGIES.
+
+LATEST OFFICIAL PRICING & PRODUCTS GUIDE:
+1. CLOUD SUBSCRIPTION PLANS (100% Daily Credit Auto-Reset at 00:00 UTC / 05:30 AM IST):
+   - Free Plan: ₹0 ($0) — 100 credits/day, ASME Materials (10 cr), Stress-Strain Curves (10 cr), AI Recommender.
+   - Basic Plan: ₹899/month ($10) — 700 credits/day, ASME Nozzle Analysis (300 cr), Bellow Expansion Joint (300 cr), Saddle Analysis (150 cr), Local PWHT (125 cr), Full DOCX/PDF reports.
+   - Pro Plan: ₹2,999/month ($35) — 1,500 credits/day, All Basic modules + Flange Rigidity (200 cr), Hot Box (75 cr), Lug Lifting (75 cr), Priority queue.
+   - Max Plan: ₹4,999/month ($60) — 3,000 credits/day, All Pro modules + Trunnion Support (175 cr), Tubesheet Heat Exchanger (250 cr), CAD AI 3D Generator (75 cr), Full platform capability.
+
+2. ANSYS ACT EXTENSION WIZARDS (.WBEX) for Local Ansys Workbench / Mechanical:
+   - Shell Nozzle ACT Wizard (.WBEX):
+     * 1 Month: ₹4,999 (1 Workstation)
+     * 3 Months: ₹12,499 (1 Workstation)
+     * 6 Months: ₹19,999 (2 Workstations - Recommended)
+   - Head Nozzle ACT Wizard (.WBEX) [1.5X of Shell Nozzle]:
+     * 1 Month: ₹7,499 (1 Workstation)
+     * 3 Months: ₹18,749 (1 Workstation)
+     * 6 Months: ₹29,999 (2 Workstations - Recommended)
+   - Full Nozzle ACT Wizard (.WBEX) [2X of Shell Nozzle]:
+     * 1 Month: ₹9,999 (1 Workstation)
+     * 3 Months: ₹24,999 (1 Workstation)
+     * 6 Months: ₹39,999 (2 Workstations - Recommended)
+   - Stress-Strain Curve ACT Wizard (.WBEX) [All types of stress-strain curves generated directly in Ansys]:
+     * 1 Month: ₹1,499 (1 Workstation)
+     * 3 Months: ₹3,749 (1 Workstation)
+     * 6 Months: ₹5,999 (2 Workstations - Recommended)
+
+3. DELIVERY & SECURITY:
+   - Node-locked commercial license keys and secure direct WBEX downloads are provisioned instantly upon successful Razorpay payment verification.
+   - No insecure external drive links are used.
+   - Payments processed via Razorpay Live (UPI, Cards, Net Banking, International).
+   - Contact: analysis.ai.nova@gmail.com | WhatsApp: +91 8757014303.
+
+Always provide professional, precise, technically accurate, and helpful answers.`;
     const responseText = await callGeminiAPI(contents, systemInstruction);
     setSupportChat(prev => [...prev, { role: 'model', text: responseText }]);
     setIsSupportLoading(false);
@@ -1770,7 +1971,7 @@ export default function App() {
         name: jobName,
         type: selectedJobType,
         status: 'Pending',
-        price: selectedJobType === 'Nozzle Analysis' ? 6000 : selectedJobType === 'Bellow Analysis' ? 48000 : 15000 
+        price: selectedJobType === 'Nozzle Analysis' ? 300 : selectedJobType === 'Bellow Analysis' ? 300 : 150 
       };
       try {
         const { data: insertedJob, error } = await supabase
@@ -3773,27 +3974,10 @@ export default function App() {
     </div>
   );
   const handleDownloadWbex = () => {
-    const dummyContent = `// NOVA Ansys ACT Extension Package (.WBEX)
-<extension version="2.4" name="NOVA_Ansys_ACT_Wizard">
-  <guid shortid="NOVA_ACT">${Math.random().toString(36).substring(2, 15)}</guid>
-  <script src="nova_main.py" />
-  <interface context="Mechanical">
-    <toolbar name="NOVA Nozzle Tools" caption="NOVA FEA">
-      <entry name="AutoNozzleMesh" icon="nozzle_hex" caption="ASME Automated Mesh" />
-      <entry name="StressLinearization" icon="stress_scl" caption="ASME Div 2 Linearization" />
-      <entry name="LimitLoadCheck" icon="limit_load" caption="Plastic Limit Load" />
-    </toolbar>
-  </interface>
-</extension>`;
-    const blob = new Blob([dummyContent], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'NOVA_Ansys_ACT_Wizard_v2.4.wbex';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const receipt = orderReceipt || completedInvoice;
+    const planName = receipt?.plan || receipt?.productName || 'Full Nozzle Ansys ACT Wizard (.WBEX)';
+    const licKey = receipt?.licenseKey || 'NOV-ACT-COMMERCIAL';
+    downloadSecureWbexFile(planName, licKey, planName);
   };
   const handlePrintInvoice = () => {
     window.print();
@@ -6383,70 +6567,89 @@ Provide:
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Ansys ACT Wizards</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Automate your FEA workflows with our premium .WBEX extensions</p>
+                  <h2 className="text-lg font-black text-slate-900">Ansys ACT Extension Wizards (.WBEX)</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Automate your local Ansys Workbench & Mechanical workflows with our verified commercial extensions</p>
                 </div>
                 <div className="w-10 h-10 bg-[#e65100]/10 rounded-full flex items-center justify-center">
                   <Package className="w-5 h-5 text-[#e65100]" />
                 </div>
               </div>
-              <div className="p-6 space-y-4">
-                {[
-                  { id: 'full', name: 'Full Nozzle Ansys Act Wizard (.WBEX)', desc: 'Complete parametric modeling, meshing, and analysis for full nozzle configurations.', icon: <Box className="w-6 h-6 text-[#2874f0]" /> },
-                  { id: 'shell', name: 'Shell Nozzle Ansys Act Wizard (.WBEX)', desc: 'Specialized workflow for shell nozzle FEA with automatic report generation.', icon: <Cylinder className="w-6 h-6 text-[#2874f0]" /> },
-                  { id: 'head', name: 'Head Nozzle Ansys Act Wizard (.WBEX)', desc: 'Advanced parametric analysis for head nozzle connections.', icon: <Disc className="w-6 h-6 text-[#2874f0]" /> },
-                ].map((item, i) => (
-                  <div key={i} className="flex flex-col sm:flex-row items-center justify-between p-5 border border-slate-200 rounded-xl hover:border-[#2874f0]/40 transition-all bg-white hover:shadow-md">
-                    <div className="flex items-center gap-4 mb-4 sm:mb-0 w-full sm:w-auto">
-                      <div className="w-12 h-12 bg-[#e8f0fe] rounded-xl flex items-center justify-center shrink-0">
-                        {item.icon}
+              <div className="p-6 space-y-5">
+                {ANSYS_WIZARDS.map((item, i) => {
+                  const purchasedJob = (jobs || []).find(j => {
+                    const isCompleted = (j.status || '').toLowerCase() === 'completed';
+                    const jName = (j.name || '').toLowerCase();
+                    const isWiz = j.type === 'Wizard Purchase' || jName.includes('wizard') || jName.includes('.wbex');
+                    if (!isCompleted || !isWiz) return false;
+                    if (item.id === 'stress_strain' && (jName.includes('stress') || jName.includes('curve'))) return true;
+                    if (item.id === 'head' && jName.includes('head')) return true;
+                    if (item.id === 'shell' && jName.includes('shell')) return true;
+                    if (item.id === 'full' && (jName.includes('full') || (!jName.includes('head') && !jName.includes('shell') && !jName.includes('stress')))) return true;
+                    return false;
+                  });
+                  const isPurchased = !!purchasedJob;
+                  const itemIcon = item.id === 'stress_strain' 
+                    ? <LineChart className="w-6 h-6 text-purple-600" />
+                    : item.id === 'shell' 
+                    ? <Cylinder className="w-6 h-6 text-[#2874f0]" />
+                    : item.id === 'head'
+                    ? <Disc className="w-6 h-6 text-emerald-600" />
+                    : <Box className="w-6 h-6 text-[#e65100]" />;
+
+                  return (
+                    <div key={i} className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-5 border border-slate-200 rounded-2xl hover:border-[#2874f0]/40 transition-all bg-white hover:shadow-md gap-4">
+                      <div className="flex items-start gap-4 w-full lg:w-auto">
+                        <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center shrink-0 mt-0.5">
+                          {itemIcon}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-black text-slate-900 text-sm sm:text-base">{item.name}</span>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {item.badge}
+                            </span>
+                            {item.id === 'stress_strain' && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+                                Starts at ₹1,499/mo
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-600 font-medium max-w-xl">{item.desc}</div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                            {item.features.slice(0, 3).map((f, fi) => (
+                              <span key={fi} className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" /> {f}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-black text-slate-900">{item.name}</div>
-                        <div className="text-xs text-slate-500 mt-0.5 max-w-sm">{item.desc}</div>
+                      <div className="flex items-center gap-3 w-full lg:w-auto justify-end shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                        <button 
+                          onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                        >
+                          <PlayCircle className="w-4 h-4 text-[#2874f0]" /> Demo
+                        </button>
+                        {isPurchased ? (
+                          <button 
+                            onClick={() => downloadSecureWbexFile(item.filename, purchasedJob?.job_id_display || 'Active', item.name)}
+                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                          >
+                            <Download className="w-4 h-4" /> Download .WBEX
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
+                            className="px-6 py-2.5 bg-gradient-to-r from-[#e65100] to-[#bf360c] hover:from-[#d84315] hover:to-[#a02700] text-white text-xs sm:text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                          >
+                            <ShoppingCart className="w-4 h-4" /> Buy License
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <button 
-                        onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
-                        className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2"
-                      >
-                        <PlayCircle className="w-4 h-4" /> View Demo
-                      </button>
-                      {(() => {
-                        const purchasedJob = (jobs || []).find(j => 
-                          (j.status || '').toLowerCase() === 'completed' &&
-                          (j.type === 'Wizard Purchase' || (j.name && j.name.toLowerCase().includes('wizard')))
-                        );
-                        const isPurchased = !!purchasedJob;
-                        if (isPurchased) {
-                          return (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <button 
-                                onClick={() => {
-                                  window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
-                                  showNotification("Downloading " + item.name + " (.WBEX)...", "success", "Wizard Download");
-                                }}
-                                className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
-                              >
-                                <Download className="w-4 h-4" /> Download (.WBEX)
-                              </button>
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <button 
-                              onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
-                              className="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-[#e65100] to-[#bf360c] hover:from-[#d84315] hover:to-[#a02700] text-white text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
-                            >
-                              <ShoppingCart className="w-4 h-4" /> Buy
-                            </button>
-                          );
-                        }
-                      })()}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )} {profileTab === 'community' && (
@@ -6578,7 +6781,7 @@ Provide:
           <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <span className="flex items-center gap-3 font-black text-lg text-slate-900">
-                <Package className="w-5 h-5 text-[#e65100]" /> Select Subscription - {selectedWizardForPricing.name.split(' Ansys')[0]}
+                <Package className="w-5 h-5 text-[#e65100]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
               </span>
               <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
                 <X className="w-5 h-5"/>
@@ -6586,33 +6789,49 @@ Provide:
             </div>
             <div className="p-6 bg-slate-50">
               <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-black uppercase mb-2">
+                  <Package className="w-3.5 h-3.5 text-[#e65100]" /> {selectedWizardForPricing.badge || 'Commercial Node-Locked'}
+                </div>
                 <h3 className="text-xl font-black text-slate-900">Choose your licensing term</h3>
                 <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {[
+                {(selectedWizardForPricing.pricing || [
                   { term: '1 Month', price: '₹4,999', desc: 'Short-term access for single projects', workstations: 1, recommend: false },
                   { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
                   { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
-                ].map((plan, i) => (
+                ]).map((plan, i) => (
                   <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#e65100] shadow-md ring-4 ring-[#e65100]/10' : 'border-slate-200 hover:border-slate-300'}`}>
                     {plan.recommend && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e65100] text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
                         Recommended
                       </div>
                     )}
-                    <div className="p-5 flex-1 text-center">
-                      <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
-                      <div className="text-3xl font-black text-slate-900">{plan.price}</div>
-                      <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
-                      <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
-                      <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
-                        <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
+                    <div className="p-5 flex-1 text-center flex flex-col justify-between">
+                      <div>
+                        <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
+                        <div className="text-3xl font-black text-slate-900">{plan.price}</div>
+                        <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
+                        <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
+                        <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
+                          <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
+                        </div>
                       </div>
                       <button
                         onClick={() => {
                           setIsWizardPricingOpen(false);
-                          handleRazorpayCheckout(`${selectedWizardForPricing.name} (${plan.term} License)`, plan.price, 'wizard_purchase', { term: plan.term, workstations: plan.workstations, productName: selectedWizardForPricing.name });
+                          handleRazorpayCheckout(
+                            `${selectedWizardForPricing.name} (${plan.term} License)`,
+                            plan.price,
+                            'wizard_purchase',
+                            {
+                              term: plan.term,
+                              workstations: plan.workstations,
+                              productName: selectedWizardForPricing.name,
+                              wizardId: selectedWizardForPricing.id,
+                              filename: selectedWizardForPricing.filename
+                            }
+                          );
                         }}
                         className={`w-full py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#e65100] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                       >
@@ -6624,7 +6843,7 @@ Provide:
               </div>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2">Secure Payments Via</span>
-                {['UPI', 'Visa', 'Mastercard', 'Net Banking', 'PayPal'].map(m => (
+                {['UPI', 'Visa', 'Mastercard', 'Net Banking', 'RuPay'].map(m => (
                   <span key={m} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">{m}</span>
                 ))}
               </div>
@@ -6936,14 +7155,13 @@ Provide:
                   </div> <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                     <button 
                       onClick={() => {
-                        window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
-                        downloadAnsysWbexFile(completedInvoice.wbexFilename, completedInvoice.licenseKey, completedInvoice.productName);
+                        downloadSecureWbexFile(completedInvoice.wbexFilename || 'Shell_Nozzle.wbex', completedInvoice.licenseKey, completedInvoice.productName);
                       }}
                       className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-105"
                     >
                       <Download className="w-4 h-4" /> Download Ansys Wizard (.WBEX)
                     </button>
-                    <span className="text-xs text-slate-500 font-medium">Auto-authorized binary archive for ANSYS Workbench</span>
+                    <span className="text-xs text-slate-500 font-medium">Secure local direct binary download for ANSYS Workbench</span>
                   </div>
                 </div>
               )} <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">

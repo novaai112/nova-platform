@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   BookOpen,
   Search,
@@ -618,6 +618,82 @@ export default function NovaHelpContent({ onNavigateBack }) {
           </div>
         </div>
       )
+    },
+    {
+      id: 'ansys_wizards_suite',
+      category: 'wizards',
+      title: 'Ansys ACT Wizards (.WBEX) & Stress-Strain Curve Generator',
+      badge: 'Workbench ACT Extensions',
+      summary: 'Automated 1-click FEA mesh & geometry generation for Shell Nozzles, Head Nozzles, Full Nozzles, and ASME Section VIII-2 Annex 3-D Stress-Strain curves.',
+      content: (
+        <div className="space-y-8">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black uppercase mb-3">
+              <Zap className="w-4 h-4 text-emerald-600" /> ACT Automation Suite: Direct ANSYS Workbench Add-ins
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+              Ansys ACT Extensions (.WBEX) Architecture & Automation
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium mt-2">
+              ANSYS Customization Toolkit (ACT) extensions (<code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold text-slate-800">.wbex</code>) integrate directly into the ANSYS Mechanical and Workbench interface to automate tedious geometry slicing, automatic weld prep, hex-dominant structured mesh generation, boundary condition mapping, and non-linear material property generation.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-sm">1. Shell Nozzle Wizard</span>
+                <span className="text-[11px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-800">₹4,999 / mo</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Automates cylindrical shell-to-nozzle intersections with reinforcing pads, fillet welds, automatic local coordinate systems, and ASME Section VIII Div 2 Part 5 SCL paths.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-sm">2. Head Nozzle Wizard (1.5X)</span>
+                <span className="text-[11px] font-black px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">₹7,499 / mo</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Parametric 2:1 Ellipsoidal, Hemispherical, and Torispherical head nozzle modeling with oblique radial offsets, knuckle transition stress paths, and automatic contact setup.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-sm">3. Full Nozzle Wizard (2X)</span>
+                <span className="text-[11px] font-black px-2 py-0.5 rounded bg-purple-100 text-purple-800">₹9,999 / mo</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Complete unified pressure vessel package combining Shell, Heads, standard ANSI B16.5 flanges, blind covers, bolting pretension, and multi-load combinations (internal pressure + WRC nozzle loads).
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-900 text-sm">4. Stress-Strain Curve Wizard</span>
+                <span className="text-[11px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">₹1,499 / mo</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Generates all types of non-linear true stress-strain curves in Ansys Engineering Data: Multilinear Isotropic (MISO), Kinematic Hardening (KINH), Ramberg-Osgood, and ASME Section VIII-2 Annex 3-D multi-temperature models.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+            <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> How to Install & License .WBEX Files
+            </h4>
+            <ol className="list-decimal list-inside text-xs text-slate-600 space-y-1.5 font-medium">
+              <li>Purchase and download the verified <code className="bg-white px-1.5 py-0.5 rounded border font-mono">.wbex</code> file directly from your user dashboard.</li>
+              <li>Launch ANSYS Workbench &rarr; Click <strong>Extensions</strong> on top menu &rarr; <strong>Install Extension...</strong></li>
+              <li>Select the downloaded <code className="bg-white px-1.5 py-0.5 rounded border font-mono">.wbex</code> file &rarr; Click <strong>Open</strong>.</li>
+              <li>Go to <strong>Extensions</strong> &rarr; <strong>Manage Extensions...</strong> &rarr; Check the box for your wizard to activate the custom toolbar in SpaceClaim and Mechanical.</li>
+            </ol>
+          </div>
+        </div>
+      )
     }
   ];
 
@@ -634,7 +710,8 @@ export default function NovaHelpContent({ onNavigateBack }) {
 
   return (
     <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8">
-      <div className="max-w-[1240px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4"> <div className="bg-gradient-to-r from-slate-950 via-[#0c2340] to-indigo-950 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800">
+      <div className="max-w-[1240px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
+        <div className="bg-gradient-to-r from-slate-950 via-[#0c2340] to-indigo-950 rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-slate-800">
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="relative z-10 max-w-3xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-black uppercase tracking-wider border border-indigo-400/30">
@@ -646,7 +723,9 @@ export default function NovaHelpContent({ onNavigateBack }) {
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
               Exhaustive technical documentation, mathematical derivations, closed-form formulas, FEA Design-by-Analysis (Part 5) standards, WRC-107/537 local stress evaluation, and fabrication rules.
             </p>
-          </div> <div className="mt-6 relative max-w-xl">
+          </div>
+
+          <div className="mt-6 relative max-w-xl">
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input 
               type="text"
@@ -664,9 +743,12 @@ export default function NovaHelpContent({ onNavigateBack }) {
               </button>
             )}
           </div>
-        </div> <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
           {[
             { id: 'all', label: 'All Chapters' },
+            { id: 'wizards', label: 'Ansys ACT Wizards (.WBEX)' },
             { id: 'philosophy', label: 'Div 1 vs Div 2' },
             { id: 'formulas', label: 'Shell & Head Formulas' },
             { id: 'nozzles', label: 'Nozzles & WRC-107' },
