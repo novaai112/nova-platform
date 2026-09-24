@@ -2402,10 +2402,12 @@ export default function App() {
   };
   const renderJobDetailsModal = () => {
     if (!selectedJobDetails) return null;
+
     const isSuccess = selectedJobDetails.status === 'Completed' || selectedJobDetails.status === 'Success';
     const isFailed = selectedJobDetails.status === 'Failed';
     const isPending = selectedJobDetails.status === 'Pending';
     const isProcessing = !isSuccess && !isFailed && !isPending;
+
     const statusLabel = selectedJobDetails.status;
     let payloads = selectedJobDetails.json_payload;
     if (typeof payloads === 'string') {
@@ -2413,6 +2415,7 @@ export default function App() {
     }
     if (!Array.isArray(payloads)) payloads = [payloads];
     const isBatch = payloads.length > 1;
+
     const getBatchItem = (arrStr, idx, fallback) => {
       if (!arrStr) return fallback;
       try {
@@ -2431,13 +2434,16 @@ export default function App() {
       } catch (e) {}
       return fallback;
     };
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div
           className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
           onClick={() => setIsJobDetailsOpen(false)}
         />
+
         <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-4 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
+
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</span>
@@ -2446,6 +2452,7 @@ export default function App() {
               </span>
               {!isBatch && <AnimatedStatusBadge status={statusLabel} />}
             </div>
+
             <button
               onClick={() => setIsJobDetailsOpen(false)}
               title="Close"
@@ -2454,11 +2461,14 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
               <span className="font-black text-[#2563eb] text-sm mt-1 block">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
             </div>
+
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Type of Analysis</span>
               <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5 mt-1">
@@ -2466,13 +2476,16 @@ export default function App() {
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
             </div>
+
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
               <span className="font-bold text-slate-700 text-xs mt-1 block">
                 {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
+
           </div>
+
           {isFailed && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between">
@@ -2497,107 +2510,80 @@ export default function App() {
               </div>
             </div>
           )}
+
           {isPending && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-900 font-bold">
               <Clock className="w-5 h-5 text-amber-600 shrink-0" />
               <span>Job is queued. The backend simulation worker will pick it up shortly.</span>
             </div>
           )}
-          <div className="pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
-            {(() => {
-              const jobInvoice = getJobInvoiceData(selectedJobDetails);
-              if (jobInvoice) {
-                return (
-                  <div className="flex flex-col gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-                      <div>
-                        <div className="text-[10px] font-black uppercase tracking-wider text-[#2874f0]">Purchased Software License</div>
-                        <div className="font-mono text-base font-black text-slate-900 mt-0.5">{jobInvoice.licenseKey}</div>
-                      </div>
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-full border border-emerald-300">
-                        ● Active (Expires: {jobInvoice.expiryDate})
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {jobInvoice.isWizard && (
-                        <button
-                          onClick={() => {
-                            window.open("https://drive.google.com/file/d/1-O1FtuZ4lfcTZecTcaKIZuqpISAdkxVS/view?usp=sharing", "_blank");
-                            downloadAnsysWbexFile(jobInvoice.wbexFilename, jobInvoice.licenseKey, jobInvoice.productName);
-                          }}
-                          className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md hover:scale-105"
-                        >
-                          <Download className="w-4 h-4" /> Download Ansys Wizard (.WBEX)
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
 
-              return payloads.map((p, idx) => {
-                const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
-                const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
-                const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
-                const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
-                const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
-                
-                return (
-                  <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
-                    {isBatch && (
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                        <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
-                        <AnimatedStatusBadge status={pStatus} />
-                      </div>
-                    )}
-                    <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
-                      <button
-                        onClick={() => generateInputPDF(selectedJobDetails, idx)}
-                        title="Download User Input Parameters PDF"
-                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-violet-600" />
-                        Input Parameters PDF{labelSuffix}
-                      </button>
-                      {pReportUrl ? (
-                        <a
-                          href={pReportUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Download MS Word FEA Report (.docx)"
-                          className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                          View Report{labelSuffix}
-                        </a>
-                      ) : isPSuccess ? (
-                        <button
-                          onClick={() => generateAndOpenReport(selectedJobDetails)}
-                          title="View Analysis Report"
-                          className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                          View Report{labelSuffix}
-                        </button>
-                      ) : null}
-                      {pResultUrl && (
-                        <a
-                          href={pResultUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Download complete ANSYS simulation archive"
-                          className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Full Analysis{labelSuffix} (.zip)
-                        </a>
-                      )}
+          <div className="pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
+            {payloads.map((p, idx) => {
+              const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
+              const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
+              const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
+              const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
+              const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
+              
+              return (
+                <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                  {isBatch && (
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                      <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
+                      <AnimatedStatusBadge status={pStatus} />
                     </div>
+                  )}
+                  <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
+                    <button
+                      onClick={() => generateInputPDF(selectedJobDetails, idx)}
+                      title="Download User Input Parameters PDF"
+                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-violet-600" />
+                      Input Parameters PDF{labelSuffix}
+                    </button>
+
+                    {pReportUrl ? (
+                      <a
+                        href={pReportUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download MS Word FEA Report (.docx)"
+                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        View Report{labelSuffix}
+                      </a>
+                    ) : isPSuccess ? (
+                      <button
+                        onClick={() => generateAndOpenReport(selectedJobDetails)}
+                        title="View Analysis Report"
+                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        View Report{labelSuffix}
+                      </button>
+                    ) : null}
+
+                    {pResultUrl && (
+                      <a
+                        href={pResultUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Download complete ANSYS simulation archive"
+                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Full Analysis{labelSuffix} (.zip)
+                      </a>
+                    )}
                   </div>
-                );
-              });
-            })()}
+                </div>
+              );
+            })}
           </div>
+
         </div>
       </div>
     );
