@@ -403,14 +403,32 @@ const DEFAULT_NOVA_COMMUNITY_COMMENTS = {
 
 export const ANSYS_WIZARDS = [
   {
+    id: 'full',
+    name: 'Full Nozzle Ansys Act Wizard (.WBEX)',
+    shortName: 'Full Nozzle ACT Wizard',
+    filename: 'Full_Nozzle.wbex',
+    desc: 'Complete parametric modeling, meshing, and analysis for full nozzle configurations.',
+    curveTypes: null,
+    features: [
+      'Complete Shell & Head Nozzle Integration',
+      'Automated Hex-Dominant Meshing',
+      'ASME VIII-2 Part 5 Linearization',
+      'Multi-Load Combinations (P + V + M + T)',
+      'Instant Word (.docx) FEA Report'
+    ],
+    pricing: [
+      { term: '1 Month', price: '₹9,999', numericPrice: 9999, desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹24,999', numericPrice: 24999, desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹39,999', numericPrice: 39999, desc: 'Best value for continuous usage', workstations: 2, recommend: true }
+    ]
+  },
+  {
     id: 'shell',
-    name: 'Shell Nozzle Ansys ACT Wizard (.WBEX)',
+    name: 'Shell Nozzle Ansys Act Wizard (.WBEX)',
     shortName: 'Shell Nozzle ACT Wizard',
     filename: 'Shell_Nozzle.wbex',
-    tag: 'Base Version',
-    multiplier: 1.0,
-    desc: 'Specialized automated parametric FEA workflow for cylindrical & conical shell nozzle junctions with ASME Section VIII Div 2 Part 5 stress linearization and automated report generation.',
-    badge: 'Standard Base',
+    desc: 'Specialized workflow for shell nozzle FEA with automatic report generation.',
+    curveTypes: null,
     features: [
       'Cylindrical & Conical Shell Nozzles',
       'Automated Hex-Dominant Meshing',
@@ -426,68 +444,47 @@ export const ANSYS_WIZARDS = [
   },
   {
     id: 'head',
-    name: 'Head Nozzle Ansys ACT Wizard (.WBEX)',
+    name: 'Head Nozzle Ansys Act Wizard (.WBEX)',
     shortName: 'Head Nozzle ACT Wizard',
     filename: 'Head_Nozzle.wbex',
-    tag: '1.5X Price',
-    multiplier: 1.5,
-    desc: 'Advanced parametric analysis for vessel head nozzle connections (Hemispherical, 2:1 Ellipsoidal, Torispherical, Conical heads) with automatic ASME stress categorization and validation.',
-    badge: '1.5X Shell Nozzle',
+    desc: 'Advanced parametric analysis for head nozzle connections.',
+    curveTypes: null,
     features: [
       'Hemispherical, Ellipsoidal & Torispherical Heads',
-      'Radial & Hillside (Off-Center) Nozzle Connections',
+      'Radial & Hillside (Off-Center) Connections',
       'Automated Solid Modeling & Contact Pairing',
       'ASME Section VIII Div 2 Stress Linearization',
       'Audit-Ready Mechanical Documentation'
     ],
     pricing: [
-      { term: '1 Month', price: '₹7,499', numericPrice: 7499, desc: '1.5X Shell Nozzle — Single project access', workstations: 1, recommend: false },
-      { term: '3 Months', price: '₹18,749', numericPrice: 18749, desc: '1.5X Shell Nozzle — Multi-vessel engineering', workstations: 1, recommend: false },
-      { term: '6 Months', price: '₹29,999', numericPrice: 29999, desc: '1.5X Shell Nozzle — Best value commercial license', workstations: 2, recommend: true }
-    ]
-  },
-  {
-    id: 'full',
-    name: 'Full Nozzle Ansys ACT Wizard (.WBEX)',
-    shortName: 'Full Nozzle ACT Wizard',
-    filename: 'Full_Nozzle.wbex',
-    tag: '2X Price',
-    multiplier: 2.0,
-    desc: 'Complete parametric modeling, meshing, and elastic-plastic analysis for ALL nozzle configurations (both Shell and all Vessel Head types) with multi-load combinations and full report generation.',
-    badge: '2X Shell Nozzle · Complete Suite',
-    features: [
-      'Includes ALL Shell & ALL Vessel Head Types',
-      'Pad Reinforced, Self-Reinforced & Weldolet',
-      'Multi-Load Case Combinations (P + V + M + T)',
-      'Automated ASME Div 1 & Div 2 Compliance Reports',
-      'Highest Priority Support & Free Version Updates'
-    ],
-    pricing: [
-      { term: '1 Month', price: '₹9,999', numericPrice: 9999, desc: '2X Shell Nozzle — Complete nozzle suite', workstations: 1, recommend: false },
-      { term: '3 Months', price: '₹24,999', numericPrice: 24999, desc: '2X Shell Nozzle — Extended engineering term', workstations: 1, recommend: false },
-      { term: '6 Months', price: '₹39,999', numericPrice: 39999, desc: '2X Shell Nozzle — Maximum value commercial team license', workstations: 2, recommend: true }
+      { term: '1 Month', price: '₹7,499', numericPrice: 7499, desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹18,749', numericPrice: 18749, desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹29,999', numericPrice: 29999, desc: 'Best value for continuous usage', workstations: 2, recommend: true }
     ]
   },
   {
     id: 'stress_strain',
-    name: 'Stress-Strain Curve Ansys ACT Wizard (.WBEX)',
+    name: 'Stress-Strain Curve Ansys Act Wizard (.WBEX)',
     shortName: 'Stress-Strain Curve ACT Wizard',
     filename: 'Stress-Strain_Curve.wbex',
-    tag: '₹1,499 / Month',
-    multiplier: null,
-    desc: 'Automates all types of Stress-Strain Curve generation directly inside Ansys Workbench Engineering Data: True Stress-Strain, Multilinear Plasticity (MISO/KINH), Ramberg-Osgood, and ASME VIII-2 Annex 3-D temperature-dependent curves.',
-    badge: 'Material Plasticity Specialist',
+    desc: 'Automated generation of non-linear stress-strain curves for Ansys Engineering Data.',
+    curveTypes: [
+      'True Stress-Strain',
+      'Cyclic Stress-Strain',
+      'Isochronous Stress-Strain',
+      'Tangent Modulus Stress-Strain'
+    ],
     features: [
-      'All Types of Stress-Strain Curves in Ansys',
-      'Ramberg-Osgood Non-Linear Plasticity Model',
-      'Multilinear Isotropic (MISO) & Kinematic (KINH) Hardening',
-      'ASME Section VIII Div 2 Annex 3-D Plasticity Derivation',
+      'True Stress-Strain Curves',
+      'Cyclic Stress-Strain Curves',
+      'Isochronous Stress-Strain Curves',
+      'Tangent Modulus Stress-Strain Curves',
       'Direct 1-Click Injection into Ansys Engineering Data'
     ],
     pricing: [
-      { term: '1 Month', price: '₹1,499', numericPrice: 1499, desc: 'Direct 1-Month Engineering Data automation', workstations: 1, recommend: false },
-      { term: '3 Months', price: '₹3,749', numericPrice: 3749, desc: 'Extended 3-Month material modeling term', workstations: 1, recommend: false },
-      { term: '6 Months', price: '₹5,999', numericPrice: 5999, desc: 'Best value continuous plasticity workflow', workstations: 2, recommend: true }
+      { term: '1 Month', price: '₹1,499', numericPrice: 1499, desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+      { term: '3 Months', price: '₹3,749', numericPrice: 3749, desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+      { term: '6 Months', price: '₹5,999', numericPrice: 5999, desc: 'Best value for continuous usage', workstations: 2, recommend: true }
     ]
   }
 ];
@@ -6564,17 +6561,17 @@ Provide:
               </div>
             </div>
           )} {profileTab === 'wizard' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
               <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Ansys ACT Extension Wizards (.WBEX)</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Automate your local Ansys Workbench & Mechanical workflows with our verified commercial extensions</p>
+                  <h2 className="text-xl font-bold text-slate-900">Ansys ACT Wizards</h2>
+                  <p className="text-xs text-slate-500 mt-1">Automate your FEA workflows with our premium .WBEX extensions</p>
                 </div>
-                <div className="w-10 h-10 bg-[#e65100]/10 rounded-full flex items-center justify-center">
-                  <Package className="w-5 h-5 text-[#e65100]" />
+                <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-[#d84315]" />
                 </div>
               </div>
-              <div className="p-6 space-y-5">
+              <div className="p-6 space-y-4">
                 {ANSYS_WIZARDS.map((item, i) => {
                   const purchasedJob = (jobs || []).find(j => {
                     const isCompleted = (j.status || '').toLowerCase() === 'completed';
@@ -6589,61 +6586,44 @@ Provide:
                   });
                   const isPurchased = !!purchasedJob;
                   const itemIcon = item.id === 'stress_strain' 
-                    ? <LineChart className="w-6 h-6 text-purple-600" />
+                    ? <LineChart className="w-6 h-6 text-[#2874f0]" />
                     : item.id === 'shell' 
                     ? <Cylinder className="w-6 h-6 text-[#2874f0]" />
                     : item.id === 'head'
-                    ? <Disc className="w-6 h-6 text-emerald-600" />
-                    : <Box className="w-6 h-6 text-[#e65100]" />;
+                    ? <Disc className="w-6 h-6 text-[#2874f0]" />
+                    : <Box className="w-6 h-6 text-[#2874f0]" />;
 
                   return (
-                    <div key={i} className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-5 border border-slate-200 rounded-2xl hover:border-[#2874f0]/40 transition-all bg-white hover:shadow-md gap-4">
-                      <div className="flex items-start gap-4 w-full lg:w-auto">
-                        <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center shrink-0 mt-0.5">
+                    <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-200 rounded-2xl bg-white hover:border-slate-300 transition-all gap-4 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center shrink-0">
                           {itemIcon}
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-black text-slate-900 text-sm sm:text-base">{item.name}</span>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                              {item.badge}
-                            </span>
-                            {item.id === 'stress_strain' && (
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200">
-                                Starts at ₹1,499/mo
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-600 font-medium max-w-xl">{item.desc}</div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
-                            {item.features.slice(0, 3).map((f, fi) => (
-                              <span key={fi} className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                                <Check className="w-3 h-3 text-emerald-600 shrink-0" /> {f}
-                              </span>
-                            ))}
-                          </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name}</h3>
+                          <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 w-full lg:w-auto justify-end shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                         <button 
                           onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
-                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2"
                         >
-                          <PlayCircle className="w-4 h-4 text-[#2874f0]" /> Demo
+                          <PlayCircle className="w-4 h-4 text-slate-700" /> View Demo
                         </button>
                         {isPurchased ? (
                           <button 
                             onClick={() => downloadSecureWbexFile(item.filename, purchasedJob?.job_id_display || 'Active', item.name)}
-                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2"
                           >
                             <Download className="w-4 h-4" /> Download .WBEX
                           </button>
                         ) : (
                           <button 
                             onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
-                            className="px-6 py-2.5 bg-gradient-to-r from-[#e65100] to-[#bf360c] hover:from-[#d84315] hover:to-[#a02700] text-white text-xs sm:text-sm font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
+                            className="px-6 py-2.5 bg-gradient-to-r from-[#d84315] to-[#bf360c] hover:from-[#c23b12] hover:to-[#a72e09] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:scale-105"
                           >
-                            <ShoppingCart className="w-4 h-4" /> Buy License
+                            <ShoppingCart className="w-4 h-4" /> Buy
                           </button>
                         )}
                       </div>
@@ -6745,7 +6725,7 @@ Provide:
           <div className="absolute inset-0 bg-black/60" onClick={() => setIsWizardDemoOpen(false)}></div>
           <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
             <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
-              <span className="flex items-center gap-3 font-black text-lg">
+              <span className="flex items-center gap-3 font-bold text-lg">
                 <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
               </span>
               <button onClick={() => setIsWizardDemoOpen(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
@@ -6764,14 +6744,33 @@ Provide:
                 className="w-full h-full"
               ></iframe>
             </div>
-            <div className="px-6 py-4 bg-slate-800 flex justify-between items-center text-slate-300">
-              <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
-              <button 
-                onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
-                className="px-6 py-2.5 bg-[#e65100] hover:bg-[#bf360c] text-white font-black rounded-xl shadow-md transition-all flex items-center gap-2"
-              >
-                <ShoppingCart className="w-4 h-4" /> Get This Wizard
-              </button>
+            <div className="px-6 py-4 bg-slate-800 border-t border-slate-700 text-slate-300 space-y-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
+                <button 
+                  onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
+                  className="px-6 py-2.5 bg-[#d84315] hover:bg-[#bf360c] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0"
+                >
+                  <ShoppingCart className="w-4 h-4" /> Buy
+                </button>
+              </div>
+              {(selectedWizardForDemo.id === 'stress_strain' || selectedWizardForDemo.curveTypes) && (
+                <div className="pt-2 border-t border-slate-700/70">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Supported Curve Types:</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    {(selectedWizardForDemo.curveTypes || [
+                      'True Stress-Strain',
+                      'Cyclic Stress-Strain',
+                      'Isochronous Stress-Strain',
+                      'Tangent Modulus Stress-Strain'
+                    ]).map((curve, ci) => (
+                      <div key={ci} className="bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-700 text-emerald-400 font-medium text-center">
+                        {curve}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -6780,8 +6779,8 @@ Provide:
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsWizardPricingOpen(false)}></div>
           <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <span className="flex items-center gap-3 font-black text-lg text-slate-900">
-                <Package className="w-5 h-5 text-[#e65100]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
+              <span className="flex items-center gap-3 font-bold text-lg text-slate-900">
+                <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
               </span>
               <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
                 <X className="w-5 h-5"/>
@@ -6789,10 +6788,7 @@ Provide:
             </div>
             <div className="p-6 bg-slate-50">
               <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-800 text-xs font-black uppercase mb-2">
-                  <Package className="w-3.5 h-3.5 text-[#e65100]" /> {selectedWizardForPricing.badge || 'Commercial Node-Locked'}
-                </div>
-                <h3 className="text-xl font-black text-slate-900">Choose your licensing term</h3>
+                <h3 className="text-xl font-bold text-slate-900">Choose your licensing term</h3>
                 <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -6801,9 +6797,9 @@ Provide:
                   { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
                   { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
                 ]).map((plan, i) => (
-                  <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#e65100] shadow-md ring-4 ring-[#e65100]/10' : 'border-slate-200 hover:border-slate-300'}`}>
+                  <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#d84315] shadow-md ring-4 ring-[#d84315]/10' : 'border-slate-200 hover:border-slate-300'}`}>
                     {plan.recommend && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e65100] text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d84315] text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
                         Recommended
                       </div>
                     )}
@@ -6833,7 +6829,7 @@ Provide:
                             }
                           );
                         }}
-                        className={`w-full py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#e65100] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#d84315] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                       >
                         <CreditCard className="w-4 h-4" /> Select {plan.term}
                       </button>
