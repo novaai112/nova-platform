@@ -339,10 +339,11 @@ export default function App() {
   const [newPostText, setNewPostText] = useState('');
   const [composerTitle, setComposerTitle] = useState('');
   const [composerCategory, setComposerCategory] = useState('ASME Codes');
-  const [composerTags, setComposerTags] = useState(['ASMEDiv2', 'FEABenchmark']);
-  const [composerTagInput, setComposerTagInput] = useState('');
-  const [composerActiveTab, setComposerActiveTab] = useState('text'); // 'text' | 'code' | 'media' | 'preview'
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [codeModalLang, setCodeModalLang] = useState('python');
+  const [codeModalFilename, setCodeModalFilename] = useState('ansys_script.py');
+  const [codeModalContent, setCodeModalContent] = useState('');
   const [showAiDraftModal, setShowAiDraftModal] = useState(false);
   const [aiDraftPrompt, setAiDraftPrompt] = useState('');
   const [isAiDraftLoading, setIsAiDraftLoading] = useState(false);
@@ -352,9 +353,6 @@ export default function App() {
   const [isPosting, setIsPosting] = useState(false);
   const [newPostMedia, setNewPostMedia] = useState(null); // { data, type: 'image'|'video', name, size }
   const [newPostCode, setNewPostCode] = useState(null); // { content, filename, lines, size, lang }
-  const [showCodeInputDrawer, setShowCodeInputDrawer] = useState(false);
-  const [codePastedText, setCodePastedText] = useState('');
-  const [codeFilenameInput, setCodeFilenameInput] = useState('ansys_script.py');
   const [copiedCodeId, setCopiedCodeId] = useState(null);
   const [selectedMediaModal, setSelectedMediaModal] = useState(null);
   const [editingPostId, setEditingPostId] = useState(null);
@@ -364,7 +362,6 @@ export default function App() {
   const [editCommentText, setEditCommentText] = useState('');
   const [communityActiveTab, setCommunityActiveTab] = useState('all'); // 'all' | 'hot' | 'latest' | 'solved' | 'bookmarked' | 'my_posts'
   const [communitySort, setCommunitySort] = useState('latest'); // 'latest' | 'upvotes' | 'comments'
-  const [communitySelectedTag, setCommunitySelectedTag] = useState(null);
   const [showAskAiCommunityModal, setShowAskAiCommunityModal] = useState(false);
   const [aiCommunityQuery, setAiCommunityQuery] = useState('');
   const [aiCommunityResponse, setAiCommunityResponse] = useState('');
@@ -1058,8 +1055,8 @@ export default function App() {
         name: file.name,
         size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
       });
-      setComposerActiveTab('media');
-      showNotification(`Attached ${isVideo ? 'video' : 'image'}: ${file.name}`, 'info', 'Attachment');
+      setShowAttachMenu(false);
+      showNotification(`Attached ${isVideo ? 'video' : 'image'}: ${file.name}`, 'info', 'Media Attached');
     };
     reader.readAsDataURL(file);
   };
@@ -1084,7 +1081,11 @@ export default function App() {
       setComposerCodeFilename(file.name);
       setComposerCodeContent(text);
       setComposerCodeLang(lang);
-      setComposerActiveTab('code');
+      setCodeModalFilename(file.name);
+      setCodeModalContent(text);
+      setCodeModalLang(lang);
+      setShowCodeModal(true);
+      setShowAttachMenu(false);
       showNotification(`Loaded script: ${file.name} (${lines} lines)`, 'success', 'Script Loaded');
     };
     reader.readAsText(file);
@@ -1147,7 +1148,7 @@ export default function App() {
     const postCat = composerCategory || communityCategory || 'ASME Codes';
 
     if (!rawContent && !rawCode && !rawMedia) {
-      showNotification('Please enter discussion details, attach code, or add media.', 'error', 'Incomplete Discussion');
+      showNotification('Please type a message, attach code, or add media.', 'error', 'Empty Message');
       return;
     }
     setIsPosting(true);
@@ -1166,7 +1167,7 @@ export default function App() {
       title: generatedTitle,
       content: rawContent,
       category: postCat === 'All' ? 'ASME Codes' : postCat,
-      tags: composerTags.length > 0 ? composerTags : ['ASMEDiv2', 'FEABenchmark'],
+      tags: [],
       image_url: rawMedia?.type === 'image' ? rawMedia.data : null,
       media_url: rawMedia?.data || null,
       media_type: rawMedia?.type || null,
@@ -1215,14 +1216,15 @@ export default function App() {
     setComposerCodeContent('');
     setNewPostMedia(null);
     setNewPostCode(null);
-    setComposerActiveTab('text');
+    setShowAttachMenu(false);
+    setShowCodeModal(false);
     setIsPosting(false);
 
-    showNotification('Discussion published live & synchronized to Nova Community!', 'success', 'Community Post');
+    showNotification('Message published & synchronized live to Nova Chat!', 'success', 'Discussion');
   };
 
   const handleDeletePost = async (postId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this discussion?')) return;
+    if (!window.confirm('Are you sure you want to permanently delete this message?')) return;
     
     setCommunityPosts(prev => {
       const updated = prev.filter(p => p.id !== postId);
@@ -4624,19 +4626,6 @@ Always provide professional, precise, technically accurate, and helpful answers.
       showNotification('Discussion updated!', 'success');
     };
 
-    const handleAddComposerTag = (tagToAdd) => {
-      const clean = tagToAdd.replace(/^#/, '').trim();
-      if (!clean) return;
-      if (!composerTags.includes(clean)) {
-        setComposerTags([...composerTags, clean]);
-      }
-      setComposerTagInput('');
-    };
-
-    const handleRemoveComposerTag = (tagToRemove) => {
-      setComposerTags(composerTags.filter(t => t !== tagToRemove));
-    };
-
     const handleTriggerAiReview = (post) => {
       setSelectedPostForAi(post);
       setAiCommunityQuery(`Provide a deep technical ASME Section VIII Div 2 & Ansys FEA review for topic: "${post.title}". Verify standard compliance, suggest mesh or script improvements.`);
@@ -4708,7 +4697,6 @@ Return a JSON object strictly matching this format:
   "title": "Clear concise engineering title",
   "category": "ASME Codes",
   "content": "Detailed technical explanation of the problem, formula, and simulation procedure (3-5 sentences).",
-  "tags": ["ASMEDiv2", "NozzleAnalysis", "FEABenchmark"],
   "code_filename": "linearization_helper.py",
   "code_snippet": "# Python ACT Script snippet\\nimport mech_dpf\\nprint('Automated ASME check')\\n"
 }`;
@@ -4730,16 +4718,20 @@ Return a JSON object strictly matching this format:
             if (parsed.title) setComposerTitle(parsed.title);
             if (parsed.content) setNewPostText(parsed.content);
             if (parsed.category) setComposerCategory(parsed.category);
-            if (parsed.tags && Array.isArray(parsed.tags)) setComposerTags(parsed.tags);
             if (parsed.code_snippet) {
               setComposerCodeContent(parsed.code_snippet);
               setComposerCodeFilename(parsed.code_filename || 'ansys_script.py');
-              setComposerActiveTab('code');
+              setNewPostCode({
+                content: parsed.code_snippet,
+                filename: parsed.code_filename || 'ansys_script.py',
+                lines: parsed.code_snippet.split('\n').length,
+                size: '1.2 KB',
+                lang: 'python'
+              });
             }
-            setIsComposerOpen(true);
             setShowAiDraftModal(false);
             setIsAiDraftLoading(false);
-            showNotification('✨ AI drafted your discussion! Review and publish.', 'success');
+            showNotification('✨ AI drafted your discussion! Ready in WhatsApp Chatbar.', 'success');
             return;
           }
         }
@@ -4752,9 +4744,7 @@ Return a JSON object strictly matching this format:
         setComposerTitle(`ASME Sec VIII Div 2 Part 5 Stress Linearization & SCL Automation Workflow`);
         setNewPostText(`We are evaluating automated Stress Concentration Line (SCL) mapping across cylindrical nozzle-to-shell junctions.\n\nKey discussion points:\n1. Establishing Membrane (Pm) and Bending (Pb) stress extraction along true normal paths.\n2. Verifying allowable limits against 1.5*k*S per Paragraph 5.2.2.4.\n3. Eliminating singularity offsets at the re-entrant weld fillet.`);
         setComposerCategory('ASME Codes');
-        setComposerTags(['ASMEDiv2', 'StressLinearization', 'PythonACT', 'FEABenchmark']);
-        setComposerCodeFilename('asme_scl_evaluator.py');
-        setComposerCodeContent(`# ASME Sec VIII Div 2 Part 5 SCL Linearization Script
+        const defaultCode = `# ASME Sec VIII Div 2 Part 5 SCL Linearization Script
 import mech_dpf
 import Ans.DataProcessing as dpf
 
@@ -4769,16 +4759,23 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
     pm = scl_stress.MembraneStress.Value
     pb = scl_stress.BendingStress.Value
     print(f"[NOVA-AI] Evaluated SCL: Pm={pm:.2f} MPa, Pb={pb:.2f} MPa, Limit={1.5*allowable_s:.2f} MPa")
-    return {"Pm": pm, "Pb": pb, "Passed": (pm + pb) <= (1.5 * allowable_s)}`);
-        setComposerActiveTab('text');
-        setIsComposerOpen(true);
+    return {"Pm": pm, "Pb": pb, "Passed": (pm + pb) <= (1.5 * allowable_s)}`;
+        setComposerCodeFilename('asme_scl_evaluator.py');
+        setComposerCodeContent(defaultCode);
+        setNewPostCode({
+          content: defaultCode,
+          filename: 'asme_scl_evaluator.py',
+          lines: defaultCode.split('\n').length,
+          size: '1.4 KB',
+          lang: 'python'
+        });
         setShowAiDraftModal(false);
         setIsAiDraftLoading(false);
-        showNotification('✨ AI drafted your discussion! Review and publish.', 'success');
+        showNotification('✨ AI drafted your discussion! Ready in WhatsApp Chatbar.', 'success');
       }, 600);
     };
 
-    // Filter & Sort Logic
+    // Filter & Sort Logic (No Hashtags)
     const displayPosts = communityPosts || [];
     const filteredPosts = displayPosts.filter(p => {
       // Tab filter
@@ -4798,19 +4795,15 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
       // Category filter
       const matchCat = communityCategory === 'All' || p.category === communityCategory;
 
-      // Tag filter
-      const matchTag = !communitySelectedTag || (p.tags && p.tags.includes(communitySelectedTag));
-
       // Search filter
       const q = communitySearch.toLowerCase().trim();
       const matchSearch = !q || 
         (p.title && p.title.toLowerCase().includes(q)) ||
         (p.content && p.content.toLowerCase().includes(q)) ||
         (p.code_snippet && p.code_snippet.toLowerCase().includes(q)) ||
-        (p.user_name && p.user_name.toLowerCase().includes(q)) ||
-        (p.tags && p.tags.some(t => t.toLowerCase().includes(q)));
+        (p.user_name && p.user_name.toLowerCase().includes(q));
 
-      return matchCat && matchTag && matchSearch;
+      return matchCat && matchSearch;
     }).sort((a, b) => {
       if (communitySort === 'upvotes') {
         return (b.likes_count || 0) - (a.likes_count || 0);
@@ -4830,11 +4823,6 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
       { name: 'Meshing', icon: <Cpu className="w-4 h-4" /> },
       { name: 'Fatigue', icon: <Activity className="w-4 h-4" /> },
       { name: 'Material Tests', icon: <Thermometer className="w-4 h-4" /> }
-    ];
-
-    const trendingTags = [
-      'ASMEDiv2', 'StressLinearization', 'NozzleAnalysis', 'PythonACT', 
-      'SOLID186', 'FatigueLife', 'WRC429', 'SpaceClaim', 'ParametricDesign', 'Convergence'
     ];
 
     // Compute dynamic contributors from active posts and comments + current user
@@ -4942,7 +4930,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
           {/* 3-Column Community Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* LEFT COLUMN: Feeds, Categories, Tags, Rules (3 Cols) */}
+            {/* LEFT COLUMN: Feeds, Domains, ASME Standard (3 Cols) */}
             <div className="lg:col-span-3 space-y-5">
               
               {/* Feeds Selector Card */}
@@ -4960,7 +4948,6 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                     key={tab.id}
                     onClick={() => {
                       setCommunityActiveTab(tab.id);
-                      setCommunitySelectedTag(null);
                     }}
                     className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                       communityActiveTab === tab.id
@@ -4995,7 +4982,6 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                       key={cat.name}
                       onClick={() => {
                         setCommunityCategory(cat.name);
-                        setCommunitySelectedTag(null);
                       }}
                       className={`w-full flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
                         communityCategory === cat.name
@@ -5017,53 +5003,19 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                 })}
               </div>
 
-              {/* Trending Tags Cloud Card */}
-              <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200/90 shadow-xl space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Trending Tags</span>
-                  {communitySelectedTag && (
-                    <button 
-                      onClick={() => setCommunitySelectedTag(null)}
-                      className="text-[10px] text-rose-600 font-bold hover:underline"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {trendingTags.map(tag => {
-                    const isSelected = communitySelectedTag === tag;
-                    return (
-                      <button
-                        key={tag}
-                        onClick={() => setCommunitySelectedTag(isSelected ? null : tag)}
-                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1 ${
-                          isSelected
-                            ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        <Hash className="w-3 h-3 text-slate-400" />
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* ASME Code Guidelines Notice */}
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-3xl p-4 border border-indigo-200/80 shadow-sm space-y-2 text-xs">
                 <div className="flex items-center gap-2 font-black text-indigo-900">
                   <ShieldCheck className="w-4 h-4 text-indigo-600" /> ASME Peer Review Standard
                 </div>
                 <p className="text-slate-600 font-medium leading-relaxed text-[11px]">
-                  All shared FEA scripts and linearization procedures follow Section VIII Div 1 & 2 design-by-analysis rules. Always verify critical load cases against PE stamped deliverables.
+                  All shared FEA scripts, Python ACT automation, and linearization procedures follow Section VIII Div 1 & 2 design-by-analysis rules.
                 </p>
               </div>
 
             </div>
 
-            {/* MIDDLE COLUMN: Search, Composer, Discussions Stream (6 Cols) */}
+            {/* MIDDLE COLUMN: WhatsApp-Style Chatbox & Discussions Stream (6 Cols) */}
             <div className="lg:col-span-6 space-y-5">
               
               {/* Search & Sort Bar */}
@@ -5104,19 +5056,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                 </div>
 
                 {/* Active Filter Chips */}
-                {(communityCategory !== 'All' || communitySelectedTag || communityActiveTab !== 'all') && (
+                {(communityCategory !== 'All' || communityActiveTab !== 'all') && (
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
                     <span className="text-slate-400 font-bold text-[11px]">Active Filters:</span>
                     {communityCategory !== 'All' && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[11px]">
                         Category: {communityCategory}
                         <button onClick={() => setCommunityCategory('All')}><X className="w-3 h-3" /></button>
-                      </span>
-                    )}
-                    {communitySelectedTag && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
-                        Tag: #{communitySelectedTag}
-                        <button onClick={() => setCommunitySelectedTag(null)}><X className="w-3 h-3" /></button>
                       </span>
                     )}
                     {communityActiveTab !== 'all' && (
@@ -5129,364 +5075,276 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                 )}
               </div>
 
-              {/* SOCIAL MEDIA STYLE "WRITE / SHARE" COMPOSER */}
-              <div className="bg-white rounded-3xl p-5 border-2 border-slate-200/90 shadow-xl space-y-4">
+              {/* WHATSAPP-STYLE INTERACTIVE CHATBOX COMPOSER */}
+              <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-emerald-500/30 shadow-2xl relative">
                 
-                {/* Collapsed Social Write Trigger */}
-                {!isComposerOpen ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                {/* Chatbox Top Header / Status */}
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
                       {currentUser?.avatar ? (
-                        <img src={currentUser.avatar} alt="User" className="w-11 h-11 rounded-2xl object-cover border-2 border-blue-500 shadow-sm shrink-0" />
+                        <img src={currentUser.avatar} alt="User" className="w-9 h-9 rounded-full object-cover border-2 border-emerald-500 shadow-sm" />
                       ) : (
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-700 text-white font-black text-xs flex items-center justify-center shadow-md">
                           {currentUser?.initial || 'D'}
                         </div>
                       )}
-                      <div 
-                        onClick={() => setIsComposerOpen(true)}
-                        className="flex-1 bg-slate-100 hover:bg-slate-200/80 cursor-pointer rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-500 font-medium transition-all flex items-center justify-between"
-                      >
-                        <span>What's on your mind? Share an ASME query, FEA insight, or ACT macro...</span>
-                        <Edit3 className="w-4 h-4 text-blue-600" />
-                      </div>
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                     </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+                    <div>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => {
-                            setIsComposerOpen(true);
-                            setComposerActiveTab('media');
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                        >
-                          <Image className="w-4 h-4 text-emerald-600" /> Photo / Contour
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setIsComposerOpen(true);
-                            setComposerActiveTab('code');
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                        >
-                          <Terminal className="w-4 h-4 text-indigo-600" /> ACT Script / Macro
-                        </button>
-                        <button 
-                          onClick={() => setShowAiDraftModal(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Draft with AI
-                        </button>
+                        <span className="font-black text-xs text-slate-900">{currentUser?.name || 'Dinesh Kumar Yadav'}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                          Online
+                        </span>
                       </div>
-
-                      <button
-                        onClick={() => setIsComposerOpen(true)}
-                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-sm transition-all flex items-center gap-1.5"
-                      >
-                        <Send className="w-3.5 h-3.5" /> Write Post
-                      </button>
+                      <span className="text-[10px] text-slate-400 font-medium">WhatsApp-style Quick Discussion Chat</span>
                     </div>
                   </div>
-                ) : (
-                  /* Expanded Full Social Media Composer */
-                  <div className="space-y-4 animate-in fade-in">
-                    {/* Composer Header */}
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div className="flex items-center gap-3">
-                        {currentUser?.avatar ? (
-                          <img src={currentUser.avatar} alt="User" className="w-10 h-10 rounded-2xl object-cover border-2 border-blue-500 shadow-sm shrink-0" />
+
+                  {/* Category Selector Pill */}
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={composerCategory}
+                      onChange={(e) => setComposerCategory(e.target.value)}
+                      className="bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl px-2.5 py-1 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer transition-all"
+                    >
+                      <option value="ASME Codes">📐 ASME Codes</option>
+                      <option value="Ansys ACT">⚡ Ansys ACT</option>
+                      <option value="SpaceClaim">⚙️ SpaceClaim</option>
+                      <option value="Meshing">🕸️ Meshing</option>
+                      <option value="Fatigue">🔄 Fatigue</option>
+                      <option value="Material Tests">🔬 Material Tests</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Staged Attachments Preview Pills (Floating above chat input) */}
+                {(newPostMedia || composerCodeContent.trim() || newPostCode) && (
+                  <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 bg-slate-900 rounded-2xl text-white border border-slate-800 animate-in fade-in">
+                    
+                    {/* Staged Code Snippet Pill */}
+                    {(composerCodeContent.trim() || newPostCode) && (
+                      <div className="flex items-center gap-2 bg-slate-800 border border-indigo-500/50 px-3 py-1.5 rounded-xl text-xs">
+                        <Terminal className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <div className="font-mono text-emerald-300 font-bold truncate max-w-[150px]">
+                          {composerCodeFilename || 'script.py'}
+                        </div>
+                        <span className="text-[10px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded">
+                          {(composerCodeContent.split('\n').length || 1)} lines
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCodeModalFilename(composerCodeFilename);
+                            setCodeModalContent(composerCodeContent);
+                            setCodeModalLang(composerCodeLang);
+                            setShowCodeModal(true);
+                          }}
+                          className="text-[10px] text-indigo-300 hover:text-white font-bold underline ml-1"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setComposerCodeContent('');
+                            setNewPostCode(null);
+                          }}
+                          className="text-slate-400 hover:text-rose-400 ml-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Staged Media Pill */}
+                    {newPostMedia && (
+                      <div className="flex items-center gap-2 bg-slate-800 border border-emerald-500/50 px-3 py-1.5 rounded-xl text-xs">
+                        {newPostMedia.type === 'video' ? (
+                          <Video className="w-4 h-4 text-emerald-400 shrink-0" />
                         ) : (
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
-                            {currentUser?.initial || 'D'}
-                          </div>
+                          <img src={newPostMedia.data} alt="thumb" className="w-6 h-6 rounded object-cover border border-emerald-400" />
                         )}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-xs sm:text-sm text-slate-900">{currentUser?.name || 'Dinesh Kumar Yadav'}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black">
-                              {currentUser?.plan === 'Max' ? 'Lead Architect' : 'FEA Engineer'}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-slate-400 font-medium">Publish technical queries, Ansys macros, or ASME Div 2 interpretations</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {/* Mode Tabs */}
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl">
-                          <button
-                            onClick={() => setComposerActiveTab('text')}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                              composerActiveTab === 'text' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            Write
-                          </button>
-                          <button
-                            onClick={() => setComposerActiveTab('code')}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                              composerActiveTab === 'code' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            <Terminal className="w-3 h-3" /> Code
-                          </button>
-                          <button
-                            onClick={() => setComposerActiveTab('media')}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                              composerActiveTab === 'media' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            <Image className="w-3 h-3" /> Media
-                          </button>
-                          <button
-                            onClick={() => setComposerActiveTab('preview')}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                              composerActiveTab === 'preview' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                            }`}
-                          >
-                            <Eye className="w-3 h-3" /> Preview
-                          </button>
-                        </div>
-
-                        <button 
-                          onClick={() => setIsComposerOpen(false)}
-                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-                          title="Collapse composer"
+                        <span className="text-slate-200 font-medium truncate max-w-[140px] text-[11px]">
+                          {newPostMedia.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setNewPostMedia(null)}
+                          className="text-slate-400 hover:text-rose-400 ml-1"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
-                      </div>
-                    </div>
-
-                    {/* Title & Category Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <input 
-                        type="text" 
-                        value={composerTitle}
-                        onChange={(e) => setComposerTitle(e.target.value)}
-                        placeholder="Discussion Title (e.g. SCL Linearization in ASME Div 2)"
-                        className="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
-                      />
-                      <select
-                        value={composerCategory}
-                        onChange={(e) => setComposerCategory(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      >
-                        <option value="ASME Codes">📐 ASME Codes</option>
-                        <option value="Ansys ACT">⚡ Ansys ACT</option>
-                        <option value="SpaceClaim">⚙️ SpaceClaim</option>
-                        <option value="Meshing">🕸️ Meshing</option>
-                        <option value="Fatigue">🔄 Fatigue</option>
-                        <option value="Material Tests">🔬 Material Tests</option>
-                      </select>
-                    </div>
-
-                    {/* Tab: Write Text */}
-                    {composerActiveTab === 'text' && (
-                      <div className="space-y-3">
-                        <textarea 
-                          value={newPostText}
-                          onChange={(e) => setNewPostText(e.target.value)}
-                          placeholder="Explain your FEA setup, ASME calculation questions, boundary conditions, or simulation observations..."
-                          rows="4"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white resize-none leading-relaxed"
-                        />
                       </div>
                     )}
-
-                    {/* Tab: Code / Macro Attachment */}
-                    {composerActiveTab === 'code' && (
-                      <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-3 text-white">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <Terminal className="w-4 h-4 text-emerald-400" />
-                            <input 
-                              type="text" 
-                              value={composerCodeFilename}
-                              onChange={(e) => setComposerCodeFilename(e.target.value)}
-                              placeholder="filename.py"
-                              className="bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                            />
-                            <select
-                              value={composerCodeLang}
-                              onChange={(e) => setComposerCodeLang(e.target.value)}
-                              className="bg-slate-800 border border-slate-700 rounded-xl px-2 py-1 text-[11px] font-bold text-slate-300 focus:outline-none"
-                            >
-                              <option value="python">Python (PyMechanical)</option>
-                              <option value="apdl">APDL Macro</option>
-                              <option value="spaceclaim">SpaceClaim Script</option>
-                              <option value="json">JSON Config</option>
-                            </select>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => codeFileInputRef.current?.click()}
-                            className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-colors"
-                          >
-                            <FileCode className="w-3.5 h-3.5 text-indigo-400" /> Upload File (.py / .mac)
-                          </button>
-                        </div>
-
-                        <textarea
-                          value={composerCodeContent}
-                          onChange={(e) => setComposerCodeContent(e.target.value)}
-                          placeholder="# Paste or write your Python ACT / APDL script here..."
-                          rows="6"
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none leading-relaxed"
-                        />
-                        <div className="flex justify-between items-center text-[11px] text-slate-400">
-                          <span>{composerCodeContent.split('\n').filter(Boolean).length} lines of code</span>
-                          {composerCodeContent && (
-                            <button 
-                              onClick={() => setComposerCodeContent('')}
-                              className="text-rose-400 hover:underline"
-                            >
-                              Clear Code
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tab: Media Attachment */}
-                    {composerActiveTab === 'media' && (
-                      <div className="space-y-3">
-                        {newPostMedia ? (
-                          <div className="p-4 bg-slate-100 rounded-2xl border border-slate-200 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {newPostMedia.type === 'video' ? (
-                                <Video className="w-6 h-6 text-indigo-600" />
-                              ) : (
-                                <img src={newPostMedia.data} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-slate-300" />
-                              )}
-                              <div>
-                                <div className="text-xs font-bold text-slate-800">{newPostMedia.name}</div>
-                                <div className="text-[10px] text-slate-500 font-mono">{newPostMedia.size} • {newPostMedia.type}</div>
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => setNewPostMedia(null)}
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div 
-                            onClick={() => mediaFileInputRef.current?.click()}
-                            className="p-8 border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 rounded-2xl text-center cursor-pointer transition-all group"
-                          >
-                            <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-blue-600 mx-auto mb-2 transition-colors" />
-                            <div className="text-xs font-bold text-slate-800">Click to attach FEA Stress Contour Plot or CAD Diagram</div>
-                            <div className="text-[10px] text-slate-400 mt-1">Supports PNG, JPG, GIF, WebP, MP4 up to 15MB</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Tab: Live Preview */}
-                    {composerActiveTab === 'preview' && (
-                      <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-900">{currentUser?.name || 'Dinesh'}</span>
-                            <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">{composerCategory}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400">Just now</span>
-                        </div>
-                        <h3 className="font-black text-sm text-slate-900">{composerTitle || 'Untitled Discussion'}</h3>
-                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{newPostText || 'No text entered yet.'}</p>
-                        {composerCodeContent && (
-                          <div className="p-3 bg-slate-900 rounded-xl text-xs font-mono text-emerald-300">
-                            <div className="text-[10px] text-slate-400 mb-1">{composerCodeFilename}</div>
-                            <pre className="max-h-32 overflow-auto text-[11px]">{composerCodeContent}</pre>
-                          </div>
-                        )}
-                        {newPostMedia && newPostMedia.type === 'image' && (
-                          <img src={newPostMedia.data} alt="Preview" className="max-h-48 rounded-xl object-contain border border-slate-200 bg-slate-950" />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Tags Selector & Suggested Tags */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[11px] font-bold text-slate-400 mr-1">Tags:</span>
-                        {composerTags.map(tag => (
-                          <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200">
-                            #{tag}
-                            <button onClick={() => handleRemoveComposerTag(tag)} className="hover:text-rose-600"><X className="w-3 h-3" /></button>
-                          </span>
-                        ))}
-                        <div className="inline-flex items-center">
-                          <input 
-                            type="text" 
-                            value={composerTagInput}
-                            onChange={(e) => setComposerTagInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ',') {
-                                e.preventDefault();
-                                handleAddComposerTag(composerTagInput);
-                              }
-                            }}
-                            placeholder="+ Add tag (press Enter)"
-                            className="bg-transparent border-none text-xs font-semibold placeholder:text-slate-400 focus:outline-none px-2 py-1 w-36"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hidden File Inputs */}
-                    <input type="file" ref={mediaFileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaFileUpload} />
-                    <input type="file" ref={codeFileInputRef} accept=".py,.wbex,.mac,.inp,.apdl,.txt,.json,.js,.cpp,.c" className="hidden" onChange={handleCodeFileUpload} />
-
-                    {/* Composer Submit Footer */}
-                    <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button" 
-                          onClick={() => mediaFileInputRef.current?.click()}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                        >
-                          <Image className="w-3.5 h-3.5 text-emerald-600" /> Photo/Plot
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => codeFileInputRef.current?.click()}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                        >
-                          <FileCode className="w-3.5 h-3.5 text-indigo-600" /> Script
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => setShowAiDraftModal(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Draft with AI
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button" 
-                          onClick={() => setIsComposerOpen(false)}
-                          className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          onClick={handlePostCommunity} 
-                          disabled={isPosting || (!newPostText.trim() && !composerCodeContent.trim() && !newPostMedia)}
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all shadow-md flex items-center gap-2 disabled:opacity-40 hover:scale-105 active:scale-95"
-                        >
-                          {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                          Publish Discussion
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 )}
+
+                {/* WhatsApp Chat Input Box */}
+                <div className="relative flex items-end gap-2 bg-slate-50 border-2 border-slate-200 rounded-3xl p-2 focus-within:border-emerald-500 focus-within:bg-white transition-all">
+                  
+                  {/* Paperclip / Plus Attachment Menu Button */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachMenu(!showAttachMenu)}
+                      className={`p-2.5 rounded-full transition-all ${
+                        showAttachMenu 
+                          ? 'bg-emerald-600 text-white rotate-45 shadow-md' 
+                          : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-200/80'
+                      }`}
+                      title="Attach code, media, or draft with AI"
+                    >
+                      <Paperclip className="w-5 h-5" />
+                    </button>
+
+                    {/* WhatsApp Animated Popover Attachment Menu */}
+                    {showAttachMenu && (
+                      <div className="absolute left-0 bottom-14 z-50 bg-white rounded-3xl p-3 shadow-2xl border-2 border-slate-200/90 w-64 space-y-2 animate-in slide-in-from-bottom-3 fade-in">
+                        <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 pt-1">
+                          Attach to Chat
+                        </div>
+                        
+                        {/* 1. Code / ACT Script Modal Trigger */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            setCodeModalFilename(composerCodeFilename || 'asme_ansys_script.py');
+                            setCodeModalContent(composerCodeContent || '');
+                            setCodeModalLang(composerCodeLang || 'python');
+                            setShowCodeModal(true);
+                          }}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-indigo-50 text-left transition-colors group"
+                        >
+                          <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                            <Terminal className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-700">⚡ Code / ACT Script</div>
+                            <div className="text-[10px] text-slate-500">Dedicated Code Editor & Macro</div>
+                          </div>
+                        </button>
+
+                        {/* 2. Photo / FEA Plot Upload */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            mediaFileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-emerald-50 text-left transition-colors group"
+                        >
+                          <div className="w-9 h-9 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                            <Image className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-700">📷 Photo / FEA Plot</div>
+                            <div className="text-[10px] text-slate-500">Attach contour, CAD, or plot</div>
+                          </div>
+                        </button>
+
+                        {/* 3. Document / Script File */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            codeFileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-blue-50 text-left transition-colors group"
+                        >
+                          <div className="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                            <FileCode className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-blue-700">📁 Upload Script File</div>
+                            <div className="text-[10px] text-slate-500">.py, .mac, .wbex, .inp</div>
+                          </div>
+                        </button>
+
+                        {/* 4. Draft with AI */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachMenu(false);
+                            setShowAiDraftModal(true);
+                          }}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-purple-50 text-left transition-colors group"
+                        >
+                          <div className="w-9 h-9 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                            <Sparkles className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-purple-700">✨ Draft with AI</div>
+                            <div className="text-[10px] text-slate-500">Generate post & ASME script</div>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Textarea for WhatsApp Chat Message */}
+                  <div className="flex-1 min-w-0">
+                    <textarea
+                      value={newPostText}
+                      onChange={(e) => setNewPostText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handlePostCommunity();
+                        }
+                      }}
+                      placeholder="Type a message, ask an ASME question, or attach code... (Press Enter to send)"
+                      rows="2"
+                      className="w-full bg-transparent border-none p-2 text-xs sm:text-sm font-medium focus:outline-none resize-none placeholder:text-slate-400 leading-relaxed text-slate-800"
+                    />
+                  </div>
+
+                  {/* Dedicated Code Editor Quick Launcher */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCodeModalFilename(composerCodeFilename || 'asme_ansys_script.py');
+                      setCodeModalContent(composerCodeContent || '');
+                      setCodeModalLang(composerCodeLang || 'python');
+                      setShowCodeModal(true);
+                    }}
+                    className={`p-2.5 rounded-full transition-all shrink-0 ${
+                      composerCodeContent.trim()
+                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                        : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-200/60'
+                    }`}
+                    title="Open Dedicated Code Modal"
+                  >
+                    <Code className="w-5 h-5" />
+                  </button>
+
+                  {/* Send Button (WhatsApp Emerald Ripple) */}
+                  <button
+                    type="button"
+                    onClick={handlePostCommunity}
+                    disabled={isPosting || (!newPostText.trim() && !composerCodeContent.trim() && !newPostMedia)}
+                    className="p-3 bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-40 text-white rounded-full shadow-lg transition-all shrink-0 hover:scale-105 active:scale-95 flex items-center justify-center"
+                    title="Send Message (Enter)"
+                  >
+                    {isPosting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Quick Hint Footer */}
+                <div className="flex items-center justify-between px-3 pt-2 text-[11px] text-slate-400">
+                  <span>💡 Tip: Click <Paperclip className="inline w-3 h-3 text-slate-500" /> to attach files, or <Code className="inline w-3 h-3 text-indigo-500" /> for the Dedicated Code Box.</span>
+                  <span className="hidden sm:inline font-mono">Shift+Enter for new line</span>
+                </div>
+
+                {/* Hidden File Inputs */}
+                <input type="file" ref={mediaFileInputRef} accept="image/*,video/*" className="hidden" onChange={handleMediaFileUpload} />
+                <input type="file" ref={codeFileInputRef} accept=".py,.wbex,.mac,.inp,.apdl,.txt,.json,.js,.cpp,.c" className="hidden" onChange={handleCodeFileUpload} />
               </div>
 
               {/* POSTS STREAM */}
@@ -5498,23 +5356,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                     </div>
                     <h3 className="text-xl font-black text-slate-900">No Discussions in this View</h3>
                     <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-                      Be the first to publish an ASME Section VIII Div 1/2 query, Ansys ACT script, or mesh convergence study.
+                      Be the first to send a message, share an ASME Section VIII Div 1/2 calculation, or attach an Ansys ACT script in the chatbox above.
                     </p>
                     <div className="flex items-center justify-center gap-3 pt-2">
                       <button
                         onClick={() => {
-                          setIsComposerOpen(true);
-                          setComposerActiveTab('text');
-                        }}
-                        className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" /> Start First Discussion
-                      </button>
-                      <button
-                        onClick={() => {
                           setCommunityCategory('All');
                           setCommunityActiveTab('all');
-                          setCommunitySelectedTag(null);
                           setCommunitySearch('');
                         }}
                         className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
@@ -5545,13 +5393,16 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                         {/* Post Header */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            {post.user_avatar || (isAuthor && currentUser?.avatar) ? (
-                              <img src={post.user_avatar || currentUser?.avatar} alt={post.user_name} className="w-11 h-11 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
-                            ) : (
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
-                                {post.user_initial || 'E'}
-                              </div>
-                            )}
+                            <div className="relative">
+                              {post.user_avatar || (isAuthor && currentUser?.avatar) ? (
+                                <img src={post.user_avatar || currentUser?.avatar} alt={post.user_name} className="w-11 h-11 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm shrink-0" />
+                              ) : (
+                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                                  {post.user_initial || 'E'}
+                                </div>
+                              )}
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                            </div>
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-black text-slate-900 text-xs sm:text-sm">{post.user_name}</h4>
@@ -5564,10 +5415,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                                {post.created_at ? new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
-                                {post.edited_at && <span className="ml-1 text-slate-400 italic">(edited)</span>}
-                              </p>
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-0.5">
+                                <span>{post.created_at ? new Date(post.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}</span>
+                                {post.edited_at && <span className="italic">(edited)</span>}
+                                <span className="text-sky-500 font-bold flex items-center ml-1" title="Delivered & Synchronized to Database">
+                                  <CheckCheck className="w-3.5 h-3.5 inline" />
+                                </span>
+                              </div>
                             </div>
                           </div>
 
@@ -5575,7 +5429,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                           <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             {post.is_pinned && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-full border border-indigo-200 shadow-sm">
-                                <Pin className="w-3 h-3 text-indigo-600" /> Pinned Benchmark
+                                <Pin className="w-3 h-3 text-indigo-600" /> Pinned
                               </span>
                             )}
                             {isSolved && (
@@ -5616,7 +5470,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                         {/* Post Content / Edit Mode */}
                         {editingPostId === post.id ? (
                           <div className="p-4 bg-slate-50 rounded-2xl border-2 border-indigo-200 space-y-3">
-                            <div className="text-xs font-black text-indigo-700 uppercase">Edit Discussion</div>
+                            <div className="text-xs font-black text-indigo-700 uppercase">Edit Message</div>
                             <input 
                               type="text"
                               value={editPostTitle}
@@ -5658,22 +5512,6 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 {post.content}
                               </p>
                             )}
-                          </div>
-                        )}
-
-                        {/* Tags Display */}
-                        {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {post.tags.map(tag => (
-                              <button
-                                key={tag}
-                                onClick={() => setCommunitySelectedTag(tag)}
-                                className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold transition-colors flex items-center gap-0.5"
-                              >
-                                <Hash className="w-2.5 h-2.5 text-slate-400" />
-                                {tag}
-                              </button>
-                            ))}
                           </div>
                         )}
 
@@ -5807,13 +5645,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                           </div>
                         </div>
 
-                        {/* Threaded Comments Drawer */}
+                        {/* WhatsApp-Style Threaded Comments Drawer */}
                         {isExpanded && (
                           <div className="pt-3 border-t border-slate-100 space-y-3 bg-slate-50/70 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 p-5 sm:p-6 rounded-b-3xl">
                             <div className="space-y-3">
                               {comments.length === 0 ? (
                                 <p className="text-xs text-slate-400 italic text-center py-3">
-                                  No comments yet. Write the first engineering insight or answer below.
+                                  No replies yet. Type an answer or insight in the reply box below.
                                 </p>
                               ) : (
                                 comments.map((c) => {
@@ -5901,7 +5739,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                               )}
                             </div>
 
-                            {/* Comment Composer */}
+                            {/* WhatsApp Style Reply Input */}
                             <div className="flex gap-2 pt-2">
                               <input 
                                 type="text" 
@@ -5910,13 +5748,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleAddComment(post.id);
                                 }}
-                                placeholder={`Reply to ${post.user_name}... (Press Enter to post)`}
-                                className="flex-1 bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm"
+                                placeholder={`Reply to ${post.user_name}... (Press Enter to send)`}
+                                className="flex-1 bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-sm"
                               />
                               <button 
                                 onClick={() => handleAddComment(post.id)}
                                 disabled={!(replyText[post.id] || '').trim()}
-                                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-black text-xs rounded-2xl shadow-sm transition-all shrink-0 hover:scale-105"
+                                className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white font-black text-xs rounded-2xl shadow-sm transition-all shrink-0 hover:scale-105"
                               >
                                 Reply
                               </button>
@@ -6028,6 +5866,166 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
         </div>
 
+        {/* DEDICATED CODE & SCRIPT MODAL (WhatsApp-style Code Drawer) */}
+        {showCodeModal && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
+            <div className="bg-slate-900 text-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border-2 border-indigo-500/50 flex flex-col max-h-[90vh] animate-in zoom-in-95">
+              
+              {/* Code Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+                    <Terminal className="w-5 h-5 text-emerald-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm sm:text-base text-white flex items-center gap-2">
+                      Ansys ACT & Script Code Box
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono px-2 py-0.5 rounded-full">
+                        WhatsApp Code Drawer
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Write, paste, or upload Ansys Python ACT scripts, APDL macros, or CAD files</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCodeModal(false)}
+                  className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Code Modal Toolbar & Config */}
+              <div className="p-4 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-xl">
+                    <span className="text-[11px] text-slate-400 font-bold">Filename:</span>
+                    <input
+                      type="text"
+                      value={codeModalFilename}
+                      onChange={(e) => setCodeModalFilename(e.target.value)}
+                      placeholder="ansys_linearization.py"
+                      className="bg-transparent text-emerald-300 font-mono text-xs focus:outline-none w-44"
+                    />
+                  </div>
+
+                  <select
+                    value={codeModalLang}
+                    onChange={(e) => setCodeModalLang(e.target.value)}
+                    className="bg-slate-950 border border-slate-700 text-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="python">Python (PyMechanical)</option>
+                    <option value="apdl">APDL Macro (.mac)</option>
+                    <option value="spaceclaim">SpaceClaim IronPython</option>
+                    <option value="json">JSON / Config</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => codeFileInputRef.current?.click()}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-slate-700"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5 text-indigo-400" /> Upload File (.py/.mac)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const template = `# ASME Section VIII Div 2 Stress Linearization
+import mech_dpf
+import Ans.DataProcessing as dpf
+
+def compute_scl_path(model, path_name, allowable_s):
+    analysis = model.Analyses[0]
+    stress_tool = analysis.Solution.AddStressTool()
+    lin_stress = stress_tool.AddLinearizedStress()
+    lin_stress.ScopingMethod = GeometryDefineByType.Path
+    lin_stress.Path = model.GetPath(path_name)
+    analysis.Solution.EvaluateAllResults()
+    pm = lin_stress.MembraneStress.Value
+    pb = lin_stress.BendingStress.Value
+    print(f"Evaluated {path_name}: Pm={pm:.2f} MPa, Pb={pb:.2f} MPa")
+    return {"Pm": pm, "Pb": pb, "Pass": (pm + pb) <= (1.5 * allowable_s)}`;
+                      setCodeModalContent(template);
+                      setCodeModalFilename('asme_scl_template.py');
+                      setCodeModalLang('python');
+                    }}
+                    className="px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-indigo-700/50"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-indigo-400" /> + Insert ASME SCL Template
+                  </button>
+                </div>
+              </div>
+
+              {/* Code Editor Body */}
+              <div className="p-4 flex-1 overflow-hidden flex flex-col bg-slate-950">
+                <textarea
+                  value={codeModalContent}
+                  onChange={(e) => setCodeModalContent(e.target.value)}
+                  placeholder="# Paste or write your Python ACT script, APDL macro, or calculation algorithm here..."
+                  rows="14"
+                  className="w-full flex-1 bg-transparent text-emerald-300 font-mono text-xs focus:outline-none resize-none leading-relaxed select-text"
+                />
+              </div>
+
+              {/* Code Modal Footer */}
+              <div className="p-4 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-4 text-slate-400 font-mono text-[11px]">
+                  <span>{codeModalContent.split('\n').length} lines</span>
+                  <span>{codeModalContent.length} chars</span>
+                  {codeModalContent && (
+                    <button
+                      type="button"
+                      onClick={() => setCodeModalContent('')}
+                      className="text-rose-400 hover:underline font-sans"
+                    >
+                      Clear Editor
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCodeModal(false)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = codeModalContent.trim();
+                      if (!trimmed) {
+                        showNotification('Code box is empty. Please enter or paste some code.', 'error');
+                        return;
+                      }
+                      setComposerCodeFilename(codeModalFilename || 'ansys_script.py');
+                      setComposerCodeContent(trimmed);
+                      setComposerCodeLang(codeModalLang);
+                      setNewPostCode({
+                        content: trimmed,
+                        filename: codeModalFilename || 'ansys_script.py',
+                        lines: trimmed.split('\n').length,
+                        size: `${(trimmed.length / 1024).toFixed(1)} KB`,
+                        lang: codeModalLang
+                      });
+                      setShowCodeModal(false);
+                      showNotification(`Code attached: ${codeModalFilename || 'ansys_script.py'}`, 'success', 'Code Attached');
+                    }}
+                    className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" /> Attach Code to Message
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
         {/* Media Lightbox Modal */}
         {selectedMediaModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
@@ -6136,7 +6134,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
               <div className="p-6 space-y-4">
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Enter a topic or query. Nova AI will generate a complete technical description, ASME code citations, suggested tags, and Python ACT / APDL macro code for your post.
+                  Enter a topic or query. Nova AI will generate a complete technical description, ASME code citations, and Python ACT / APDL macro code for your chat message.
                 </p>
 
                 <div className="space-y-1.5">
@@ -6185,7 +6183,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                   className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {isAiDraftLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  Generate & Populate Composer
+                  Generate & Populate Chatbar
                 </button>
               </div>
             </div>
