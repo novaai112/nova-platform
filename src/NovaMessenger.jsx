@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "./supabaseClient";
 import {
   Search, Send, Paperclip, Image as ImageIcon, Smile, MoreVertical,
@@ -9,7 +9,7 @@ import {
   Hash, Radio, Settings, UserPlus, LogOut, MessageSquarePlus, UserX,
   ChevronRight, Play, Square, Info, Shield, ShieldAlert, Sparkle,
   PhoneIncoming, PhoneMissed, Clock, Edit2, Sun, Moon, Lock, Unlock,
-  CheckCheck as DoubleCheck, Zap
+  CheckCheck as DoubleCheck, Zap, Award, ExternalLink
 } from "lucide-react";
 
 const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉", "👏"];
@@ -17,7 +17,7 @@ const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉
 const EMOJI_CATEGORIES = {
   Smileys: ["😀","😃","😄","😁","😆","😅","😂","🤣","🥲","☺️","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🤫","🤥","😶","😐","😑","😬","🫠","🙄","😯","😦","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤠","😈","👿","💩","👻","💀","👽","🤖","🎃"],
   Gestures: ["👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏","✍️","💪","👀","🧠"],
-  Animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐴","🦄","🐝","🐛","🦋","🐙","🐬","🐳","🦈","🐊","🐘","🦒","🐕"],
+  Animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐴","🦄","🐝","🐛","🦋","🐙","🐬","🐳","鯊","🐊","🐘","🦒","🐕"],
   Food: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍒","🍑","🍍","🥥","🥝","🍅","🥑","🥦","🌽","🥕","🍞","🥐","🧀","🍳","🥓","🥩","🍗","🍔","🍟","🍕","🥪","🌮","🍜","🍣","🍿","🍩","🍪","🍫","☕️","🧃","🍺","🥂"],
   Hearts: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝"]
 };
@@ -39,7 +39,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const myAvatar = currentUser?.avatar || currentUser?.avatar_url || null;
   const myUserId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
 
-  // Theme state with instant local storage recall
+  // Light Mode (White background) by default; toggleable to Deep Dark Mode
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("nova_messenger_dark") === "true";
   });
@@ -75,6 +75,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   });
 
+  // Master user dictionary mapping user_id, id, and email to full user profile
+  const [masterUserDict, setMasterUserDict] = useState({});
+
+  // Profile Popover Modal state for "Profile tap to see"
+  const [inspectingProfile, setInspectingProfile] = useState(null);
+
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +99,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [gifResults, setGifResults] = useState([]);
   const [gifLoading, setGifLoading] = useState(false);
 
-  // Messages & Reactions State (Instant Cache Recall)
+  // Messages & Reactions State
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
@@ -133,7 +139,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [hasBlockedTarget, setHasBlockedTarget] = useState(false);
   const [customNickname, setCustomNickname] = useState("");
 
-  // Refs for Performance & WebRTC
+  // Refs for Performance, WebRTC, and Audio Ringtone
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -149,63 +155,214 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const remoteAudioRef = useRef(null);
   const rtcChannelRef = useRef(null);
   const presenceChannelRef = useRef(null);
+  const ringAudioRef = useRef(null);
+
+  // Comprehensive user map resolving real avatars, full names, and roles
+  const userMap = useMemo(() => {
+    const map = { ...masterUserDict };
+    (registeredUsers || []).forEach((u) => {
+      if (u.id) map[u.id] = { ...map[u.id], ...u };
+      if (u.user_id) map[u.user_id] = { ...map[u.user_id], ...u };
+      if (u.email) map[u.email.toLowerCase()] = { ...map[u.email.toLowerCase()], ...u };
+    });
+    if (currentUser) {
+      const cur = {
+        id: currentUser.id,
+        user_id: currentUser.id,
+        email: currentUser.email,
+        full_name: currentUser.name || currentUser.full_name || myName,
+        display_name: currentUser.name || currentUser.full_name || myName,
+        avatar_url: currentUser.avatar || currentUser.avatar_url || myAvatar,
+        avatar: currentUser.avatar || currentUser.avatar_url || myAvatar,
+        plan: currentUser.plan || "Free"
+      };
+      if (currentUser.id) map[currentUser.id] = { ...map[currentUser.id], ...cur };
+      if (currentUser.email) map[currentUser.email.toLowerCase()] = { ...map[currentUser.email.toLowerCase()], ...cur };
+    }
+    return map;
+  }, [masterUserDict, registeredUsers, currentUser, myName, myAvatar]);
 
   // Request & Acceptance status calculation
   const isPendingRequestForMe = activeConv?.is_request && activeConv?.created_by !== myUserId;
   const isPendingRequestByMe = activeConv?.is_request && activeConv?.created_by === myUserId;
   const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
 
-  // Theme configuration
+  // Dynamic Theme Colors: Clean White Light Mode (Default) / Deep Dark Mode
   const theme = {
     bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
     modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200",
-    sidebarBg: isDarkMode ? "bg-slate-900/95 border-slate-800" : "bg-slate-50/95 border-slate-200",
-    chatBg: isDarkMode ? "bg-slate-950" : "bg-[#f8fafc]",
-    headerBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-white/95 border-slate-200",
+    sidebarBg: isDarkMode ? "bg-slate-900/95 border-slate-800" : "bg-white border-slate-200",
+    chatBg: isDarkMode ? "bg-slate-950" : "bg-white",
+    headerBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-white border-slate-200",
     cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
-    hoverBg: isDarkMode ? "hover:bg-slate-800/60" : "hover:bg-slate-100",
-    activeConvBg: isDarkMode ? "bg-blue-600/20 border-l-4 border-blue-500" : "bg-blue-50/80 border-l-4 border-blue-600",
-    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-100/90 border-slate-300 text-slate-900 placeholder-slate-400",
+    hoverBg: isDarkMode ? "hover:bg-slate-800/60" : "hover:bg-slate-50",
+    activeConvBg: isDarkMode ? "bg-blue-600/20 border-l-4 border-blue-500" : "bg-blue-50 border-l-4 border-blue-600",
+    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400",
     secondaryText: isDarkMode ? "text-slate-400" : "text-slate-500",
     iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900",
-    incomingBubble: isDarkMode ? "bg-slate-800/95 text-slate-100 border border-slate-700/60" : "bg-white text-slate-900 border border-slate-200 shadow-sm",
+    incomingBubble: isDarkMode ? "bg-slate-800/95 text-slate-100 border border-slate-700/60" : "bg-slate-50 text-slate-900 border border-slate-200 shadow-xs",
     outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md",
   };
 
+  // Web Audio Ringtone Chime for incoming & outgoing calls
+  const startRingTone = (isIncoming = false) => {
+    try {
+      stopRingTone();
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(isIncoming ? 523.25 : 440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+
+      const interval = setInterval(() => {
+        if (!gain) return;
+        gain.gain.setValueAtTime(gain.gain.value > 0.01 ? 0.0001 : 0.08, ctx.currentTime);
+      }, isIncoming ? 1000 : 1800);
+
+      ringAudioRef.current = { ctx, osc, interval };
+    } catch (e) {}
+  };
+
+  const stopRingTone = () => {
+    if (ringAudioRef.current) {
+      try {
+        clearInterval(ringAudioRef.current.interval);
+        ringAudioRef.current.osc?.stop();
+        ringAudioRef.current.ctx?.close();
+      } catch (e) {}
+      ringAudioRef.current = null;
+    }
+  };
+
+  // Helper to open real user profile modal with live database stats
+  const openUserProfile = async (user) => {
+    if (!user) return;
+    const key = user.user_id || user.id || user.email?.toLowerCase();
+    const resolved = userMap[key] || user;
+    setInspectingProfile(resolved);
+
+    if (resolved.email) {
+      try {
+        const [postsRes, cmtsRes] = await Promise.all([
+          supabase.from("nova_community_posts").select("id", { count: "exact" }).eq("user_email", resolved.email),
+          supabase.from("nova_community_comments").select("id", { count: "exact" }).eq("user_email", resolved.email)
+        ]);
+        setInspectingProfile((prev) => {
+          if (!prev || prev.email?.toLowerCase() !== resolved.email?.toLowerCase()) return prev;
+          return {
+            ...prev,
+            discussionsCount: postsRes.count || 0,
+            commentsCount: cmtsRes.count || 0
+          };
+        });
+      } catch (e) {}
+    }
+  };
+
   // =========================================================================
-  // 1. FAST REGISTERED USERS LOAD & CACHING
+  // 1. FAST REGISTERED USERS LOAD & CACHING WITH REAL AVATARS
   // =========================================================================
   const loadRegisteredUsers = useCallback(async () => {
     try {
       const [usersRes, profsRes] = await Promise.all([
-        supabase.from("user_profiles").select("id, email, full_name, avatar_url, plan, created_at").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("user_id, display_name, email, avatar_url, username")
+        supabase.from("user_profiles").select("id, email, full_name, avatar_url, plan, company, created_at").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, display_name, email, avatar_url, username, created_at")
       ]);
 
-      const profMap = new Map();
+      const dict = {};
+
+      // 1. Map all records from profiles
       (profsRes.data || []).forEach((p) => {
-        if (p.email) profMap.set(p.email.toLowerCase(), p);
-        if (p.user_id) profMap.set(p.user_id, p);
+        const emailKey = p.email?.toLowerCase();
+        const idKey = p.user_id;
+        const item = {
+          id: p.user_id,
+          user_id: p.user_id,
+          email: p.email,
+          full_name: p.display_name || p.username || (p.email ? p.email.split("@")[0] : "Engineer"),
+          display_name: p.display_name || p.username || (p.email ? p.email.split("@")[0] : "Engineer"),
+          username: p.username || (p.email ? p.email.split("@")[0] : "engineer"),
+          avatar_url: p.avatar_url || null,
+          avatar: p.avatar_url || null,
+          plan: "Free",
+          created_at: p.created_at || new Date().toISOString()
+        };
+        if (idKey) dict[idKey] = item;
+        if (emailKey) dict[emailKey] = item;
       });
 
-      const combined = (usersRes.data || [])
-        .filter((u) => u.email?.toLowerCase() !== myEmail.toLowerCase())
-        .map((u) => {
-          const prof = profMap.get(u.email?.toLowerCase()) || profMap.get(u.id) || {};
-          return {
-            id: u.id || prof.user_id,
-            user_id: u.id || prof.user_id,
-            email: u.email,
-            full_name: u.full_name || prof.display_name || u.email.split("@")[0],
-            display_name: u.full_name || prof.display_name || u.email.split("@")[0],
-            username: prof.username || u.email.split("@")[0],
-            avatar_url: u.avatar_url || prof.avatar_url || null,
-            plan: u.plan || "Pro"
-          };
-        });
+      // 2. Merge and enrich with user_profiles
+      (usersRes.data || []).forEach((u) => {
+        const emailKey = u.email?.toLowerCase();
+        const idKey = u.id;
+        const existing = (idKey && dict[idKey]) || (emailKey && dict[emailKey]) || {};
+        const realAv = u.avatar_url || existing.avatar_url || null;
+        const merged = {
+          ...existing,
+          id: u.id || existing.id,
+          user_id: u.id || existing.user_id,
+          email: u.email || existing.email,
+          full_name: u.full_name || existing.full_name || (u.email ? u.email.split("@")[0] : "Engineer"),
+          display_name: u.full_name || existing.display_name || (u.email ? u.email.split("@")[0] : "Engineer"),
+          avatar_url: realAv,
+          avatar: realAv,
+          plan: u.plan || existing.plan || "Free",
+          company: u.company || existing.company || "Nova Engineering",
+          created_at: u.created_at || existing.created_at
+        };
+        if (idKey) dict[idKey] = merged;
+        if (emailKey) dict[emailKey] = merged;
+      });
 
-      setRegisteredUsers(combined);
-      try { localStorage.setItem("nova_registered_users_cache", JSON.stringify(combined)); } catch (e) {}
+      setMasterUserDict(dict);
+
+      // Create unique registered users list
+      const uniqueList = [];
+      const seen = new Set();
+      Object.values(dict).forEach((item) => {
+        const mail = item.email?.toLowerCase();
+        if (mail && !seen.has(mail)) {
+          seen.add(mail);
+          if (mail !== myEmail.toLowerCase()) {
+            uniqueList.push(item);
+          }
+        }
+      });
+
+      setRegisteredUsers(uniqueList);
+      try { localStorage.setItem("nova_registered_users_cache", JSON.stringify(uniqueList)); } catch (e) {}
+
+      // Update conversations with fresh resolved avatars
+      setConversations((prev) =>
+        prev.map((c) => {
+          const pKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+          const resolved = pKey ? dict[pKey] : null;
+          if (resolved) {
+            const realAv = resolved.avatar_url || c.avatar;
+            const realNm = c.type === "group" ? c.name : (resolved.full_name || c.name);
+            return {
+              ...c,
+              name: realNm,
+              avatar: realAv,
+              avatar_url: realAv,
+              otherUser: { ...c.otherUser, ...resolved, avatar_url: realAv, avatar: realAv }
+            };
+          }
+          return c;
+        })
+      );
+
+      // Update active recipient if currently viewing
+      setActiveRecipient((prev) => {
+        if (!prev) return prev;
+        const pKey = prev.user_id || prev.id || prev.email?.toLowerCase();
+        const resolved = pKey ? dict[pKey] : null;
+        return resolved ? { ...prev, ...resolved, avatar_url: resolved.avatar_url || prev.avatar_url, avatar: resolved.avatar_url || prev.avatar } : prev;
+      });
     } catch (err) {
       console.warn("Load users error:", err);
     }
@@ -222,26 +379,26 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (!myEmail) return;
     const channelName = `presence-chat-global-${myEmail.replace(/[^a-zA-Z0-9]/g, "_")}`;
     const ch = supabase.channel(channelName, {
-      config: { presence: { key: myEmail } },
+      config: { presence: { key: myEmail.toLowerCase() } },
     });
 
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
-      setOnlineUsers(new Set(Object.keys(state)));
+      setOnlineUsers(new Set(Object.keys(state).map((k) => k.toLowerCase())));
     })
       .on("presence", { event: "join" }, ({ key }) => {
-        setOnlineUsers((prev) => new Set([...prev, key]));
+        setOnlineUsers((prev) => new Set([...prev, key.toLowerCase()]));
       })
       .on("presence", { event: "leave" }, ({ key }) => {
         setOnlineUsers((prev) => {
           const next = new Set(prev);
-          next.delete(key);
+          next.delete(key.toLowerCase());
           return next;
         });
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await ch.track({ email: myEmail, online_at: new Date().toISOString() });
+          await ch.track({ email: myEmail.toLowerCase(), online_at: new Date().toISOString() });
         }
       });
 
@@ -270,7 +427,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       if (convIds.length > 0) {
         const [convsRes, msgsRes, partsRes] = await Promise.all([
           supabase.from("conversations").select("*").in("id", convIds).order("updated_at", { ascending: false }),
-          supabase.from("messages").select("conversation_id, content, media_type, created_at, user_id").in("conversation_id", convIds).order("created_at", { ascending: false }),
+          supabase.from("messages").select("conversation_id, content, media_type, media_metadata, created_at, user_id").in("conversation_id", convIds).order("created_at", { ascending: false }),
           supabase.from("conversation_participants").select("conversation_id, user_id").in("conversation_id", convIds).neq("user_id", myUserId)
         ]);
 
@@ -282,11 +439,27 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
         const otherUserIds = [...new Set((partsRes.data || []).map((p) => p.user_id))];
         if (otherUserIds.length > 0) {
-          const { data: profs } = await supabase.from("profiles").select("user_id, display_name, avatar_url, email, username").in("user_id", otherUserIds);
+          const [profsRes, userProfsRes] = await Promise.all([
+            supabase.from("profiles").select("user_id, display_name, avatar_url, email, username").in("user_id", otherUserIds),
+            supabase.from("user_profiles").select("id, full_name, avatar_url, email, plan, created_at").in("id", otherUserIds)
+          ]);
+
           const pMap = {};
-          (profs || []).forEach((p) => { pMap[p.user_id] = p; });
+          (profsRes.data || []).forEach((p) => { pMap[p.user_id] = p; });
+          (userProfsRes.data || []).forEach((u) => {
+            const existing = pMap[u.id] || {};
+            pMap[u.id] = {
+              user_id: u.id,
+              display_name: u.full_name || existing.display_name || u.email?.split("@")[0],
+              avatar_url: u.avatar_url || existing.avatar_url || null,
+              email: u.email || existing.email,
+              plan: u.plan || "Pro",
+              created_at: u.created_at
+            };
+          });
+
           (partsRes.data || []).forEach((p) => {
-            dmPartnerMap[p.conversation_id] = pMap[p.user_id] || { user_id: p.user_id, display_name: "Engineer", email: "engineer@nova.ai" };
+            dmPartnerMap[p.conversation_id] = pMap[p.user_id] || userMap[p.user_id] || { user_id: p.user_id, display_name: "Engineer", email: "engineer@nova.ai" };
           });
         }
       }
@@ -304,9 +477,29 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       dbConvs.forEach((c) => {
         const other = c.type === "dm" ? dmPartnerMap[c.id] : null;
         const lastM = lastMsgMap[c.id];
-        const title = c.type === "group" ? c.name || "Group" : other?.display_name || other?.username || "Direct Chat";
-        const email = other?.email || null;
+        const partnerProfile = other ? (userMap[other.user_id] || userMap[other.email?.toLowerCase()] || other) : null;
+
+        const title = c.type === "group" ? (c.name || "Group") : (partnerProfile?.full_name || partnerProfile?.display_name || partnerProfile?.username || "Direct Chat");
+        const email = partnerProfile?.email || other?.email || null;
         if (email) seenEmails.add(email.toLowerCase());
+
+        let lastPreview = "No messages yet";
+        if (lastM) {
+          const meta = typeof lastM.media_metadata === "string" ? (() => { try { return JSON.parse(lastM.media_metadata); } catch(e) { return {}; } })() : (lastM.media_metadata || {});
+          if (lastM.media_type === "image") {
+            lastPreview = `📷 ${meta.name || "Photo"}`;
+          } else if (lastM.media_type === "file") {
+            lastPreview = `📎 ${meta.name || "Document"}`;
+          } else if (lastM.media_type === "voice") {
+            lastPreview = `🎤 Voice Note`;
+          } else if (lastM.media_type === "gif") {
+            lastPreview = `✨ GIF`;
+          } else {
+            lastPreview = lastM.content || "Message";
+          }
+        }
+
+        const realAvatar = c.type === "group" ? c.avatar_url : (partnerProfile?.avatar_url || partnerProfile?.avatar || other?.avatar_url || null);
 
         convList.push({
           id: c.id,
@@ -314,15 +507,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           type: c.type,
           name: title,
           email: email,
-          avatar: c.type === "group" ? c.avatar_url : other?.avatar_url || null,
+          avatar: realAvatar,
+          avatar_url: realAvatar,
           wallpaper_url: c.wallpaper_url || null,
           is_request: !!c.is_request,
           created_by: c.created_by,
-          lastMessage: lastM?.media_type === "text" ? lastM.content : lastM?.media_type ? `📎 ${lastM.media_type}` : "No messages yet",
+          lastMessage: lastPreview,
           lastTime: lastM?.created_at ? new Date(lastM.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
           lastRawTime: lastM?.created_at || c.updated_at || c.created_at,
           unread: 0,
-          otherUser: other
+          otherUser: { ...other, ...partnerProfile, avatar_url: realAvatar, avatar: realAvatar }
         });
       });
 
@@ -331,16 +525,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         const partnerEmail = (isMine ? msg.recipient_email : msg.sender_email)?.toLowerCase();
         if (partnerEmail && !seenEmails.has(partnerEmail)) {
           seenEmails.add(partnerEmail);
-          const partnerName = isMine ? msg.recipient_name : msg.sender_name;
-          const partnerAvatar = isMine ? msg.recipient_avatar : msg.sender_avatar;
+          const partnerProfile = userMap[partnerEmail] || {};
+          const partnerName = partnerProfile.full_name || (isMine ? msg.recipient_name : msg.sender_name) || partnerEmail.split("@")[0];
+          const partnerAvatar = partnerProfile.avatar_url || (isMine ? msg.recipient_avatar : msg.sender_avatar) || null;
 
           convList.push({
             id: `legacy_${partnerEmail}`,
             conv_id: null,
             type: "dm",
-            name: partnerName || partnerEmail.split("@")[0],
+            name: partnerName,
             email: partnerEmail,
             avatar: partnerAvatar,
+            avatar_url: partnerAvatar,
             wallpaper_url: null,
             is_request: false,
             created_by: null,
@@ -348,7 +544,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             lastTime: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             lastRawTime: msg.created_at,
             unread: !isMine && !msg.is_read ? 1 : 0,
-            otherUser: { email: partnerEmail, display_name: partnerName, avatar_url: partnerAvatar }
+            otherUser: { email: partnerEmail, display_name: partnerName, full_name: partnerName, avatar_url: partnerAvatar, avatar: partnerAvatar }
           });
         }
       });
@@ -357,13 +553,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         const uEmail = u.email?.toLowerCase();
         if (uEmail && !seenEmails.has(uEmail)) {
           seenEmails.add(uEmail);
+          const realAvatar = u.avatar_url || u.avatar || null;
           convList.push({
             id: `user_${u.id || u.email}`,
             conv_id: null,
             type: "dm",
             name: u.full_name || u.display_name || uEmail.split("@")[0],
             email: u.email,
-            avatar: u.avatar_url,
+            avatar: realAvatar,
+            avatar_url: realAvatar,
             wallpaper_url: null,
             is_request: true,
             created_by: myUserId,
@@ -371,7 +569,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             lastTime: "",
             lastRawTime: u.created_at || new Date().toISOString(),
             unread: 0,
-            otherUser: u
+            otherUser: { ...u, avatar_url: realAvatar, avatar: realAvatar }
           });
         }
       });
@@ -383,7 +581,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       if (!activeConvId && convList.length > 0) {
         if (initialRecipient?.email) {
           const matched = convList.find((c) => c.email?.toLowerCase() === initialRecipient.email.toLowerCase());
-          selectConversation(matched || convList[0]);
+          if (matched) selectConversation(matched);
+          else selectConversation(convList[0]);
         } else {
           selectConversation(convList[0]);
         }
@@ -391,7 +590,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     } catch (err) {
       console.warn("Load conversations error:", err);
     }
-  }, [myUserId, myEmail, registeredUsers, initialRecipient, activeConvId]);
+  }, [myUserId, myEmail, registeredUsers, initialRecipient, activeConvId, userMap]);
 
   useEffect(() => {
     loadConversations();
@@ -401,9 +600,22 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // 4. INSTANT CONVERSATION SELECTION WITH CACHED MESSAGES
   // =========================================================================
   const selectConversation = (conv) => {
-    setActiveConv(conv);
+    const key = conv.otherUser?.user_id || conv.otherUser?.id || conv.email?.toLowerCase();
+    const resolvedUser = key ? (userMap[key] || conv.otherUser) : conv.otherUser;
+    const finalAvatar = resolvedUser?.avatar_url || conv.avatar || null;
+    const finalName = conv.type === "group" ? conv.name : (resolvedUser?.full_name || resolvedUser?.display_name || conv.name);
+
+    const enrichedConv = {
+      ...conv,
+      name: finalName,
+      avatar: finalAvatar,
+      avatar_url: finalAvatar,
+      otherUser: resolvedUser ? { ...resolvedUser, full_name: finalName, avatar_url: finalAvatar, avatar: finalAvatar } : conv.otherUser
+    };
+
+    setActiveConv(enrichedConv);
     setActiveConvId(conv.id);
-    setActiveRecipient(conv.otherUser || { name: conv.name, email: conv.email, avatar: conv.avatar });
+    setActiveRecipient(enrichedConv.otherUser || { name: finalName, display_name: finalName, email: conv.email, avatar: finalAvatar, avatar_url: finalAvatar });
     setShowDetailsPanel(false);
     setReplyingTo(null);
     setSearchQuery("");
@@ -419,8 +631,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     const storedNick = localStorage.getItem(`nova_nick_${conv.id}_${myUserId}`);
     setCustomNickname(storedNick || "");
 
-    if (conv.otherUser?.user_id) {
-      checkBlockStatus(conv.otherUser.user_id);
+    if (enrichedConv.otherUser?.user_id) {
+      checkBlockStatus(enrichedConv.otherUser.user_id);
     }
   };
 
@@ -445,108 +657,67 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  const handleToggleBlock = async () => {
-    const otherId = activeRecipient?.user_id || activeRecipient?.id;
-    if (!otherId || !myUserId) return;
-
-    if (hasBlockedTarget) {
-      await supabase
-        .from("user_blocks")
-        .delete()
-        .or(`and(blocker_id.eq.${myUserId},blocked_id.eq.${otherId}),and(user_id.eq.${myUserId},blocked_user_id.eq.${otherId})`);
-      setHasBlockedTarget(false);
-    } else {
-      await supabase.from("user_blocks").insert([
-        { blocker_id: myUserId, blocked_id: otherId, user_id: myUserId, blocked_user_id: otherId }
-      ]);
-      setHasBlockedTarget(true);
-    }
-  };
-
-  const handleAcceptRequest = async () => {
-    if (!activeConv?.conv_id) return;
-    try {
-      await supabase.rpc("accept_conversation_request", { _conv_id: activeConv.conv_id });
-      setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
-      setConversations((prev) => prev.map((c) => c.id === activeConv.id ? { ...c, is_request: false } : c));
-      if (rtcChannelRef.current) {
-        rtcChannelRef.current.send({
-          type: "broadcast",
-          event: "request-accepted",
-          payload: { conversation_id: activeConv.conv_id, from: myUserId }
-        });
-      }
-    } catch (err) {
-      console.warn("Accept request error:", err);
-    }
-  };
-
-  const handleRejectRequest = async () => {
-    if (!activeConv?.conv_id) return;
-    try {
-      await supabase.from("conversation_participants").delete().eq("conversation_id", activeConv.conv_id).eq("user_id", myUserId);
-      setConversations((prev) => prev.filter((c) => c.id !== activeConv.id));
-      setActiveConv(null);
-      setActiveConvId(null);
-    } catch (err) {
-      console.warn("Reject request error:", err);
-    }
-  };
-
   // =========================================================================
-  // 5. LIGHTNING FAST MESSAGES LOADER & PERSISTENT CACHE
+  // 5. FAST MESSAGES LOADER & DB SYNC
   // =========================================================================
   const loadMessages = useCallback(async () => {
-    if (!activeConv) {
-      setMessages([]);
-      return;
-    }
-
+    if (!activeConv) return;
     try {
       if (activeConv.conv_id) {
         const [msgsRes, rxRes] = await Promise.all([
           supabase.from("messages").select("*").eq("conversation_id", activeConv.conv_id).order("created_at", { ascending: true }),
-          supabase.from("message_reactions").select("*")
+          supabase.from("message_reactions").select("*").in("message_id", messages.map((m) => m.id))
         ]);
 
-        const msgList = msgsRes.data || [];
-        setMessages(msgList);
-        setPinnedMessage(msgList.find((m) => m.is_pinned) || null);
+        const rawMsgs = msgsRes.data || [];
+        const normalized = rawMsgs.map((m) => {
+          const isMine = m.user_id === myUserId;
+          const senderInfo = userMap[m.user_id] || (isMine ? currentUser : activeRecipient);
+          return {
+            ...m,
+            sender_name: senderInfo?.full_name || senderInfo?.display_name || senderInfo?.name || "Engineer",
+            sender_avatar: senderInfo?.avatar_url || senderInfo?.avatar || null
+          };
+        });
 
-        const msgIds = new Set(msgList.map((m) => m.id));
-        setReactions((rxRes.data || []).filter((r) => msgIds.has(r.message_id)));
+        setMessages(normalized);
+        if (rxRes.data) setReactions(rxRes.data);
 
-        // Persist to local cache for instant recall
-        try { localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(msgList)); } catch (e) {}
+        const pinned = normalized.find((m) => m.is_pinned);
+        setPinnedMessage(pinned || null);
 
-        const unreadMine = msgList.filter((m) => m.user_id !== myUserId);
-        if (unreadMine.length > 0) {
-          const readsToUpsert = unreadMine.map((m) => ({ message_id: m.id, user_id: myUserId }));
-          await supabase.from("message_reads").upsert(readsToUpsert, { onConflict: "message_id,user_id", ignoreDuplicates: true });
-        }
+        try { localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(normalized)); } catch (e) {}
+
+        await supabase
+          .from("conversation_participants")
+          .update({ last_read_at: new Date().toISOString() })
+          .eq("conversation_id", activeConv.conv_id)
+          .eq("user_id", myUserId);
       } else if (activeConv.email) {
-        const otherEmail = activeConv.email;
-        const { data: directData } = await supabase
+        const { data: directMsgs } = await supabase
           .from("nova_messages")
           .select("*")
-          .or(`and(sender_email.eq.${myEmail},recipient_email.eq.${otherEmail}),and(sender_email.eq.${otherEmail},recipient_email.eq.${myEmail})`)
+          .or(`and(sender_email.eq.${myEmail},recipient_email.eq.${activeConv.email}),and(sender_email.eq.${activeConv.email},recipient_email.eq.${myEmail})`)
           .order("created_at", { ascending: true });
 
-        const normalized = (directData || []).map((m) => ({
-          id: m.id,
-          conversation_id: activeConv.id,
-          user_id: m.sender_email === myEmail ? myUserId : (activeRecipient?.user_id || "other"),
-          sender_email: m.sender_email,
-          sender_name: m.sender_name,
-          sender_avatar: m.sender_avatar,
-          content: m.content,
-          media_type: m.message_type || "text",
-          media_url: m.attachment_url,
-          media_metadata: m.attachment_name ? { name: m.attachment_name, size: m.attachment_size } : null,
-          reactions: m.reactions || [],
-          is_read: m.is_read,
-          created_at: m.created_at
-        }));
+        const normalized = (directMsgs || []).map((m) => {
+          const isMine = m.sender_email === myEmail;
+          const partnerProfile = userMap[activeConv.email?.toLowerCase()] || {};
+          return {
+            id: m.id,
+            conversation_id: null,
+            user_id: isMine ? myUserId : (partnerProfile.user_id || "partner"),
+            content: m.content,
+            media_type: m.message_type || (m.attachment_url ? "image" : "text"),
+            media_url: m.attachment_url,
+            media_metadata: { name: m.attachment_name, size: m.attachment_size },
+            sender_name: isMine ? myName : (partnerProfile.full_name || m.sender_name || "Engineer"),
+            sender_avatar: isMine ? myAvatar : (partnerProfile.avatar_url || m.sender_avatar || null),
+            created_at: m.created_at,
+            view_limit: 0,
+            view_count: 0
+          };
+        });
 
         setMessages(normalized);
         try { localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(normalized)); } catch (e) {}
@@ -554,7 +725,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     } catch (err) {
       console.warn("Load messages error:", err);
     }
-  }, [activeConv, myUserId, myEmail, activeRecipient]);
+  }, [activeConv, myUserId, myEmail, activeRecipient, userMap, currentUser, myName, myAvatar]);
 
   useEffect(() => {
     loadMessages();
@@ -568,16 +739,22 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     const cid = activeConv.conv_id;
 
     const ch = supabase
-      .channel(`rt-conv-turbo-${cid}`)
+      .channel(`rt-conv-v4-${cid}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
         const newMsg = payload.new;
         if (!newMsg) return;
+        const senderInfo = userMap[newMsg.user_id] || (newMsg.user_id === myUserId ? currentUser : activeRecipient);
+        const enriched = {
+          ...newMsg,
+          sender_name: senderInfo?.full_name || senderInfo?.display_name || senderInfo?.name || "Engineer",
+          sender_avatar: senderInfo?.avatar_url || senderInfo?.avatar || null
+        };
+
         setMessages((prev) => {
-          // If already added optimistically with temp_ id, replace it
-          const exists = prev.some((m) => m.id === newMsg.id);
+          const exists = prev.some((m) => m.id === enriched.id);
           if (exists) return prev;
-          const filtered = prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== newMsg.content);
-          return [...filtered, newMsg];
+          const filtered = prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== enriched.content);
+          return [...filtered, enriched];
         });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
@@ -605,7 +782,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           .gt("updated_at", new Date(Date.now() - 4000).toISOString());
         setTypingUsers((data || []).map((t) => t.user_id).filter((id) => id !== myUserId));
       })
-      .on("broadcast", { event: "webrtc-signal" }, handleWebRTCSignal)
       .on("broadcast", { event: "request-accepted" }, () => {
         setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
       })
@@ -615,331 +791,99 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [activeConv?.conv_id, myUserId]);
+  }, [activeConv?.conv_id, myUserId, userMap, currentUser, activeRecipient]);
 
+  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, pendingAttachments.length]);
+  }, [messages]);
 
   // =========================================================================
-  // 7. INSTANT OPTIMISTIC MESSAGE SENDING
+  // 7. REAL-TIME CALL SYSTEM & GLOBAL USER SIGNALING CHANNEL
   // =========================================================================
-  const handleSendMessage = async (customContent = null, mediaType = "text", mediaUrl = null, mediaMeta = null) => {
-    const content = customContent || messageText.trim();
-    if (!content && !mediaUrl && pendingAttachments.length === 0) return;
-    if (isTargetBlocked || hasBlockedTarget) {
-      alert("Cannot send messages in a blocked conversation.");
-      return;
-    }
+  useEffect(() => {
+    if (!myUserId || myUserId === "00000000-0000-0000-0000-000000000000") return;
 
-    const currentReplying = replyingTo;
-    setReplyingTo(null);
-    setMessageText("");
-    setShowEmojiPicker(false);
-    setShowStickerPicker(false);
-    setShowGifPicker(false);
+    const userSignalChannel = supabase
+      .channel(`nova-calls-${myUserId}`)
+      .on("broadcast", { event: "call-signal" }, async ({ payload }) => {
+        if (!payload) return;
+        const { type, from, callerName, callType, data } = payload;
 
-    let convId = activeConv?.conv_id;
-    if (!convId && activeRecipient?.user_id) {
-      try {
-        const { data: rpcConvId } = await supabase.rpc("get_or_create_dm", {
-          _other_user: activeRecipient.user_id,
-          _sender_user: myUserId
-        });
-        if (rpcConvId) {
-          convId = rpcConvId;
-          if (activeConv) activeConv.conv_id = rpcConvId;
-        }
-      } catch (e) {
-        console.warn("RPC get_or_create_dm error:", e);
-      }
-    }
-
-    const itemsToSend = [];
-    if (pendingAttachments.length > 0) {
-      for (const att of pendingAttachments) {
-        itemsToSend.push({
-          content: content || `Shared ${att.type}`,
-          media_type: att.type,
-          media_url: att.url,
-          media_metadata: { name: att.name, size: att.size },
-          view_limit: viewOnceMode ? 1 : 0
-        });
-      }
-      setPendingAttachments([]);
-      setViewOnceMode(false);
-    } else {
-      itemsToSend.push({
-        content: content,
-        media_type: mediaType,
-        media_url: mediaUrl,
-        media_metadata: mediaMeta,
-        view_limit: viewOnceMode ? 1 : 0
-      });
-      setViewOnceMode(false);
-    }
-
-    for (const item of itemsToSend) {
-      const tempId = "temp_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-
-      if (convId) {
-        const msgRow = {
-          conversation_id: convId,
-          user_id: myUserId,
-          content: item.content,
-          media_type: item.media_type,
-          media_url: item.media_url,
-          media_metadata: item.media_metadata,
-          reply_to_id: currentReplying?.id || null,
-          view_limit: item.view_limit || 0,
-          view_count: 0,
-          viewer_ids: [],
-          created_at: new Date().toISOString()
-        };
-
-        // 0ms Optimistic UI Display
-        setMessages((prev) => [...prev, { id: tempId, ...msgRow }]);
-
-        // Background sync
-        supabase.from("messages").insert([msgRow]).select("id").single().then(({ data }) => {
-          if (data?.id) {
-            setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, id: data.id } : m));
+        if (type === "offer") {
+          const callerProfile = userMap[from] || { user_id: from, name: callerName || "Engineer" };
+          setIncomingCallData(payload);
+          setActiveCall({
+            type: callType || "audio",
+            status: "incoming",
+            duration: 0,
+            caller: callerProfile.full_name || callerName || "Engineer",
+            callerAvatar: callerProfile.avatar_url || callerProfile.avatar || null,
+            from: from
+          });
+          startRingTone(true);
+        } else if (type === "answer") {
+          stopRingTone();
+          if (peerConnectionRef.current) {
+            try {
+              await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data));
+            } catch (e) {}
           }
-        });
-        supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
-      } else {
-        const legacyRow = {
-          sender_email: myEmail,
-          sender_name: myName,
-          sender_avatar: myAvatar,
-          recipient_email: activeConv?.email || activeRecipient?.email,
-          recipient_name: activeRecipient?.display_name || activeRecipient?.full_name || "Engineer",
-          recipient_avatar: activeRecipient?.avatar_url || null,
-          content: item.content,
-          message_type: item.media_type,
-          attachment_url: item.media_url,
-          attachment_name: item.media_metadata?.name || null,
-          attachment_size: item.media_metadata?.size || null,
-          reactions: [],
-          is_read: false,
-          created_at: new Date().toISOString()
-        };
-
-        setMessages((prev) => [...prev, { id: tempId, ...legacyRow }]);
-        supabase.from("nova_messages").insert([legacyRow]).then(() => {});
-      }
-    }
-  };
-
-  const handleTextChange = (e) => {
-    setMessageText(e.target.value);
-    if (!activeConv?.conv_id || !myUserId) return;
-
-    supabase.from("typing_indicators").upsert(
-      { conversation_id: activeConv.conv_id, user_id: myUserId, updated_at: new Date().toISOString() },
-      { onConflict: "conversation_id,user_id" }
-    ).then(() => {});
-
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      supabase.from("typing_indicators").delete().eq("conversation_id", activeConv.conv_id).eq("user_id", myUserId);
-    }, 2500);
-  };
-
-  // =========================================================================
-  // 8. STORAGE UPLOADS & ATTACHMENTS
-  // =========================================================================
-  const uploadToStorage = async (file, folder = "attachments") => {
-    try {
-      const ext = file.name ? file.name.split(".").pop() : "bin";
-      const filePath = `${myUserId}/${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("chat-media").upload(filePath, file, {
-        upsert: true,
-        contentType: file.type || "application/octet-stream"
-      });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("chat-media").getPublicUrl(filePath);
-      return pub.publicUrl;
-    } catch (err) {
-      console.warn("Upload storage error, using fallback:", err);
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleStageFiles = async (e, type = "image") => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    e.target.value = "";
-
-    for (const file of files) {
-      const isVid = file.type.startsWith("video/");
-      const isImg = file.type.startsWith("image/");
-      const fileType = isVid ? "video" : isImg ? "image" : "file";
-      const publicUrl = await uploadToStorage(file, fileType);
-
-      setPendingAttachments((prev) => [
-        ...prev,
-        {
-          file,
-          preview: URL.createObjectURL(file),
-          url: publicUrl,
-          type: fileType,
-          name: file.name,
-          size: `${(file.size / 1024).toFixed(1)} KB`
+          setActiveCall((prev) => prev ? { ...prev, status: "connected" } : null);
+          startCallTimer();
+        } else if (type === "ice-candidate") {
+          if (peerConnectionRef.current && data) {
+            try {
+              await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data));
+            } catch (e) {}
+          }
+        } else if (type === "end-call" || type === "reject-call") {
+          stopRingTone();
+          endCallCleanup();
+        } else if (type === "video-upgrade-request") {
+          setVideoUpgradeRequested(true);
         }
-      ]);
-    }
-  };
+      })
+      .subscribe();
 
-  // =========================================================================
-  // 9. VOICE RECORDING
-  // =========================================================================
-  const startVoiceRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      mediaRecorderRef.current = rec;
-      voiceChunksRef.current = [];
+    // Also listen to database calls table for fallback signaling
+    const dbCallsChannel = supabase
+      .channel(`db-calls-${myUserId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "calls", filter: `callee_id=eq.${myUserId}` }, (payload) => {
+        const c = payload.new;
+        if (c && c.status === "ringing" && !activeCall) {
+          const callerProfile = userMap[c.caller_id] || {};
+          setActiveCall({
+            type: c.type || c.call_type || "audio",
+            status: "incoming",
+            duration: 0,
+            caller: callerProfile.full_name || "Engineer",
+            callerAvatar: callerProfile.avatar_url || callerProfile.avatar || null,
+            from: c.caller_id
+          });
+          startRingTone(true);
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls" }, (payload) => {
+        if (payload.new?.status === "ended") {
+          stopRingTone();
+          endCallCleanup();
+        }
+      })
+      .subscribe();
 
-      rec.ondataavailable = (e) => {
-        if (e.data.size > 0) voiceChunksRef.current.push(e.data);
-      };
+    return () => {
+      supabase.removeChannel(userSignalChannel);
+      supabase.removeChannel(dbCallsChannel);
+    };
+  }, [myUserId, userMap, activeCall]);
 
-      rec.onstop = async () => {
-        const blob = new Blob(voiceChunksRef.current, { type: "audio/webm" });
-        const voiceFile = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
-        const publicUrl = await uploadToStorage(voiceFile, "voice");
-        handleSendMessage("🎤 Voice Note", "voice", publicUrl, {
-          name: `voice_${Date.now()}.webm`,
-          size: `${(blob.size / 1024).toFixed(1)} KB`
-        });
-        stream.getTracks().forEach((t) => t.stop());
-      };
-
-      rec.start();
-      setIsRecordingVoice(true);
-      setVoiceDuration(0);
-      voiceTimerRef.current = setInterval(() => {
-        setVoiceDuration((p) => p + 1);
-      }, 1000);
-    } catch (err) {
-      alert("Microphone permission required for voice notes.");
-    }
-  };
-
-  const stopVoiceRecording = () => {
-    if (mediaRecorderRef.current && isRecordingVoice) {
-      mediaRecorderRef.current.stop();
-      setIsRecordingVoice(false);
-      clearInterval(voiceTimerRef.current);
-    }
-  };
-
-  const cancelVoiceRecording = () => {
-    if (mediaRecorderRef.current && isRecordingVoice) {
-      mediaRecorderRef.current.onstop = null;
-      mediaRecorderRef.current.stop();
-      setIsRecordingVoice(false);
-      clearInterval(voiceTimerRef.current);
-    }
-  };
-
-  // =========================================================================
-  // 10. REACTIONS & VIEW-ONCE
-  // =========================================================================
-  const handleToggleReaction = async (msgId, emoji) => {
-    if (!msgId) return;
-    const existing = reactions.find((r) => r.message_id === msgId && r.user_id === myUserId && r.emoji === emoji);
-    if (existing) {
-      setReactions((prev) => prev.filter((r) => r.id !== existing.id));
-      await supabase.from("message_reactions").delete().eq("id", existing.id);
-    } else {
-      const newRx = { id: "rx_" + Date.now(), message_id: msgId, user_id: myUserId, emoji: emoji };
-      setReactions((prev) => [...prev, newRx]);
-      await supabase.from("message_reactions").insert([
-        { message_id: msgId, user_id: myUserId, emoji: emoji }
-      ]);
-    }
-  };
-
-  const handleDeleteMessage = async (msgId) => {
-    setMessages((prev) => prev.filter((m) => m.id !== msgId));
-    try {
-      if (!String(msgId).startsWith("temp_")) {
-        await supabase.from("messages").delete().eq("id", msgId);
-        await supabase.from("nova_messages").delete().eq("id", msgId);
-      }
-    } catch (err) {}
-  };
-
-  const handleTogglePin = async (msg) => {
-    const willPin = !msg.is_pinned;
-    setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_pinned: willPin } : m)));
-    setPinnedMessage(willPin ? msg : null);
-    try {
-      await supabase.from("messages").update({ is_pinned: willPin }).eq("id", msg.id);
-    } catch (err) {}
-  };
-
-  const openSecureViewOnce = async (msg) => {
-    if (msg.user_id === myUserId) {
-      setSecureLightboxMsg(msg);
-      return;
-    }
-
-    try {
-      const { data: res } = await supabase.rpc("mark_message_viewed", {
-        p_message_id: msg.id
-      });
-      if (res?.already_viewed) {
-        alert("This view-once media has already expired.");
-        return;
-      }
-      setSecureLightboxMsg(msg);
-      loadMessages();
-    } catch (err) {
-      setSecureLightboxMsg(msg);
-    }
-  };
-
-  // =========================================================================
-  // 11. WEBRTC CALLING ENGINE
-  // =========================================================================
-  const handleWebRTCSignal = async (payload) => {
-    const data = payload.payload;
-    if (!data || data.to !== myUserId) return;
-
-    if (data.type === "offer") {
-      setIncomingCallData(data);
-      setActiveCall({
-        type: data.callType || "audio",
-        status: "incoming",
-        duration: 0,
-        caller: data.callerName || "Engineer"
-      });
-    } else if (data.type === "answer") {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.data));
-      }
-      setActiveCall((prev) => (prev ? { ...prev, status: "connected" } : null));
-      startCallTimer();
-    } else if (data.type === "ice-candidate") {
-      if (peerConnectionRef.current && data.data) {
-        try {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.data));
-        } catch (e) {}
-      }
-    } else if (data.type === "end-call" || data.type === "reject-call") {
-      endCallCleanup();
-    } else if (data.type === "video-upgrade-request") {
-      setVideoUpgradeRequested(true);
-    } else if (data.type === "video-upgrade-accept") {
-      upgradeToVideoTracks();
-    }
+  const sendCallSignal = (targetUserId, signalPayload) => {
+    supabase.channel(`nova-calls-${targetUserId}`).send({
+      type: "broadcast",
+      event: "call-signal",
+      payload: signalPayload
+    });
   };
 
   const setupWebRTC = async (type) => {
@@ -963,22 +907,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       remoteStreamRef.current = event.streams[0];
       if (type === "video" && remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
-      } else {
-        if (!remoteAudioRef.current) {
-          remoteAudioRef.current = new Audio();
-          remoteAudioRef.current.autoplay = true;
-        }
+      } else if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = event.streams[0];
+        remoteAudioRef.current.play().catch(() => {});
       }
     };
 
+    const targetUserId = incomingCallData?.from || activeRecipient?.user_id || activeRecipient?.id;
     pc.onicecandidate = (event) => {
-      if (event.candidate && rtcChannelRef.current) {
-        const targetUserId = activeRecipient?.user_id || activeRecipient?.id;
-        rtcChannelRef.current.send({
-          type: "broadcast",
-          event: "webrtc-signal",
-          payload: { type: "ice-candidate", from: myUserId, to: targetUserId, data: event.candidate }
+      if (event.candidate && targetUserId) {
+        sendCallSignal(targetUserId, {
+          type: "ice-candidate",
+          from: myUserId,
+          to: targetUserId,
+          data: event.candidate
         });
       }
     };
@@ -987,43 +929,46 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return pc;
   };
 
-  const initiateCall = async (type) => {
-    if (activeConv?.is_request) {
+  const initiateCall = async (type = "audio", customTarget = null) => {
+    const target = customTarget || activeRecipient;
+    if (activeConv?.is_request && !customTarget) {
       alert("⚠️ Calls are locked until the message request is accepted by both users.");
       return;
     }
 
-    const targetUserId = activeRecipient?.user_id || activeRecipient?.id;
+    const targetUserId = target?.user_id || target?.id;
     if (!targetUserId) {
       alert("Please select an active user to call.");
       return;
     }
 
-    setActiveCall({ type, status: "calling", duration: 0 });
+    const targetProfile = userMap[targetUserId] || target;
+    setActiveCall({
+      type,
+      status: "calling",
+      duration: 0,
+      caller: targetProfile.full_name || targetProfile.display_name || "Engineer",
+      callerAvatar: targetProfile.avatar_url || targetProfile.avatar || null
+    });
     setIsMicMuted(false);
     setIsSpeakerOn(false);
     setIsVideoCameraOn(true);
     setCallKeypadTyped("");
+    startRingTone(false);
 
     try {
       const pc = await setupWebRTC(type);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      if (rtcChannelRef.current) {
-        rtcChannelRef.current.send({
-          type: "broadcast",
-          event: "webrtc-signal",
-          payload: {
-            type: "offer",
-            from: myUserId,
-            callerName: myName,
-            to: targetUserId,
-            callType: type,
-            data: offer
-          }
-        });
-      }
+      sendCallSignal(targetUserId, {
+        type: "offer",
+        from: myUserId,
+        callerName: myName,
+        to: targetUserId,
+        callType: type,
+        data: offer
+      });
 
       if (activeConv?.conv_id) {
         await supabase.from("calls").insert([
@@ -1044,7 +989,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
+  const initiateCallToUser = async (targetUser, type = "audio") => {
+    if (!targetUser) return;
+    setActiveRecipient(targetUser);
+    initiateCall(type, targetUser);
+  };
+
   const acceptIncomingCall = async () => {
+    stopRingTone();
     if (!incomingCallData) return;
     const type = incomingCallData.callType || "audio";
     setActiveCall({ type, status: "connected", duration: 0 });
@@ -1055,13 +1007,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      if (rtcChannelRef.current) {
-        rtcChannelRef.current.send({
-          type: "broadcast",
-          event: "webrtc-signal",
-          payload: { type: "answer", from: myUserId, to: incomingCallData.from, data: answer }
-        });
-      }
+      sendCallSignal(incomingCallData.from, {
+        type: "answer",
+        from: myUserId,
+        to: incomingCallData.from,
+        data: answer
+      });
+
       startCallTimer();
     } catch (err) {
       startCallTimer();
@@ -1069,11 +1021,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   const rejectIncomingCall = () => {
-    if (rtcChannelRef.current && incomingCallData) {
-      rtcChannelRef.current.send({
-        type: "broadcast",
-        event: "webrtc-signal",
-        payload: { type: "reject-call", from: myUserId, to: incomingCallData.from }
+    stopRingTone();
+    if (incomingCallData) {
+      sendCallSignal(incomingCallData.from, {
+        type: "reject-call",
+        from: myUserId,
+        to: incomingCallData.from
       });
     }
     endCallCleanup();
@@ -1088,18 +1041,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   const endCall = () => {
+    stopRingTone();
     if (isCallRecording) stopCallRecording();
     if (callKeypadTyped && activeConv?.conv_id) {
-      handleSendMessage(`📞 Call Keypad entries: ${callKeypadTyped}`);
+      handleSendMessage(`📞 Call Keypad: ${callKeypadTyped}`);
     }
 
-    const targetUserId = activeRecipient?.user_id || activeRecipient?.id;
-    if (rtcChannelRef.current && targetUserId) {
-      rtcChannelRef.current.send({
-        type: "broadcast",
-        event: "webrtc-signal",
-        payload: { type: "end-call", from: myUserId, to: targetUserId }
+    const targetUserId = incomingCallData?.from || activeRecipient?.user_id || activeRecipient?.id;
+    if (targetUserId) {
+      sendCallSignal(targetUserId, {
+        type: "end-call",
+        from: myUserId,
+        to: targetUserId
       });
+    }
+
+    if (activeConv?.conv_id) {
+      supabase.from("calls").update({ status: "ended", ended_at: new Date().toISOString() }).eq("conversation_id", activeConv.conv_id);
     }
 
     if (callDuration > 0) {
@@ -1110,6 +1068,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   const endCallCleanup = () => {
+    stopRingTone();
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     peerConnectionRef.current?.close();
@@ -1147,105 +1106,348 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  const upgradeToVideoTracks = async () => {
-    try {
-      const vidStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      vidStream.getVideoTracks().forEach((track) => {
-        localStreamRef.current?.addTrack(track);
-        peerConnectionRef.current?.addTrack(track, localStreamRef.current);
-      });
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
-      setActiveCall((prev) => (prev ? { ...prev, type: "video" } : null));
-    } catch (e) {}
-  };
-
   const startCallRecording = () => {
+    const streamToRec = localStreamRef.current;
+    if (!streamToRec) return;
     try {
-      const tracks = [];
-      if (localStreamRef.current) tracks.push(...localStreamRef.current.getTracks());
-      if (remoteStreamRef.current) tracks.push(...remoteStreamRef.current.getTracks());
-      if (tracks.length === 0) return;
-
-      const combined = new MediaStream(tracks);
-      const rec = new MediaRecorder(combined);
+      const rec = new MediaRecorder(streamToRec);
+      callRecRef.current = rec;
       callRecChunks.current = [];
       rec.ondataavailable = (e) => {
         if (e.data.size > 0) callRecChunks.current.push(e.data);
       };
-      rec.onstop = async () => {
+      rec.onstop = () => {
         const blob = new Blob(callRecChunks.current, { type: "audio/webm" });
-        const voiceFile = new File([blob], `call_rec_${Date.now()}.webm`, { type: "audio/webm" });
-        const publicUrl = await uploadToStorage(voiceFile, "recordings");
-        handleSendMessage("📼 Call Recording", "voice", publicUrl, {
-          name: `call_recording_${Date.now()}.webm`,
-          size: `${(blob.size / 1024).toFixed(1)} KB`
-        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `nova_call_rec_${Date.now()}.webm`;
+        a.click();
       };
       rec.start();
-      callRecRef.current = rec;
       setIsCallRecording(true);
-    } catch (err) {
-      alert("Call recording failed.");
-    }
+    } catch (e) {}
   };
 
   const stopCallRecording = () => {
-    callRecRef.current?.stop();
-    callRecRef.current = null;
-    setIsCallRecording(false);
-  };
-
-  // =========================================================================
-  // 12. GROUP CREATION & GIF SEARCH
-  // =========================================================================
-  const handleCreateGroup = async () => {
-    if (!newGroupName.trim() || selectedGroupUsers.length === 0) return;
-
-    try {
-      const { data: conv, error } = await supabase
-        .from("conversations")
-        .insert({
-          type: "group",
-          name: newGroupName.trim(),
-          created_by: myUserId,
-          is_request: false
-        })
-        .select("id")
-        .single();
-
-      if (error || !conv) throw error || new Error("Failed to create group");
-
-      const memberRows = [myUserId, ...selectedGroupUsers.map((u) => u.user_id || u.id)].map((uid) => ({
-        conversation_id: conv.id,
-        user_id: uid
-      }));
-
-      await supabase.from("conversation_participants").insert(memberRows);
-
-      setShowCreateGroupModal(false);
-      setNewGroupName("");
-      setSelectedGroupUsers([]);
-      await loadConversations();
-    } catch (err) {
-      alert("Error creating group: " + err.message);
+    if (callRecRef.current && isCallRecording) {
+      callRecRef.current.stop();
+      setIsCallRecording(false);
     }
   };
 
-  const searchGifs = async (query) => {
-    setGifSearchQuery(query);
-    if (!query.trim()) {
-      setGifResults([]);
-      return;
+  // =========================================================================
+  // 8. SEND MESSAGES & REAL FILE NAME ATTACHMENTS
+  // =========================================================================
+  const handleSendMessage = async (customContent = null, mediaType = "text", mediaUrl = null, mediaMeta = null) => {
+    const content = customContent !== null ? customContent : messageText.trim();
+    if (!content && !mediaUrl && pendingAttachments.length === 0) return;
+
+    const currentReplying = replyingTo;
+    setReplyingTo(null);
+    setMessageText("");
+    setShowEmojiPicker(false);
+    setShowStickerPicker(false);
+    setShowGifPicker(false);
+
+    let convId = activeConv?.conv_id;
+    if (!convId && activeRecipient?.user_id) {
+      try {
+        const { data: rpcConvId } = await supabase.rpc("get_or_create_dm", {
+          _other_user: activeRecipient.user_id,
+          _sender_user: myUserId
+        });
+        if (rpcConvId) {
+          convId = rpcConvId;
+          if (activeConv) activeConv.conv_id = rpcConvId;
+        }
+      } catch (e) {
+        console.warn("RPC get_or_create_dm error:", e);
+      }
     }
-    setGifLoading(true);
+
+    const itemsToSend = [];
+    if (pendingAttachments.length > 0) {
+      for (const att of pendingAttachments) {
+        itemsToSend.push({
+          content: content || att.name,
+          media_type: att.type,
+          media_url: att.url,
+          media_metadata: { name: att.name, size: att.size },
+          view_limit: viewOnceMode ? 1 : 0
+        });
+      }
+      setPendingAttachments([]);
+      setViewOnceMode(false);
+    } else {
+      itemsToSend.push({
+        content: content,
+        media_type: mediaType,
+        media_url: mediaUrl,
+        media_metadata: mediaMeta,
+        view_limit: viewOnceMode ? 1 : 0
+      });
+      setViewOnceMode(false);
+    }
+
+    for (const item of itemsToSend) {
+      const tempId = "temp_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+
+      if (convId) {
+        const msgRow = {
+          conversation_id: convId,
+          user_id: myUserId,
+          content: item.content,
+          media_type: item.media_type,
+          media_url: item.media_url,
+          media_metadata: item.media_metadata,
+          reply_to_id: currentReplying?.id || null,
+          view_limit: item.view_limit || 0,
+          view_count: 0,
+          viewer_ids: [],
+          created_at: new Date().toISOString()
+        };
+
+        // 0ms Optimistic UI Display with real sender info
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: tempId,
+            ...msgRow,
+            sender_name: myName,
+            sender_avatar: myAvatar
+          }
+        ]);
+
+        // Background database sync
+        supabase.from("messages").insert([msgRow]).select("id").single().then(({ data }) => {
+          if (data?.id) {
+            setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, id: data.id } : m));
+          }
+        });
+        supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
+      } else {
+        const legacyRow = {
+          sender_email: myEmail,
+          sender_name: myName,
+          sender_avatar: myAvatar,
+          recipient_email: activeConv?.email || activeRecipient?.email,
+          recipient_name: activeRecipient?.display_name || activeRecipient?.full_name || "Engineer",
+          recipient_avatar: activeRecipient?.avatar_url || activeRecipient?.avatar || null,
+          content: item.content,
+          message_type: item.media_type,
+          attachment_url: item.media_url,
+          attachment_name: item.media_metadata?.name || null,
+          attachment_size: item.media_metadata?.size || null,
+          reactions: [],
+          is_read: false,
+          created_at: new Date().toISOString()
+        };
+
+        setMessages((prev) => [...prev, { id: tempId, ...legacyRow }]);
+        supabase.from("nova_messages").insert([legacyRow]).then(() => {});
+      }
+    }
+  };
+
+  const handleTextChange = (e) => {
+    setMessageText(e.target.value);
+    if (!activeConv?.conv_id || !myUserId) return;
+
+    supabase.from("typing_indicators").upsert(
+      { conversation_id: activeConv.conv_id, user_id: myUserId, updated_at: new Date().toISOString() },
+      { onConflict: "conversation_id,user_id" }
+    ).then(() => {});
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      supabase.from("typing_indicators").delete().eq("conversation_id", activeConv.conv_id).eq("user_id", myUserId);
+    }, 2500);
+  };
+
+  // Upload to Storage while preserving exact original file name
+  const uploadToStorage = async (file, folder = "attachments") => {
     try {
-      const res = await fetch(`https://g.tenor.com/v1/search?q=${encodeURIComponent(query)}&key=LIVDSRZULELA&limit=12`);
-      const json = await res.json();
-      setGifResults((json.results || []).map((r) => ({ id: r.id, url: r.media[0].gif.url })));
+      const ext = file.name ? file.name.split(".").pop() : "bin";
+      const cleanOriginalName = file.name ? file.name.replace(/[^a-zA-Z0-9._-]/g, "_") : `file_${Date.now()}.${ext}`;
+      const filePath = `${myUserId}/${folder}/${Date.now()}_${cleanOriginalName}`;
+      const { error: upErr } = await supabase.storage.from("chat-media").upload(filePath, file, {
+        upsert: true,
+        cacheControl: "3600"
+      });
+      if (upErr) throw upErr;
+      const { data: pubData } = supabase.storage.from("chat-media").getPublicUrl(filePath);
+      return pubData.publicUrl;
     } catch (err) {
-      console.warn("GIF fetch error:", err);
-    } finally {
-      setGifLoading(false);
+      console.warn("Storage upload error:", err);
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleStageFiles = async (e, type = "image") => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    e.target.value = "";
+
+    for (const file of files) {
+      const isVid = file.type.startsWith("video/");
+      const isImg = file.type.startsWith("image/");
+      const fileType = isVid ? "video" : isImg ? "image" : "file";
+      const publicUrl = await uploadToStorage(file, fileType);
+
+      setPendingAttachments((prev) => [
+        ...prev,
+        {
+          file,
+          preview: URL.createObjectURL(file),
+          url: publicUrl,
+          type: fileType,
+          name: file.name,
+          size: `${(file.size / 1024).toFixed(1)} KB`
+        }
+      ]);
+    }
+  };
+
+  // Voice Recording
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      mediaRecorderRef.current = rec;
+      voiceChunksRef.current = [];
+
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) voiceChunksRef.current.push(e.data);
+      };
+
+      rec.onstop = async () => {
+        const blob = new Blob(voiceChunksRef.current, { type: "audio/webm" });
+        const voiceFile = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
+        const publicUrl = await uploadToStorage(voiceFile, "voice");
+        handleSendMessage("🎤 Voice Note", "voice", publicUrl, {
+          name: `voice_${Date.now()}.webm`,
+          size: `${(blob.size / 1024).toFixed(1)} KB`
+        });
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      rec.start();
+      setIsRecordingVoice(true);
+      setVoiceDuration(0);
+      voiceTimerRef.current = setInterval(() => {
+        setVoiceDuration((p) => p + 1);
+      }, 1000);
+    } catch (err) {
+      alert("Microphone permission denied or not available.");
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecordingVoice) {
+      mediaRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
+    }
+  };
+
+  const cancelVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecordingVoice) {
+      mediaRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+      voiceChunksRef.current = [];
+      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
+    }
+  };
+
+  // View-Once Media Handlers
+  const openSecureViewOnce = async (msg) => {
+    setSecureLightboxMsg(msg);
+    try {
+      await supabase.rpc("mark_message_viewed", { p_message_id: msg.id });
+      setMessages((prev) =>
+        prev.map((m) => m.id === msg.id ? { ...m, view_count: (m.view_count || 0) + 1 } : m)
+      );
+    } catch (e) {}
+  };
+
+  // Reactions & Pins
+  const handleToggleReaction = async (msgId, emoji) => {
+    const existing = reactions.find((r) => r.message_id === msgId && r.emoji === emoji && r.user_id === myUserId);
+    if (existing) {
+      setReactions((prev) => prev.filter((r) => r.id !== existing.id));
+      await supabase.from("message_reactions").delete().eq("id", existing.id);
+    } else {
+      const newRx = { message_id: msgId, user_id: myUserId, emoji };
+      setReactions((prev) => [...prev, newRx]);
+      await supabase.from("message_reactions").insert([newRx]);
+    }
+  };
+
+  const handleTogglePin = async (msg) => {
+    const newPinned = !msg.is_pinned;
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, is_pinned: newPinned } : m));
+    setPinnedMessage(newPinned ? msg : null);
+    if (activeConv?.conv_id) {
+      await supabase.from("messages").update({ is_pinned: newPinned }).eq("id", msg.id);
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    if (activeConv?.conv_id) {
+      await supabase.from("messages").delete().eq("id", msgId);
+    }
+  };
+
+  // Request Lifecycle: Accept & Decline
+  const handleAcceptRequest = async () => {
+    if (!activeConv?.conv_id) return;
+    try {
+      await supabase.rpc("accept_conversation_request", { _conv_id: activeConv.conv_id });
+      setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
+      setConversations((prev) => prev.map((c) => c.conv_id === activeConv.conv_id ? { ...c, is_request: false } : c));
+      if (rtcChannelRef.current) {
+        rtcChannelRef.current.send({ type: "broadcast", event: "request-accepted", payload: {} });
+      }
+    } catch (err) {
+      console.warn("Accept error:", err);
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    if (!activeConv?.conv_id) return;
+    if (confirm("Decline this chat request?")) {
+      await supabase.from("conversations").delete().eq("id", activeConv.conv_id);
+      setActiveConv(null);
+      setActiveConvId(null);
+      loadConversations();
+    }
+  };
+
+  const handleSaveNickname = (nick) => {
+    setCustomNickname(nick);
+    if (activeConv) {
+      localStorage.setItem(`nova_nick_${activeConv.id}_${myUserId}`, nick);
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    const targetUserId = activeRecipient?.user_id || activeRecipient?.id;
+    if (!targetUserId) return;
+
+    if (hasBlockedTarget) {
+      await supabase.from("user_blocks").delete().or(`and(blocker_id.eq.${myUserId},blocked_id.eq.${targetUserId}),and(user_id.eq.${myUserId},blocked_user_id.eq.${targetUserId})`);
+      setHasBlockedTarget(false);
+    } else {
+      await supabase.from("user_blocks").insert([
+        { blocker_id: myUserId, blocked_id: targetUserId, user_id: myUserId, blocked_user_id: targetUserId }
+      ]);
+      setHasBlockedTarget(true);
     }
   };
 
@@ -1257,17 +1459,26 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const pendingRequestsCount = conversations.filter((c) => c.is_request && c.created_by !== myUserId).length;
 
+  // Real Active Status of current partner
+  const partnerProfile = activeRecipient ? (userMap[activeRecipient.user_id || activeRecipient.id || activeRecipient.email?.toLowerCase()] || activeRecipient) : {};
+  const isCurrentPartnerOnline = partnerProfile?.email && onlineUsers.has(partnerProfile.email.toLowerCase());
+  const headerAvatar = partnerProfile?.avatar_url || partnerProfile?.avatar || activeConv?.avatar || null;
+  const headerName = customNickname || partnerProfile?.full_name || partnerProfile?.display_name || activeConv?.name || "Engineer";
+
   const filteredConvs = conversations.filter((c) => {
     const matchSearch = (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (c.email || "").toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchSearch) return false;
     if (activeTab === "direct") return c.type === "dm" && !c.is_request;
     if (activeTab === "groups") return c.type === "group";
-    if (activeTab === "requests") return c.is_request;
+    if (activeTab === "requests") return c.is_request && c.created_by !== myUserId;
     return true;
   });
 
   return (
-    <div className="fixed inset-0 z-[250] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-5 animate-in fade-in">
+    <div className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <audio ref={remoteAudioRef} autoPlay />
+
+      {/* Main Messenger Container */}
       <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-150`}>
 
         {/* ================================================================= */}
@@ -1283,23 +1494,27 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 >
                   <X className="w-6 h-6" />
                 </button>
-                <div className="text-white text-3xl font-mono tracking-widest mb-6 min-h-[44px]">
+                <h4 className="text-xl font-bold mb-4">Dialpad</h4>
+                <div className="text-3xl font-mono tracking-widest mb-6 min-h-[40px] text-blue-400">
                   {callKeypadTyped || "—"}
                 </div>
-                <div className="grid grid-cols-3 gap-4 w-[270px]">
-                  {["1","2","3","4","5","6","7","8","9","*","0","#"].map((k) => (
+                <div className="grid grid-cols-3 gap-4 w-64">
+                  {["1","2","3","4","5","6","7","8","9","*","0","#"].map((digit) => (
                     <button
-                      key={k}
-                      onClick={() => setCallKeypadTyped((p) => p + k)}
-                      className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 text-white text-2xl font-light border border-white/10 flex items-center justify-center transition-all"
+                      key={digit}
+                      onClick={() => setCallKeypadTyped((p) => p + digit)}
+                      className="w-16 h-16 rounded-full bg-white/10 hover:bg-blue-600 font-bold text-xl flex items-center justify-center transition-all"
                     >
-                      {k}
+                      {digit}
                     </button>
                   ))}
                 </div>
                 {callKeypadTyped && (
-                  <button onClick={() => setCallKeypadTyped("")} className="mt-5 text-xs text-white/60 hover:text-white underline">
-                    Clear Keypad
+                  <button
+                    onClick={() => setCallKeypadTyped("")}
+                    className="mt-4 text-xs text-rose-400 hover:text-rose-300 underline"
+                  >
+                    Clear
                   </button>
                 )}
               </div>
@@ -1314,19 +1529,22 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            <div className="relative z-10 text-center space-y-2 mt-6">
-              <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 border-4 border-white/20 shadow-2xl flex items-center justify-center text-4xl font-black mx-auto overflow-hidden">
-                {activeRecipient?.avatar_url || activeRecipient?.avatar ? (
-                  <img src={activeRecipient.avatar_url || activeRecipient.avatar} alt="" className="w-full h-full object-cover" />
+            {/* Calling Status & Target HD Profile */}
+            <div className="relative z-10 flex flex-col items-center space-y-4 mt-8">
+              <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500 shadow-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-4xl font-extrabold">
+                {activeCall.status === "incoming" && activeCall.callerAvatar ? (
+                  <img src={activeCall.callerAvatar} alt="" className="w-full h-full object-cover" />
+                ) : headerAvatar ? (
+                  <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  (activeRecipient?.display_name || activeRecipient?.name || "E")[0].toUpperCase()
+                  (activeCall.caller || headerName || "U")[0].toUpperCase()
                 )}
                 {activeCall.status === "connected" && (
                   <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-slate-950 rounded-full" />
                 )}
               </div>
               <h3 className="text-2xl font-extrabold tracking-tight">
-                {customNickname || activeRecipient?.display_name || activeRecipient?.name || "Nova Engineer"}
+                {activeCall.status === "incoming" ? activeCall.caller : headerName}
               </h3>
               <p className={`text-sm font-semibold tracking-wider ${activeCall.status === "connected" ? "text-emerald-400" : "text-blue-300 animate-pulse"}`}>
                 {activeCall.status === "calling" ? `Calling ${activeCall.type}...` : activeCall.status === "incoming" ? `Incoming ${activeCall.type} call...` : `${activeCall.type.toUpperCase()} • ${formatDuration(callDuration)}`}
@@ -1335,9 +1553,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
             {videoUpgradeRequested && (
               <div className="relative z-20 bg-slate-900/90 border border-blue-500/50 rounded-2xl p-4 shadow-2xl flex items-center gap-4">
-                <Video className="w-6 h-6 text-blue-400 animate-bounce" />
-                <span className="text-xs font-bold text-white">Partner requested video upgrade</span>
-                <button onClick={upgradeToVideoTracks} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold">Accept</button>
+                <Video className="w-6 h-6 text-blue-400 animate-pulse" />
+                <span className="text-xs font-bold">Caller wants to upgrade to Video Call</span>
+                <button onClick={() => { setVideoUpgradeRequested(false); toggleCallVideoCamera(); }} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-bold">Accept</button>
                 <button onClick={() => setVideoUpgradeRequested(false)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold">Decline</button>
               </div>
             )}
@@ -1354,17 +1572,17 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </button>
                   <button
                     onClick={acceptIncomingCall}
-                    className="p-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl hover:scale-105 transition-all"
-                    title="Accept"
+                    className="p-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl hover:scale-105 transition-all animate-bounce"
+                    title="Accept Call"
                   >
                     <Phone className="w-7 h-7" />
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 sm:gap-4 bg-slate-900/80 backdrop-blur-xl border border-white/10 p-3 rounded-full shadow-2xl">
+                <div className="flex items-center gap-3 bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/10">
                   <button
                     onClick={toggleCallMute}
-                    className={`p-3.5 rounded-full transition-all ${isMicMuted ? "bg-amber-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                    className={`p-3.5 rounded-full transition-all ${isMicMuted ? "bg-rose-600 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
                     title={isMicMuted ? "Unmute" : "Mute"}
                   >
                     {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -1372,7 +1590,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   <button
                     onClick={() => setIsSpeakerOn((p) => !p)}
-                    className={`p-3.5 rounded-full transition-all ${isSpeakerOn ? "bg-blue-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                    className={`p-3.5 rounded-full transition-all ${isSpeakerOn ? "bg-blue-600 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
                     title="Speaker"
                   >
                     {isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
@@ -1384,40 +1602,32 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                       className={`p-3.5 rounded-full transition-all ${!isVideoCameraOn ? "bg-amber-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
                       title={isVideoCameraOn ? "Camera Off" : "Camera On"}
                     >
-                      {isVideoCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                      {!isVideoCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                     </button>
                   ) : (
                     <button
-                      onClick={() => upgradeToVideoTracks()}
+                      onClick={() => setShowCallKeypad(true)}
                       className="p-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
-                      title="Switch to Video"
+                      title="Keypad"
                     >
-                      <Video className="w-5 h-5" />
+                      <Grip className="w-5 h-5" />
                     </button>
                   )}
 
                   <button
-                    onClick={() => isCallRecording ? stopCallRecording() : startCallRecording()}
-                    className={`p-3.5 rounded-full transition-all ${isCallRecording ? "bg-rose-500 text-white animate-pulse" : "bg-white/10 hover:bg-white/20 text-white"}`}
-                    title="Record Call"
+                    onClick={isCallRecording ? stopCallRecording : startCallRecording}
+                    className={`p-3.5 rounded-full transition-all ${isCallRecording ? "bg-rose-600 text-white animate-pulse" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                    title={isCallRecording ? "Stop Recording" : "Record Call"}
                   >
-                    <Radio className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={() => setShowCallKeypad((p) => !p)}
-                    className="p-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
-                    title="Keypad"
-                  >
-                    <Grip className="w-5 h-5" />
+                    <Square className="w-5 h-5" />
                   </button>
 
                   <button
                     onClick={endCall}
-                    className="p-3.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-xl hover:scale-105 transition-all"
+                    className="p-4 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-xl hover:scale-105 transition-all ml-2"
                     title="End Call"
                   >
-                    <PhoneOff className="w-5 h-5" />
+                    <PhoneOff className="w-6 h-6" />
                   </button>
                 </div>
               )}
@@ -1426,25 +1636,34 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 2. LEFT SIDEBAR: FAST CACHED CONVERSATIONS & INSTANT SEARCH       */}
+        {/* 2. LEFT SIDEBAR                                                   */}
         {/* ================================================================= */}
-        <div className={`w-full sm:w-80 md:w-96 border-r ${theme.sidebarBg} flex flex-col shrink-0`}>
+        <div className={`w-80 sm:w-96 border-r ${theme.sidebarBg} flex flex-col shrink-0 select-none`}>
+          {/* User Profile Bar & Light/Dark Mode Switch */}
           <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-700">
-                {myAvatar ? <img src={myAvatar} alt="" className="w-full h-full object-cover" /> : myName[0].toUpperCase()}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
+            <div
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => openUserProfile(currentUser)}
+              title="Click to view your profile"
+            >
+              <div className="relative w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center overflow-hidden shadow-xs group-hover:scale-105 transition-transform border border-slate-200 dark:border-slate-800">
+                {myAvatar ? (
+                  <img src={myAvatar} alt={myName} className="w-full h-full object-cover" />
+                ) : (
+                  myName[0].toUpperCase()
+                )}
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
               </div>
-              <div>
-                <h3 className="font-extrabold text-sm flex items-center gap-1.5">
-                  {myName}
-                  <Zap className="w-3.5 h-3.5 text-amber-500" title="Real-Time Turbo Mode Active" />
+              <div className="min-w-0">
+                <h3 className="font-extrabold text-xs truncate flex items-center gap-1 group-hover:text-blue-600 transition-colors">
+                  {myName} <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
                 </h3>
-                <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[130px]`}>{myEmail}</p>
+                <p className={`text-[10px] ${theme.secondaryText} truncate max-w-[120px]`}>{myEmail}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Dark / Light Mode Toggle */}
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
@@ -1455,12 +1674,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
               <button
                 onClick={() => setShowNewChatModal(true)}
-                className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white transition-all"
-                title="New Direct Message"
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
+                title="Start Direct Chat"
               >
                 <MessageSquarePlus className="w-4 h-4" />
               </button>
-
               <button
                 onClick={() => setShowCreateGroupModal(true)}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
@@ -1468,100 +1686,127 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               >
                 <Users className="w-4 h-4" />
               </button>
-
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                onClick={onClose}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
+                title="Close Messenger"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
+          {/* Search Box */}
           <div className="p-3">
-            <div className="relative">
-              <Search className={`w-4 h-4 absolute left-3 top-2.5 ${theme.secondaryText}`} />
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl ${theme.inputBg} border ${theme.modalBorder}`}>
+              <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="text"
                 placeholder="Search chats or registered engineers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className="bg-transparent border-none text-xs w-full focus:outline-none"
               />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          <div className={`px-3 pb-2 flex gap-1 border-b ${theme.modalBorder}`}>
+          {/* Tabs: All / Direct / Groups / Requests */}
+          <div className={`flex items-center justify-around px-3 pb-2 border-b ${theme.modalBorder} text-xs font-bold`}>
             {[
               { id: "all", label: "All Chats" },
               { id: "direct", label: "Direct" },
               { id: "groups", label: "Groups" },
-              { id: "requests", label: `Requests${pendingRequestsCount > 0 ? ` (${pendingRequestsCount})` : ""}` }
+              { id: "requests", label: "Requests", badge: pendingRequestsCount }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeTab === tab.id ? "bg-blue-600 text-white shadow" : `${theme.secondaryText} ${theme.hoverBg}`}`}
+                className={`relative py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                  activeTab === tab.id
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : `${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`
+                }`}
               >
                 {tab.label}
+                {tab.badge > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px]">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
-          <div className={`flex-1 overflow-y-auto divide-y ${isDarkMode ? "divide-slate-800/40" : "divide-slate-200/60"}`}>
+          {/* Conversations List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
             {filteredConvs.length === 0 ? (
-              <div className="p-8 text-center space-y-2">
-                <MessageSquare className={`w-8 h-8 mx-auto ${theme.secondaryText}`} />
-                <p className="text-xs font-bold">No conversations in this tab</p>
-                <p className={`text-[11px] ${theme.secondaryText}`}>Click + to start chatting with any registered engineer.</p>
+              <div className={`p-8 text-center text-xs ${theme.secondaryText}`}>
+                <p>No conversations found</p>
+                <button
+                  onClick={() => setShowNewChatModal(true)}
+                  className="mt-3 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold transition-all"
+                >
+                  + New Conversation
+                </button>
               </div>
             ) : (
               filteredConvs.map((c) => {
                 const isSelected = activeConvId === c.id;
-                const isOnline = c.email && onlineUsers.has(c.email);
-                const isPendingReq = c.is_request && c.created_by !== myUserId;
+                const partnerKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                const resolvedUser = partnerKey ? userMap[partnerKey] : null;
+                const convAvatar = c.avatar || resolvedUser?.avatar_url || resolvedUser?.avatar || null;
+                const convName = c.type === "group" ? (c.name || "Group") : (resolvedUser?.full_name || resolvedUser?.display_name || c.name || "User");
+                const isUserOnline = c.email && onlineUsers.has(c.email.toLowerCase());
 
                 return (
-                  <button
+                  <div
                     key={c.id}
                     onClick={() => selectConversation(c)}
-                    className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
+                    className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
                   >
-                    <div className="relative shrink-0">
-                      <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden`}>
-                        {c.avatar ? (
-                          <img src={c.avatar} alt="" className="w-full h-full object-cover" />
+                    {/* Real Avatar with tap to see profile */}
+                    <div className="relative shrink-0" onClick={(e) => { e.stopPropagation(); openUserProfile(resolvedUser || c.otherUser || c); }}>
+                      <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden hover:scale-105 transition-transform`}>
+                        {convAvatar ? (
+                          <img src={convAvatar} alt="" className="w-full h-full object-cover" />
                         ) : c.type === "group" ? (
                           <Users className="w-5 h-5 text-blue-500" />
                         ) : (
-                          (c.name || "U")[0].toUpperCase()
+                          (convName || "U")[0].toUpperCase()
                         )}
                       </div>
-                      {isOnline && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                      {isUserOnline && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <h4 className="font-bold text-xs truncate">{c.name}</h4>
-                          {isPendingReq && (
-                            <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded text-[9px] font-extrabold">Request</span>
-                          )}
-                        </div>
-                        <span className={`text-[10px] ${theme.secondaryText} whitespace-nowrap ml-1`}>{c.lastTime}</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-bold text-xs truncate max-w-[150px]">{convName}</h4>
+                        <span className={`text-[10px] ${theme.secondaryText}`}>{c.lastTime}</span>
                       </div>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[170px]`}>{c.lastMessage}</p>
+                      <div className="flex items-center justify-between">
+                        <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[160px]`}>
+                          {c.lastMessage}
+                        </p>
                         {c.unread > 0 && (
-                          <span className="px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-[9px] font-black">{c.unread}</span>
+                          <span className="w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
+                            {c.unread}
+                          </span>
+                        )}
+                        {c.is_request && (
+                          <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[9px] font-bold">
+                            Request
+                          </span>
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })
             )}
@@ -1575,25 +1820,30 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           <div className={`flex-1 flex flex-col ${theme.chatBg} relative min-w-0`} style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
             {activeConv.wallpaper_url && <div className={`absolute inset-0 ${isDarkMode ? "bg-slate-950/80" : "bg-white/80"} backdrop-blur-sm pointer-events-none`} />}
 
+            {/* Chat Room Header with Clickable Real Profile & Real Active Status */}
             <div className={`relative z-10 p-3.5 border-b ${theme.headerBg} backdrop-blur-md flex items-center justify-between`}>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`relative w-10 h-10 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0`}>
-                  {activeConv.avatar ? (
-                    <img src={activeConv.avatar} alt="" className="w-full h-full object-cover" />
+              <div
+                className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
+                title="Click to view full real profile"
+              >
+                <div className={`relative w-10 h-10 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-xs`}>
+                  {headerAvatar ? (
+                    <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
                   ) : activeConv.type === "group" ? (
                     <Users className="w-5 h-5 text-blue-500" />
                   ) : (
-                    (activeConv.name || "U")[0].toUpperCase()
+                    (headerName || "U")[0].toUpperCase()
                   )}
-                  {activeConv.email && onlineUsers.has(activeConv.email) && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                  {isCurrentPartnerOnline && (
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
                   )}
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-sm truncate">
-                      {customNickname || activeConv.name}
+                    <h3 className="font-extrabold text-sm truncate group-hover:text-blue-600 transition-colors">
+                      {headerName}
                     </h3>
                     {activeConv.type === "group" ? (
                       <span className="px-2 py-0.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
@@ -1605,12 +1855,27 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                       </span>
                     )}
                   </div>
-                  <p className={`text-[11px] ${theme.secondaryText} truncate`}>
-                    {activeConv.type === "group" ? "Multi-engineer discussion" : onlineUsers.has(activeConv.email) ? "Active now" : activeConv.email || "Active"}
-                  </p>
+                  
+                  {/* REAL ACTIVE STATUS */}
+                  <div className="flex items-center gap-1.5 text-[11px] mt-0.5">
+                    {activeConv.type === "group" ? (
+                      <span className={theme.secondaryText}>Multi-engineer discussion</span>
+                    ) : isCurrentPartnerOnline ? (
+                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Active now
+                      </span>
+                    ) : (
+                      <span className={`flex items-center gap-1.5 ${theme.secondaryText}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        Offline
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Action buttons */}
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => initiateCall("audio")}
@@ -1646,11 +1911,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </button>
                 ) : (
                   <button
-                    onClick={() => setShowDetailsPanel((p) => !p)}
+                    onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
                     className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all`}
-                    title="Contact Details"
+                    title="View Real User Profile"
                   >
-                    <Info className="w-4 h-4" />
+                    <User className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -1674,8 +1939,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     <Check className="w-3.5 h-3.5" /> Accept Request
                   </button>
                   <button
-                    onClick={handleRejectRequest}
-                    className="px-4 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all"
+                    onClick={handleDeclineRequest}
+                    className="px-3 py-1.5 bg-rose-600/15 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white text-xs font-bold rounded-xl transition-all"
                   >
                     Decline
                   </button>
@@ -1684,34 +1949,35 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             )}
 
             {isPendingRequestByMe && (
-              <div className="relative z-10 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
-                <Clock className="w-4 h-4 text-blue-500 animate-spin" />
-                <span>Message request sent. Audio/video calls and direct features will unlock once <strong>{activeConv.name}</strong> accepts.</span>
+              <div className="relative z-10 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+                <span>Message request sent. Waiting for {activeConv.name} to accept. Calls and media are locked until accepted.</span>
+                <Clock className="w-4 h-4 animate-spin text-blue-500" />
               </div>
             )}
 
+            {/* SEARCH IN CHAT BAR */}
             {chatSearchOpen && (
-              <div className={`relative z-10 p-2 ${theme.headerBg} border-b ${theme.modalBorder} flex items-center gap-2`}>
-                <Search className={`w-4 h-4 ${theme.secondaryText} ml-2`} />
+              <div className={`relative z-10 p-2.5 border-b ${theme.modalBorder} ${theme.headerBg} flex items-center gap-2 animate-in slide-in-from-top`}>
+                <Search className="w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search in this chat transcript..."
+                  placeholder="Filter messages in this chat..."
                   value={chatSearchText}
                   onChange={(e) => setChatSearchText(e.target.value)}
-                  className="flex-1 bg-transparent text-xs focus:outline-none"
-                  autoFocus
+                  className="bg-transparent border-none text-xs w-full focus:outline-none"
                 />
-                <button onClick={() => { setChatSearchOpen(false); setChatSearchText(""); }} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
+                <button onClick={() => { setChatSearchText(""); setChatSearchOpen(false); }} className="text-slate-400 hover:text-slate-600">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
+            {/* PINNED MESSAGE BANNER */}
             {pinnedMessage && (
-              <div className="relative z-10 px-4 py-2 bg-blue-600/10 border-b border-blue-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Pin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">Pinned:</span>
+              <div className={`relative z-10 px-4 py-2 border-b ${theme.modalBorder} bg-blue-600/10 flex items-center justify-between text-xs`}>
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 min-w-0">
+                  <Pin className="w-3.5 h-3.5 shrink-0" />
+                  <span className="font-bold">Pinned:</span>
                   <p className="text-[11px] truncate">{pinnedMessage.content}</p>
                 </div>
                 <button onClick={() => handleTogglePin(pinnedMessage)} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
@@ -1720,7 +1986,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Messages Stream */}
+            {/* Messages Stream with Real User Profile Avatars & Real File Names */}
             <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 ? (
                 <div className={`h-full flex flex-col items-center justify-center ${theme.secondaryText} space-y-3`}>
@@ -1732,11 +1998,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
               ) : (
                 messages
-                  .filter((m) => !chatSearchText || (m.content || "").toLowerCase().includes(chatSearchText.toLowerCase()))
+                  .filter((m) => !chatSearchText || (m.content || "").toLowerCase().includes(chatSearchText.toLowerCase()) || (m.media_metadata?.name || "").toLowerCase().includes(chatSearchText.toLowerCase()))
                   .map((m) => {
                     const isMine = m.user_id === myUserId || m.sender_email === myEmail;
                     const msgRx = reactions.filter((r) => r.message_id === m.id);
                     const isViewOnceExpired = m.view_limit > 0 && m.view_count >= m.view_limit;
+
+                    // Resolve real sender info
+                    const sender = userMap[m.user_id] || userMap[m.sender_email?.toLowerCase()] || (isMine ? currentUser : partnerProfile);
+                    const senderAvatar = isMine ? (myAvatar || currentUser?.avatar) : (sender?.avatar_url || sender?.avatar || null);
+                    const senderName = isMine ? myName : (sender?.full_name || sender?.display_name || sender?.name || "Engineer");
+
+                    const meta = typeof m.media_metadata === "string" ? (() => { try { return JSON.parse(m.media_metadata); } catch(e) { return {}; } })() : (m.media_metadata || {});
+                    const realFileName = meta.name || m.attachment_name || (m.media_url ? m.media_url.split("/").pop()?.replace(/^\d+_[a-z0-9]+_/, "") : null) || "File";
+                    const realFileSize = meta.size || m.attachment_size || "";
 
                     return (
                       <div key={m.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"} group`}>
@@ -1747,13 +2022,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                         )}
 
                         <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%]">
+                          {/* Real Sender Avatar with Tap to inspect profile */}
                           {!isMine && (
-                            <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[10px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
-                              {m.sender_avatar ? <img src={m.sender_avatar} alt="" className="w-full h-full object-cover" /> : (m.sender_name || "E")[0].toUpperCase()}
+                            <div
+                              onClick={() => openUserProfile(sender)}
+                              className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                              title={`View ${senderName}'s Profile`}
+                            >
+                              {senderAvatar ? (
+                                <img src={senderAvatar} alt={senderName} className="w-full h-full object-cover" />
+                              ) : (
+                                (senderName || "U")[0].toUpperCase()
+                              )}
                             </div>
                           )}
 
                           <div className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}>
+                            {/* View-Once Media */}
                             {m.view_limit > 0 ? (
                               isViewOnceExpired ? (
                                 <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
@@ -1771,84 +2056,150 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               )
                             ) : null}
 
+                            {/* Image Attachment with Exact File Name & Size */}
                             {m.media_type === "image" && m.media_url && !m.view_limit && (
-                              <div className="mb-2 rounded-xl overflow-hidden max-h-60">
-                                <img src={m.media_url} alt="" className="w-full h-full object-cover cursor-pointer hover:opacity-95" onClick={() => window.open(m.media_url, "_blank")} />
+                              <div className="mb-2 rounded-xl overflow-hidden space-y-1.5">
+                                <div className="rounded-xl overflow-hidden max-h-72 bg-black/5 dark:bg-black/40">
+                                  <img
+                                    src={m.media_url}
+                                    alt={realFileName}
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                    onClick={() => window.open(m.media_url, "_blank")}
+                                  />
+                                </div>
+                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-white/15 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"} rounded-lg text-[11px]`}>
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <ImageIcon className="w-3.5 h-3.5 shrink-0 text-blue-500" />
+                                    <span className="font-bold truncate max-w-[190px]" title={realFileName}>{realFileName}</span>
+                                    {realFileSize && <span className="opacity-70 text-[10px]">({realFileSize})</span>}
+                                  </div>
+                                  <a href={m.media_url} download={realFileName} target="_blank" rel="noreferrer" className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition-colors" title={`Download ${realFileName}`}>
+                                    <Download className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
                               </div>
                             )}
 
+                            {/* Video Attachment with Exact File Name & Size */}
                             {m.media_type === "video" && m.media_url && !m.view_limit && (
-                              <div className="mb-2 rounded-xl overflow-hidden max-h-60 bg-black">
-                                <video src={m.media_url} controls className="w-full h-full object-contain" />
+                              <div className="mb-2 rounded-xl overflow-hidden space-y-1.5">
+                                <div className="rounded-xl overflow-hidden max-h-72 bg-black">
+                                  <video src={m.media_url} controls className="w-full h-full object-contain" />
+                                </div>
+                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-white/15 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"} rounded-lg text-[11px]`}>
+                                  <span className="font-bold truncate max-w-[180px]">{realFileName}</span>
+                                  {realFileSize && <span className="opacity-70 text-[10px]">({realFileSize})</span>}
+                                </div>
                               </div>
                             )}
 
+                            {/* Voice Note Audio Player */}
                             {m.media_type === "voice" && m.media_url && (
                               <div className="flex items-center gap-2 my-1 bg-black/10 dark:bg-black/30 p-2 rounded-xl">
                                 <audio src={m.media_url} controls className="w-48 sm:w-56 h-8" />
                               </div>
                             )}
 
+                            {/* Generic File Attachment with Exact File Name & Size */}
                             {m.media_type === "file" && m.media_url && (
-                              <a href={m.media_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 my-1 p-2 bg-black/10 dark:bg-black/30 hover:bg-black/20 rounded-xl transition-colors">
-                                <FileText className="w-5 h-5 text-blue-400" />
-                                <div className="min-w-0">
-                                  <p className="font-bold text-[11px] truncate">{m.media_metadata?.name || "Attached File"}</p>
-                                  <p className="text-[9px] opacity-80">{m.media_metadata?.size || "Download"}</p>
+                              <a
+                                href={m.media_url}
+                                download={realFileName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`flex items-center gap-2.5 my-1 p-2.5 ${isMine ? "bg-white/15 hover:bg-white/25 text-white" : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"} rounded-xl transition-colors`}
+                              >
+                                <FileText className="w-6 h-6 text-blue-500 shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-bold text-[12px] truncate max-w-[200px]" title={realFileName}>{realFileName}</p>
+                                  <p className="text-[10px] opacity-80">{realFileSize || "Download file"}</p>
                                 </div>
-                                <Download className="w-4 h-4 ml-auto" />
+                                <Download className="w-4 h-4 shrink-0 opacity-80 hover:opacity-100" />
                               </a>
                             )}
 
+                            {/* Sticker or GIF */}
                             {m.media_type === "gif" && m.media_url && (
                               <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
                             )}
 
-                            {m.content && m.content !== "🎤 Voice Note" && (
+                            {/* Text Content (hiding generic 'Shared image' or file name repeat) */}
+                            {m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "📎 Attachment" && m.content !== realFileName && (
                               <p className="whitespace-pre-wrap break-words">{m.content}</p>
                             )}
 
+                            {/* Timestamp & Delivery status */}
                             <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : theme.secondaryText}`}>
                               <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              {isMine && <DoubleCheck className="w-3 h-3 text-emerald-300" />}
+                              {isMine && <CheckCheck className="w-3 h-3 text-blue-200" />}
                             </div>
+
+                            {/* Reaction Pills */}
+                            {msgRx.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
+                                  const count = msgRx.filter((r) => r.emoji === emoji).length;
+                                  return (
+                                    <span
+                                      key={emoji}
+                                      onClick={() => handleToggleReaction(m.id, emoji)}
+                                      className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-black/30 backdrop-blur-xs flex items-center gap-0.5 cursor-pointer hover:scale-105"
+                                    >
+                                      <span>{emoji}</span>
+                                      <span className="font-bold text-[9px]">{count}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                            <button onClick={() => setReplyingTo(m)} className={`p-1 rounded-full ${theme.iconBtn}`} title="Reply">
-                              <MessageSquare className="w-3 h-3" />
+                          {/* Hover Action Bar */}
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity mb-2">
+                            <div className="relative group/em">
+                              <button className={`p-1.5 rounded-lg ${theme.iconBtn}`}>
+                                <Smile className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="absolute bottom-full left-0 mb-1 hidden group-hover/em:flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 rounded-full shadow-xl z-20">
+                                {EMOJI_REACTIONS.map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => handleToggleReaction(m.id, emoji)}
+                                    className="p-1 hover:scale-125 transition-transform text-sm"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => setReplyingTo(m)}
+                              className={`p-1.5 rounded-lg ${theme.iconBtn}`}
+                              title="Reply"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => handleToggleReaction(m.id, "❤️")} className={`p-1 rounded-full ${theme.iconBtn} hover:text-rose-500`} title="Love">
-                              <Heart className="w-3 h-3" />
+
+                            <button
+                              onClick={() => handleTogglePin(m)}
+                              className={`p-1.5 rounded-lg ${theme.iconBtn}`}
+                              title={m.is_pinned ? "Unpin" : "Pin"}
+                            >
+                              <Pin className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => handleTogglePin(m)} className={`p-1 rounded-full ${theme.iconBtn} hover:text-blue-500`} title="Pin">
-                              <Pin className="w-3 h-3" />
-                            </button>
+
                             {isMine && (
-                              <button onClick={() => handleDeleteMessage(m.id)} className={`p-1 rounded-full ${theme.iconBtn} hover:text-rose-500`} title="Delete">
-                                <Trash2 className="w-3 h-3" />
+                              <button
+                                onClick={() => handleDeleteMessage(m.id)}
+                                className={`p-1.5 rounded-lg ${theme.iconBtn} text-rose-500 hover:text-rose-600`}
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
                         </div>
-
-                        {msgRx.length > 0 && (
-                          <div className={`flex items-center gap-1 mt-1 px-2 ${isMine ? "mr-2" : "ml-9"}`}>
-                            {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
-                              const count = msgRx.filter((r) => r.emoji === emoji).length;
-                              return (
-                                <button
-                                  key={emoji}
-                                  onClick={() => handleToggleReaction(m.id, emoji)}
-                                  className={`px-1.5 py-0.5 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-300 shadow-sm"} border text-[10px] font-bold flex items-center gap-1 hover:scale-110 transition-transform`}
-                                >
-                                  <span>{emoji}</span>
-                                  <span className={theme.secondaryText}>{count}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
                       </div>
                     );
                   })
@@ -1856,60 +2207,75 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               <div ref={messagesEndRef} />
             </div>
 
+            {/* TYPING INDICATORS */}
             {typingUsers.length > 0 && (
-              <div className="px-4 py-1.5 text-[11px] text-blue-600 dark:text-blue-400 italic flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                <span>Engineer is typing...</span>
+              <div className="relative z-10 px-4 py-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold flex items-center gap-2">
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]" />
+                </span>
+                <span>{activeConv.name} is typing...</span>
               </div>
             )}
 
+            {/* REPLY BANNER */}
+            {replyingTo && (
+              <div className={`relative z-10 p-2.5 border-t ${theme.modalBorder} bg-slate-100 dark:bg-slate-800/80 flex items-center justify-between text-xs`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare className="w-4 h-4 text-blue-500 shrink-0" />
+                  <div className="truncate">
+                    <span className="font-bold text-blue-600 dark:text-blue-400">Replying to message: </span>
+                    <span className="text-slate-600 dark:text-slate-300">{replyingTo.content || "Attachment"}</span>
+                  </div>
+                </div>
+                <button onClick={() => setReplyingTo(null)} className="p-1 hover:text-rose-500">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* PENDING ATTACHMENTS PREVIEW BAR */}
             {pendingAttachments.length > 0 && (
-              <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center gap-3 overflow-x-auto`}>
+              <div className={`relative z-10 p-2 border-t ${theme.modalBorder} flex items-center gap-2 overflow-x-auto bg-slate-50 dark:bg-slate-900/60`}>
                 {pendingAttachments.map((att, idx) => (
-                  <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500/50 shrink-0 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                  <div key={idx} className="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-black/10 flex items-center justify-center">
                     {att.type === "image" ? (
                       <img src={att.preview} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <FileText className="w-6 h-6 text-blue-500" />
                     )}
                     <button
-                      onClick={() => setPendingAttachments((prev) => prev.filter((_, i) => i !== idx))}
-                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/70 text-white"
+                      onClick={() => setPendingAttachments((p) => p.filter((_, i) => i !== idx))}
+                      className="absolute top-0.5 right-0.5 p-0.5 bg-black/70 text-white rounded-full hover:bg-rose-600"
                     >
                       <X className="w-3 h-3" />
                     </button>
+                    <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] truncate px-1 text-center">
+                      {att.name}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
-            {replyingTo && (
-              <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center justify-between`}>
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-1 h-8 bg-blue-600 rounded-full shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400">Replying to message</p>
-                    <p className={`text-[11px] ${theme.secondaryText} truncate`}>{replyingTo.content}</p>
-                  </div>
-                </div>
-                <button onClick={() => setReplyingTo(null)} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
+            {/* EMOJI PICKER MODAL */}
             {showEmojiPicker && (
-              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-48 overflow-y-auto`}>
-                <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-2 mb-2`}>
-                  <span className="text-xs font-bold">Emoji Picker</span>
-                  <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4" /></button>
+              <div className="absolute bottom-20 left-4 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3 w-72 max-h-72 overflow-y-auto animate-in fade-in">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                  <span className="text-xs font-bold">Emojis</span>
+                  <button onClick={() => setShowEmojiPicker(false)}><X className="w-3.5 h-3.5" /></button>
                 </div>
-                {Object.entries(EMOJI_CATEGORIES).map(([cat, emojis]) => (
+                {Object.entries(EMOJI_CATEGORIES).map(([cat, list]) => (
                   <div key={cat} className="mb-2">
-                    <p className={`text-[10px] font-bold ${theme.secondaryText} uppercase tracking-wider mb-1`}>{cat}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {emojis.map((em) => (
-                        <button key={em} onClick={() => setMessageText((p) => p + em)} className="text-lg hover:scale-125 transition-transform">
+                    <p className="text-[10px] font-bold text-slate-400 mb-1">{cat}</p>
+                    <div className="grid grid-cols-7 gap-1">
+                      {list.map((em) => (
+                        <button
+                          key={em}
+                          onClick={() => setMessageText((p) => p + em)}
+                          className="hover:scale-125 transition-transform text-lg p-1"
+                        >
                           {em}
                         </button>
                       ))}
@@ -1919,71 +2285,70 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
+            {/* STICKER PICKER */}
             {showStickerPicker && (
-              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-48 overflow-y-auto`}>
-                <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-2 mb-2`}>
-                  <span className="text-xs font-bold">Animated Stickers</span>
-                  <button onClick={() => setShowStickerPicker(false)}><X className="w-4 h-4" /></button>
+              <div className="absolute bottom-20 left-12 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3 w-80 max-h-72 overflow-y-auto animate-in fade-in">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                  <span className="text-xs font-bold">Engineering Stickers</span>
+                  <button onClick={() => setShowStickerPicker(false)}><X className="w-3.5 h-3.5" /></button>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {STICKER_PACKS.map((stk) => (
                     <button
                       key={stk.id}
-                      onClick={() => handleSendMessage(`Sticker: ${stk.name}`, "gif", stk.url)}
-                      className={`p-1 ${theme.iconBtn} rounded-xl flex items-center justify-center hover:scale-105 transition-all`}
+                      onClick={() => handleSendMessage(null, "gif", stk.url)}
+                      className="rounded-xl overflow-hidden hover:scale-105 transition-transform border border-slate-200 dark:border-slate-800"
                     >
-                      <img src={stk.url} alt={stk.name} className="w-16 h-16 object-contain" />
+                      <img src={stk.url} alt={stk.name} className="w-full h-16 object-cover" />
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* GIF SEARCH PICKER */}
             {showGifPicker && (
-              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-56 overflow-y-auto`}>
-                <div className={`flex items-center gap-2 border-b ${theme.modalBorder} pb-2 mb-2`}>
-                  <Search className={`w-4 h-4 ${theme.secondaryText}`} />
+              <div className="absolute bottom-20 left-20 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3 w-80 animate-in fade-in">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                  <span className="text-xs font-bold">Search GIFs</span>
+                  <button onClick={() => setShowGifPicker(false)}><X className="w-3.5 h-3.5" /></button>
+                </div>
+                <div className="flex gap-1 mb-2">
                   <input
                     type="text"
-                    placeholder="Search Tenor GIFs..."
+                    placeholder="Search GIFs..."
                     value={gifSearchQuery}
-                    onChange={(e) => searchGifs(e.target.value)}
-                    className="flex-1 bg-transparent text-xs focus:outline-none"
-                    autoFocus
+                    onChange={(e) => setGifSearchQuery(e.target.value)}
+                    className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl ${theme.inputBg} focus:outline-none`}
                   />
-                  <button onClick={() => setShowGifPicker(false)}><X className="w-4 h-4" /></button>
                 </div>
-                {gifLoading ? (
-                  <div className={`p-4 text-center text-xs ${theme.secondaryText}`}>Searching GIFs...</div>
-                ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {gifResults.map((gif) => (
-                      <button
-                        key={gif.id}
-                        onClick={() => handleSendMessage("GIF", "gif", gif.url)}
-                        className="rounded-xl overflow-hidden hover:opacity-90 hover:scale-105 transition-all h-20 bg-slate-200 dark:bg-slate-800"
-                      >
-                        <img src={gif.url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {STICKER_PACKS.map((g) => (
+                    <img
+                      key={g.id}
+                      src={g.url}
+                      alt=""
+                      onClick={() => handleSendMessage(null, "gif", g.url)}
+                      className="w-full h-20 object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform"
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
+            {/* INPUT CONTROLS BAR */}
             <div className={`relative z-10 p-3 border-t ${theme.modalBorder} ${theme.headerBg} backdrop-blur-md`}>
               {isRecordingVoice ? (
-                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/40 p-3 rounded-2xl animate-pulse">
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 bg-rose-500 rounded-full animate-ping" />
-                    <span className="font-mono text-sm font-bold text-rose-600 dark:text-rose-400">{formatDuration(voiceDuration)}</span>
-                    <span className="text-xs text-rose-500">Recording voice note...</span>
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 rounded-2xl p-2.5 px-4 animate-pulse">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                    <Mic className="w-4 h-4 animate-bounce" />
+                    <span>Recording voice note: {formatDuration(voiceDuration)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={cancelVoiceRecording} className={`px-3 py-1.5 ${theme.iconBtn} text-xs font-bold rounded-xl`}>
-                      Cancel
+                    <button onClick={cancelVoiceRecording} className="p-2 text-slate-400 hover:text-rose-600">
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                    <button onClick={stopVoiceRecording} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1">
+                    <button onClick={stopVoiceRecording} className="p-2 bg-blue-600 text-white rounded-xl font-bold text-xs flex items-center gap-1">
                       <Send className="w-3.5 h-3.5" /> Send
                     </button>
                   </div>
@@ -2004,21 +2369,21 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
-                    title="Attach Files"
+                    title="Attach File/Document"
                   >
                     <Paperclip className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={() => setViewOnceMode((p) => !p)}
-                    className={`p-2.5 rounded-xl transition-all shrink-0 ${viewOnceMode ? "bg-amber-500 text-white font-bold" : theme.iconBtn}`}
-                    title={viewOnceMode ? "View-Once Active" : "Enable View-Once"}
+                    className={`p-2.5 rounded-xl transition-all shrink-0 ${viewOnceMode ? "bg-amber-500 text-white" : theme.iconBtn}`}
+                    title={viewOnceMode ? "View Once Enabled" : "Send as View Once"}
                   >
-                    <Eye className="w-4 h-4" />
+                    {viewOnceMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
 
                   <button
-                    onClick={() => { setShowEmojiPicker((p) => !p); setShowStickerPicker(false); setShowGifPicker(false); }}
+                    onClick={() => setShowEmojiPicker((p) => !p)}
                     className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Emojis"
                   >
@@ -2026,40 +2391,41 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </button>
 
                   <button
-                    onClick={() => { setShowStickerPicker((p) => !p); setShowEmojiPicker(false); setShowGifPicker(false); }}
+                    onClick={() => setShowStickerPicker((p) => !p)}
                     className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Stickers"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkle className="w-4 h-4" />
                   </button>
 
                   <button
-                    onClick={() => { setShowGifPicker((p) => !p); setShowEmojiPicker(false); setShowStickerPicker(false); }}
-                    className={`px-2.5 py-1.5 rounded-xl ${theme.iconBtn} font-bold text-[11px] transition-all shrink-0`}
+                    onClick={() => setShowGifPicker((p) => !p)}
+                    className={`px-2 py-1.5 rounded-xl ${theme.iconBtn} text-[11px] font-black transition-all shrink-0`}
                     title="GIFs"
                   >
                     GIF
                   </button>
 
-                  <input
-                    type="text"
-                    placeholder={isPendingRequestForMe ? "Accept request above to reply..." : viewOnceMode ? "Add a view-once note..." : "Type your message..."}
-                    value={messageText}
-                    disabled={isPendingRequestForMe}
-                    onChange={handleTextChange}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    className={`flex-1 ${theme.inputBg} rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
-                  />
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="text"
+                      placeholder="Type your message..."
+                      value={messageText}
+                      onChange={handleTextChange}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-2xl ${theme.inputBg} border ${theme.modalBorder} text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                  </div>
 
                   {messageText.trim() || pendingAttachments.length > 0 ? (
                     <button
                       onClick={() => handleSendMessage()}
-                      className="p-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:scale-105 transition-all shrink-0"
+                      className="p-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-all shrink-0 cursor-pointer"
                       title="Send Message"
                     >
                       <Send className="w-4 h-4" />
@@ -2067,9 +2433,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   ) : (
                     <button
                       onClick={startVoiceRecording}
-                      disabled={isPendingRequestForMe}
-                      className={`p-2.5 rounded-2xl ${theme.iconBtn} hover:bg-blue-600 hover:text-white transition-all shrink-0 disabled:opacity-40`}
-                      title="Hold to Record Voice Note"
+                      className={`p-2.5 rounded-2xl ${theme.iconBtn} hover:text-blue-600 transition-all shrink-0 cursor-pointer`}
+                      title="Record Voice Note"
                     >
                       <Mic className="w-4 h-4" />
                     </button>
@@ -2079,72 +2444,203 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
         ) : (
-          <div className={`flex-1 flex flex-col items-center justify-center p-8 text-center ${theme.secondaryText} space-y-3`}>
-            <MessageSquare className="w-12 h-12 opacity-50" />
+          <div className={`flex-1 flex flex-col items-center justify-center ${theme.chatBg} ${theme.secondaryText} p-6 space-y-3`}>
+            <MessageSquare className="w-16 h-16 text-blue-600/40" />
             <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-200">Nova Real-Time Messenger</h3>
-            <p className="text-xs max-w-sm">
-              Select an engineer from the left sidebar or start a new conversation.
+            <p className="text-xs max-w-sm text-center">
+              Select a conversation from the left or start a new direct message with any registered engineer.
             </p>
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* 4. DETAILS / USER PROFILE PANEL                                   */}
+        {/* 4. DETAILS PANEL                                                  */}
         {/* ================================================================= */}
-        {showDetailsPanel && activeRecipient && (
-          <div className={`w-72 border-l ${theme.sidebarBg} p-5 flex flex-col space-y-5 animate-in slide-in-from-right`}>
-            <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
-              <h4 className="font-extrabold text-sm">Contact Info</h4>
+        {showDetailsPanel && activeConv && (
+          <div className={`w-72 border-l ${theme.sidebarBg} flex flex-col p-4 space-y-4 animate-in slide-in-from-right`}>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+              <h4 className="font-bold text-xs">Chat Details</h4>
               <button onClick={() => setShowDetailsPanel(false)}><X className="w-4 h-4" /></button>
             </div>
 
-            <div className="text-center space-y-2">
-              <div className="w-20 h-20 rounded-full bg-blue-600 text-white font-black text-2xl flex items-center justify-center mx-auto overflow-hidden border-2 border-slate-300 dark:border-slate-700">
-                {activeRecipient.avatar_url || activeRecipient.avatar ? (
-                  <img src={activeRecipient.avatar_url || activeRecipient.avatar} alt="" className="w-full h-full object-cover" />
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 font-bold text-xl flex items-center justify-center">
+                {headerAvatar ? (
+                  <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  (activeRecipient.display_name || activeRecipient.name || "E")[0].toUpperCase()
+                  (headerName || "U")[0].toUpperCase()
                 )}
               </div>
-              <h3 className="font-extrabold text-base">{customNickname || activeRecipient.display_name || activeRecipient.name}</h3>
-              <p className={`text-xs ${theme.secondaryText}`}>{activeRecipient.email}</p>
-              <span className="inline-block px-2.5 py-0.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-full text-[10px] font-bold">
-                {activeRecipient.plan || "Engineer"}
-              </span>
+              <h3 className="font-extrabold text-sm">{headerName}</h3>
+              <p className={`text-xs ${theme.secondaryText}`}>{activeConv.email || "Multi-engineer room"}</p>
             </div>
 
-            <div className={`p-3 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"} rounded-2xl border space-y-2`}>
-              <label className={`text-[11px] font-bold ${theme.secondaryText}`}>Private Nickname</label>
+            <div className="space-y-2 text-xs">
+              <label className="font-bold text-[11px] text-slate-400">Custom Nickname</label>
               <input
                 type="text"
-                placeholder="e.g. Lead FEA"
                 value={customNickname}
-                onChange={(e) => {
-                  setCustomNickname(e.target.value);
-                  localStorage.setItem(`nova_nick_${activeConv?.id}_${myUserId}`, e.target.value);
-                }}
-                className={`w-full px-2.5 py-1.5 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
+                onChange={(e) => handleSaveNickname(e.target.value)}
+                placeholder="Set nickname..."
+                className={`w-full px-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
               />
             </div>
 
-            <div className="mt-auto space-y-2">
+            {activeConv.type === "dm" && (
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={handleToggleBlock}
+                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                    hasBlockedTarget
+                      ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                      : "bg-rose-600/15 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white"
+                  }`}
+                >
+                  <UserX className="w-4 h-4" />
+                  {hasBlockedTarget ? "Unblock Engineer" : "Block Engineer"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 5. REAL USER PROFILE POPOVER MODAL (PROFILE TAP TO SEE)           */}
+        {/* ================================================================= */}
+        {inspectingProfile && (
+          <div className="fixed inset-0 z-[280] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in" onClick={() => setInspectingProfile(null)}>
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl shadow-2xl border ${theme.modalBorder} w-full max-w-sm overflow-hidden font-sans relative p-6 pt-8 text-center flex flex-col items-center`} onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={handleToggleBlock}
-                className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${hasBlockedTarget ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-500/15 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white"}`}
+                onClick={() => setInspectingProfile(null)}
+                className={`absolute top-4 right-4 p-1.5 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white rounded-full transition-colors`}
               >
-                <UserX className="w-4 h-4" />
-                {hasBlockedTarget ? "Unblock User" : "Block User"}
+                <X className="w-5 h-5" />
               </button>
+
+              {/* Large HD Profile Avatar with Verified Badge Overlay */}
+              <div className="relative mb-3">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-3xl flex items-center justify-center border-4 border-white dark:border-slate-800 shadow-xl overflow-hidden">
+                  {inspectingProfile.avatar_url || inspectingProfile.avatar ? (
+                    <img src={inspectingProfile.avatar_url || inspectingProfile.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    (inspectingProfile.full_name || inspectingProfile.display_name || inspectingProfile.name || "U")[0].toUpperCase()
+                  )}
+                </div>
+                <span className="absolute bottom-0 right-0 bg-slate-900 text-amber-400 text-xs font-black px-2 py-0.5 rounded-full border-2 border-white dark:border-slate-800 shadow-xs flex items-center gap-0.5">
+                  &lt;/&gt;
+                </span>
+              </div>
+
+              {/* User Real Name */}
+              <h3 className="text-xl font-extrabold text-blue-600 dark:text-blue-400 mb-1">
+                {inspectingProfile.full_name || inspectingProfile.display_name || inspectingProfile.name || inspectingProfile.email?.split("@")[0]}
+              </h3>
+
+              {/* User Role / Plan Badge */}
+              <span className="px-3 py-0.5 rounded-md border border-slate-300 dark:border-slate-700 text-[11px] font-black tracking-wider text-slate-700 dark:text-slate-300 uppercase mb-4">
+                {inspectingProfile.plan ? `${inspectingProfile.plan.toUpperCase()} MEMBER` : "VERIFIED ENGINEER"}
+              </span>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-3 gap-2 w-full mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const profileTarget = inspectingProfile;
+                    setInspectingProfile(null);
+                    const matched = conversations.find((c) => c.email?.toLowerCase() === profileTarget.email?.toLowerCase());
+                    if (matched) {
+                      selectConversation(matched);
+                    } else {
+                      selectConversation({
+                        id: `user_${profileTarget.id || profileTarget.email}`,
+                        conv_id: null,
+                        type: "dm",
+                        name: profileTarget.full_name || profileTarget.email?.split("@")[0],
+                        email: profileTarget.email,
+                        avatar: profileTarget.avatar_url || profileTarget.avatar,
+                        avatar_url: profileTarget.avatar_url || profileTarget.avatar,
+                        is_request: true,
+                        created_by: myUserId,
+                        otherUser: profileTarget
+                      });
+                    }
+                  }}
+                  className="py-2.5 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" /> Message
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = inspectingProfile;
+                    setInspectingProfile(null);
+                    initiateCallToUser(target, "audio");
+                  }}
+                  className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
+                >
+                  <Phone className="w-3.5 h-3.5 text-emerald-500" /> Audio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = inspectingProfile;
+                    setInspectingProfile(null);
+                    initiateCallToUser(target, "video");
+                  }}
+                  className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
+                >
+                  <Video className="w-3.5 h-3.5 text-blue-500" /> Video
+                </button>
+              </div>
+
+              {/* Real Live Stats */}
+              <div className="grid grid-cols-2 gap-4 w-full py-3 border-y border-slate-200 dark:border-slate-800 mb-3">
+                <div>
+                  <p className="text-xl font-black text-slate-900 dark:text-white">{inspectingProfile.discussionsCount ?? 0}</p>
+                  <p className="text-[11px] font-medium text-slate-400">Discussions</p>
+                </div>
+                <div>
+                  <p className="text-xl font-black text-slate-900 dark:text-white">{inspectingProfile.commentsCount ?? 0}</p>
+                  <p className="text-[11px] font-medium text-slate-400">Comments</p>
+                </div>
+              </div>
+
+              {/* Real Badges Row */}
+              <div className="flex items-center justify-center gap-2 py-2 border-b border-slate-200 dark:border-slate-800 w-full mb-3">
+                <span className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs" title="Verified Engineer">✓</span>
+                <span className="w-8 h-8 rounded-md bg-amber-400 text-slate-900 font-black text-xs flex items-center justify-center shadow-xs" title="Code Contributor">&lt;/&gt;</span>
+                <span className="w-8 h-8 rounded-md bg-slate-900 text-yellow-400 font-black text-xs flex items-center justify-center shadow-xs" title="Active Solver">⚡</span>
+                <span className="w-8 h-8 rounded-full bg-cyan-500 text-white font-black text-xs flex items-center justify-center shadow-xs" title="Community Upvoter">⬆️</span>
+              </div>
+
+              {/* User Real Email & Real Active Status */}
+              <div className={`text-[11px] ${theme.secondaryText} flex items-center justify-between w-full`}>
+                <span className="truncate max-w-[170px]" title={inspectingProfile.email}>{inspectingProfile.email}</span>
+                <span className="font-bold flex items-center gap-1">
+                  {inspectingProfile.email && onlineUsers.has(inspectingProfile.email.toLowerCase()) ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Active now
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                      Offline
+                    </span>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* 5. GROUP SETTINGS MODAL                                           */}
+        {/* 6. GROUP SETTINGS MODAL                                           */}
         {/* ================================================================= */}
         {showGroupSettings && activeConv && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4`}>
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4`}>
               <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
                 <h3 className="font-extrabold text-base">Group Settings</h3>
                 <button onClick={() => setShowGroupSettings(false)}><X className="w-5 h-5" /></button>
@@ -2207,8 +2703,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   {registeredUsers.map((u) => (
                     <div key={u.id} className={`p-2 flex items-center justify-between ${theme.hoverBg} rounded-xl`}>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center">
-                          {(u.full_name || u.email)[0].toUpperCase()}
+                        <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center overflow-hidden">
+                          {u.avatar_url || u.avatar ? (
+                            <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            (u.full_name || u.email)[0].toUpperCase()
+                          )}
                         </div>
                         <span className="text-xs font-bold">{u.full_name || u.email}</span>
                       </div>
@@ -2234,7 +2734,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 6. CREATE GROUP MODAL                                             */}
+        {/* 7. CREATE GROUP MODAL                                             */}
         {/* ================================================================= */}
         {showCreateGroupModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2251,116 +2751,152 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   placeholder="e.g. FEA Analysis Squad"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className={`w-full px-3.5 py-2.5 mt-1 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
+                  className={`w-full mt-1 px-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
                 />
               </div>
 
               <div>
-                <label className={`text-xs font-bold ${theme.secondaryText}`}>Select Members ({selectedGroupUsers.length})</label>
+                <label className={`text-xs font-bold ${theme.secondaryText}`}>Select Engineers</label>
                 <div className={`max-h-48 overflow-y-auto divide-y ${theme.modalBorder} mt-2`}>
                   {registeredUsers.map((u) => {
-                    const isSel = selectedGroupUsers.some((s) => (s.id || s.user_id) === (u.id || u.user_id));
+                    const isSel = selectedGroupUsers.includes(u.user_id || u.id);
                     return (
-                      <button
+                      <div
                         key={u.id}
-                        type="button"
                         onClick={() => {
-                          setSelectedGroupUsers((prev) => isSel ? prev.filter((s) => (s.id || s.user_id) !== (u.id || u.user_id)) : [...prev, u]);
+                          const uid = u.user_id || u.id;
+                          setSelectedGroupUsers((prev) =>
+                            isSel ? prev.filter((id) => id !== uid) : [...prev, uid]
+                          );
                         }}
-                        className={`w-full p-2.5 flex items-center justify-between rounded-xl transition-all ${isSel ? "bg-blue-600/20 text-blue-600 dark:text-white" : theme.hoverBg}`}
+                        className={`w-full p-2.5 flex items-center justify-between rounded-xl transition-all cursor-pointer ${isSel ? "bg-blue-600/20 text-blue-600 dark:text-white" : theme.hoverBg}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 font-bold text-xs flex items-center justify-center">
-                            {(u.full_name || u.email)[0].toUpperCase()}
+                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 font-bold text-xs flex items-center justify-center overflow-hidden">
+                            {u.avatar_url || u.avatar ? (
+                              <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              (u.full_name || u.email)[0].toUpperCase()
+                            )}
                           </div>
                           <span className="text-xs font-bold">{u.full_name || u.email}</span>
                         </div>
-                        {isSel && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-                      </button>
+                        {isSel && <Check className="w-4 h-4 text-blue-600" />}
+                      </div>
                     );
                   })}
                 </div>
               </div>
 
               <button
-                onClick={handleCreateGroup}
                 disabled={!newGroupName.trim() || selectedGroupUsers.length === 0}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 text-white font-bold text-xs rounded-2xl shadow-xl transition-all"
+                onClick={async () => {
+                  try {
+                    const { data: conv } = await supabase
+                      .from("conversations")
+                      .insert([{ type: "group", name: newGroupName.trim(), created_by: myUserId }])
+                      .select("id")
+                      .single();
+
+                    if (conv?.id) {
+                      const participants = [myUserId, ...selectedGroupUsers].map((uid) => ({
+                        conversation_id: conv.id,
+                        user_id: uid
+                      }));
+                      await supabase.from("conversation_participants").insert(participants);
+                      setShowCreateGroupModal(false);
+                      setNewGroupName("");
+                      setSelectedGroupUsers([]);
+                      loadConversations();
+                    }
+                  } catch (e) {
+                    alert("Group creation error: " + e.message);
+                  }
+                }}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
               >
-                Create Group
+                Create Group Discussion
               </button>
             </div>
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* 7. NEW DIRECT MESSAGE MODAL                                       */}
+        {/* 8. NEW DIRECT MESSAGE MODAL                                       */}
         {/* ================================================================= */}
         {showNewChatModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
             <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4`}>
               <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
-                <h3 className="font-extrabold text-base">New Conversation</h3>
+                <h3 className="font-extrabold text-base">New Direct Message</h3>
                 <button onClick={() => setShowNewChatModal(false)}><X className="w-5 h-5" /></button>
               </div>
 
-              <p className={`text-xs ${theme.secondaryText}`}>Select any registered engineer in the Nova platform:</p>
-
-              <div className={`max-h-64 overflow-y-auto divide-y ${theme.modalBorder}`}>
-                {registeredUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      selectConversation({
-                        id: `user_${u.id}`,
-                        conv_id: null,
-                        type: "dm",
-                        name: u.full_name || u.display_name || u.email,
-                        email: u.email,
-                        avatar: u.avatar_url,
-                        is_request: true,
-                        created_by: myUserId,
-                        otherUser: u
-                      });
-                      setShowNewChatModal(false);
-                    }}
-                    className={`w-full p-3 flex items-center gap-3 ${theme.hoverBg} rounded-2xl transition-colors text-left`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                      {(u.full_name || u.email)[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-xs">{u.full_name || u.display_name || u.email}</h4>
-                      <p className={`text-[11px] ${theme.secondaryText}`}>{u.email}</p>
-                    </div>
-                  </button>
-                ))}
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {registeredUsers.length === 0 ? (
+                  <p className={`text-xs ${theme.secondaryText} text-center py-4`}>No other registered engineers found</p>
+                ) : (
+                  registeredUsers.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => {
+                        setShowNewChatModal(false);
+                        selectConversation({
+                          id: `user_${u.id || u.email}`,
+                          conv_id: null,
+                          type: "dm",
+                          name: u.full_name || u.display_name || u.email,
+                          email: u.email,
+                          avatar: u.avatar_url || u.avatar,
+                          avatar_url: u.avatar_url || u.avatar,
+                          is_request: true,
+                          created_by: myUserId,
+                          otherUser: u
+                        });
+                      }}
+                      className={`w-full p-3 flex items-center gap-3 ${theme.hoverBg} rounded-2xl transition-colors text-left cursor-pointer`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden">
+                        {u.avatar_url || u.avatar ? (
+                          <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          (u.full_name || u.email)[0].toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs">{u.full_name || u.display_name || u.email}</h4>
+                        <p className={`text-[10px] ${theme.secondaryText}`}>{u.email}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 ml-auto text-slate-400" />
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* 8. SECURE VIEW-ONCE LIGHTBOX                                      */}
+        {/* 9. SECURE VIEW-ONCE LIGHTBOX                                      */}
         {/* ================================================================= */}
         {secureLightboxMsg && (
           <div className="fixed inset-0 z-[300] bg-black/95 flex flex-col items-center justify-center p-6 animate-in zoom-in-95">
             <button
               onClick={() => setSecureLightboxMsg(null)}
-              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white"
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
             >
               <X className="w-6 h-6" />
             </button>
-            <div className="text-center mb-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold">
-                <Eye className="w-4 h-4" /> Self-Destructing View-Once Media
-              </div>
+            <div className="max-w-2xl max-h-[80vh] flex flex-col items-center space-y-4">
+              <span className="text-xs text-amber-400 font-bold flex items-center gap-1.5">
+                <Shield className="w-4 h-4" /> Self-destructing after this view
+              </span>
+              {secureLightboxMsg.media_type === "image" ? (
+                <img src={secureLightboxMsg.media_url} alt="" className="max-h-[70vh] rounded-2xl object-contain shadow-2xl" />
+              ) : (
+                <video src={secureLightboxMsg.media_url} controls autoPlay className="max-h-[70vh] rounded-2xl" />
+              )}
             </div>
-            {secureLightboxMsg.media_type === "video" ? (
-              <video src={secureLightboxMsg.media_url} autoPlay controls className="max-w-2xl max-h-[70vh] rounded-2xl shadow-2xl" />
-            ) : (
-              <img src={secureLightboxMsg.media_url} alt="" className="max-w-2xl max-h-[70vh] rounded-2xl shadow-2xl object-contain" />
-            )}
           </div>
         )}
 

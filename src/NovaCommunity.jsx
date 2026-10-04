@@ -1621,7 +1621,8 @@ export default function NovaCommunity({ currentUser }) {
                                   setMessengerRecipient({
                                     name: post.user_name,
                                     email: post.user_email,
-                                    avatar: post.user_avatar
+                                    avatar: post.user_avatar,
+                                    avatar_url: post.user_avatar
                                   });
                                   setShowMessenger(true);
                                   setActiveMenuPostId(null);

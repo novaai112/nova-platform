@@ -1324,6 +1324,7 @@ export default function App() {
       email: user.email,
       initial: fullName.charAt(0).toUpperCase(),
       avatar: user.user_metadata?.avatar_url || null,
+      avatar_url: user.user_metadata?.avatar_url || null,
       company: user.user_metadata?.company || "Not Provided",
       phone: user.user_metadata?.phone || "Not Provided",
       joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -1346,6 +1347,8 @@ export default function App() {
         setCurrentUser(prev => ({
           ...prev,
           plan: finalPlan,
+          avatar: dbProfile.avatar_url || prev.avatar,
+          avatar_url: dbProfile.avatar_url || prev.avatar_url || prev.avatar,
           dailyCreditsTotal: finalTotal,
           dailyCreditsRemaining: finalRemaining
         }));
