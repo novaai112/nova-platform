@@ -9,7 +9,7 @@ import {
   Hash, Radio, Settings, UserPlus, LogOut, MessageSquarePlus, UserX,
   ChevronRight, Play, Square, Info, Shield, ShieldAlert, Sparkle,
   PhoneIncoming, PhoneMissed, Clock, Edit2, Sun, Moon, Lock, Unlock,
-  CheckCheck as DoubleCheck, Zap, Award, ExternalLink
+  CheckCheck as DoubleCheck, Zap, Award, ExternalLink, UserCheck
 } from "lucide-react";
 
 const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉", "👏"];
@@ -17,7 +17,7 @@ const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉
 const EMOJI_CATEGORIES = {
   Smileys: ["😀","😃","😄","😁","😆","😅","😂","🤣","🥲","☺️","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🤫","🤥","😶","😐","😑","😬","🫠","🙄","😯","😦","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤠","😈","👿","💩","👻","💀","👽","🤖","🎃"],
   Gestures: ["👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏","✍️","💪","👀","🧠"],
-  Animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐴","🦄","🐝","🐛","🦋","🐙","🐬","🐳","鯊","🐊","🐘","🦒","🐕"],
+  Animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐴","🦄","🐝","🐛","🦋","🐙","🐬","🐳","🦈","🐊","🐘","🦒","🐕"],
   Food: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍒","🍑","🍍","🥥","🥝","🍅","🥑","🥦","🌽","🥕","🍞","🥐","🧀","🍳","🥓","🥩","🍗","🍔","🍟","🍕","🥪","🌮","🍜","🍣","🍿","🍩","🍪","🍫","☕️","🧃","🍺","🥂"],
   Hearts: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝"]
 };
@@ -83,12 +83,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [activeTab, setActiveTab] = useState("all");
+  const [requestsSubTab, setRequestsSubTab] = useState("received"); // "received" | "sent"
   const [searchQuery, setSearchQuery] = useState("");
   const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [chatSearchText, setChatSearchText] = useState("");
 
   // Modals & Panels
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showSendRequestModal, setShowSendRequestModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
@@ -96,8 +98,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearchQuery, setGifSearchQuery] = useState("");
-  const [gifResults, setGifResults] = useState([]);
-  const [gifLoading, setGifLoading] = useState(false);
 
   // Messages & Reactions State
   const [messages, setMessages] = useState([]);
@@ -182,7 +182,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return map;
   }, [masterUserDict, registeredUsers, currentUser, myName, myAvatar]);
 
-  // Request & Acceptance status calculation
+  // Request lists & counts
+  const incomingRequests = useMemo(() => {
+    return conversations.filter((c) => c.is_request && c.created_by !== myUserId);
+  }, [conversations, myUserId]);
+
+  const outgoingRequests = useMemo(() => {
+    return conversations.filter((c) => c.is_request && c.created_by === myUserId);
+  }, [conversations, myUserId]);
+
+  const pendingRequestsCount = incomingRequests.length;
+
+  // Request & Acceptance status calculation for active chat
   const isPendingRequestForMe = activeConv?.is_request && activeConv?.created_by !== myUserId;
   const isPendingRequestByMe = activeConv?.is_request && activeConv?.created_by === myUserId;
   const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
@@ -320,7 +331,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
       setMasterUserDict(dict);
 
-      // Create unique registered users list
       const uniqueList = [];
       const seen = new Set();
       Object.values(dict).forEach((item) => {
@@ -511,6 +521,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           avatar_url: realAvatar,
           wallpaper_url: c.wallpaper_url || null,
           is_request: !!c.is_request,
+          request_status: c.request_status || (c.is_request ? "pending" : "accepted"),
           created_by: c.created_by,
           lastMessage: lastPreview,
           lastTime: lastM?.created_at ? new Date(lastM.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "",
@@ -539,6 +550,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             avatar_url: partnerAvatar,
             wallpaper_url: null,
             is_request: false,
+            request_status: "accepted",
             created_by: null,
             lastMessage: msg.content || "Attachment",
             lastTime: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -564,6 +576,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             avatar_url: realAvatar,
             wallpaper_url: null,
             is_request: true,
+            request_status: "not_started",
             created_by: myUserId,
             lastMessage: "No messages yet",
             lastTime: "",
@@ -739,7 +752,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     const cid = activeConv.conv_id;
 
     const ch = supabase
-      .channel(`rt-conv-v4-${cid}`)
+      .channel(`rt-conv-v5-${cid}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
         const newMsg = payload.new;
         if (!newMsg) return;
@@ -772,7 +785,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         if (payload.old?.id) setReactions((prev) => prev.filter((r) => r.id !== payload.old.id));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${cid}` }, (payload) => {
-        if (payload.new) setActiveConv((prev) => prev ? { ...prev, ...payload.new } : null);
+        if (payload.new) {
+          setActiveConv((prev) => prev ? { ...prev, ...payload.new } : null);
+          loadConversations();
+        }
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "typing_indicators", filter: `conversation_id=eq.${cid}` }, async () => {
         const { data } = await supabase
@@ -783,7 +799,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         setTypingUsers((data || []).map((t) => t.user_id).filter((id) => id !== myUserId));
       })
       .on("broadcast", { event: "request-accepted" }, () => {
-        setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
+        setActiveConv((prev) => prev ? { ...prev, is_request: false, request_status: "accepted" } : null);
+        loadConversations();
       })
       .subscribe();
 
@@ -791,7 +808,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [activeConv?.conv_id, myUserId, userMap, currentUser, activeRecipient]);
+  }, [activeConv?.conv_id, myUserId, userMap, currentUser, activeRecipient, loadConversations]);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -808,7 +825,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       .channel(`nova-calls-${myUserId}`)
       .on("broadcast", { event: "call-signal" }, async ({ payload }) => {
         if (!payload) return;
-        const { type, from, callerName, callType, data } = payload;
+        const { type, from, callerName, callType, data, convId } = payload;
 
         if (type === "offer") {
           const callerProfile = userMap[from] || { user_id: from, name: callerName || "Engineer" };
@@ -842,6 +859,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           endCallCleanup();
         } else if (type === "video-upgrade-request") {
           setVideoUpgradeRequested(true);
+        } else if (type === "new-request") {
+          loadConversations();
+        } else if (type === "request-accepted") {
+          loadConversations();
+          setActiveConv((prev) => (prev && (prev.conv_id === convId || prev.id === convId) ? { ...prev, is_request: false, request_status: "accepted" } : prev));
+        } else if (type === "request-declined") {
+          loadConversations();
+          setActiveConv((prev) => (prev && (prev.conv_id === convId || prev.id === convId) ? null : prev));
         }
       })
       .subscribe();
@@ -876,7 +901,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       supabase.removeChannel(userSignalChannel);
       supabase.removeChannel(dbCallsChannel);
     };
-  }, [myUserId, userMap, activeCall]);
+  }, [myUserId, userMap, activeCall, loadConversations]);
 
   const sendCallSignal = (targetUserId, signalPayload) => {
     supabase.channel(`nova-calls-${targetUserId}`).send({
@@ -1404,28 +1429,162 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // Request Lifecycle: Accept & Decline
-  const handleAcceptRequest = async () => {
-    if (!activeConv?.conv_id) return;
+  // =========================================================================
+  // 9. REAL REQUEST LIFECYCLE: ACCEPT, DECLINE, CANCEL & SEND
+  // =========================================================================
+  const handleAcceptRequest = async (targetConv = null) => {
+    const convToAccept = targetConv || activeConv;
+    const cid = convToAccept?.conv_id || convToAccept?.id;
+    if (!cid) return;
+
     try {
-      await supabase.rpc("accept_conversation_request", { _conv_id: activeConv.conv_id });
-      setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
-      setConversations((prev) => prev.map((c) => c.conv_id === activeConv.conv_id ? { ...c, is_request: false } : c));
-      if (rtcChannelRef.current) {
-        rtcChannelRef.current.send({ type: "broadcast", event: "request-accepted", payload: {} });
+      await supabase.rpc("accept_conversation_request", { _conv_id: cid });
+
+      setActiveConv((prev) => {
+        if (!prev) return prev;
+        if (prev.conv_id === cid || prev.id === cid) {
+          return { ...prev, is_request: false, request_status: "accepted" };
+        }
+        return prev;
+      });
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.conv_id === cid || c.id === cid
+            ? { ...c, is_request: false, request_status: "accepted" }
+            : c
+        )
+      );
+
+      if (!activeConv || (activeConv.conv_id !== cid && activeConv.id !== cid)) {
+        selectConversation({ ...convToAccept, is_request: false, request_status: "accepted" });
+      }
+
+      const otherId = convToAccept.otherUser?.user_id || convToAccept.otherUser?.id || convToAccept.created_by;
+      if (otherId) {
+        sendCallSignal(otherId, {
+          type: "request-accepted",
+          from: myUserId,
+          convId: cid
+        });
+      }
+
+      // Insert system acceptance message directly to the conversation
+      try {
+        const acceptText = "🤝 Connection request accepted! You can now chat and call freely in real time.";
+        const { data: insertedMsg } = await supabase.from("messages").insert({
+          conversation_id: cid,
+          user_id: myUserId,
+          content: acceptText,
+          media_type: "text",
+          view_limit: 0
+        }).select().maybeSingle();
+
+        if (insertedMsg) {
+          setMessages((prev) => [...prev, {
+            ...insertedMsg,
+            sender_name: currentUser?.name || currentUser?.full_name || "Me",
+            sender_avatar: currentUser?.avatar_url || currentUser?.avatar || null
+          }]);
+        }
+      } catch (msgErr) {
+        console.warn("Accept notification message error:", msgErr);
       }
     } catch (err) {
       console.warn("Accept error:", err);
     }
   };
 
-  const handleDeclineRequest = async () => {
-    if (!activeConv?.conv_id) return;
-    if (confirm("Decline this chat request?")) {
-      await supabase.from("conversations").delete().eq("id", activeConv.conv_id);
-      setActiveConv(null);
-      setActiveConvId(null);
-      loadConversations();
+  const handleDeclineRequest = async (targetConv = null) => {
+    const convToDecline = targetConv || activeConv;
+    const cid = convToDecline?.conv_id || convToDecline?.id;
+    if (!cid) return;
+
+    try {
+      await supabase.rpc("decline_conversation_request", { _conv_id: cid });
+
+      setConversations((prev) => prev.filter((c) => c.conv_id !== cid && c.id !== cid));
+      if (activeConv && (activeConv.conv_id === cid || activeConv.id === cid)) {
+        setActiveConv(null);
+        setActiveConvId(null);
+      }
+
+      const otherId = convToDecline.otherUser?.user_id || convToDecline.otherUser?.id || convToDecline.created_by;
+      if (otherId) {
+        sendCallSignal(otherId, {
+          type: "request-declined",
+          from: myUserId,
+          convId: cid
+        });
+      }
+    } catch (err) {
+      console.warn("Decline error:", err);
+    }
+  };
+
+  const handleCancelSentRequest = async (targetConv) => {
+    const cid = targetConv?.conv_id || targetConv?.id;
+    if (!cid) return;
+    try {
+      await supabase.rpc("decline_conversation_request", { _conv_id: cid });
+      setConversations((prev) => prev.filter((c) => c.conv_id !== cid && c.id !== cid));
+      if (activeConv && (activeConv.conv_id === cid || activeConv.id === cid)) {
+        setActiveConv(null);
+        setActiveConvId(null);
+      }
+    } catch (err) {
+      console.warn("Cancel request error:", err);
+    }
+  };
+
+  const handleSendRequest = async (targetUser) => {
+    if (!targetUser || !myUserId) return;
+    const targetUserId = targetUser.user_id || targetUser.id;
+    if (!targetUserId) {
+      alert("Invalid user selected");
+      return;
+    }
+
+    try {
+      const { data: convId, error } = await supabase.rpc("send_conversation_request", {
+        _sender_id: myUserId,
+        _recipient_id: targetUserId
+      });
+      if (error) throw error;
+
+      sendCallSignal(targetUserId, {
+        type: "new-request",
+        from: myUserId,
+        senderName: myName,
+        senderAvatar: myAvatar,
+        convId: convId
+      });
+
+      await loadConversations();
+
+      const newConvObj = {
+        id: convId,
+        conv_id: convId,
+        type: "dm",
+        name: targetUser.full_name || targetUser.display_name || targetUser.email?.split("@")[0],
+        email: targetUser.email,
+        avatar: targetUser.avatar_url || targetUser.avatar,
+        avatar_url: targetUser.avatar_url || targetUser.avatar,
+        is_request: true,
+        request_status: "pending",
+        created_by: myUserId,
+        otherUser: targetUser,
+        lastMessage: "Connection request sent",
+        lastTime: "Just now"
+      };
+
+      selectConversation(newConvObj);
+      setShowNewChatModal(false);
+      setShowSendRequestModal(false);
+      setInspectingProfile(null);
+    } catch (err) {
+      console.warn("Send request error:", err);
+      alert("Error sending request: " + err.message);
     }
   };
 
@@ -1457,8 +1616,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const pendingRequestsCount = conversations.filter((c) => c.is_request && c.created_by !== myUserId).length;
-
   // Real Active Status of current partner
   const partnerProfile = activeRecipient ? (userMap[activeRecipient.user_id || activeRecipient.id || activeRecipient.email?.toLowerCase()] || activeRecipient) : {};
   const isCurrentPartnerOnline = partnerProfile?.email && onlineUsers.has(partnerProfile.email.toLowerCase());
@@ -1470,7 +1627,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (!matchSearch) return false;
     if (activeTab === "direct") return c.type === "dm" && !c.is_request;
     if (activeTab === "groups") return c.type === "group";
-    if (activeTab === "requests") return c.is_request && c.created_by !== myUserId;
     return true;
   });
 
@@ -1673,12 +1829,21 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </button>
 
               <button
+                onClick={() => setShowSendRequestModal(true)}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-blue-600 dark:text-blue-400`}
+                title="Send Connection Request"
+              >
+                <Zap className="w-4 h-4 text-amber-500" />
+              </button>
+
+              <button
                 onClick={() => setShowNewChatModal(true)}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
                 title="Start Direct Chat"
               >
                 <MessageSquarePlus className="w-4 h-4" />
               </button>
+
               <button
                 onClick={() => setShowCreateGroupModal(true)}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
@@ -1686,6 +1851,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               >
                 <Users className="w-4 h-4" />
               </button>
+
               <button
                 onClick={onClose}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
@@ -1742,75 +1908,231 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             ))}
           </div>
 
-          {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
-            {filteredConvs.length === 0 ? (
-              <div className={`p-8 text-center text-xs ${theme.secondaryText}`}>
-                <p>No conversations found</p>
+          {/* SIDEBAR BODY: DEDICATED REQUESTS VIEW OR CONVERSATIONS LIST */}
+          {activeTab === "requests" ? (
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Requests Sub-header with toggle & Send Request button */}
+              <div className={`p-2.5 border-b ${theme.modalBorder} flex items-center justify-between gap-1 bg-slate-50/50 dark:bg-slate-900/50`}>
+                <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-bold">
+                  <button
+                    onClick={() => setRequestsSubTab("received")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${requestsSubTab === "received" ? "bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-black" : "text-slate-600 dark:text-slate-400"}`}
+                  >
+                    Received ({incomingRequests.length})
+                  </button>
+                  <button
+                    onClick={() => setRequestsSubTab("sent")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${requestsSubTab === "sent" ? "bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-black" : "text-slate-600 dark:text-slate-400"}`}
+                  >
+                    Sent ({outgoingRequests.length})
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setShowNewChatModal(true)}
-                  className="mt-3 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold transition-all"
+                  onClick={() => setShowSendRequestModal(true)}
+                  className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-bold transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer"
+                  title="Send a connection request to an engineer"
                 >
-                  + New Conversation
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <span>+ Send Request</span>
                 </button>
               </div>
-            ) : (
-              filteredConvs.map((c) => {
-                const isSelected = activeConvId === c.id;
-                const partnerKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
-                const resolvedUser = partnerKey ? userMap[partnerKey] : null;
-                const convAvatar = c.avatar || resolvedUser?.avatar_url || resolvedUser?.avatar || null;
-                const convName = c.type === "group" ? (c.name || "Group") : (resolvedUser?.full_name || resolvedUser?.display_name || c.name || "User");
-                const isUserOnline = c.email && onlineUsers.has(c.email.toLowerCase());
 
-                return (
-                  <div
-                    key={c.id}
-                    onClick={() => selectConversation(c)}
-                    className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
+              {/* Requests Content Stream */}
+              <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5">
+                {requestsSubTab === "received" ? (
+                  incomingRequests.length === 0 ? (
+                    <div className={`p-8 text-center text-xs ${theme.secondaryText} space-y-2`}>
+                      <ShieldCheckIcon className="w-10 h-10 mx-auto opacity-40 text-blue-500" />
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">No Pending Requests</p>
+                      <p className="text-[11px] max-w-xs mx-auto">
+                        When another engineer sends you a connection request, it will appear here with Accept and Decline buttons.
+                      </p>
+                      <button
+                        onClick={() => setShowSendRequestModal(true)}
+                        className="mt-2 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold text-xs transition-all"
+                      >
+                        Send Connection Request
+                      </button>
+                    </div>
+                  ) : (
+                    incomingRequests.map((c) => {
+                      const partnerKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                      const resolvedUser = partnerKey ? userMap[partnerKey] : null;
+                      const convAvatar = c.avatar || resolvedUser?.avatar_url || resolvedUser?.avatar || null;
+                      const convName = resolvedUser?.full_name || resolvedUser?.display_name || c.name || "Engineer";
+                      const isUserOnline = c.email && onlineUsers.has(c.email.toLowerCase());
+
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => selectConversation(c)}
+                          className={`p-3 rounded-2xl border ${theme.modalBorder} ${theme.cardBg} space-y-3 shadow-xs transition-all hover:border-blue-500/40 cursor-pointer`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative shrink-0" onClick={(e) => { e.stopPropagation(); openUserProfile(resolvedUser || c.otherUser); }}>
+                              <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs overflow-hidden border border-slate-300 dark:border-slate-700">
+                                {convAvatar ? <img src={convAvatar} alt="" className="w-full h-full object-cover" /> : (convName || "U")[0].toUpperCase()}
+                              </div>
+                              {isUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <h4 className="font-extrabold text-xs truncate text-blue-600 dark:text-blue-400">{convName}</h4>
+                                <span className="text-[10px] text-slate-400">{c.lastTime}</span>
+                              </div>
+                              <p className={`text-[11px] ${theme.secondaryText} truncate font-medium`}>
+                                Sent you a connection request
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Real Accept and Decline Buttons */}
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleAcceptRequest(c); }}
+                              className="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleDeclineRequest(c); }}
+                              className="py-2 px-3 bg-rose-600/15 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" /> Decline
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
+                ) : (
+                  outgoingRequests.length === 0 ? (
+                    <div className={`p-8 text-center text-xs ${theme.secondaryText} space-y-3`}>
+                      <Clock className="w-10 h-10 mx-auto opacity-40 text-blue-500" />
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">No Sent Requests</p>
+                      <p className="text-[11px] max-w-xs mx-auto">
+                        You have not sent any pending connection requests to other engineers.
+                      </p>
+                      <button
+                        onClick={() => setShowSendRequestModal(true)}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-xs shadow-xs hover:from-blue-500 hover:to-indigo-500 transition-all cursor-pointer"
+                      >
+                        + Send Request Now
+                      </button>
+                    </div>
+                  ) : (
+                    outgoingRequests.map((c) => {
+                      const partnerKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                      const resolvedUser = partnerKey ? userMap[partnerKey] : null;
+                      const convAvatar = c.avatar || resolvedUser?.avatar_url || resolvedUser?.avatar || null;
+                      const convName = resolvedUser?.full_name || resolvedUser?.display_name || c.name || "Engineer";
+
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => selectConversation(c)}
+                          className={`p-3 rounded-2xl border ${theme.modalBorder} ${theme.cardBg} flex items-center justify-between gap-3 shadow-xs transition-all hover:border-blue-500/40 cursor-pointer`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-xs overflow-hidden border border-slate-300 dark:border-slate-700 shrink-0">
+                              {convAvatar ? <img src={convAvatar} alt="" className="w-full h-full object-cover" /> : (convName || "U")[0].toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-xs truncate">{convName}</h4>
+                              <p className="text-[10px] text-amber-500 font-semibold flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3 animate-spin" /> Pending Approval
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleCancelSentRequest(c); }}
+                            className="px-2.5 py-1 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer"
+                            title="Cancel this request"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      );
+                    })
+                  )
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Standard Conversations List for All Chats / Direct / Groups */
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
+              {filteredConvs.length === 0 ? (
+                <div className={`p-8 text-center text-xs ${theme.secondaryText}`}>
+                  <p>No conversations found</p>
+                  <button
+                    onClick={() => setShowNewChatModal(true)}
+                    className="mt-3 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold transition-all cursor-pointer"
                   >
-                    {/* Real Avatar with tap to see profile */}
-                    <div className="relative shrink-0" onClick={(e) => { e.stopPropagation(); openUserProfile(resolvedUser || c.otherUser || c); }}>
-                      <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden hover:scale-105 transition-transform`}>
-                        {convAvatar ? (
-                          <img src={convAvatar} alt="" className="w-full h-full object-cover" />
-                        ) : c.type === "group" ? (
-                          <Users className="w-5 h-5 text-blue-500" />
-                        ) : (
-                          (convName || "U")[0].toUpperCase()
-                        )}
-                      </div>
-                      {isUserOnline && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
-                      )}
-                    </div>
+                    + New Conversation
+                  </button>
+                </div>
+              ) : (
+                filteredConvs.map((c) => {
+                  const isSelected = activeConvId === c.id;
+                  const partnerKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                  const resolvedUser = partnerKey ? userMap[partnerKey] : null;
+                  const convAvatar = c.avatar || resolvedUser?.avatar_url || resolvedUser?.avatar || null;
+                  const convName = c.type === "group" ? (c.name || "Group") : (resolvedUser?.full_name || resolvedUser?.display_name || c.name || "User");
+                  const isUserOnline = c.email && onlineUsers.has(c.email.toLowerCase());
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-bold text-xs truncate max-w-[150px]">{convName}</h4>
-                        <span className={`text-[10px] ${theme.secondaryText}`}>{c.lastTime}</span>
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => selectConversation(c)}
+                      className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
+                    >
+                      {/* Real Avatar with tap to see profile */}
+                      <div className="relative shrink-0" onClick={(e) => { e.stopPropagation(); openUserProfile(resolvedUser || c.otherUser || c); }}>
+                        <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden hover:scale-105 transition-transform`}>
+                          {convAvatar ? (
+                            <img src={convAvatar} alt="" className="w-full h-full object-cover" />
+                          ) : c.type === "group" ? (
+                            <Users className="w-5 h-5 text-blue-500" />
+                          ) : (
+                            (convName || "U")[0].toUpperCase()
+                          )}
+                        </div>
+                        {isUserOnline && (
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
+                        )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[160px]`}>
-                          {c.lastMessage}
-                        </p>
-                        {c.unread > 0 && (
-                          <span className="w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
-                            {c.unread}
-                          </span>
-                        )}
-                        {c.is_request && (
-                          <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[9px] font-bold">
-                            Request
-                          </span>
-                        )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-xs truncate max-w-[150px]">{convName}</h4>
+                          <span className={`text-[10px] ${theme.secondaryText}`}>{c.lastTime}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[160px]`}>
+                            {c.lastMessage}
+                          </p>
+                          {c.unread > 0 && (
+                            <span className="w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
+                              {c.unread}
+                            </span>
+                          )}
+                          {c.is_request && (
+                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[9px] font-bold">
+                              Request
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* ================================================================= */}
@@ -1848,7 +2170,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     {activeConv.type === "group" ? (
                       <span className="px-2 py-0.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
                     ) : activeConv.is_request ? (
-                      <span className="px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
+                      isPendingRequestByMe ? (
+                        <span className="px-2 py-0.5 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 animate-spin" /> Request Sent
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
+                      )
                     ) : (
                       <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold flex items-center gap-1">
                         <Check className="w-3 h-3" /> Connected
@@ -1921,10 +2249,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             </div>
 
-            {/* REQUEST BANNER */}
+            {/* TOP REQUEST BANNER FOR RECEIVER */}
             {isPendingRequestForMe && (
               <div className="relative z-10 px-4 py-3 bg-amber-500/10 border-b border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top">
-                <div className="flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <div className="flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-100">
                   <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
                   <div>
                     <span className="font-extrabold">{activeConv.name}</span> wants to connect with you.
@@ -1933,25 +2261,34 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={handleAcceptRequest}
-                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1"
+                    onClick={() => handleAcceptRequest(activeConv)}
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" /> Accept Request
                   </button>
                   <button
-                    onClick={handleDeclineRequest}
-                    className="px-3 py-1.5 bg-rose-600/15 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white text-xs font-bold rounded-xl transition-all"
+                    onClick={() => handleDeclineRequest(activeConv)}
+                    className="px-3 py-1.5 bg-rose-600/15 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
                   >
-                    Decline
+                    <X className="w-3.5 h-3.5" /> Decline
                   </button>
                 </div>
               </div>
             )}
 
+            {/* TOP BANNER FOR SENDER */}
             {isPendingRequestByMe && (
-              <div className="relative z-10 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
-                <span>Message request sent. Waiting for {activeConv.name} to accept. Calls and media are locked until accepted.</span>
-                <Clock className="w-4 h-4 animate-spin text-blue-500" />
+              <div className="relative z-10 px-4 py-2.5 bg-blue-500/10 border-b border-blue-500/20 text-xs text-blue-800 dark:text-blue-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 animate-spin text-blue-500 shrink-0" />
+                  <span>Connection request sent to <strong>{activeConv.name}</strong>. Calls & attachments are locked until accepted.</span>
+                </div>
+                <button
+                  onClick={() => handleCancelSentRequest(activeConv)}
+                  className="px-3 py-1 text-slate-500 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer"
+                >
+                  Cancel Request
+                </button>
               </div>
             )}
 
@@ -1995,6 +2332,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   <p className="text-xs max-w-xs text-center">
                     Send blueprints, voice notes, engineering calculations, or initiate audio/video calls.
                   </p>
+                  {isPendingRequestForMe && (
+                    <button
+                      onClick={() => handleAcceptRequest(activeConv)}
+                      className="mt-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow hover:bg-emerald-500 transition-all cursor-pointer"
+                    >
+                      ✓ Accept Request to Start Chatting
+                    </button>
+                  )}
                 </div>
               ) : (
                 messages
@@ -2336,9 +2681,48 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* INPUT CONTROLS BAR */}
+            {/* INPUT CONTROLS OR LOCKED REQUEST ACTION BAR */}
             <div className={`relative z-10 p-3 border-t ${theme.modalBorder} ${theme.headerBg} backdrop-blur-md`}>
-              {isRecordingVoice ? (
+              {isPendingRequestForMe ? (
+                /* Prominent bottom Accept / Decline card for recipient */
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl animate-in slide-in-from-bottom">
+                  <div className="flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-100">
+                    <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <span className="font-extrabold">{activeConv.name}</span> sent you a connection request.
+                      <p className="text-[11px] opacity-80">Accept this request to unlock direct messaging, audio/video calls, and file sharing.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleAcceptRequest(activeConv)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" /> Accept Request
+                    </button>
+                    <button
+                      onClick={() => handleDeclineRequest(activeConv)}
+                      className="px-3.5 py-2 bg-rose-600/15 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                    >
+                      <X className="w-4 h-4" /> Decline
+                    </button>
+                  </div>
+                </div>
+              ) : isPendingRequestByMe ? (
+                /* Bottom pending state for sender */
+                <div className="flex items-center justify-between gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl text-xs text-blue-800 dark:text-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-blue-500 animate-spin shrink-0" />
+                    <span>Waiting for <strong>{activeConv.name}</strong> to accept your connection request. Calls & attachments are locked until accepted.</span>
+                  </div>
+                  <button
+                    onClick={() => handleCancelSentRequest(activeConv)}
+                    className="px-3 py-1.5 bg-rose-600/15 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer"
+                  >
+                    Cancel Request
+                  </button>
+                </div>
+              ) : isRecordingVoice ? (
                 <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 rounded-2xl p-2.5 px-4 animate-pulse">
                   <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs">
                     <Mic className="w-4 h-4 animate-bounce" />
@@ -2448,8 +2832,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             <MessageSquare className="w-16 h-16 text-blue-600/40" />
             <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-200">Nova Real-Time Messenger</h3>
             <p className="text-xs max-w-sm text-center">
-              Select a conversation from the left or start a new direct message with any registered engineer.
+              Select a conversation from the left or send a connection request to any registered engineer.
             </p>
+            <button
+              onClick={() => setShowSendRequestModal(true)}
+              className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold shadow hover:from-blue-500 hover:to-indigo-500 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Zap className="w-4 h-4 text-amber-300" /> Send Connection Request
+            </button>
           </div>
         )}
 
@@ -2541,58 +2931,117 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 {inspectingProfile.plan ? `${inspectingProfile.plan.toUpperCase()} MEMBER` : "VERIFIED ENGINEER"}
               </span>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-3 gap-2 w-full mb-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const profileTarget = inspectingProfile;
-                    setInspectingProfile(null);
-                    const matched = conversations.find((c) => c.email?.toLowerCase() === profileTarget.email?.toLowerCase());
-                    if (matched) {
-                      selectConversation(matched);
-                    } else {
-                      selectConversation({
-                        id: `user_${profileTarget.id || profileTarget.email}`,
-                        conv_id: null,
-                        type: "dm",
-                        name: profileTarget.full_name || profileTarget.email?.split("@")[0],
-                        email: profileTarget.email,
-                        avatar: profileTarget.avatar_url || profileTarget.avatar,
-                        avatar_url: profileTarget.avatar_url || profileTarget.avatar,
-                        is_request: true,
-                        created_by: myUserId,
-                        otherUser: profileTarget
-                      });
-                    }
-                  }}
-                  className="py-2.5 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" /> Message
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = inspectingProfile;
-                    setInspectingProfile(null);
-                    initiateCallToUser(target, "audio");
-                  }}
-                  className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
-                >
-                  <Phone className="w-3.5 h-3.5 text-emerald-500" /> Audio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = inspectingProfile;
-                    setInspectingProfile(null);
-                    initiateCallToUser(target, "video");
-                  }}
-                  className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
-                >
-                  <Video className="w-3.5 h-3.5 text-blue-500" /> Video
-                </button>
-              </div>
+              {/* Dynamic Connection Status & Actions */}
+              {(() => {
+                const targetKey = inspectingProfile.user_id || inspectingProfile.id || inspectingProfile.email?.toLowerCase();
+                const matchedConv = conversations.find((c) => {
+                  const cKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                  return cKey === targetKey;
+                });
+
+                if (inspectingProfile.email?.toLowerCase() === myEmail.toLowerCase()) {
+                  return (
+                    <div className="w-full py-2 px-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-bold mb-4">
+                      This is your verified profile
+                    </div>
+                  );
+                }
+
+                if (!matchedConv || matchedConv.request_status === "declined" || matchedConv.request_status === "not_started") {
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => handleSendRequest(inspectingProfile)}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mb-4"
+                    >
+                      <Zap className="w-4 h-4 text-amber-300" /> Send Connection Request
+                    </button>
+                  );
+                }
+
+                if (matchedConv.is_request && matchedConv.created_by !== myUserId) {
+                  return (
+                    <div className="grid grid-cols-2 gap-2 w-full mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInspectingProfile(null);
+                          handleAcceptRequest(matchedConv);
+                        }}
+                        className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" /> Accept Request
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInspectingProfile(null);
+                          handleDeclineRequest(matchedConv);
+                        }}
+                        className="py-2.5 px-3 bg-rose-600/15 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" /> Decline
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (matchedConv.is_request && matchedConv.created_by === myUserId) {
+                  return (
+                    <div className="flex items-center justify-between w-full p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl mb-4 text-xs">
+                      <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 animate-spin" /> Request Sent • Pending
+                      </span>
+                      <button
+                        onClick={() => {
+                          handleCancelSentRequest(matchedConv);
+                          setInspectingProfile(null);
+                        }}
+                        className="text-rose-500 hover:underline font-bold text-[11px] cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-3 gap-2 w-full mb-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInspectingProfile(null);
+                        selectConversation(matchedConv);
+                      }}
+                      className="py-2.5 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> Message
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = inspectingProfile;
+                        setInspectingProfile(null);
+                        initiateCallToUser(target, "audio");
+                      }}
+                      className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
+                    >
+                      <Phone className="w-3.5 h-3.5 text-emerald-500" /> Audio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = inspectingProfile;
+                        setInspectingProfile(null);
+                        initiateCallToUser(target, "video");
+                      }}
+                      className={`py-2.5 px-2 ${theme.iconBtn} rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer`}
+                    >
+                      <Video className="w-3.5 h-3.5 text-blue-500" /> Video
+                    </button>
+                  </div>
+                );
+              })()}
 
               {/* Real Live Stats */}
               <div className="grid grid-cols-2 gap-4 w-full py-3 border-y border-slate-200 dark:border-slate-800 mb-3">
@@ -2636,7 +3085,94 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 6. GROUP SETTINGS MODAL                                           */}
+        {/* 6. SEND CONNECTION REQUEST MODAL                                  */}
+        {/* ================================================================= */}
+        {showSendRequestModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-extrabold text-base">Send Connection Request</h3>
+                </div>
+                <button onClick={() => setShowSendRequestModal(false)}><X className="w-5 h-5" /></button>
+              </div>
+
+              <p className={`text-xs ${theme.secondaryText}`}>
+                Select an engineer to send a direct connection request. Once accepted, you can call and chat freely.
+              </p>
+
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {registeredUsers.length === 0 ? (
+                  <p className={`text-xs ${theme.secondaryText} text-center py-4`}>No other engineers found</p>
+                ) : (
+                  registeredUsers.map((u) => {
+                    const existing = conversations.find((c) => {
+                      const cKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                      return cKey === (u.user_id || u.id || u.email?.toLowerCase());
+                    });
+                    const isConnected = existing && !existing.is_request;
+                    const isSentPending = existing && existing.is_request && existing.created_by === myUserId;
+                    const isReceivedPending = existing && existing.is_request && existing.created_by !== myUserId;
+
+                    return (
+                      <div
+                        key={u.id}
+                        className={`w-full p-3 flex items-center justify-between gap-3 ${theme.hoverBg} rounded-2xl transition-colors`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                            {u.avatar_url || u.avatar ? (
+                              <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              (u.full_name || u.email)[0].toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs truncate">{u.full_name || u.display_name || u.email}</h4>
+                            <p className={`text-[10px] ${theme.secondaryText} truncate`}>{u.email}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isConnected ? (
+                            <span className="px-2.5 py-1 bg-emerald-500/15 text-emerald-600 rounded-lg text-xs font-bold flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5" /> Connected
+                            </span>
+                          ) : isReceivedPending ? (
+                            <button
+                              onClick={() => {
+                                setShowSendRequestModal(false);
+                                handleAcceptRequest(existing);
+                              }}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept
+                            </button>
+                          ) : isSentPending ? (
+                            <span className="px-2.5 py-1 bg-amber-500/15 text-amber-600 rounded-lg text-xs font-bold flex items-center gap-1">
+                              <Clock className="w-3 h-3 animate-spin" /> Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleSendRequest(u)}
+                              className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-300" /> Send Request
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 7. GROUP SETTINGS MODAL                                           */}
         {/* ================================================================= */}
         {showGroupSettings && activeConv && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2664,7 +3200,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           loadConversations();
                         }
                       }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
                       Save
                     </button>
@@ -2689,7 +3225,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           loadConversations();
                         }
                       }}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
                       Apply
                     </button>
@@ -2721,7 +3257,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             alert("Added " + (u.full_name || u.email) + " to group!");
                           }
                         }}
-                        className="px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-lg text-[11px] font-bold"
+                        className="px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-lg text-[11px] font-bold cursor-pointer"
                       >
                         + Add
                       </button>
@@ -2734,7 +3270,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 7. CREATE GROUP MODAL                                             */}
+        {/* 8. CREATE GROUP MODAL                                             */}
         {/* ================================================================= */}
         {showCreateGroupModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2813,7 +3349,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     alert("Group creation error: " + e.message);
                   }
                 }}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
                 Create Group Discussion
               </button>
@@ -2822,7 +3358,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 8. NEW DIRECT MESSAGE MODAL                                       */}
+        {/* 9. NEW DIRECT MESSAGE MODAL (WITH SEND REQUEST & CHAT BUTTONS)     */}
         {/* ================================================================= */}
         {showNewChatModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2836,40 +3372,81 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 {registeredUsers.length === 0 ? (
                   <p className={`text-xs ${theme.secondaryText} text-center py-4`}>No other registered engineers found</p>
                 ) : (
-                  registeredUsers.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        setShowNewChatModal(false);
-                        selectConversation({
-                          id: `user_${u.id || u.email}`,
-                          conv_id: null,
-                          type: "dm",
-                          name: u.full_name || u.display_name || u.email,
-                          email: u.email,
-                          avatar: u.avatar_url || u.avatar,
-                          avatar_url: u.avatar_url || u.avatar,
-                          is_request: true,
-                          created_by: myUserId,
-                          otherUser: u
-                        });
-                      }}
-                      className={`w-full p-3 flex items-center gap-3 ${theme.hoverBg} rounded-2xl transition-colors text-left cursor-pointer`}
-                    >
-                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden">
-                        {u.avatar_url || u.avatar ? (
-                          <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          (u.full_name || u.email)[0].toUpperCase()
-                        )}
+                  registeredUsers.map((u) => {
+                    const existing = conversations.find((c) => {
+                      const cKey = c.otherUser?.user_id || c.otherUser?.id || c.email?.toLowerCase();
+                      return cKey === (u.user_id || u.id || u.email?.toLowerCase());
+                    });
+                    const isConnected = existing && !existing.is_request;
+                    const isSentPending = existing && existing.is_request && existing.created_by === myUserId;
+                    const isReceivedPending = existing && existing.is_request && existing.created_by !== myUserId;
+
+                    return (
+                      <div
+                        key={u.id}
+                        className={`w-full p-3 flex items-center justify-between gap-3 ${theme.hoverBg} rounded-2xl transition-colors`}
+                      >
+                        <div
+                          className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
+                          onClick={() => {
+                            if (isConnected && existing) {
+                              setShowNewChatModal(false);
+                              selectConversation(existing);
+                            } else {
+                              openUserProfile(u);
+                            }
+                          }}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                            {u.avatar_url || u.avatar ? (
+                              <img src={u.avatar_url || u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              (u.full_name || u.email)[0].toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs truncate">{u.full_name || u.display_name || u.email}</h4>
+                            <p className={`text-[10px] ${theme.secondaryText} truncate`}>{u.email}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isConnected ? (
+                            <button
+                              onClick={() => {
+                                setShowNewChatModal(false);
+                                selectConversation(existing);
+                              }}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> Chat
+                            </button>
+                          ) : isReceivedPending ? (
+                            <button
+                              onClick={() => {
+                                setShowNewChatModal(false);
+                                handleAcceptRequest(existing);
+                              }}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept
+                            </button>
+                          ) : isSentPending ? (
+                            <span className="px-2.5 py-1 bg-amber-500/15 text-amber-600 rounded-lg text-xs font-bold flex items-center gap-1">
+                              <Clock className="w-3 h-3 animate-spin" /> Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleSendRequest(u)}
+                              className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              <Zap className="w-3.5 h-3.5 text-amber-300" /> Send Request
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs">{u.full_name || u.display_name || u.email}</h4>
-                        <p className={`text-[10px] ${theme.secondaryText}`}>{u.email}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 ml-auto text-slate-400" />
-                    </button>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -2877,7 +3454,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 9. SECURE VIEW-ONCE LIGHTBOX                                      */}
+        {/* 10. SECURE VIEW-ONCE LIGHTBOX                                     */}
         {/* ================================================================= */}
         {secureLightboxMsg && (
           <div className="fixed inset-0 z-[300] bg-black/95 flex flex-col items-center justify-center p-6 animate-in zoom-in-95">
@@ -2902,5 +3479,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
       </div>
     </div>
+  );
+}
+
+// Icon helper for ShieldCheck
+function ShieldCheckIcon({ className = "w-6 h-6" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }
