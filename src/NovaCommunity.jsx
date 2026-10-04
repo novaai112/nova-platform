@@ -977,8 +977,32 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Parse initial sub-route from URL for community details
+  const getCommunityInitialRoute = () => {
+    try {
+      const raw = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+      if (raw === '/community/ask-question' || raw === '/community/question') return { mode: 'question', postId: null, profileKey: null };
+      if (raw === '/community/new-discussion' || raw === '/community/discussion') return { mode: 'discussion', postId: null, profileKey: null };
+      if (raw.startsWith('/community/post/')) {
+        const id = window.location.pathname.split('/community/post/')[1]?.split('/')[0];
+        return { mode: null, postId: id, profileKey: null };
+      }
+      if (raw.startsWith('/community/edit/')) {
+        const id = window.location.pathname.split('/community/edit/')[1]?.split('/')[0];
+        return { mode: 'edit', postId: id, profileKey: null };
+      }
+      if (raw.startsWith('/community/user/')) {
+        const key = window.location.pathname.split('/community/user/')[1]?.split('/')[0];
+        return { mode: null, postId: null, profileKey: key };
+      }
+    } catch (e) {}
+    return { mode: null, postId: null, profileKey: null };
+  };
+
+  const initialComm = getCommunityInitialRoute();
+
   // Standalone Page Mode ('question' | 'discussion' | 'edit' | null)
-  const [pageMode, setPageMode] = useState(null);
+  const [pageMode, setPageMode] = useState(initialComm.mode);
   const [editingPost, setEditingPost] = useState(null);
 
   // Real Messenger State & URL synchronization
@@ -998,6 +1022,22 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
     setMessengerRecipient(null);
     try {
       window.history.pushState({ view: 'nova_community' }, '', '/community');
+    } catch (e) {}
+  };
+
+  const handleSetPageMode = (mode, post = null) => {
+    setPageMode(mode);
+    setEditingPost(post);
+    try {
+      if (mode === 'question') {
+        window.history.pushState({ view: 'nova_community', mode }, '', '/community/ask-question');
+      } else if (mode === 'discussion') {
+        window.history.pushState({ view: 'nova_community', mode }, '', '/community/new-discussion');
+      } else if (mode === 'edit' && post?.id) {
+        window.history.pushState({ view: 'nova_community', mode, postId: post.id }, '', `/community/edit/${post.id}`);
+      } else if (!mode) {
+        window.history.pushState({ view: 'nova_community' }, '', '/community');
+      }
     } catch (e) {}
   };
 
@@ -1098,15 +1138,25 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
   const handleToggleExpand = (postId) => {
     if (expandedPostId === postId) {
       setExpandedPostId(null);
+      try {
+        window.history.pushState({ view: 'nova_community' }, '', '/community');
+      } catch (e) {}
     } else {
       setExpandedPostId(postId);
       fetchCommentsAndTrackView(postId);
+      try {
+        window.history.pushState({ view: 'nova_community', postId }, '', `/community/post/${postId}`);
+      } catch (e) {}
     }
   };
 
-  // Open User Profile & Calculate Real Comments Count
+  // Open User Profile & Calculate Real Comments Count with own link
   const handleOpenUserProfile = async (postUser) => {
     setSelectedProfile(postUser);
+    try {
+      const key = postUser.id || postUser.user_id || postUser.email;
+      window.history.pushState({ view: 'nova_community', profileKey: key }, '', `/community/user/${key}`);
+    } catch (e) {}
     try {
       const { data } = await supabase
         .from("nova_community_comments")
@@ -1117,6 +1167,42 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
       setProfileCommentsCount(0);
     }
   };
+
+  const handleCloseUserProfile = () => {
+    setSelectedProfile(null);
+    try {
+      window.history.pushState({ view: 'nova_community' }, '', '/community');
+    } catch (e) {}
+  };
+
+  // Restore post details on initial load or popstate
+  useEffect(() => {
+    if (initialComm.postId && posts.length > 0) {
+      const p = posts.find((item) => item.id === initialComm.postId);
+      if (p) {
+        fetchCommentsAndTrackView(p.id);
+        if (initialComm.mode === 'edit') {
+          setEditingPost(p);
+        }
+      }
+    }
+  }, [posts, initialComm.postId, initialComm.mode]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const commRoute = getCommunityInitialRoute();
+      setPageMode(commRoute.mode);
+      setExpandedPostId(commRoute.postId);
+      if (commRoute.postId) {
+        fetchCommentsAndTrackView(commRoute.postId);
+      }
+      if (!commRoute.profileKey) {
+        setSelectedProfile(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Real Like Post
   const handleLike = async (postId) => {
@@ -1279,8 +1365,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
         editingPost={editingPost}
         currentUser={currentUser}
         onBack={() => {
-          setPageMode(null);
-          setEditingPost(null);
+          handleSetPageMode(null);
         }}
         onSave={(savedPost) => {
           if (editingPost) {
@@ -1288,8 +1373,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
           } else {
             setPosts((prev) => [savedPost, ...prev]);
           }
-          setPageMode(null);
-          setEditingPost(null);
+          handleSetPageMode(null);
         }}
       />
     );
@@ -1313,7 +1397,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
           posts={posts}
           commentsCount={profileCommentsCount}
           currentUser={currentUser}
-          onClose={() => setSelectedProfile(null)}
+          onClose={handleCloseUserProfile}
           onMessage={(profile) => {
             openMessenger(profile);
           }}
@@ -1342,8 +1426,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
                 <button
                   type="button"
                   onClick={() => {
-                    setPageMode("discussion");
-                    setEditingPost(null);
+                    handleSetPageMode("discussion");
                     setShowNewPostMenu(false);
                   }}
                   className="w-full text-left px-5 py-3 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-2.5"
@@ -1354,8 +1437,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
                 <button
                   type="button"
                   onClick={() => {
-                    setPageMode("question");
-                    setEditingPost(null);
+                    handleSetPageMode("question");
                     setShowNewPostMenu(false);
                   }}
                   className="w-full text-left px-5 py-3 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center gap-2.5"
@@ -1563,7 +1645,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
                 </p>
                 <button
                   type="button"
-                  onClick={() => setPageMode("question")}
+                  onClick={() => handleSetPageMode("question")}
                   className="px-5 py-2.5 bg-[#188bf6] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
                 >
                   + Ask a Question
@@ -1649,8 +1731,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat 
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setEditingPost(post);
-                                    setPageMode("edit");
+                                    handleSetPageMode("edit", post);
                                     setActiveMenuPostId(null);
                                   }}
                                   className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2"

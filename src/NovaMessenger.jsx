@@ -257,12 +257,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // Helper to open real user profile modal with live database stats
+  // Helper to open real user profile modal with live database stats and deep URL
   const openUserProfile = async (user) => {
     if (!user) return;
     const key = user.user_id || user.id || user.email?.toLowerCase();
     const resolved = userMap[key] || user;
     setInspectingProfile(resolved);
+    try {
+      const idParam = resolved.user_id || resolved.id || resolved.email;
+      if (idParam) {
+        window.history.pushState({ view: 'chat', inspectingUser: idParam }, '', `/chat/user/${encodeURIComponent(idParam)}`);
+      }
+    } catch (e) {}
 
     if (resolved.email) {
       try {
@@ -281,6 +287,33 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       } catch (e) {}
     }
   };
+
+  const closeUserProfile = () => {
+    setInspectingProfile(null);
+    try {
+      if (activeConv?.email) {
+        window.history.pushState({ view: 'chat', recipient: activeConv.email }, '', `/chat?user=${encodeURIComponent(activeConv.email)}`);
+      } else {
+        window.history.pushState({ view: 'chat' }, '', '/chat');
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const handleMessengerPopState = () => {
+      const path = window.location.pathname.replace(/\/+$/, '');
+      if (path.startsWith('/chat/user/')) {
+        const uid = path.split('/chat/user/')[1]?.split('/')[0];
+        if (uid && userMap[uid]) {
+          setInspectingProfile(userMap[uid]);
+        }
+      } else {
+        setInspectingProfile(null);
+      }
+    };
+    window.addEventListener('popstate', handleMessengerPopState);
+    return () => window.removeEventListener('popstate', handleMessengerPopState);
+  }, [userMap]);
 
   // =========================================================================
   // 1. FAST REGISTERED USERS LOAD & CACHING WITH REAL AVATARS
@@ -661,6 +694,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (enrichedConv.otherUser?.user_id) {
       checkBlockStatus(enrichedConv.otherUser.user_id);
     }
+
+    try {
+      const recipientParam = conv.email || resolvedUser?.email || conv.id;
+      if (recipientParam && !window.location.pathname.includes('/chat/user/')) {
+        const curSearch = new URLSearchParams(window.location.search);
+        if (curSearch.get('user') !== recipientParam) {
+          window.history.pushState({ view: 'chat', recipient: recipientParam }, '', `/chat?user=${encodeURIComponent(recipientParam)}`);
+        }
+      }
+    } catch (e) {}
   };
 
   const checkBlockStatus = async (otherId) => {
@@ -2912,10 +2955,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* 5. REAL USER PROFILE POPOVER MODAL (PROFILE TAP TO SEE)           */}
         {/* ================================================================= */}
         {inspectingProfile && (
-          <div className="fixed inset-0 z-[280] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in" onClick={() => setInspectingProfile(null)}>
+          <div className="fixed inset-0 z-[280] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in" onClick={() => closeUserProfile()}>
             <div className={`${theme.cardBg} ${theme.bg} rounded-3xl shadow-2xl border ${theme.modalBorder} w-full max-w-sm overflow-hidden font-sans relative p-6 pt-8 text-center flex flex-col items-center`} onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => setInspectingProfile(null)}
+                onClick={() => closeUserProfile()}
                 className={`absolute top-4 right-4 p-1.5 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white rounded-full transition-colors`}
               >
                 <X className="w-5 h-5" />

@@ -144,14 +144,125 @@ export const ROUTE_VIEWS = {
   'wizard_demo': '/wizard_demo',
 };
 
-export function getInitialViewFromUrl() {
+export function parseRouteFromUrl() {
   try {
-    const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-    if (VIEW_ROUTES[path]) return VIEW_ROUTES[path];
+    const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+
+    // 1. Dashboard Sub-routes & Detail Pages
+    if (rawPath.startsWith('/dashboard/job/') && rawPath.endsWith('/insights')) {
+      const jobId = rawPath.replace('/dashboard/job/', '').replace('/insights', '').split('/')[0];
+      return { view: 'dashboard', subType: 'job_insights', id: jobId, path: rawPath };
+    }
+    if (rawPath.startsWith('/dashboard/job/')) {
+      const jobId = window.location.pathname.split('/dashboard/job/')[1]?.split('/')[0];
+      return { view: 'dashboard', subType: 'job', id: jobId, path: rawPath };
+    }
+    if (rawPath.startsWith('/jobs/') || rawPath.startsWith('/job/')) {
+      const jobId = window.location.pathname.split(/\/jobs?\/+/)[1]?.split('/')[0];
+      return { view: 'dashboard', subType: 'job', id: jobId, path: `/dashboard/job/${jobId}` };
+    }
+    if (rawPath === '/dashboard/ai-recommender' || rawPath === '/ai-recommender') {
+      return { view: 'dashboard', subType: 'ai_recommender', path: rawPath };
+    }
+    if (rawPath === '/dashboard/submit' || rawPath.startsWith('/dashboard/submit/')) {
+      const type = rawPath.replace('/dashboard/submit', '').replace(/^\//, '');
+      return { view: 'dashboard', subType: 'submit', type, path: rawPath };
+    }
+    if (rawPath === '/wizards' || rawPath === '/dashboard/wizards') {
+      return { view: 'profile', subType: 'tab', tab: 'wizard', path: rawPath };
+    }
+    if ((rawPath.startsWith('/wizards/') || rawPath.startsWith('/dashboard/wizards/')) && rawPath.endsWith('/demo')) {
+      const parts = rawPath.split('/');
+      const wizardId = parts[rawPath.startsWith('/dashboard/') ? 3 : 2];
+      return { view: 'dashboard', subType: 'wizard_demo_modal', id: wizardId, path: rawPath };
+    }
+    if ((rawPath.startsWith('/wizards/') || rawPath.startsWith('/dashboard/wizards/')) && rawPath.endsWith('/pricing')) {
+      const parts = rawPath.split('/');
+      const wizardId = parts[rawPath.startsWith('/dashboard/') ? 3 : 2];
+      return { view: 'dashboard', subType: 'wizard_pricing_modal', id: wizardId, path: rawPath };
+    }
+    if (rawPath === '/dashboard/invoice' || rawPath === '/invoice') {
+      return { view: 'dashboard', subType: 'document', docType: 'invoice', path: rawPath };
+    }
+    if (rawPath === '/dashboard/receipt' || rawPath === '/receipt') {
+      return { view: 'dashboard', subType: 'document', docType: 'receipt', path: rawPath };
+    }
+
+    // 2. Profile Sub-routes & Detail Tabs
+    if (rawPath === '/profile/edit') {
+      return { view: 'profile', subType: 'tab', tab: 'info', modal: 'edit', path: rawPath };
+    }
+    if (rawPath === '/profile/security' || rawPath === '/profile/change-password') {
+      return { view: 'profile', subType: 'tab', tab: 'security', modal: 'password', path: rawPath };
+    }
+    if (rawPath.startsWith('/profile/')) {
+      const tab = rawPath.replace('/profile/', '');
+      return { view: 'profile', subType: 'tab', tab, path: rawPath };
+    }
+
+    // 3. Community Sub-routes & Detail Pages
+    if (rawPath === '/community/ask-question' || rawPath === '/community/question') {
+      return { view: 'nova_community', subType: 'question', path: rawPath };
+    }
+    if (rawPath === '/community/new-discussion' || rawPath === '/community/discussion') {
+      return { view: 'nova_community', subType: 'discussion', path: rawPath };
+    }
+    if (rawPath.startsWith('/community/post/')) {
+      const postId = window.location.pathname.split('/community/post/')[1]?.split('/')[0];
+      return { view: 'nova_community', subType: 'post', id: postId, path: rawPath };
+    }
+    if (rawPath.startsWith('/community/edit/')) {
+      const postId = window.location.pathname.split('/community/edit/')[1]?.split('/')[0];
+      return { view: 'nova_community', subType: 'edit', id: postId, path: rawPath };
+    }
+    if (rawPath.startsWith('/community/user/')) {
+      const userId = window.location.pathname.split('/community/user/')[1]?.split('/')[0];
+      return { view: 'nova_community', subType: 'user', id: userId, path: rawPath };
+    }
+
+    // 4. Help Sub-routes & Detail Topics
+    if (rawPath === '/help' || rawPath.startsWith('/help/')) {
+      const topicId = rawPath.replace('/help/', '').replace(/^\//, '');
+      return { view: 'nova_help', subType: 'help', topicId: topicId || null, path: rawPath };
+    }
+
+    // 5. Chat & Direct Messages
+    if (rawPath.startsWith('/chat/user/')) {
+      const uid = window.location.pathname.split('/chat/user/')[1]?.split('/')[0];
+      return { view: 'chat', subType: 'chat_user', recipient: uid, path: rawPath };
+    }
+    if (rawPath === '/chat' || rawPath.startsWith('/chat/') || window.location.search.includes('user=')) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const recipient = urlParams.get('user') || window.location.pathname.split('/chat/')[1]?.split('/')[0];
+      return { view: 'chat', subType: 'chat', recipient, path: rawPath };
+    }
+
+    // 6. Materials Database & Detail View
+    if (rawPath === '/materials' || rawPath.startsWith('/materials/')) {
+      const mat = rawPath.replace('/materials/', '').replace(/^\//, '');
+      return { view: 'materials', subType: 'materials', material: mat || null, path: rawPath };
+    }
+
+    // 7. Stress Strain Generator & Curves
+    if (rawPath === '/stress_strain' || rawPath.startsWith('/stress_strain/')) {
+      return { view: 'stress_strain', subType: 'stress_strain', path: rawPath };
+    }
+
+    // 8. Standard Top-level Routes
+    if (VIEW_ROUTES[rawPath]) {
+      return { view: VIEW_ROUTES[rawPath], path: rawPath };
+    }
+
     const saved = localStorage.getItem('nova_last_view');
-    if (saved && ROUTE_VIEWS[saved]) return saved;
+    if (saved && ROUTE_VIEWS[saved]) {
+      return { view: saved, path: ROUTE_VIEWS[saved] };
+    }
   } catch (e) {}
-  return 'landing';
+  return { view: 'landing', path: '/home' };
+}
+
+export function getInitialViewFromUrl() {
+  return parseRouteFromUrl().view || 'landing';
 }
 const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -328,28 +439,108 @@ export default function App() {
   const [isSplashExiting, setIsSplashExiting] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Synchronize browser URL bar with current active view
+  // Synchronize browser URL bar with current active view if not already on a sub-route
   useEffect(() => {
     try {
       localStorage.setItem('nova_last_view', currentView);
-      const targetPath = ROUTE_VIEWS[currentView] || '/home';
       const curPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-      if (curPath !== targetPath && !(curPath === '/' && targetPath === '/home')) {
-        window.history.pushState({ view: currentView }, '', targetPath);
+      const isSubRoute = curPath.includes('/job/') ||
+        curPath.includes('/submit') ||
+        curPath.includes('/wizards') ||
+        curPath.includes('/profile/') ||
+        curPath.includes('/community/') ||
+        curPath.includes('/invoice') ||
+        curPath.includes('/receipt') ||
+        curPath.includes('/materials/') ||
+        curPath.includes('/help/') ||
+        curPath.includes('/ai-recommender') ||
+        curPath.includes('/chat/') ||
+        window.location.search.includes('user=');
+      if (!isSubRoute) {
+        const targetPath = ROUTE_VIEWS[currentView] || '/home';
+        if (curPath !== targetPath && !(curPath === '/' && targetPath === '/home')) {
+          window.history.pushState({ view: currentView }, '', targetPath);
+        }
       }
     } catch (e) {}
   }, [currentView]);
 
-  // Support Browser Back and Forward buttons seamlessly
+  // Support Browser Back and Forward buttons seamlessly with detail pages
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-      const matched = VIEW_ROUTES[path] || 'landing';
-      setCurrentView(matched);
+      const route = parseRouteFromUrl();
+      setCurrentView(route.view || 'landing');
+
+      if (route.subType === 'job') {
+        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+        if (matched) {
+          setSelectedJobDetails(matched);
+          setIsJobDetailsOpen(true);
+        }
+      } else if (route.subType === 'job_insights') {
+        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+        if (matched) {
+          setSelectedJobDetails(matched);
+          setIsJobDetailsOpen(true);
+          handleGenerateInsights(matched);
+        }
+      } else {
+        setIsJobDetailsOpen(false);
+      }
+
+      if (route.subType === 'ai_recommender') {
+        setIsAiModalOpen(true);
+      } else {
+        setIsAiModalOpen(false);
+      }
+
+      if (route.subType === 'materials' && route.material) {
+        setSelectedMaterialId(route.material);
+      }
+
+      if (route.subType === 'submit') {
+        setIsSubmitJobOpen(true);
+      } else {
+        setIsSubmitJobOpen(false);
+      }
+
+      if (route.subType === 'wizard_demo_modal' && route.id) {
+        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+        if (w) {
+          setSelectedWizardForDemo(w);
+          setIsWizardDemoOpen(true);
+        }
+      } else {
+        setIsWizardDemoOpen(false);
+      }
+
+      if (route.subType === 'wizard_pricing_modal' && route.id) {
+        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+        if (w) {
+          setSelectedWizardForPricing(w);
+          setIsWizardPricingOpen(true);
+        }
+      } else {
+        setIsWizardPricingOpen(false);
+      }
+
+      if (route.subType === 'document') {
+        setActiveDocumentViewer(prev => ({ ...(prev || {}), type: route.docType || 'invoice' }));
+      } else {
+        setActiveDocumentViewer(null);
+      }
+
+      if (route.subType === 'tab' && route.tab) {
+        setProfileTab(route.tab);
+        if (route.modal === 'edit') setIsEditProfileOpen(true);
+        else setIsEditProfileOpen(false);
+        if (route.modal === 'password') setIsChangePasswordOpen(true);
+        else setIsChangePasswordOpen(false);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [jobs]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info');
   const [profileNotifPrefs, setProfileNotifPrefs] = useState({
@@ -590,16 +781,201 @@ export default function App() {
   const [materialPrompt, setMaterialPrompt] = useState("");
   const [materialResponse, setMaterialResponse] = useState("");
   const [isMaterialLoading, setIsMaterialLoading] = useState(false);
+  const [materialSearchQuery, setMaterialSearchQuery] = useState("");
+  const [materialCategoryFilter, setMaterialCategoryFilter] = useState("All");
+  const [selectedMaterialId, setSelectedMaterialId] = useState("sa-516-gr-70");
+  const [stressMaterialId, setStressMaterialId] = useState("sa-516-gr-70");
+  const [stressTempC, setStressTempC] = useState(20);
+  const [stressCurveMode, setStressCurveMode] = useState("true_stress_strain");
+
+  const openJobDetails = (job) => {
+    setSelectedJobDetails(job);
+    setActiveDetailRun(0);
+    setCopiedError(false);
+    setIsJobDetailsOpen(true);
+    try {
+      window.history.pushState({ view: 'dashboard', jobId: job.id }, '', `/dashboard/job/${job.id}`);
+    } catch (e) {}
+  };
+
+  const closeJobDetails = () => {
+    setIsJobDetailsOpen(false);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const openSubmitJob = (type = 'Nozzle Analysis') => {
+    setSelectedJobType(type);
+    setShowMaterialConsultant(false);
+    setMaterialPrompt("");
+    setMaterialResponse("");
+    setIsSubmitJobOpen(true);
+    try {
+      const slug = (type || 'nozzle').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      window.history.pushState({ view: 'dashboard', submitType: slug }, '', `/dashboard/submit/${slug}`);
+    } catch (e) {}
+  };
+
+  const closeSubmitJob = () => {
+    setIsSubmitJobOpen(false);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const openWizardDemo = (item) => {
+    setSelectedWizardForDemo(item);
+    setIsWizardDemoOpen(true);
+    try {
+      window.history.pushState({ view: 'dashboard', wizardId: item.id }, '', `/wizards/${item.id}/demo`);
+    } catch (e) {}
+  };
+
+  const closeWizardDemo = () => {
+    setIsWizardDemoOpen(false);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const openWizardPricing = (item) => {
+    setSelectedWizardForPricing(item);
+    setIsWizardPricingOpen(true);
+    try {
+      window.history.pushState({ view: 'dashboard', wizardId: item.id }, '', `/wizards/${item.id}/pricing`);
+    } catch (e) {}
+  };
+
+  const closeWizardPricing = () => {
+    setIsWizardPricingOpen(false);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const openDocumentViewer = (docData, docType = 'invoice') => {
+    setActiveDocumentViewer({ data: docData, type: docType });
+    try {
+      window.history.pushState({ view: 'dashboard', docType }, '', `/dashboard/${docType}`);
+    } catch (e) {}
+  };
+
+  const closeDocumentViewer = () => {
+    setActiveDocumentViewer(null);
+    setCompletedInvoice(null);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const handleProfileTabChange = (tab) => {
+    setProfileTab(tab);
+    try {
+      window.history.pushState({ view: 'profile', tab }, '', `/profile/${tab}`);
+    } catch (e) {}
+  };
+
+  const openAiModal = () => {
+    setIsAiModalOpen(true);
+    try {
+      window.history.pushState({ view: 'dashboard', modal: 'ai' }, '', '/dashboard/ai-recommender');
+    } catch (e) {}
+  };
+
+  const closeAiModal = () => {
+    setIsAiModalOpen(false);
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const openJobInsights = (job) => {
+    setSelectedInsightJob(job);
+    setIsInsightsOpen(true);
+    handleGenerateInsights(job);
+    try {
+      window.history.pushState({ view: 'dashboard', jobId: job.id, modal: 'insights' }, '', `/dashboard/job/${job.id}/insights`);
+    } catch (e) {}
+  };
+
+  const closeJobInsights = () => {
+    setIsInsightsOpen(false);
+    try {
+      if (selectedJobDetails?.id) {
+        window.history.pushState({ view: 'dashboard', jobId: selectedJobDetails.id }, '', `/dashboard/job/${selectedJobDetails.id}`);
+      } else {
+        window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+      }
+    } catch (e) {}
+  };
+
+  // Auto-restore detail view or modal on page load or refresh
+  useEffect(() => {
+    const route = parseRouteFromUrl();
+    if (route.subType === 'job' && route.id && jobs.length > 0) {
+      const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+      if (matched) {
+        setSelectedJobDetails(matched);
+        setIsJobDetailsOpen(true);
+      }
+    } else if (route.subType === 'job_insights' && route.id && jobs.length > 0) {
+      const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+      if (matched) {
+        setSelectedJobDetails(matched);
+        setIsJobDetailsOpen(true);
+        handleGenerateInsights(matched);
+      }
+    } else if (route.subType === 'ai_recommender') {
+      setIsAiModalOpen(true);
+    } else if (route.subType === 'materials' && route.material) {
+      setSelectedMaterialId(route.material);
+    } else if (route.subType === 'submit') {
+      setIsSubmitJobOpen(true);
+      if (route.type) {
+        const typeMap = {
+          'nozzle': 'Nozzle Analysis',
+          'bellow': 'Bellow Analysis',
+          'flange': 'Flange Analysis',
+          'saddle': 'Saddle Analysis',
+          'pwht': 'Local PWHT',
+          'hot-box': 'Hot Box Analysis',
+          'stiffener': 'Vessel Stiffener Ring Analysis',
+          'lug': 'Lifting Lug WRC Analysis',
+          'trunnion': 'Trunnion WRC Analysis',
+          'tubesheet': '2D Axisymetric Tubesheet Analysis'
+        };
+        if (typeMap[route.type]) setSelectedJobType(typeMap[route.type]);
+      }
+    } else if (route.subType === 'wizard_demo_modal' && route.id) {
+      const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+      if (w) {
+        setSelectedWizardForDemo(w);
+        setIsWizardDemoOpen(true);
+      }
+    } else if (route.subType === 'wizard_pricing_modal' && route.id) {
+      const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+      if (w) {
+        setSelectedWizardForPricing(w);
+        setIsWizardPricingOpen(true);
+      }
+    } else if (route.subType === 'document' && route.docType) {
+      setActiveDocumentViewer({ type: route.docType, data: completedInvoice || {} });
+    } else if (route.subType === 'tab' && route.tab) {
+      setProfileTab(route.tab);
+      if (route.modal === 'edit') setIsEditProfileOpen(true);
+      if (route.modal === 'password') setIsChangePasswordOpen(true);
+    }
+  }, [jobs]);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setupUser(session.user);
         fetchJobs();
         setCurrentView((prev) => {
-          const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-          const matched = VIEW_ROUTES[path];
-          if (matched && matched !== 'landing' && matched !== 'login' && matched !== 'signup') {
-            return matched;
+          const route = parseRouteFromUrl();
+          if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
+            return route.view;
           }
           if (['landing', 'login', 'signup', 'forgot'].includes(prev)) {
             return 'dashboard';
@@ -614,10 +990,9 @@ export default function App() {
         setupUser(session.user);
         fetchJobs();
         setCurrentView((prev) => {
-          const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-          const matched = VIEW_ROUTES[path];
-          if (matched && matched !== 'landing' && matched !== 'login' && matched !== 'signup') {
-            return matched;
+          const route = parseRouteFromUrl();
+          if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
+            return route.view;
           }
           return ['landing', 'login', 'signup', 'forgot'].includes(prev) ? 'dashboard' : prev;
         });
@@ -899,7 +1274,7 @@ export default function App() {
       wbexFilename: entryOrData.wbexFilename || entryOrData.wbex_filename || (entryOrData.receipt_data?.wbexFilename || '')
     };
 
-    setActiveDocumentViewer({ type, data: normalized });
+    openDocumentViewer(normalized, type);
     setCompletedInvoice(normalized);
   };
 
@@ -1863,13 +2238,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       showNotification("Error uploading picture: " + error.message, "error");
     }
   };
-  const openSubmitJob = (type) => {
-    setSelectedJobType(type);
-    setIsSubmitJobOpen(true);
-    setShowMaterialConsultant(false);
-    setMaterialPrompt("");
-    setMaterialResponse("");
-  };
+
   const handleRequestAccess = async () => {
     setIsRequestingAccess(true);
     try {
@@ -1910,7 +2279,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         .select()
         .single();
       if (error) throw error;
-      setIsSubmitJobOpen(false);
+      closeSubmitJob();
       showNotification(`${selectedJobType} submitted! Added to queue.`, 'success');
       fetchJobs();
     } catch (error) {
@@ -1943,8 +2312,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       setJobs(prev => prev.filter(j => j.id !== jobId));
       setSelectedJobIds(prev => prev.filter(id => id !== jobId));
       if (selectedJobDetails?.id === jobId) {
-        setSelectedJobDetails(null);
-        setIsJobDetailsOpen(false);
+        closeJobDetails();
       }
       showNotification("Job deleted successfully.", "success");
     } catch (err) {
@@ -1963,8 +2331,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       if (error) throw error;
       setJobs(prev => prev.filter(j => !selectedJobIds.includes(j.id)));
       if (selectedJobDetails && selectedJobIds.includes(selectedJobDetails.id)) {
-        setSelectedJobDetails(null);
-        setIsJobDetailsOpen(false);
+        closeJobDetails();
       }
       showNotification(`${selectedJobIds.length} job(s) deleted successfully.`, "success");
       setSelectedJobIds([]);
@@ -2472,13 +2839,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
   );
   const renderInsightsModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsInsightsOpen(false)}></div>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeJobInsights()}></div>
       <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
         <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
           <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
             <Sparkles className="w-6 h-6" /> Executive Insights
           </h3>
-          <button onClick={() => setIsInsightsOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
+          <button onClick={() => closeJobInsights()} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -2501,7 +2868,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             )}
           </div>
           <div className="flex justify-end mt-4 md:mt-8">
-            <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
+            <button onClick={() => closeJobInsights()} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
           </div>
         </div>
       </div>
@@ -3161,7 +3528,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div
           className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
-          onClick={() => setIsJobDetailsOpen(false)}
+          onClick={() => closeJobDetails()}
         />
 
         <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-4 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
@@ -3176,7 +3543,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
 
             <button
-              onClick={() => setIsJobDetailsOpen(false)}
+              onClick={() => closeJobDetails()}
               title="Close"
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all shrink-0"
             >
@@ -3288,6 +3655,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
                       </button>
                     ) : null}
 
+                    <button
+                      onClick={() => openJobInsights(selectedJobDetails)}
+                      title="Generate Executive AI Analysis Insights"
+                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-purple-800 hover:scale-105 flex items-center gap-2 transition-all border border-purple-200"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                      AI Insights
+                    </button>
+
                     {pResultUrl && (
                       <a
                         href={pResultUrl}
@@ -3310,14 +3686,21 @@ Always provide professional, precise, technically accurate, and helpful answers.
       </div>
     );
   };
-  const DashboardHeader = ({ isProfile }) => (
+  const DashboardHeader = ({ isProfile, customTitle }) => (
     <div className="relative z-50 flex flex-col items-start justify-between p-4 md:p-6 mb-4 md:mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
       <div className="flex items-center gap-4">
         <div className="items-center justify-center hidden p-3 transition-all border shadow-sm cursor-pointer sm:flex bg-white/40 border-white/50 rounded-2xl hover:bg-white/60 hover:scale-105" onClick={handleLogoClick}>
           <CosmicLogo className="w-8 h-8 sm:w-10 sm:h-10" />
         </div>
         <div>
-          {isProfile ? (
+          {customTitle ? (
+            <>
+              <h1 className="text-lg md:text-2xl font-extrabold text-[#1E293B] tracking-wide drop-shadow-sm">{customTitle}</h1>
+              <div className="flex items-center text-sm mt-1.5 font-bold text-slate-600">
+                <span>Numerical Optimization & Virtual Analysis Platform</span>
+              </div>
+            </>
+          ) : isProfile ? (
             <h1 className="text-lg md:text-2xl font-extrabold text-[#1E293B] drop-shadow-sm">About Me</h1>
           ) : (
             <>
@@ -3336,12 +3719,57 @@ Always provide professional, precise, technically accurate, and helpful answers.
           )}
         </div>
       </div>
-      {isProfile ? (
-        <button onClick={() => setCurrentView('dashboard')} className="glass-input hover:bg-white/70 text-slate-800 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-colors mt-4 md:mt-0 shadow-sm border-white/80">
-          Back to Dashboard
+      {isProfile || customTitle ? (
+        <button onClick={() => { setCurrentView('dashboard'); try { window.history.pushState({ view: 'dashboard' }, '', '/dashboard'); } catch (e) {} }} className="glass-input hover:bg-white/70 text-slate-800 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-colors mt-4 md:mt-0 shadow-sm border-white/80 flex items-center gap-2 cursor-pointer">
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </button>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 z-[60]">
+        <div className="flex flex-wrap items-center gap-2.5 mt-4 md:mt-0 z-[60]">
+          <button
+            onClick={() => openSubmitJob('Nozzle Analysis')}
+            className="hidden sm:flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md hover:scale-105 transition-all cursor-pointer"
+            title="Submit a new FEA simulation job"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Submit Job</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentView('materials');
+              try { window.history.pushState({ view: 'materials' }, '', '/materials'); } catch (e) {}
+            }}
+            className="hidden md:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="ASME Section II Part D Database"
+          >
+            <Database className="w-3.5 h-3.5 text-blue-600" />
+            <span>Materials</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentView('stress_strain');
+              try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
+            }}
+            className="hidden md:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Nonlinear Stress-Strain Curve Generator"
+          >
+            <LineChart className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Curves</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCurrentView('chat');
+              try { window.history.pushState({ view: 'chat' }, '', '/chat'); } catch (e) {}
+            }}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            title="Engineering Messenger & P2P Calls"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Chat</span>
+          </button>
+
           <div className="relative">
             <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
               <div className="bg-[#3C64D6] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
@@ -3355,13 +3783,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
             {isDropdownOpen && (
               <div className="absolute right-0 mt-3 w-60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl py-2 z-[100] text-slate-800 animate-in fade-in slide-in-from-top-2 border border-slate-200">
-                <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                <button onClick={() => { setCurrentView('profile'); handleProfileTabChange('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
                   <User className="w-4 h-4 mr-3 text-[#3C64D6]" /> My Profile
                 </button>
-                <button onClick={() => { setCurrentView('nova_help'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                <button onClick={() => { setCurrentView('nova_help'); setIsDropdownOpen(false); try { window.history.pushState({ view: 'nova_help' }, '', '/help'); } catch (e) {} }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
                   <HelpCircle className="w-4 h-4 mr-3 text-sky-600" /> Nova Help
                 </button>
-                <button onClick={() => { setCurrentView('nova_community'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
+                <button onClick={() => { setCurrentView('nova_community'); setIsDropdownOpen(false); try { window.history.pushState({ view: 'nova_community' }, '', '/community'); } catch (e) {} }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
                   <Users className="w-4 h-4 mr-3 text-emerald-600" /> Nova Community
                 </button>
                 <div className="h-px mx-2 my-1 bg-slate-200/50"></div>
@@ -3834,7 +4262,12 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
 
             <button
-              onClick={() => consumeCredits('ASME Materials', 10, 'Free', () => window.location.href = 'https://asme-material.vercel.app/')}
+              onClick={() => {
+                consumeCredits('ASME Materials', 10, 'Free', () => {
+                  setCurrentView('materials');
+                  try { window.history.pushState({ view: 'materials' }, '', '/materials'); } catch (e) {}
+                });
+              }}
               className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
               Open Database
             </button>
@@ -3849,7 +4282,12 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
 
             <button
-              onClick={() => consumeCredits('Stress-Strain Curve', 10, 'Free', () => window.location.href = 'https://nova-analysis.vercel.app/curve.html')}
+              onClick={() => {
+                consumeCredits('Stress-Strain Curve', 10, 'Free', () => {
+                  setCurrentView('stress_strain');
+                  try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
+                });
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
               Open Generator
             </button>
@@ -3905,7 +4343,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               </h3>
               <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
             </div>
-            <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
+            <button onClick={() => openAiModal()} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
               <Sparkles className="w-4 h-4" /> ✨ Smart Setup
             </button>
           </div>
@@ -4075,12 +4513,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                               <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
                             </a>
                           )} <button
-                            onClick={() => {
-                              setSelectedJobDetails(job);
-                              setActiveDetailRun(0);
-                              setCopiedError(false);
-                              setIsJobDetailsOpen(true);
-                            }}
+                            onClick={() => openJobDetails(job)}
                             title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
                             className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${job.status === 'Failed'
                                 ? 'text-red-700 hover:bg-red-50/80 border border-red-300'
@@ -4109,11 +4542,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
         {isSubmitJobOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSubmitJobOpen(false)}></div>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeSubmitJob()}></div>
             <div className="glass-panel w-full max-w-md rounded-[2rem] overflow-hidden animate-in zoom-in-95 relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
               <div className={`p-4 md:p-6 text-white font-extrabold flex justify-between items-center bg-gradient-to-r ${selectedJobType === 'Nozzle Analysis' ? 'from-emerald-600/90 to-emerald-500/90' : selectedJobType === 'Local PWHT' ? 'from-orange-600/90 to-orange-500/90' : 'from-blue-600/90 to-blue-500/90'} backdrop-blur-md`}>
                 <span className="flex items-center gap-3 text-lg drop-shadow-sm"><Plus className="w-6 h-6" /> New {selectedJobType}</span>
-                <button onClick={() => setIsSubmitJobOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                <button onClick={() => closeSubmitJob()} className="hover:bg-white/20 p-1.5 rounded-full transition-colors"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleJobSubmit} className="p-4 md:p-8 space-y-4">
                 <div className="space-y-2">
@@ -4147,7 +4580,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   )}
                 </div>
                 <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setIsSubmitJobOpen(false)} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
+                  <button type="button" onClick={() => closeSubmitJob()} className="flex-1 px-4 py-3.5 glass-input text-slate-800 rounded-xl font-bold hover:bg-white/60 transition-colors shadow-sm">Cancel</button>
                   <button type="submit" className={`flex-1 px-4 py-3.5 text-white rounded-xl font-bold transition-all hover:scale-[1.02] shadow-md ${selectedJobType === 'Nozzle Analysis' ? 'glass-btn-green' : selectedJobType === 'Local PWHT' ? 'glass-btn-orange' : 'glass-btn-blue'}`}>Submit</button>
                 </div>
               </form>
@@ -4159,13 +4592,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
         {isJobDetailsOpen && renderJobDetailsModal()}
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAiModalOpen(false)}></div>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeAiModal()}></div>
             <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80">
               <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
                 <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
                   <Sparkles className="w-6 h-6" /> AI Analysis Recommender
                 </h3>
-                <button onClick={() => setIsAiModalOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
+                <button onClick={() => closeAiModal()} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -4896,14 +5329,717 @@ Always provide professional, precise, technically accurate, and helpful answers.
     );
   };
 
+  const ASME_MATERIALS_CATALOG = [
+    {
+      id: 'sa-516-gr-70',
+      grade: 'SA-516 Gr 70',
+      uns: 'K02700',
+      category: 'Carbon Steel',
+      form: 'Plate',
+      composition: 'C-Mn-Si',
+      tensileMpa: 485,
+      tensileKsi: 70,
+      yieldMpa: 260,
+      yieldKsi: 38,
+      curve: 'Curve B',
+      extChart: 'Fig. CS-2',
+      elasticMod: '200 GPa',
+      density: '7.85 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 138 },
+        { temp: '100°C', s: 138 },
+        { temp: '200°C', s: 138 },
+        { temp: '300°C', s: 125 },
+        { temp: '400°C', s: 92 },
+        { temp: '500°C', s: 45 }
+      ],
+      desc: 'Most widely utilized carbon steel plate for pressure vessels and boilers in moderate to lower temperature service.'
+    },
+    {
+      id: 'sa-106-gr-b',
+      grade: 'SA-106 Gr B',
+      uns: 'K03006',
+      category: 'Carbon Steel',
+      form: 'Seamless Pipe',
+      composition: 'C-Mn-Si',
+      tensileMpa: 415,
+      tensileKsi: 60,
+      yieldMpa: 240,
+      yieldKsi: 35,
+      curve: 'Curve B',
+      extChart: 'Fig. CS-2',
+      elasticMod: '203 GPa',
+      density: '7.85 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 118 },
+        { temp: '100°C', s: 118 },
+        { temp: '200°C', s: 118 },
+        { temp: '300°C', s: 109 },
+        { temp: '400°C', s: 84 },
+        { temp: '500°C', s: 38 }
+      ],
+      desc: 'Seamless carbon steel pipe specification for high-temperature process piping and vessel nozzles.'
+    },
+    {
+      id: 'sa-240-304',
+      grade: 'SA-240 304',
+      uns: 'S30400',
+      category: 'Austenitic Stainless',
+      form: 'Plate / Sheet',
+      composition: '18Cr-8Ni',
+      tensileMpa: 515,
+      tensileKsi: 75,
+      yieldMpa: 205,
+      yieldKsi: 30,
+      curve: 'Impact Exempt (> -196°C)',
+      extChart: 'Fig. HA-1',
+      elasticMod: '193 GPa',
+      density: '8.00 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 138 },
+        { temp: '100°C', s: 115 },
+        { temp: '200°C', s: 99 },
+        { temp: '300°C', s: 89 },
+        { temp: '400°C', s: 83 },
+        { temp: '500°C', s: 78 }
+      ],
+      desc: 'General-purpose austenitic stainless steel with excellent corrosion resistance and cryogenic toughness.'
+    },
+    {
+      id: 'sa-240-316l',
+      grade: 'SA-240 316L',
+      uns: 'S31603',
+      category: 'Austenitic Stainless',
+      form: 'Plate / Sheet',
+      composition: '16Cr-12Ni-2Mo',
+      tensileMpa: 485,
+      tensileKsi: 70,
+      yieldMpa: 170,
+      yieldKsi: 25,
+      curve: 'Impact Exempt (> -196°C)',
+      extChart: 'Fig. HA-2',
+      elasticMod: '193 GPa',
+      density: '8.00 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 115 },
+        { temp: '100°C', s: 98 },
+        { temp: '200°C', s: 86 },
+        { temp: '300°C', s: 78 },
+        { temp: '400°C', s: 73 },
+        { temp: '500°C', s: 69 }
+      ],
+      desc: 'Low-carbon molybdenum-bearing stainless steel providing enhanced resistance to pitting and crevice corrosion.'
+    },
+    {
+      id: 'sa-387-gr-22-cl-2',
+      grade: 'SA-387 Gr 22 Cl 2',
+      uns: 'K21590',
+      category: 'Low Alloy Steel',
+      form: 'Plate',
+      composition: '2.25Cr-1Mo',
+      tensileMpa: 515,
+      tensileKsi: 75,
+      yieldMpa: 310,
+      yieldKsi: 45,
+      curve: 'Curve C',
+      extChart: 'Fig. CS-3',
+      elasticMod: '211 GPa',
+      density: '7.85 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 147 },
+        { temp: '100°C', s: 147 },
+        { temp: '200°C', s: 147 },
+        { temp: '300°C', s: 147 },
+        { temp: '400°C', s: 139 },
+        { temp: '500°C', s: 108 }
+      ],
+      desc: 'Chromium-molybdenum alloy steel intended primarily for boilers and pressure vessels elevated temperature hydrogen service.'
+    },
+    {
+      id: 'sb-443-inconel-625',
+      grade: 'SB-443 Inconel 625',
+      uns: 'N06625',
+      category: 'Nickel Alloy',
+      form: 'Plate / Sheet',
+      composition: '60Ni-22Cr-9Mo-3.5Nb',
+      tensileMpa: 827,
+      tensileKsi: 120,
+      yieldMpa: 414,
+      yieldKsi: 60,
+      curve: 'Impact Exempt',
+      extChart: 'Fig. NFN-12',
+      elasticMod: '207 GPa',
+      density: '8.44 g/cm³',
+      allowables: [
+        { temp: '-29 to 40°C', s: 230 },
+        { temp: '100°C', s: 219 },
+        { temp: '200°C', s: 205 },
+        { temp: '300°C', s: 196 },
+        { temp: '400°C', s: 191 },
+        { temp: '500°C', s: 187 }
+      ],
+      desc: 'High-strength nickel-chromium-molybdenum alloy with outstanding corrosion resistance in severe chemical and marine environments.'
+    }
+  ];
+
   const renderChat = () => {
+    const route = parseRouteFromUrl();
+    const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : (chatRecipient || null);
     return (
       <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
         <NovaMessenger
           currentUser={currentUser}
-          initialRecipient={null}
-          onClose={() => setCurrentView('nova_community')}
+          initialRecipient={recipientParam}
+          onClose={() => {
+            setCurrentView('dashboard');
+            try {
+              window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+            } catch (e) {}
+          }}
         />
+      </div>
+    );
+  };
+
+  const renderMaterials = () => {
+    const filteredMaterials = ASME_MATERIALS_CATALOG.filter(m => {
+      const matchSearch = materialSearchQuery === '' ||
+        m.grade.toLowerCase().includes(materialSearchQuery.toLowerCase()) ||
+        m.uns.toLowerCase().includes(materialSearchQuery.toLowerCase()) ||
+        m.desc.toLowerCase().includes(materialSearchQuery.toLowerCase());
+      const matchCat = materialCategoryFilter === 'All' || m.category === materialCategoryFilter;
+      return matchSearch && matchCat;
+    });
+
+    const activeMaterial = ASME_MATERIALS_CATALOG.find(m => m.id === selectedMaterialId) || ASME_MATERIALS_CATALOG[0];
+
+    const handleSelectMat = (mat) => {
+      setSelectedMaterialId(mat.id);
+      try {
+        window.history.pushState({ view: 'materials', material: mat.id }, '', `/materials/${mat.id}`);
+      } catch (e) {}
+    };
+
+    return (
+      <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
+        <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
+          <DashboardHeader isProfile={false} customTitle="ASME Materials Database" />
+
+          {/* Top Banner and Quick Links */}
+          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider backdrop-blur-md">
+                <Database className="w-3.5 h-3.5" /> ASME Section II Part D Database
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Standard ASME Pressure Vessel Materials</h2>
+              <p className="text-sm text-blue-100 font-medium leading-relaxed">
+                Explore ASME Section II Part D design stress allowables, temperature limits, UCS-66 impact test exemption curves, external pressure charts, and mechanical properties.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href="https://asme-material.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 rounded-2xl bg-white text-blue-700 font-black text-xs sm:text-sm shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2 hover:scale-105"
+              >
+                <ExternalLink className="w-4 h-4" /> Open Full ASME Database App
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentView('stress_strain');
+                  try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
+                }}
+                className="px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <LineChart className="w-4 h-4" /> Stress-Strain Curves →
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-96">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by grade (e.g. SA-516, 304, 316, Inconel)..."
+                value={materialSearchQuery}
+                onChange={(e) => setMaterialSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+              {['All', 'Carbon Steel', 'Austenitic Stainless', 'Low Alloy Steel', 'Nickel Alloy'].map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setMaterialCategoryFilter(cat)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    materialCategoryFilter === cat
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2-Column Layout: Materials List on Left, Active Detail on Right */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* List */}
+            <div className="lg:col-span-5 space-y-3">
+              <div className="text-xs font-black uppercase tracking-wider text-slate-500 px-1">
+                Showing {filteredMaterials.length} Materials
+              </div>
+              <div className="space-y-3">
+                {filteredMaterials.map(m => {
+                  const isSelected = m.id === activeMaterial.id;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleSelectMat(m)}
+                      className={`p-5 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-50/80 border-blue-400 shadow-md ring-2 ring-blue-500/10'
+                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-black text-slate-900">{m.grade}</span>
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">{m.uns}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{m.desc}</p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100/70 text-blue-700 whitespace-nowrap">
+                          {m.category}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-center">
+                        <div className="bg-slate-50 rounded-lg p-1.5">
+                          <span className="block text-[9px] uppercase font-bold text-slate-400">Tensile (Su)</span>
+                          <span className="text-xs font-black text-slate-800">{m.tensileMpa} MPa</span>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-1.5">
+                          <span className="block text-[9px] uppercase font-bold text-slate-400">Yield (Sy)</span>
+                          <span className="text-xs font-black text-slate-800">{m.yieldMpa} MPa</span>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-1.5">
+                          <span className="block text-[9px] uppercase font-bold text-slate-400">MDMT Curve</span>
+                          <span className="text-xs font-black text-indigo-700">{m.curve}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Detail View */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">{activeMaterial.grade}</h3>
+                      <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
+                        UNS {activeMaterial.uns}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1.5">{activeMaterial.desc}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStressMaterialId(activeMaterial.id);
+                      setCurrentView('stress_strain');
+                      try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
+                    }}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start whitespace-nowrap cursor-pointer"
+                  >
+                    <LineChart className="w-3.5 h-3.5" /> Generate Stress-Strain Curve
+                  </button>
+                </div>
+
+                {/* Key Specification Matrix */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="block text-[10px] font-black uppercase text-slate-400">Product Form</span>
+                    <span className="text-sm font-black text-slate-900 mt-0.5 block">{activeMaterial.form}</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="block text-[10px] font-black uppercase text-slate-400">Composition</span>
+                    <span className="text-sm font-black text-slate-900 mt-0.5 block">{activeMaterial.composition}</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="block text-[10px] font-black uppercase text-slate-400">Elastic Modulus</span>
+                    <span className="text-sm font-black text-slate-900 mt-0.5 block">{activeMaterial.elasticMod}</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="block text-[10px] font-black uppercase text-slate-400">External Pressure</span>
+                    <span className="text-sm font-black text-indigo-700 mt-0.5 block">{activeMaterial.extChart}</span>
+                  </div>
+                </div>
+
+                {/* ASME Allowable Stresses Table */}
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-600" /> ASME Section II Part D Maximum Allowable Stress Values, S (MPa)
+                  </h4>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-900 text-white font-black uppercase">
+                        <tr>
+                          {activeMaterial.allowables.map((a, i) => (
+                            <th key={i} className="p-3 border-r border-slate-800 last:border-r-0 text-center">{a.temp}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-x divide-slate-100 font-bold text-center">
+                        <tr className="bg-slate-50">
+                          {activeMaterial.allowables.map((a, i) => (
+                            <td key={i} className="p-3 text-sm font-black text-blue-700">{a.s} MPa</td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium mt-2">
+                    * Values derived from ASME BPVC Section II, Part D, Subpart 1, Table 1A (Div 1) and Table 5A (Div 2 Class 1).
+                  </p>
+                </div>
+
+                {/* AI Material Recommendation Assistant */}
+                <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
+                  <div className="flex items-center gap-2 text-purple-900 font-black text-sm">
+                    <Sparkles className="w-4 h-4 text-purple-600" /> Ask AI Material Consultant
+                  </div>
+                  <p className="text-xs text-purple-700 font-medium leading-relaxed">
+                    Have specific operating conditions (e.g. wet H2S sour service, high temperature hydrogen attack, or cryogenic conditions)? Let NOVA AI recommend the optimal ASME grade.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Sour gas service, 250°C, 4 MPa, H2S present..."
+                      value={materialPrompt}
+                      onChange={(e) => setMaterialPrompt(e.target.value)}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-purple-200 text-xs sm:text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleMaterialConsultant}
+                      disabled={isMaterialLoading || !materialPrompt.trim()}
+                      className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      {isMaterialLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Ask AI
+                    </button>
+                  </div>
+                  {materialResponse && (
+                    <div className="p-4 bg-white rounded-xl border border-purple-200 text-xs text-slate-800 whitespace-pre-wrap font-medium leading-relaxed shadow-sm">
+                      {materialResponse}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderStressStrain = () => {
+    const activeMat = ASME_MATERIALS_CATALOG.find(m => m.id === stressMaterialId) || ASME_MATERIALS_CATALOG[0];
+
+    // Compute temperature adjusted mechanical properties
+    const tempDelta = Math.max(0, stressTempC - 20);
+    const tempFactorYield = Math.max(0.4, 1 - 0.00065 * tempDelta);
+    const tempFactorTensile = Math.max(0.5, 1 - 0.00045 * tempDelta);
+    const currentSy = Math.round(activeMat.yieldMpa * tempFactorYield);
+    const currentSu = Math.round(activeMat.tensileMpa * tempFactorTensile);
+    const currentE = 200000 - Math.round(tempDelta * 60);
+
+    // Compute Ramberg-Osgood stress-strain data points
+    // epsilon = sigma / E + alpha * (sigma / Sy)^m
+    const m = activeMat.category.includes('Stainless') ? 7 : 12;
+
+    const dataPoints = [];
+    const maxStress = currentSu * 1.05;
+    const steps = 30;
+    for (let i = 0; i <= steps; i++) {
+      const sigma = (maxStress / steps) * i;
+      const elasticStrain = sigma / currentE;
+      const plasticStrain = 0.002 * Math.pow(sigma / currentSy, m);
+      const totalStrain = elasticStrain + plasticStrain;
+      dataPoints.push({
+        strain: parseFloat(totalStrain.toFixed(5)),
+        stress: Math.round(sigma)
+      });
+    }
+
+    // Map to SVG coordinates
+    const maxStrainVal = 0.05;
+    const svgWidth = 540;
+    const svgHeight = 260;
+    const padding = { left: 55, right: 25, top: 25, bottom: 40 };
+    const chartW = svgWidth - padding.left - padding.right;
+    const chartH = svgHeight - padding.top - padding.bottom;
+
+    const pathData = dataPoints.map((pt, idx) => {
+      const x = padding.left + Math.min(1, pt.strain / maxStrainVal) * chartW;
+      const y = padding.top + (1 - (pt.stress / (maxStress * 1.08))) * chartH;
+      return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+
+    const handleExportCsv = () => {
+      const rows = [
+        ['Engineering/True Strain (mm/mm)', 'Stress (MPa)'],
+        ...dataPoints.map(p => [p.strain, p.stress])
+      ];
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `${activeMat.grade.replace(/[^a-zA-Z0-9]/g, '_')}_${stressTempC}C_curve.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showNotification('Stress-strain curve CSV exported successfully!', 'success');
+    };
+
+    return (
+      <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
+        <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
+          <DashboardHeader isProfile={false} customTitle="Stress-Strain Curve Generator" />
+
+          {/* Top Hero Banner */}
+          <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider backdrop-blur-md">
+                <LineChart className="w-3.5 h-3.5" /> ASME Sec VIII Div 2 Part 3 & API 579 Curves
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Nonlinear Stress-Strain Generator</h2>
+              <p className="text-sm text-purple-100 font-medium leading-relaxed">
+                Generate mathematical True Stress-True Strain curves, Ramberg-Osgood plasticity parameters, and tangent modulus curves directly for FEA simulation inputs.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href="/curve.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 rounded-2xl bg-white text-indigo-700 font-black text-xs sm:text-sm shadow-lg hover:bg-indigo-50 transition-all flex items-center gap-2 hover:scale-105"
+              >
+                <ExternalLink className="w-4 h-4" /> Open Standalone Curve Generator
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentView('materials');
+                  try { window.history.pushState({ view: 'materials' }, '', '/materials'); } catch (e) {}
+                }}
+                className="px-5 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Database className="w-4 h-4" /> ASME Materials Database →
+              </button>
+            </div>
+          </div>
+
+          {/* Controls & Curve Canvas */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Parameters Controls */}
+            <div className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+              <div>
+                <h3 className="text-base font-black text-slate-900 mb-1">Material & Temperature</h3>
+                <p className="text-xs text-slate-500 font-medium">Select material grade and design operating temperature.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Material Grade</label>
+                  <select
+                    value={stressMaterialId}
+                    onChange={(e) => setStressMaterialId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    {ASME_MATERIALS_CATALOG.map(m => (
+                      <option key={m.id} value={m.id}>{m.grade} ({m.category})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-black uppercase text-slate-500">Design Temperature</label>
+                    <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">{stressTempC} °C</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="500"
+                    step="5"
+                    value={stressTempC}
+                    onChange={(e) => setStressTempC(parseInt(e.target.value, 10))}
+                    className="w-full accent-indigo-600 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1">
+                    <span>20 °C (Room Temp)</span>
+                    <span>250 °C</span>
+                    <span>500 °C (Creep Range)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Curve Formulation</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'true_stress_strain', label: 'True Stress-True Strain (Ramberg-Osgood)' },
+                      { id: 'engineering', label: 'Engineering (Nominal) Stress-Strain' },
+                      { id: 'cyclic', label: 'Cyclic Stress-Strain (Masing Rule)' },
+                      { id: 'tangent', label: 'Tangent Modulus (Et) vs Strain' }
+                    ].map(type => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => setStressCurveMode(type.id)}
+                        className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          stressCurveMode === type.id
+                            ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Computed Temperature Properties */}
+                <div className="pt-4 border-t border-slate-100 space-y-2">
+                  <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Adjusted Properties @ {stressTempC}°C</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="block text-[10px] text-slate-400 font-bold">Yield (Sy)</span>
+                      <span className="text-sm font-black text-slate-900">{currentSy} MPa</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="block text-[10px] text-slate-400 font-bold">Tensile (Su)</span>
+                      <span className="text-sm font-black text-slate-900">{currentSu} MPa</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="block text-[10px] text-slate-400 font-bold">Modulus (E)</span>
+                      <span className="text-sm font-black text-slate-900">{Math.round(currentE / 1000)} GPa</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="block text-[10px] text-slate-400 font-bold">Hardening (m)</span>
+                      <span className="text-sm font-black text-indigo-600">{m}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Export Curve Data (.CSV)
+                </button>
+              </div>
+            </div>
+
+            {/* SVG Graph & Analysis */}
+            <div className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    {activeMat.grade} — {stressCurveMode === 'true_stress_strain' ? 'True Stress vs True Strain' : stressCurveMode === 'engineering' ? 'Engineering Stress-Strain Curve' : stressCurveMode === 'cyclic' ? 'Cyclic Stress-Strain' : 'Tangent Modulus'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Computed per ASME BPVC Section VIII, Division 2, Part 3-D</p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200 self-start">
+                  Sy: {currentSy} MPa | Su: {currentSu} MPa
+                </span>
+              </div>
+
+              {/* Interactive SVG Chart */}
+              <div className="relative bg-slate-950 rounded-2xl p-4 overflow-hidden shadow-inner">
+                <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto">
+                  <defs>
+                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="50%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal Grid lines */}
+                  {[0.25, 0.5, 0.75, 1.0].map((frac, idx) => {
+                    const y = padding.top + (1 - frac) * chartH;
+                    const val = Math.round(frac * maxStress);
+                    return (
+                      <g key={idx}>
+                        <line x1={padding.left} y1={y} x2={svgWidth - padding.right} y2={y} stroke="#334155" strokeDasharray="3 3" strokeWidth="0.8" />
+                        <text x={padding.left - 8} y={y + 4} textAnchor="end" fill="#94a3b8" fontSize="10" fontWeight="bold">{val}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Vertical Grid lines */}
+                  {[0.01, 0.02, 0.03, 0.04, 0.05].map((str, idx) => {
+                    const x = padding.left + (str / maxStrainVal) * chartW;
+                    return (
+                      <g key={idx}>
+                        <line x1={x} y1={padding.top} x2={x} y2={padding.top + chartH} stroke="#334155" strokeDasharray="3 3" strokeWidth="0.8" />
+                        <text x={x} y={padding.top + chartH + 16} textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">{(str * 100).toFixed(0)}%</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Axes */}
+                  <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + chartH} stroke="#64748b" strokeWidth="1.5" />
+                  <line x1={padding.left} y1={padding.top + chartH} x2={svgWidth - padding.right} y2={padding.top + chartH} stroke="#64748b" strokeWidth="1.5" />
+
+                  {/* Axis Titles */}
+                  <text x={padding.left - 38} y={padding.top + chartH / 2} textAnchor="middle" fill="#cbd5e1" fontSize="11" fontWeight="bold" transform={`rotate(-90, ${padding.left - 38}, ${padding.top + chartH / 2})`}>Stress σ (MPa)</text>
+                  <text x={padding.left + chartW / 2} y={svgHeight - 8} textAnchor="middle" fill="#cbd5e1" fontSize="11" fontWeight="bold">True Strain ε (mm/mm)</text>
+
+                  {/* Curve Line */}
+                  <path d={pathData} fill="none" stroke="url(#curveGradient)" strokeWidth="3" strokeLinecap="round" />
+
+                  {/* Yield Point Dot */}
+                  {(() => {
+                    const yieldPt = dataPoints.find(p => p.stress >= currentSy) || dataPoints[5];
+                    const yx = padding.left + (yieldPt.strain / maxStrainVal) * chartW;
+                    const yy = padding.top + (1 - (yieldPt.stress / (maxStress * 1.08))) * chartH;
+                    return (
+                      <g>
+                        <circle cx={yx} cy={yy} r="5" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.5" />
+                        <text x={yx + 8} y={yy - 6} fill="#fbbf24" fontSize="10" fontWeight="bold">Yield: {currentSy} MPa</text>
+                      </g>
+                    );
+                  })()}
+                </svg>
+              </div>
+
+              {/* Curve Formula Summary */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
+                <div className="font-black text-slate-900 uppercase tracking-wider text-[11px]">Ramberg-Osgood Material Model Formulation</div>
+                <div className="font-mono bg-white p-3 rounded-xl border border-slate-200 text-indigo-700 font-bold overflow-x-auto">
+                  ε = (σ / E) + 0.002 × (σ / Sy)^{m}
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                  This mathematical relationship characterizes elastic-plastic behavior through the yield transition up to ultimate tensile strength without artificial discontinuities, matching Section VIII Div 2 Part 5 requirements.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -4967,7 +6103,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setProfileTab(item.id)}
+                onClick={() => handleProfileTabChange(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-left transition-all border-b border-slate-100 last:border-b-0 group ${profileTab === item.id ? 'bg-[#e8f0fe] text-[#2874f0] border-l-4 border-l-[#2874f0]' : 'text-slate-700 hover:bg-slate-50 border-l-4 border-l-transparent'}`}
               >
                 <span className={profileTab === item.id ? 'text-[#2874f0]' : item.color}>{item.icon}</span>
@@ -4984,7 +6120,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <div className="w-full bg-white/20 rounded-full h-1.5 mt-2 overflow-hidden">
               <div className="h-full bg-white rounded-full transition-all" style={{ width: `${Math.round((currentUser.dailyCreditsRemaining / currentUser.dailyCreditsTotal) * 100)}%` }}></div>
             </div>
-            <button onClick={() => setProfileTab('subscription')} className="mt-3 w-full text-[11px] font-black bg-white text-[#2874f0] py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+            <button onClick={() => handleProfileTabChange('subscription')} className="mt-3 w-full text-[11px] font-black bg-white text-[#2874f0] py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
               Upgrade Plan →
             </button>
           </div>
@@ -4995,7 +6131,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <h2 className="text-lg font-black text-slate-900">Personal Information</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Manage your name, email and contact details</p>
               </div>
-              <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#2874f0] hover:bg-[#1a5dc9] text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+              <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); try { window.history.pushState({ view: 'profile', tab: 'info', modal: 'edit' }, '', '/profile/edit'); } catch (e) {} }} className="flex items-center gap-2 px-4 py-2 bg-[#2874f0] hover:bg-[#1a5dc9] text-white text-sm font-bold rounded-lg transition-all shadow-sm">
                 <Settings className="w-3.5 h-3.5" /> Edit
               </button>
             </div>
@@ -5082,7 +6218,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   const isFailed = normStatus === 'failed' || normStatus === 'error';
                   const isPending = !isCompleted && !isFailed;
                   return (
-                    <div key={job.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }}>
+                    <div key={job.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => openJobDetails(job)}>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-xl bg-[#e8f0fe] flex items-center justify-center shrink-0"><Cpu className="w-5 h-5 text-[#2874f0]" /></div>
@@ -5537,7 +6673,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                       <button
-                        onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
+                        onClick={() => openWizardDemo(item)}
                         className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2"
                       >
                         <PlayCircle className="w-4 h-4 text-slate-700" /> View Demo
@@ -5551,7 +6687,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                         </button>
                       ) : (
                         <button
-                          onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
+                          onClick={() => openWizardPricing(item)}
                           className="px-6 py-2.5 bg-gradient-to-r from-[#d84315] to-[#bf360c] hover:from-[#c23b12] hover:to-[#a72e09] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:scale-105"
                         >
                           <ShoppingCart className="w-4 h-4" /> Buy
@@ -5629,11 +6765,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </div>
         </div> {isEditProfileOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setIsEditProfileOpen(false); try { window.history.pushState({ view: 'profile', tab: 'info' }, '', '/profile/info'); } catch (e) {} }}></div>
             <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
               <div className="flex items-center justify-between px-6 py-5 bg-[#2874f0] text-white">
                 <span className="flex items-center gap-2 font-black text-lg"><Settings className="w-5 h-5" /> Edit Profile</span>
-                <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
+                <button onClick={() => { setIsEditProfileOpen(false); try { window.history.pushState({ view: 'profile', tab: 'info' }, '', '/profile/info'); } catch (e) {} }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleEditProfile} className="p-6 space-y-5">
                 <div>
@@ -5645,7 +6781,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} required placeholder="+91 98765 43210" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
                 </div>
                 <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50">Cancel</button>
+                  <button type="button" onClick={() => { setIsEditProfileOpen(false); try { window.history.pushState({ view: 'profile', tab: 'info' }, '', '/profile/info'); } catch (e) {} }} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50">Cancel</button>
                   <button type="submit" className="flex-1 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white rounded-xl font-bold text-sm shadow-md">Save Changes</button>
                 </div>
               </form>
@@ -5653,13 +6789,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </div>
         )} {isWizardDemoOpen && selectedWizardForDemo && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60" onClick={() => setIsWizardDemoOpen(false)}></div>
+            <div className="absolute inset-0 bg-black/60" onClick={() => closeWizardDemo()}></div>
             <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
               <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
                 <span className="flex items-center gap-3 font-bold text-lg">
                   <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
                 </span>
-                <button onClick={() => setIsWizardDemoOpen(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
+                <button onClick={() => closeWizardDemo()} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
                   <X className="w-5 h-5 text-slate-300" />
                 </button>
               </div>
@@ -5679,7 +6815,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
                   <button
-                    onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
+                    onClick={() => { closeWizardDemo(); openWizardPricing(selectedWizardForDemo); }}
                     className="px-6 py-2.5 bg-[#d84315] hover:bg-[#bf360c] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0"
                   >
                     <ShoppingCart className="w-4 h-4" /> Buy
@@ -5707,13 +6843,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </div>
         )} {isWizardPricingOpen && selectedWizardForPricing && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setIsWizardPricingOpen(false)}></div>
+            <div className="absolute inset-0 bg-black/50" onClick={() => closeWizardPricing()}></div>
             <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
               <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
                 <span className="flex items-center gap-3 font-bold text-lg text-slate-900">
                   <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
                 </span>
-                <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
+                <button onClick={() => closeWizardPricing()} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -5748,7 +6884,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                           <div>
                             <button
                               onClick={() => {
-                                setIsWizardPricingOpen(false);
+                                closeWizardPricing();
                                 handleRazorpayCheckout(
                                   `${selectedWizardForPricing.name} (${plan.term} License)`,
                                   plan.price,
@@ -5783,14 +6919,14 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </div>
         )} {isChangePasswordOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setIsChangePasswordOpen(false); try { window.history.pushState({ view: 'profile', tab: 'security' }, '', '/profile/security'); } catch (e) {} }}></div>
             <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
               <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
                 <span className="flex items-center gap-2 font-black text-lg">
                   {isPwdSuccess ? <CheckCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                   {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
                 </span>
-                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({ current: '', new: '', confirm: '' }); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
+                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({ current: '', new: '', confirm: '' }); setIsPwdSuccess(false); try { window.history.pushState({ view: 'profile', tab: 'security' }, '', '/profile/security'); } catch (e) {} }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
                 <div>
@@ -5810,44 +6946,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
                 </div>
                 <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
-                  <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
-                    {isPwdSuccess ? 'Updated!' : 'Update Password'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )} {isChangePasswordOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
-            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
-              <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
-                <span className="flex items-center gap-2 font-black text-lg">
-                  {isPwdSuccess ? <CheckCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-                  {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
-                </span>
-                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({ current: '', new: '', confirm: '' }); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
-              </div>
-              <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
-                <div>
-                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
-                  <div className="relative">
-                    <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({ ...pwdForm, new: e.target.value }); setPwdErrors({ ...pwdErrors, new: null }); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                    <button type="button" onClick={() => setShowPwd({ ...showPwd, new: !showPwd.new })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
-                  </div>
-                  {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
-                </div>
-                <div>
-                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
-                  <div className="relative">
-                    <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({ ...pwdForm, confirm: e.target.value }); setPwdErrors({ ...pwdErrors, confirm: null }); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                    <button type="button" onClick={() => setShowPwd({ ...showPwd, confirm: !showPwd.confirm })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
-                  </div>
-                  {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
-                </div>
-                <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
+                  <button type="button" onClick={() => { setIsChangePasswordOpen(false); try { window.history.pushState({ view: 'profile', tab: 'security' }, '', '/profile/security'); } catch (e) {} }} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
                   <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
                     {isPwdSuccess ? 'Updated!' : 'Update Password'}
                   </button>
@@ -5969,7 +7068,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveDocumentViewer(prev => ({ ...(prev || { data: docData }), type: 'invoice' }))}
+                    onClick={() => openDocumentViewer(docData, 'invoice')}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                       docMode === 'invoice'
                         ? 'bg-slate-900 text-white shadow-sm'
@@ -5980,7 +7079,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveDocumentViewer(prev => ({ ...(prev || { data: docData }), type: 'receipt' }))}
+                    onClick={() => openDocumentViewer(docData, 'receipt')}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                       docMode === 'receipt'
                         ? 'bg-indigo-600 text-white shadow-sm'
@@ -5994,7 +7093,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => { setActiveDocumentViewer(null); setCompletedInvoice(null); }}
+                    onClick={closeDocumentViewer}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
                     title="Close document viewer"
                   >
@@ -6190,7 +7289,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               <div className="w-full text-center pb-12 print:hidden">
                 <button
                   type="button"
-                  onClick={() => { setActiveDocumentViewer(null); setCompletedInvoice(null); }}
+                  onClick={closeDocumentViewer}
                   className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-lg border border-slate-200 transition-all cursor-pointer inline-flex items-center gap-2"
                 >
                   <X className="w-4 h-4" /> Close Document
@@ -6213,6 +7312,8 @@ Always provide professional, precise, technically accurate, and helpful answers.
           {currentView === 'nova_help' && renderNovaHelp()}
           {currentView === 'nova_community' && renderNovaCommunity()}
           {currentView === 'chat' && renderChat()}
+          {currentView === 'materials' && renderMaterials()}
+          {currentView === 'stress_strain' && renderStressStrain()}
         </>
       )}
     </>

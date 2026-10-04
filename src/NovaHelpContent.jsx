@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Search,
@@ -22,9 +22,30 @@ import {
 } from 'lucide-react';
 
 export default function NovaHelpContent({ onNavigateBack }) {
+  const getInitialTopicId = () => {
+    try {
+      const path = window.location.pathname.replace(/\/+$/, '');
+      if (path.startsWith('/help/')) {
+        const id = path.split('/help/')[1]?.split('/')[0];
+        if (id) return id;
+      }
+      const params = new URLSearchParams(window.location.search);
+      const qTopic = params.get('topic');
+      if (qTopic) return qTopic;
+    } catch (e) {}
+    return 'div1_vs_div2';
+  };
+
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTopicId, setSelectedTopicId] = useState('div1_vs_div2');
+  const [selectedTopicId, setSelectedTopicId] = useState(getInitialTopicId);
+
+  const handleSelectTopic = (id) => {
+    setSelectedTopicId(id);
+    try {
+      window.history.pushState({ view: 'nova_help', topicId: id }, '', `/help/${id}`);
+    } catch (e) {}
+  };
 
   const topics = [
     {
@@ -697,6 +718,21 @@ export default function NovaHelpContent({ onNavigateBack }) {
     }
   ];
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const topic = getInitialTopicId();
+      if (topic) {
+        setSelectedTopicId(topic);
+        const match = topics.find(t => t.id === topic);
+        if (match && activeCategory !== 'all' && match.category !== activeCategory) {
+          setActiveCategory(match.category);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeCategory, topics]);
+
   const filteredTopics = topics.filter(t => {
     return activeCategory === 'all' || t.category === activeCategory;
   });
@@ -721,7 +757,7 @@ export default function NovaHelpContent({ onNavigateBack }) {
             onClick={() => {
               setActiveCategory(cat.id);
               const firstInCat = topics.find(t => cat.id === 'all' || t.category === cat.id);
-              if (firstInCat) setSelectedTopicId(firstInCat.id);
+              if (firstInCat) handleSelectTopic(firstInCat.id);
             }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               activeCategory === cat.id
@@ -746,7 +782,7 @@ export default function NovaHelpContent({ onNavigateBack }) {
                 return (
                   <button
                     key={topic.id}
-                    onClick={() => setSelectedTopicId(topic.id)}
+                    onClick={() => handleSelectTopic(topic.id)}
                     className={`w-full text-left p-3.5 rounded-2xl transition-all flex items-start justify-between gap-3 ${
                       isSelected
                         ? 'bg-[#2874f0] text-white shadow-lg scale-[1.02]'
