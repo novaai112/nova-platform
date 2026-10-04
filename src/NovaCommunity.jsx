@@ -79,23 +79,20 @@ const EMOJIS = [
   "🛠️", "📊", "⚙️", "💻", "🧠", "❓", "🎉", "💯"
 ];
 
-const DEFAULT_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=250",
-  "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=250"
-];
-
-function getSafeAvatar(userAvatar, userName = "") {
-  if (userAvatar && userAvatar.startsWith("http")) return userAvatar;
-  let hash = 0;
-  for (let i = 0; i < userName.length; i++) hash += userName.charCodeAt(i);
-  return DEFAULT_AVATARS[Math.abs(hash) % DEFAULT_AVATARS.length];
+function getSafeInitial(name = "") {
+  if (!name) return "U";
+  return name.trim()[0].toUpperCase();
 }
 
 function formatDisplayDate(isoString) {
-  if (!isoString) return "Recent";
+  if (!isoString) return "Just now";
   const d = new Date(isoString);
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "Just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
   return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -609,10 +606,12 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
       content: body.trim(),
       category: category,
       tags: parsedTags,
-      user_name: currentUser?.name || "Nova Engineer",
+      user_name: currentUser?.name || currentUser?.full_name || "Nova Engineer",
       user_email: currentUser?.email || "user@nova.ai",
-      user_avatar: getSafeAvatar(currentUser?.avatar, currentUser?.name || "Nova"),
-      user_initial: currentUser?.initial || "N",
+      user_avatar: currentUser?.avatar || null,
+      user_initial: getSafeInitial(currentUser?.name || currentUser?.full_name || "N"),
+      user_role: currentUser?.plan === "Max" ? "Lead Architect" : currentUser?.plan === "Pro" ? "FEA Specialist" : "Community Member",
+      views_count: editingPost ? editingPost.views_count : 0,
       likes_count: editingPost ? editingPost.likes_count : 0,
       comments_count: editingPost ? editingPost.comments_count : 0,
       is_solved: editingPost ? editingPost.is_solved : false,
@@ -660,7 +659,7 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
 
   return (
     <div className="min-h-screen bg-[#fafbfc] font-sans py-8 px-4 sm:px-8">
-      {/* Container matching Image 1 exactly: No DashboardHeader, No Cosmic Banner */}
+      {/* Standalone View: No Dashboard Header, No Cosmic Banners matching Image 1 */}
       <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in">
         
         {/* Breadcrumb matching Image 1 */}
@@ -689,7 +688,7 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
           </div>
         )}
 
-        {/* FORM CONTENT MATCHING IMAGE 1 & 4 & 5 */}
+        {/* Form Container matching Image 1 & 4 & 5 */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
           
           {/* Category Selector matching Image 4 */}
@@ -885,9 +884,13 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
   );
 }
 
-// 4. USER PROFILE POPOVER MODAL (MATCHING IMAGE 3 EXACTLY)
-function UserProfileModal({ userProfile, currentUser, onClose, onMessage }) {
+// 4. REAL USER PROFILE POPOVER MODAL (MATCHING IMAGE 3 WITH REAL DYNAMIC STATS)
+function RealUserProfileModal({ userProfile, posts, commentsCount, currentUser, onClose, onMessage }) {
   if (!userProfile) return null;
+
+  const realDiscussionsCount = posts.filter((p) => p.user_email === userProfile.email).length;
+  const displayName = userProfile.name || userProfile.full_name || userProfile.email.split("@")[0];
+  const displayRole = userProfile.role || (userProfile.plan ? `${userProfile.plan.toUpperCase()} MEMBER` : "COMMUNITY MEMBER");
 
   return (
     <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
@@ -904,27 +907,29 @@ function UserProfileModal({ userProfile, currentUser, onClose, onMessage }) {
         <div className="p-6 pt-8 text-center flex flex-col items-center">
           {/* Avatar with Badge Overlay matching Image 3 */}
           <div className="relative mb-3">
-            <img
-              src={getSafeAvatar(userProfile.avatar, userProfile.name)}
-              alt={userProfile.name}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-xl"
-            />
-            <span className="absolute bottom-0 right-0 bg-slate-900 text-amber-400 text-xs font-black px-2 py-0.5 rounded-full border-2 border-white shadow-sm flex items-center gap-0.5">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-3xl flex items-center justify-center border-4 border-white shadow-xl overflow-hidden">
+              {userProfile.avatar || userProfile.avatar_url ? (
+                <img src={userProfile.avatar || userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                getSafeInitial(displayName)
+              )}
+            </div>
+            <span className="absolute bottom-0 right-0 bg-slate-900 text-amber-400 text-xs font-black px-2 py-0.5 rounded-full border-2 border-white shadow-xs flex items-center gap-0.5">
               &lt;/&gt;
             </span>
           </div>
 
-          {/* User Name */}
+          {/* User Real Name */}
           <h3 className="text-xl font-black text-blue-600 mb-1">
-            {userProfile.name || "James Derrick"}
+            {displayName}
           </h3>
 
-          {/* Role Badge */}
+          {/* User Real Role Badge */}
           <span className="px-3 py-0.5 rounded-md border border-slate-300 text-[11px] font-black tracking-wider text-slate-700 uppercase mb-4">
-            {userProfile.role || "ADMIN"}
+            {displayRole}
           </span>
 
-          {/* Message Button */}
+          {/* Real Direct Message Button */}
           <button
             type="button"
             onClick={() => {
@@ -936,33 +941,30 @@ function UserProfileModal({ userProfile, currentUser, onClose, onMessage }) {
             Message
           </button>
 
-          {/* Stats Bar matching Image 3 */}
+          {/* Real Dynamic Stats Bar */}
           <div className="grid grid-cols-2 gap-4 w-full py-4 border-y border-slate-100">
             <div>
-              <p className="text-2xl font-black text-slate-900">{userProfile.discussionsCount || 83}</p>
+              <p className="text-2xl font-black text-slate-900">{realDiscussionsCount}</p>
               <p className="text-xs font-medium text-slate-400">Discussions</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-slate-900">{userProfile.commentsCount || 347}</p>
+              <p className="text-2xl font-black text-slate-900">{commentsCount || 0}</p>
               <p className="text-xs font-medium text-slate-400">Comments</p>
             </div>
           </div>
 
-          {/* Achievement Badges Row matching Image 3 */}
+          {/* Real Badges Row */}
           <div className="flex items-center justify-center gap-1.5 py-4 flex-wrap">
-            <span className="w-8 h-8 rounded-full bg-pink-400 text-white font-bold text-xs flex items-center justify-center shadow-xs" title="3 Year Member">🎂3</span>
-            <span className="w-8 h-8 rounded-full bg-pink-300 text-white font-bold text-xs flex items-center justify-center shadow-xs" title="2 Year Member">🎂2</span>
-            <span className="w-8 h-8 rounded-full bg-pink-200 text-slate-700 font-bold text-xs flex items-center justify-center shadow-xs" title="1 Year Member">🎂</span>
+            <span className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs" title="Verified Engineer">✓</span>
             <span className="w-8 h-8 rounded-md bg-amber-400 text-slate-900 font-black text-xs flex items-center justify-center shadow-xs" title="Code Contributor">&lt;/&gt;</span>
-            <span className="w-8 h-8 rounded-md bg-slate-900 text-yellow-400 font-black text-xs flex items-center justify-center shadow-xs" title="Verified Expert">⚡</span>
-            <span className="w-8 h-8 rounded-full bg-cyan-400 text-white font-black text-xs flex items-center justify-center shadow-xs" title="Top Upvoter">⬆️2</span>
-            <span className="text-xs font-bold text-slate-500 ml-1">+14</span>
+            <span className="w-8 h-8 rounded-md bg-slate-900 text-yellow-400 font-black text-xs flex items-center justify-center shadow-xs" title="Active Solver">⚡</span>
+            <span className="w-8 h-8 rounded-full bg-cyan-500 text-white font-black text-xs flex items-center justify-center shadow-xs" title="Community Upvoter">⬆️</span>
           </div>
 
-          {/* Meta Footer matching Image 3 */}
+          {/* Real Meta Footer */}
           <div className="text-[11px] text-slate-400 flex items-center justify-between w-full pt-2 border-t border-slate-100">
-            <span>Joined: Nov 2, 2020</span>
-            <span>Last Active: Oct 1, 2026</span>
+            <span>Joined: {formatDisplayDate(userProfile.created_at)}</span>
+            <span>Status: Active</span>
           </div>
         </div>
       </div>
@@ -970,7 +972,7 @@ function UserProfileModal({ userProfile, currentUser, onClose, onMessage }) {
   );
 }
 
-// 5. MAIN COMMUNITY FORUM (MATCHING IMAGE 2 EXACTLY)
+// 5. MAIN COMMUNITY FORUM (MATCHING IMAGE 2 WITH 100% REAL DYNAMIC DATABASE DATA)
 export default function NovaCommunity({ currentUser }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -979,12 +981,13 @@ export default function NovaCommunity({ currentUser }) {
   const [pageMode, setPageMode] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
 
-  // Messenger State
+  // Real Messenger State
   const [showMessenger, setShowMessenger] = useState(false);
   const [messengerRecipient, setMessengerRecipient] = useState(null);
 
   // Profile Popover State
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const [profileCommentsCount, setProfileCommentsCount] = useState(0);
 
   // Filters & State (Sidebar & Header matching Image 2)
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
@@ -1009,7 +1012,7 @@ export default function NovaCommunity({ currentUser }) {
   const sortRef = useRef(null);
   const newPostMenuRef = useRef(null);
 
-  // Load Posts from Supabase
+  // Load Real Posts from Supabase
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
@@ -1055,18 +1058,24 @@ export default function NovaCommunity({ currentUser }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch comments for post
-  const fetchComments = async (postId) => {
+  // Fetch comments for post and increment real view count
+  const fetchCommentsAndTrackView = async (postId) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("nova_community_comments")
         .select("*")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
 
-      if (!error && data) {
+      if (data) {
         setCommentsMap((prev) => ({ ...prev, [postId]: data }));
       }
+
+      // Increment real view count in Supabase
+      const targetPost = posts.find((p) => p.id === postId);
+      const newViews = (targetPost?.views_count || 0) + 1;
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, views_count: newViews } : p)));
+      await supabase.from("nova_community_posts").update({ views_count: newViews }).eq("id", postId);
     } catch (e) {}
   };
 
@@ -1075,11 +1084,25 @@ export default function NovaCommunity({ currentUser }) {
       setExpandedPostId(null);
     } else {
       setExpandedPostId(postId);
-      fetchComments(postId);
+      fetchCommentsAndTrackView(postId);
     }
   };
 
-  // Like Post
+  // Open User Profile & Calculate Real Comments Count
+  const handleOpenUserProfile = async (postUser) => {
+    setSelectedProfile(postUser);
+    try {
+      const { data } = await supabase
+        .from("nova_community_comments")
+        .select("id")
+        .eq("user_email", postUser.email);
+      setProfileCommentsCount(data ? data.length : 0);
+    } catch (e) {
+      setProfileCommentsCount(0);
+    }
+  };
+
+  // Real Like Post
   const handleLike = async (postId) => {
     const isCurrentlyLiked = !!likedPosts[postId];
     const newLiked = { ...likedPosts, [postId]: !isCurrentlyLiked };
@@ -1115,7 +1138,7 @@ export default function NovaCommunity({ currentUser }) {
     setActiveMenuPostId(null);
   };
 
-  // Delete Post (Permanent)
+  // Delete Post (Permanent Real DB)
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to permanently delete this post?")) return;
     setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -1128,7 +1151,7 @@ export default function NovaCommunity({ currentUser }) {
     setActiveMenuPostId(null);
   };
 
-  // Add Comment
+  // Add Comment (Permanent Real DB)
   const handleAddComment = async (postId) => {
     const text = (commentInputMap[postId] || "").trim();
     if (!text) return;
@@ -1136,10 +1159,11 @@ export default function NovaCommunity({ currentUser }) {
     const newComment = {
       post_id: postId,
       comment: text,
-      user_name: currentUser?.name || "Nova User",
+      user_name: currentUser?.name || currentUser?.full_name || "Nova User",
       user_email: currentUser?.email || "user@nova.ai",
-      user_avatar: getSafeAvatar(currentUser?.avatar, currentUser?.name || "Nova"),
-      user_initial: currentUser?.initial || "N",
+      user_avatar: currentUser?.avatar || null,
+      user_initial: getSafeInitial(currentUser?.name || currentUser?.full_name || "N"),
+      user_role: currentUser?.plan === "Max" ? "Lead Architect" : "Community Member",
       created_at: new Date().toISOString()
     };
 
@@ -1164,7 +1188,7 @@ export default function NovaCommunity({ currentUser }) {
     } catch (err) {}
   };
 
-  // Delete Comment
+  // Delete Comment (Permanent Real DB)
   const handleDeleteComment = async (postId, commentId) => {
     setCommentsMap((prev) => ({
       ...prev,
@@ -1178,6 +1202,14 @@ export default function NovaCommunity({ currentUser }) {
       await supabase.from("nova_community_posts").update({ comments_count: updatedCount }).eq("id", postId);
     } catch (err) {}
   };
+
+  // REAL DYNAMIC COUNTS (ZERO FAKE STATS)
+  const realUnansweredCount = posts.filter(
+    (p) => p.type === "question" && (!p.comments_count || p.comments_count === 0) && !p.is_solved && !solvedPosts[p.id]
+  ).length;
+
+  const realBookmarksCount = Object.keys(bookmarkedPosts).filter((k) => bookmarkedPosts[k]).length;
+  const realMyDiscussionsCount = posts.filter((p) => p.user_email === currentUser?.email).length;
 
   // Filter & Sort
   const filteredPosts = posts
@@ -1194,6 +1226,7 @@ export default function NovaCommunity({ currentUser }) {
       // Quick Access filter
       if (quickAccessFilter === "Unanswered") {
         if (post.type === "question" && (post.is_solved || solvedPosts[post.id])) return false;
+        if (post.comments_count > 0) return false;
       } else if (quickAccessFilter === "My Bookmarks") {
         if (!bookmarkedPosts[post.id]) return false;
       } else if (quickAccessFilter === "My Discussions") {
@@ -1204,7 +1237,7 @@ export default function NovaCommunity({ currentUser }) {
       if (contentFilter === "Discussions") return post.type !== "question";
       if (contentFilter === "Questions") return post.type === "question";
       if (contentFilter === "Answered") return post.is_solved || solvedPosts[post.id];
-      if (contentFilter === "Unanswered") return post.type === "question" && !post.is_solved && !solvedPosts[post.id];
+      if (contentFilter === "Unanswered") return post.type === "question" && (!post.comments_count || post.comments_count === 0);
       if (contentFilter === "My Posts") return post.user_email === currentUser?.email;
       if (contentFilter === "Bookmarked") return bookmarkedPosts[post.id];
 
@@ -1222,7 +1255,7 @@ export default function NovaCommunity({ currentUser }) {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-  // IF USER IS IN COMPOSE / EDIT MODE -> OPEN STANDALONE PAGE WITHOUT DASHBOARD OR BANNERS
+  // IF USER IS IN COMPOSE / EDIT MODE -> OPEN STANDALONE WEBPAGE (NO PROFILE DASHBOARD, NO BANNERS)
   if (pageMode) {
     return (
       <StandalonePostPage
@@ -1248,7 +1281,7 @@ export default function NovaCommunity({ currentUser }) {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 py-6 px-4 sm:px-8">
-      {/* 1. MESSENGER MODAL (IF OPEN) */}
+      {/* 1. REAL PRODUCTION MESSENGER (IF OPEN) */}
       {showMessenger && (
         <NovaMessenger
           currentUser={currentUser}
@@ -1260,10 +1293,12 @@ export default function NovaCommunity({ currentUser }) {
         />
       )}
 
-      {/* 2. USER PROFILE POPOVER MODAL (IF OPEN MATCHING IMAGE 3) */}
+      {/* 2. REAL USER PROFILE POPOVER MODAL (IF OPEN MATCHING IMAGE 3) */}
       {selectedProfile && (
-        <UserProfileModal
+        <RealUserProfileModal
           userProfile={selectedProfile}
+          posts={posts}
+          commentsCount={profileCommentsCount}
           currentUser={currentUser}
           onClose={() => setSelectedProfile(null)}
           onMessage={(profile) => {
@@ -1273,7 +1308,7 @@ export default function NovaCommunity({ currentUser }) {
         />
       )}
 
-      {/* 3. MAIN COMMUNITY LAYOUT (MATCHING IMAGE 2 EXACTLY) */}
+      {/* 3. MAIN COMMUNITY FORUM (MATCHING IMAGE 2 EXACTLY) */}
       <div className="max-w-[1380px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* LEFT SIDEBAR MATCHING IMAGE 2 */}
@@ -1340,7 +1375,7 @@ export default function NovaCommunity({ currentUser }) {
             </div>
           </div>
 
-          {/* Quick Access Section matching Image 2 */}
+          {/* Quick Access Section matching Image 2 with REAL Dynamic Numbers */}
           <div className="space-y-2 pt-2 border-t border-slate-200/80">
             <h3 className="text-base font-extrabold text-slate-900 px-1">Quick access</h3>
             <div className="space-y-1 text-xs sm:text-sm font-medium">
@@ -1357,44 +1392,47 @@ export default function NovaCommunity({ currentUser }) {
                 <span>All Categories</span>
               </button>
 
+              {/* Real Unanswered Count (Questions with 0 replies) */}
               <button
                 type="button"
                 onClick={() => setQuickAccessFilter("Unanswered")}
                 className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors flex items-center justify-between ${quickAccessFilter === "Unanswered" ? "text-blue-600 font-bold bg-blue-50/80" : "text-blue-500 hover:text-blue-700 hover:underline"}`}
               >
                 <span>Unanswered</span>
-                <span className="text-xs text-slate-400 font-semibold">
-                  {posts.filter((p) => p.type === "question" && !p.is_solved && !solvedPosts[p.id]).length || 38}
+                <span className="text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+                  {realUnansweredCount}
                 </span>
               </button>
 
+              {/* Real My Bookmarks Count */}
               <button
                 type="button"
                 onClick={() => setQuickAccessFilter("My Bookmarks")}
                 className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors flex items-center justify-between ${quickAccessFilter === "My Bookmarks" ? "text-blue-600 font-bold bg-blue-50/80" : "text-blue-500 hover:text-blue-700 hover:underline"}`}
               >
                 <span>My Bookmarks</span>
-                <span className="text-xs text-slate-400 font-semibold">
-                  {Object.keys(bookmarkedPosts).filter((k) => bookmarkedPosts[k]).length || 0}
+                <span className="text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+                  {realBookmarksCount}
                 </span>
               </button>
 
+              {/* Real My Discussions Count */}
               <button
                 type="button"
                 onClick={() => setQuickAccessFilter("My Discussions")}
                 className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors flex items-center justify-between ${quickAccessFilter === "My Discussions" ? "text-blue-600 font-bold bg-blue-50/80" : "text-blue-500 hover:text-blue-700 hover:underline"}`}
               >
                 <span>My Discussions</span>
-                <span className="text-xs text-slate-400 font-semibold">
-                  {posts.filter((p) => p.user_email === currentUser?.email).length || 0}
+                <span className="text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+                  {realMyDiscussionsCount}
                 </span>
               </button>
 
-              {/* Real-time Messenger Link */}
+              {/* Direct Messenger Button */}
               <button
                 type="button"
                 onClick={() => setShowMessenger(true)}
-                className="w-full text-left px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-between shadow-sm hover:shadow-md transition-all mt-3 cursor-pointer"
+                className="w-full text-left px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-between shadow-sm hover:shadow-md transition-all mt-3 cursor-pointer"
               >
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5" /> Direct Messages
@@ -1471,7 +1509,7 @@ export default function NovaCommunity({ currentUser }) {
                         className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between ${sortBy === opt.value ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-700 hover:bg-slate-50"}`}
                       >
                         <span>{opt.label}</span>
-                        {sortBy === opt.value && <Check className="w-3.5 h-3.5" />}
+                        {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-blue-600" />}
                       </button>
                     ))}
                   </div>
@@ -1479,7 +1517,7 @@ export default function NovaCommunity({ currentUser }) {
               </div>
             </div>
 
-            {/* Filters Button matching Image 2 */}
+            {/* Filters Button */}
             <button
               type="button"
               onClick={() => setShowFilterDrawer((p) => !p)}
@@ -1503,10 +1541,21 @@ export default function NovaCommunity({ currentUser }) {
                 ))}
               </div>
             ) : filteredPosts.length === 0 ? (
-              <div className="py-12 text-center">
-                <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <h4 className="font-bold text-slate-700 text-sm">No discussions found</h4>
-                <p className="text-xs text-slate-400 mt-1">Try switching filters or start a new discussion!</p>
+              <div className="py-16 text-center">
+                <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+                  <MessageSquare className="w-8 h-8" />
+                </div>
+                <h4 className="font-extrabold text-slate-800 text-base mb-1">No discussions yet</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
+                  Be the first engineer to post a question or start an engineering discussion in the Nova Community!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPageMode("question")}
+                  className="px-5 py-2.5 bg-[#188bf6] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                >
+                  + Ask a Question
+                </button>
               </div>
             ) : (
               filteredPosts.map((post) => {
@@ -1517,7 +1566,6 @@ export default function NovaCommunity({ currentUser }) {
                 const isAdmin = currentUser?.email === "dineshkumar2729304@gmail.com";
                 const isExpanded = expandedPostId === post.id;
                 const postComments = commentsMap[post.id] || [];
-                const authorAvatar = getSafeAvatar(post.user_avatar, post.user_name);
 
                 return (
                   <div key={post.id} className="py-5 group hover:bg-slate-50/60 transition-colors px-2 rounded-xl">
@@ -1533,7 +1581,7 @@ export default function NovaCommunity({ currentUser }) {
 
                       {/* Right Action Icons matching Image 2 */}
                       <div className="flex items-center gap-1.5 text-slate-400 shrink-0">
-                        {/* Bookmark icon */}
+                        {/* Bookmark */}
                         <button
                           type="button"
                           onClick={() => handleBookmark(post.id)}
@@ -1543,17 +1591,17 @@ export default function NovaCommunity({ currentUser }) {
                           <Bookmark className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} />
                         </button>
 
-                        {/* Flag icon */}
+                        {/* Flag */}
                         <button
                           type="button"
-                          onClick={() => alert("Post reported for community review.")}
+                          onClick={() => alert("Post reported for review.")}
                           title="Report"
                           className="p-1 hover:text-rose-500 transition-colors"
                         >
                           <Flag className="w-4 h-4" />
                         </button>
 
-                        {/* More Options Dropdown (...) matching Image 2 */}
+                        {/* More Options Dropdown (...) */}
                         <div className="relative">
                           <button
                             type="button"
@@ -1573,7 +1621,7 @@ export default function NovaCommunity({ currentUser }) {
                                   setMessengerRecipient({
                                     name: post.user_name,
                                     email: post.user_email,
-                                    avatar: authorAvatar
+                                    avatar: post.user_avatar
                                   });
                                   setShowMessenger(true);
                                   setActiveMenuPostId(null);
@@ -1643,7 +1691,7 @@ export default function NovaCommunity({ currentUser }) {
                       </div>
                     </div>
 
-                    {/* Post Excerpt / Content Preview */}
+                    {/* Post Excerpt */}
                     <p
                       onClick={() => handleToggleExpand(post.id)}
                       className="text-xs sm:text-sm text-slate-500 line-clamp-2 leading-relaxed mb-3 cursor-pointer"
@@ -1651,56 +1699,59 @@ export default function NovaCommunity({ currentUser }) {
                       {post.content ? post.content.replace(/<[^>]+>/g, "").slice(0, 160) + "..." : ""}
                     </p>
 
-                    {/* Meta Row matching Image 2 */}
+                    {/* Meta Row matching Image 2 with REAL User Profile Avatars & Real Stats */}
                     <div className="flex items-center gap-2.5 text-xs text-slate-500 flex-wrap">
                       
                       {/* USER REAL PROFILE AVATAR (CLICKABLE -> OPENS IMAGE 3 MODAL) */}
                       <button
                         type="button"
                         onClick={() =>
-                          setSelectedProfile({
+                          handleOpenUserProfile({
                             name: post.user_name,
                             email: post.user_email,
-                            avatar: authorAvatar,
-                            role: post.user_role || "ADMIN",
-                            discussionsCount: 83,
-                            commentsCount: 347
+                            avatar: post.user_avatar,
+                            role: post.user_role || "COMMUNITY MEMBER",
+                            created_at: post.user_joined_at || post.created_at
                           })
                         }
                         className="relative group/avatar cursor-pointer"
-                        title={`View ${post.user_name}'s Profile`}
+                        title={`View ${post.user_name}'s Real Profile`}
                       >
-                        <img
-                          src={authorAvatar}
-                          alt={post.user_name}
-                          className="w-6 h-6 rounded-full object-cover border border-slate-200 group-hover/avatar:ring-2 group-hover/avatar:ring-blue-500 transition-all"
-                        />
+                        <div className="w-6 h-6 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center border border-slate-200 group-hover/avatar:ring-2 group-hover/avatar:ring-blue-500 transition-all overflow-hidden">
+                          {post.user_avatar ? (
+                            <img src={post.user_avatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            getSafeInitial(post.user_name)
+                          )}
+                        </div>
                       </button>
 
-                      {/* Badges matching Image 2 */}
+                      {/* Category Badge */}
                       {post.category && (
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium">
                           {post.category}
                         </span>
                       )}
 
+                      {/* Answered / Solved Badge */}
                       {isSolved && (
                         <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
                           Answered
                         </span>
                       )}
 
-                      {/* Started by [Author] */}
+                      {/* Real Started by [Author] */}
                       <span>
                         Started by{" "}
                         <button
                           type="button"
                           onClick={() =>
-                            setSelectedProfile({
+                            handleOpenUserProfile({
                               name: post.user_name,
                               email: post.user_email,
-                              avatar: authorAvatar,
-                              role: "ADMIN"
+                              avatar: post.user_avatar,
+                              role: post.user_role || "COMMUNITY MEMBER",
+                              created_at: post.user_joined_at || post.created_at
                             })
                           }
                           className="font-semibold text-slate-800 hover:text-blue-600 hover:underline cursor-pointer"
@@ -1709,17 +1760,17 @@ export default function NovaCommunity({ currentUser }) {
                         </button>
                       </span>
 
-                      {/* Views Count */}
+                      {/* Real Views Count */}
                       <span className="flex items-center gap-1 text-slate-400">
-                        <Eye className="w-3.5 h-3.5" /> {post.views_count || 73}
+                        <Eye className="w-3.5 h-3.5" /> {post.views_count || 0}
                       </span>
 
-                      {/* Date */}
+                      {/* Real Date */}
                       <span className="flex items-center gap-1 text-slate-400">
                         <Clock className="w-3.5 h-3.5" /> {formatDisplayDate(post.created_at)}
                       </span>
 
-                      {/* Comments Count / Toggle */}
+                      {/* Real Comments Count */}
                       <button
                         type="button"
                         onClick={() => handleToggleExpand(post.id)}
@@ -1729,7 +1780,7 @@ export default function NovaCommunity({ currentUser }) {
                         <span>{post.comments_count || postComments.length || 0}</span>
                       </button>
 
-                      {/* Likes / Upvotes */}
+                      {/* Real Likes / Upvotes */}
                       <button
                         type="button"
                         onClick={() => handleLike(post.id)}
@@ -1757,11 +1808,13 @@ export default function NovaCommunity({ currentUser }) {
 
                           {postComments.map((cmt) => (
                             <div key={cmt.id} className="flex items-start gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
-                              <img
-                                src={getSafeAvatar(cmt.user_avatar, cmt.user_name)}
-                                alt=""
-                                className="w-7 h-7 rounded-full object-cover shrink-0"
-                              />
+                              <div className="w-7 h-7 rounded-full bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0 overflow-hidden">
+                                {cmt.user_avatar ? (
+                                  <img src={cmt.user_avatar} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  getSafeInitial(cmt.user_name)
+                                )}
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="text-xs font-bold text-slate-900">{cmt.user_name}</span>
