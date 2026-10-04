@@ -4,6 +4,7 @@ import {
   Activity,
   AlertCircle,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   AtSign,
   Award,
@@ -438,109 +439,6 @@ export default function App() {
   });
   const [isSplashExiting, setIsSplashExiting] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-
-  // Synchronize browser URL bar with current active view if not already on a sub-route
-  useEffect(() => {
-    try {
-      localStorage.setItem('nova_last_view', currentView);
-      const curPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-      const isSubRoute = curPath.includes('/job/') ||
-        curPath.includes('/submit') ||
-        curPath.includes('/wizards') ||
-        curPath.includes('/profile/') ||
-        curPath.includes('/community/') ||
-        curPath.includes('/invoice') ||
-        curPath.includes('/receipt') ||
-        curPath.includes('/materials/') ||
-        curPath.includes('/help/') ||
-        curPath.includes('/ai-recommender') ||
-        curPath.includes('/chat/') ||
-        window.location.search.includes('user=');
-      if (!isSubRoute) {
-        const targetPath = ROUTE_VIEWS[currentView] || '/home';
-        if (curPath !== targetPath && !(curPath === '/' && targetPath === '/home')) {
-          window.history.pushState({ view: currentView }, '', targetPath);
-        }
-      }
-    } catch (e) {}
-  }, [currentView]);
-
-  // Support Browser Back and Forward buttons seamlessly with detail pages
-  useEffect(() => {
-    const handlePopState = () => {
-      const route = parseRouteFromUrl();
-      setCurrentView(route.view || 'landing');
-
-      if (route.subType === 'job') {
-        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
-        if (matched) {
-          setSelectedJobDetails(matched);
-          setIsJobDetailsOpen(true);
-        }
-      } else if (route.subType === 'job_insights') {
-        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
-        if (matched) {
-          setSelectedJobDetails(matched);
-          setIsJobDetailsOpen(true);
-          handleGenerateInsights(matched);
-        }
-      } else {
-        setIsJobDetailsOpen(false);
-      }
-
-      if (route.subType === 'ai_recommender') {
-        setIsAiModalOpen(true);
-      } else {
-        setIsAiModalOpen(false);
-      }
-
-      if (route.subType === 'materials' && route.material) {
-        setSelectedMaterialId(route.material);
-      }
-
-      if (route.subType === 'submit') {
-        setIsSubmitJobOpen(true);
-      } else {
-        setIsSubmitJobOpen(false);
-      }
-
-      if (route.subType === 'wizard_demo_modal' && route.id) {
-        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
-        if (w) {
-          setSelectedWizardForDemo(w);
-          setIsWizardDemoOpen(true);
-        }
-      } else {
-        setIsWizardDemoOpen(false);
-      }
-
-      if (route.subType === 'wizard_pricing_modal' && route.id) {
-        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
-        if (w) {
-          setSelectedWizardForPricing(w);
-          setIsWizardPricingOpen(true);
-        }
-      } else {
-        setIsWizardPricingOpen(false);
-      }
-
-      if (route.subType === 'document') {
-        setActiveDocumentViewer(prev => ({ ...(prev || {}), type: route.docType || 'invoice' }));
-      } else {
-        setActiveDocumentViewer(null);
-      }
-
-      if (route.subType === 'tab' && route.tab) {
-        setProfileTab(route.tab);
-        if (route.modal === 'edit') setIsEditProfileOpen(true);
-        else setIsEditProfileOpen(false);
-        if (route.modal === 'password') setIsChangePasswordOpen(true);
-        else setIsChangePasswordOpen(false);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [jobs]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info');
   const [profileNotifPrefs, setProfileNotifPrefs] = useState({
@@ -909,6 +807,109 @@ export default function App() {
       }
     } catch (e) {}
   };
+
+  // Synchronize browser URL bar with current active view if not already on a sub-route
+  useEffect(() => {
+    try {
+      localStorage.setItem('nova_last_view', currentView);
+      const curPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      const isSubRoute = curPath.includes('/job/') ||
+        curPath.includes('/submit') ||
+        curPath.includes('/wizards') ||
+        curPath.includes('/profile/') ||
+        curPath.includes('/community/') ||
+        curPath.includes('/invoice') ||
+        curPath.includes('/receipt') ||
+        curPath.includes('/materials/') ||
+        curPath.includes('/help/') ||
+        curPath.includes('/ai-recommender') ||
+        curPath.includes('/chat/') ||
+        window.location.search.includes('user=');
+      if (!isSubRoute) {
+        const targetPath = ROUTE_VIEWS[currentView] || '/home';
+        if (curPath !== targetPath && !(curPath === '/' && targetPath === '/home')) {
+          window.history.pushState({ view: currentView }, '', targetPath);
+        }
+      }
+    } catch (e) {}
+  }, [currentView]);
+
+  // Support Browser Back and Forward buttons seamlessly with detail pages
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = parseRouteFromUrl();
+      setCurrentView(route.view || 'landing');
+
+      if (route.subType === 'job') {
+        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+        if (matched) {
+          setSelectedJobDetails(matched);
+          setIsJobDetailsOpen(true);
+        }
+      } else if (route.subType === 'job_insights') {
+        const matched = jobs.find(j => j.id === route.id || j.job_id_display === route.id || j.id?.startsWith(route.id));
+        if (matched) {
+          setSelectedJobDetails(matched);
+          setIsJobDetailsOpen(true);
+          handleGenerateInsights(matched);
+        }
+      } else {
+        setIsJobDetailsOpen(false);
+      }
+
+      if (route.subType === 'ai_recommender') {
+        setIsAiModalOpen(true);
+      } else {
+        setIsAiModalOpen(false);
+      }
+
+      if (route.subType === 'materials' && route.material) {
+        setSelectedMaterialId(route.material);
+      }
+
+      if (route.subType === 'submit') {
+        setIsSubmitJobOpen(true);
+      } else {
+        setIsSubmitJobOpen(false);
+      }
+
+      if (route.subType === 'wizard_demo_modal' && route.id) {
+        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+        if (w) {
+          setSelectedWizardForDemo(w);
+          setIsWizardDemoOpen(true);
+        }
+      } else {
+        setIsWizardDemoOpen(false);
+      }
+
+      if (route.subType === 'wizard_pricing_modal' && route.id) {
+        const w = ANSYS_WIZARDS.find(item => item.id === route.id);
+        if (w) {
+          setSelectedWizardForPricing(w);
+          setIsWizardPricingOpen(true);
+        }
+      } else {
+        setIsWizardPricingOpen(false);
+      }
+
+      if (route.subType === 'document') {
+        setActiveDocumentViewer(prev => ({ ...(prev || {}), type: route.docType || 'invoice' }));
+      } else {
+        setActiveDocumentViewer(null);
+      }
+
+      if (route.subType === 'tab' && route.tab) {
+        setProfileTab(route.tab);
+        if (route.modal === 'edit') setIsEditProfileOpen(true);
+        else setIsEditProfileOpen(false);
+        if (route.modal === 'password') setIsChangePasswordOpen(true);
+        else setIsChangePasswordOpen(false);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [jobs]);
 
   // Auto-restore detail view or modal on page load or refresh
   useEffect(() => {
@@ -2044,7 +2045,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     setSupportChat(prev => [...prev, { role: 'model', text: responseText }]);
     setIsSupportLoading(false);
   };
-  const handleGenerateInsights = async (job) => {
+  async function handleGenerateInsights(job) {
     setSelectedInsightJob(job);
     setIsInsightsOpen(true);
     setIsInsightLoading(true);
@@ -2054,7 +2055,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], systemInstruction);
     setInsightResponse(responseText);
     setIsInsightLoading(false);
-  };
+  }
   const handleMaterialConsultant = async (e) => {
     e.preventDefault();
     if (!materialPrompt.trim()) return;
