@@ -973,7 +973,7 @@ function RealUserProfileModal({ userProfile, posts, commentsCount, currentUser, 
 }
 
 // 5. MAIN COMMUNITY FORUM (MATCHING IMAGE 2 WITH 100% REAL DYNAMIC DATABASE DATA)
-export default function NovaCommunity({ currentUser }) {
+export default function NovaCommunity({ currentUser, onNavigateBack, onOpenChat }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -981,9 +981,25 @@ export default function NovaCommunity({ currentUser }) {
   const [pageMode, setPageMode] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
 
-  // Real Messenger State
+  // Real Messenger State & URL synchronization
   const [showMessenger, setShowMessenger] = useState(false);
   const [messengerRecipient, setMessengerRecipient] = useState(null);
+
+  const openMessenger = (recipient = null) => {
+    setMessengerRecipient(recipient);
+    setShowMessenger(true);
+    try {
+      window.history.pushState({ view: 'chat' }, '', '/chat');
+    } catch (e) {}
+  };
+
+  const closeMessenger = () => {
+    setShowMessenger(false);
+    setMessengerRecipient(null);
+    try {
+      window.history.pushState({ view: 'nova_community' }, '', '/community');
+    } catch (e) {}
+  };
 
   // Profile Popover State
   const [selectedProfile, setSelectedProfile] = useState(null);
@@ -1286,10 +1302,7 @@ export default function NovaCommunity({ currentUser }) {
         <NovaMessenger
           currentUser={currentUser}
           initialRecipient={messengerRecipient}
-          onClose={() => {
-            setShowMessenger(false);
-            setMessengerRecipient(null);
-          }}
+          onClose={closeMessenger}
         />
       )}
 
@@ -1302,8 +1315,7 @@ export default function NovaCommunity({ currentUser }) {
           currentUser={currentUser}
           onClose={() => setSelectedProfile(null)}
           onMessage={(profile) => {
-            setMessengerRecipient(profile);
-            setShowMessenger(true);
+            openMessenger(profile);
           }}
         />
       )}
@@ -1431,7 +1443,7 @@ export default function NovaCommunity({ currentUser }) {
               {/* Direct Messenger Button */}
               <button
                 type="button"
-                onClick={() => setShowMessenger(true)}
+                onClick={() => openMessenger()}
                 className="w-full text-left px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-between shadow-sm hover:shadow-md transition-all mt-3 cursor-pointer"
               >
                 <span className="flex items-center gap-1.5">
@@ -1618,13 +1630,12 @@ export default function NovaCommunity({ currentUser }) {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setMessengerRecipient({
+                                  openMessenger({
                                     name: post.user_name,
                                     email: post.user_email,
                                     avatar: post.user_avatar,
                                     avatar_url: post.user_avatar
                                   });
-                                  setShowMessenger(true);
                                   setActiveMenuPostId(null);
                                 }}
                                 className="w-full text-left px-4 py-2 hover:bg-slate-50 text-slate-700 flex items-center gap-2"

@@ -182,37 +182,45 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return map;
   }, [masterUserDict, registeredUsers, currentUser, myName, myAvatar]);
 
-  // Request lists & counts
+  // Request lists & counts - strictly ONLY genuine pending requests
   const incomingRequests = useMemo(() => {
-    return conversations.filter((c) => c.is_request && c.created_by !== myUserId);
+    return conversations.filter(
+      (c) => c.is_request && c.request_status === "pending" && c.created_by !== myUserId
+    );
   }, [conversations, myUserId]);
 
   const outgoingRequests = useMemo(() => {
-    return conversations.filter((c) => c.is_request && c.created_by === myUserId);
+    return conversations.filter(
+      (c) => c.is_request && c.request_status === "pending" && c.created_by === myUserId
+    );
   }, [conversations, myUserId]);
 
   const pendingRequestsCount = incomingRequests.length;
 
   // Request & Acceptance status calculation for active chat
-  const isPendingRequestForMe = activeConv?.is_request && activeConv?.created_by !== myUserId;
-  const isPendingRequestByMe = activeConv?.is_request && activeConv?.created_by === myUserId;
+  const isPendingRequestForMe = Boolean(
+    activeConv?.is_request && activeConv?.request_status === "pending" && activeConv?.created_by !== myUserId
+  );
+  const isPendingRequestByMe = Boolean(
+    activeConv?.is_request && activeConv?.request_status === "pending" && activeConv?.created_by === myUserId
+  );
   const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
 
   // Dynamic Theme Colors: Clean White Light Mode (Default) / Deep Dark Mode
   const theme = {
     bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
     modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200",
-    sidebarBg: isDarkMode ? "bg-slate-900/95 border-slate-800" : "bg-white border-slate-200",
+    sidebarBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
     chatBg: isDarkMode ? "bg-slate-950" : "bg-white",
-    headerBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-white border-slate-200",
+    headerBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
     cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
-    hoverBg: isDarkMode ? "hover:bg-slate-800/60" : "hover:bg-slate-50",
-    activeConvBg: isDarkMode ? "bg-blue-600/20 border-l-4 border-blue-500" : "bg-blue-50 border-l-4 border-blue-600",
-    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400",
-    secondaryText: isDarkMode ? "text-slate-400" : "text-slate-500",
-    iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900",
-    incomingBubble: isDarkMode ? "bg-slate-800/95 text-slate-100 border border-slate-700/60" : "bg-slate-50 text-slate-900 border border-slate-200 shadow-xs",
-    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md",
+    hoverBg: isDarkMode ? "hover:bg-slate-800/80" : "hover:bg-slate-100",
+    activeConvBg: isDarkMode ? "bg-blue-600/25 border-l-4 border-blue-500" : "bg-blue-50 border-l-4 border-blue-600",
+    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400",
+    secondaryText: isDarkMode ? "text-slate-400" : "text-slate-600",
+    iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900",
+    incomingBubble: isDarkMode ? "bg-slate-900 text-slate-100 border border-slate-800 shadow-xs" : "bg-white text-slate-900 border border-slate-200 shadow-xs",
+    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm",
   };
 
   // Web Audio Ringtone Chime for incoming & outgoing calls
@@ -481,7 +489,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         .or(`sender_email.eq.${myEmail},recipient_email.eq.${myEmail}`)
         .order("created_at", { ascending: false });
 
-      const convList = [];
+      let convList = [];
       const seenEmails = new Set();
 
       dbConvs.forEach((c) => {
@@ -561,31 +569,37 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         }
       });
 
-      registeredUsers.forEach((u) => {
-        const uEmail = u.email?.toLowerCase();
-        if (uEmail && !seenEmails.has(uEmail)) {
-          seenEmails.add(uEmail);
+      // If initialRecipient was explicitly passed from user action and not yet in list, add as active DM
+      if (initialRecipient?.email) {
+        const initEmail = initialRecipient.email.toLowerCase();
+        if (!seenEmails.has(initEmail)) {
+          seenEmails.add(initEmail);
+          const u = initialRecipient;
           const realAvatar = u.avatar_url || u.avatar || null;
-          convList.push({
+          const partnerName = u.full_name || u.display_name || initEmail.split("@")[0];
+          convList.unshift({
             id: `user_${u.id || u.email}`,
             conv_id: null,
             type: "dm",
-            name: u.full_name || u.display_name || uEmail.split("@")[0],
+            name: partnerName,
             email: u.email,
             avatar: realAvatar,
             avatar_url: realAvatar,
             wallpaper_url: null,
-            is_request: true,
+            is_request: false,
             request_status: "not_started",
             created_by: myUserId,
-            lastMessage: "No messages yet",
+            lastMessage: "Start a conversation",
             lastTime: "",
-            lastRawTime: u.created_at || new Date().toISOString(),
+            lastRawTime: new Date().toISOString(),
             unread: 0,
             otherUser: { ...u, avatar_url: realAvatar, avatar: realAvatar }
           });
         }
-      });
+      }
+
+      // Filter out any stale auto-requests that have no real database conversation ID
+      convList = convList.filter((c) => c.conv_id !== null || (initialRecipient && c.email?.toLowerCase() === initialRecipient.email?.toLowerCase()));
 
       convList.sort((a, b) => (b.lastRawTime || "").localeCompare(a.lastRawTime || ""));
       setConversations(convList);
@@ -2401,24 +2415,24 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               )
                             ) : null}
 
-                            {/* Image Attachment with Exact File Name & Size */}
+                            {/* Image Attachment with Exact File Name & Size - 100% Solid Non-Transparent Background */}
                             {m.media_type === "image" && m.media_url && !m.view_limit && (
-                              <div className="mb-2 rounded-xl overflow-hidden space-y-1.5">
-                                <div className="rounded-xl overflow-hidden max-h-72 bg-black/5 dark:bg-black/40">
+                              <div className={`mb-2 rounded-2xl overflow-hidden p-1.5 space-y-1.5 ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm"}`}>
+                                <div className="rounded-xl overflow-hidden max-h-72 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 flex items-center justify-center">
                                   <img
                                     src={m.media_url}
                                     alt={realFileName}
-                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                    className="w-full h-full object-contain max-h-72 cursor-pointer hover:opacity-95 transition-opacity"
                                     onClick={() => window.open(m.media_url, "_blank")}
                                   />
                                 </div>
-                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-white/15 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"} rounded-lg text-[11px]`}>
+                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-blue-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"} rounded-lg text-[11px]`}>
                                   <div className="flex items-center gap-1.5 min-w-0">
                                     <ImageIcon className="w-3.5 h-3.5 shrink-0 text-blue-500" />
                                     <span className="font-bold truncate max-w-[190px]" title={realFileName}>{realFileName}</span>
-                                    {realFileSize && <span className="opacity-70 text-[10px]">({realFileSize})</span>}
+                                    {realFileSize && <span className="opacity-80 text-[10px]">({realFileSize})</span>}
                                   </div>
-                                  <a href={m.media_url} download={realFileName} target="_blank" rel="noreferrer" className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition-colors" title={`Download ${realFileName}`}>
+                                  <a href={m.media_url} download={realFileName} target="_blank" rel="noreferrer" className={`p-1 ${isMine ? "hover:bg-blue-800 text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"} rounded transition-colors`} title={`Download ${realFileName}`}>
                                     <Download className="w-3.5 h-3.5" />
                                   </a>
                                 </div>
@@ -2427,20 +2441,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                             {/* Video Attachment with Exact File Name & Size */}
                             {m.media_type === "video" && m.media_url && !m.view_limit && (
-                              <div className="mb-2 rounded-xl overflow-hidden space-y-1.5">
-                                <div className="rounded-xl overflow-hidden max-h-72 bg-black">
+                              <div className={`mb-2 rounded-2xl overflow-hidden p-1.5 space-y-1.5 ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm"}`}>
+                                <div className="rounded-xl overflow-hidden max-h-72 bg-black flex items-center justify-center">
                                   <video src={m.media_url} controls className="w-full h-full object-contain" />
                                 </div>
-                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-white/15 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"} rounded-lg text-[11px]`}>
+                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-blue-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"} rounded-lg text-[11px]`}>
                                   <span className="font-bold truncate max-w-[180px]">{realFileName}</span>
-                                  {realFileSize && <span className="opacity-70 text-[10px]">({realFileSize})</span>}
+                                  {realFileSize && <span className="opacity-80 text-[10px]">({realFileSize})</span>}
                                 </div>
                               </div>
                             )}
 
                             {/* Voice Note Audio Player */}
                             {m.media_type === "voice" && m.media_url && (
-                              <div className="flex items-center gap-2 my-1 bg-black/10 dark:bg-black/30 p-2 rounded-xl">
+                              <div className={`flex items-center gap-2 my-1 p-2 rounded-xl ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-xs" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-xs"}`}>
                                 <audio src={m.media_url} controls className="w-48 sm:w-56 h-8" />
                               </div>
                             )}
@@ -2452,12 +2466,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                                 download={realFileName}
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`flex items-center gap-2.5 my-1 p-2.5 ${isMine ? "bg-white/15 hover:bg-white/25 text-white" : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"} rounded-xl transition-colors`}
+                                className={`flex items-center gap-2.5 my-1 p-2.5 ${isMine ? "bg-blue-800 hover:bg-blue-700 text-white border border-blue-400/40 shadow-xs" : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-xs"} rounded-xl transition-colors`}
                               >
                                 <FileText className="w-6 h-6 text-blue-500 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                   <p className="font-bold text-[12px] truncate max-w-[200px]" title={realFileName}>{realFileName}</p>
-                                  <p className="text-[10px] opacity-80">{realFileSize || "Download file"}</p>
+                                  <p className={`text-[10px] ${isMine ? "text-blue-200" : "text-slate-500 dark:text-slate-400"}`}>{realFileSize || "Download file"}</p>
                                 </div>
                                 <Download className="w-4 h-4 shrink-0 opacity-80 hover:opacity-100" />
                               </a>
@@ -2580,11 +2594,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* PENDING ATTACHMENTS PREVIEW BAR */}
+            {/* PENDING ATTACHMENTS PREVIEW BAR - 100% Solid Background */}
             {pendingAttachments.length > 0 && (
-              <div className={`relative z-10 p-2 border-t ${theme.modalBorder} flex items-center gap-2 overflow-x-auto bg-slate-50 dark:bg-slate-900/60`}>
+              <div className={`relative z-10 p-2 border-t ${theme.modalBorder} flex items-center gap-2 overflow-x-auto bg-slate-100 dark:bg-slate-900`}>
                 {pendingAttachments.map((att, idx) => (
-                  <div key={idx} className="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-black/10 flex items-center justify-center">
+                  <div key={idx} className="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center shadow-xs">
                     {att.type === "image" ? (
                       <img src={att.preview} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -2592,11 +2606,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     )}
                     <button
                       onClick={() => setPendingAttachments((p) => p.filter((_, i) => i !== idx))}
-                      className="absolute top-0.5 right-0.5 p-0.5 bg-black/70 text-white rounded-full hover:bg-rose-600"
+                      className="absolute top-0.5 right-0.5 p-0.5 bg-black/80 text-white rounded-full hover:bg-rose-600 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                    <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] truncate px-1 text-center">
+                    <span className="absolute bottom-0 inset-x-0 bg-slate-900/90 text-white text-[8px] truncate px-1 text-center font-medium">
                       {att.name}
                     </span>
                   </div>

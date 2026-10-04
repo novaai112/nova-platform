@@ -111,6 +111,48 @@ import autoTable from 'jspdf-autotable';
 import './cube.css';
 import NovaHelpContent from './NovaHelpContent';
 import NovaCommunity from './NovaCommunity';
+import NovaMessenger from './NovaMessenger';
+
+export const VIEW_ROUTES = {
+  '/': 'landing',
+  '/home': 'landing',
+  '/login': 'login',
+  '/signup': 'signup',
+  '/forgot': 'forgot',
+  '/community': 'nova_community',
+  '/chat': 'chat',
+  '/help': 'nova_help',
+  '/profile': 'profile',
+  '/dashboard': 'dashboard',
+  '/materials': 'materials',
+  '/stress_strain': 'stress_strain',
+  '/wizard_demo': 'wizard_demo',
+};
+
+export const ROUTE_VIEWS = {
+  'landing': '/home',
+  'login': '/login',
+  'signup': '/signup',
+  'forgot': '/forgot',
+  'nova_community': '/community',
+  'chat': '/chat',
+  'nova_help': '/help',
+  'profile': '/profile',
+  'dashboard': '/dashboard',
+  'materials': '/materials',
+  'stress_strain': '/stress_strain',
+  'wizard_demo': '/wizard_demo',
+};
+
+export function getInitialViewFromUrl() {
+  try {
+    const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    if (VIEW_ROUTES[path]) return VIEW_ROUTES[path];
+    const saved = localStorage.getItem('nova_last_view');
+    if (saved && ROUTE_VIEWS[saved]) return saved;
+  } catch (e) {}
+  return 'landing';
+}
 const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -278,10 +320,36 @@ export const ANSYS_WIZARDS = [
 ];
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const initialViewResolved = getInitialViewFromUrl();
+  const [currentView, setCurrentView] = useState(initialViewResolved);
+  const [showSplash, setShowSplash] = useState(() => {
+    return initialViewResolved === 'landing' && !localStorage.getItem('nova_splash_seen');
+  });
   const [isSplashExiting, setIsSplashExiting] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [currentView, setCurrentView] = useState('landing');
+
+  // Synchronize browser URL bar with current active view
+  useEffect(() => {
+    try {
+      localStorage.setItem('nova_last_view', currentView);
+      const targetPath = ROUTE_VIEWS[currentView] || '/home';
+      const curPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      if (curPath !== targetPath && !(curPath === '/' && targetPath === '/home')) {
+        window.history.pushState({ view: currentView }, '', targetPath);
+      }
+    } catch (e) {}
+  }, [currentView]);
+
+  // Support Browser Back and Forward buttons seamlessly
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      const matched = VIEW_ROUTES[path] || 'landing';
+      setCurrentView(matched);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileTab, setProfileTab] = useState('info');
   const [profileNotifPrefs, setProfileNotifPrefs] = useState({
@@ -527,7 +595,17 @@ export default function App() {
       if (session) {
         setupUser(session.user);
         fetchJobs();
-        setCurrentView('dashboard');
+        setCurrentView((prev) => {
+          const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+          const matched = VIEW_ROUTES[path];
+          if (matched && matched !== 'landing' && matched !== 'login' && matched !== 'signup') {
+            return matched;
+          }
+          if (['landing', 'login', 'signup', 'forgot'].includes(prev)) {
+            return 'dashboard';
+          }
+          return prev;
+        });
       }
       setIsInitializing(false);
     });
@@ -535,7 +613,14 @@ export default function App() {
       if (session) {
         setupUser(session.user);
         fetchJobs();
-        setCurrentView(prev => (['landing', 'login', 'signup', 'forgot'].includes(prev) ? 'dashboard' : prev));
+        setCurrentView((prev) => {
+          const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+          const matched = VIEW_ROUTES[path];
+          if (matched && matched !== 'landing' && matched !== 'login' && matched !== 'signup') {
+            return matched;
+          }
+          return ['landing', 'login', 'signup', 'forgot'].includes(prev) ? 'dashboard' : prev;
+        });
       } else {
         setIsLoggedIn(false);
         setCurrentUser({ id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "" });
@@ -4801,8 +4886,24 @@ Always provide professional, precise, technically accurate, and helpful answers.
         <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
           {/* Top Profile Header */}
           <DashboardHeader isProfile={false} customTitle="Nova Community" />
-          <NovaCommunity currentUser={currentUser} onNavigateBack={() => setCurrentView('dashboard')} />
+          <NovaCommunity
+            currentUser={currentUser}
+            onNavigateBack={() => setCurrentView('dashboard')}
+            onOpenChat={() => setCurrentView('chat')}
+          />
         </div>
+      </div>
+    );
+  };
+
+  const renderChat = () => {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+        <NovaMessenger
+          currentUser={currentUser}
+          initialRecipient={null}
+          onClose={() => setCurrentView('nova_community')}
+        />
       </div>
     );
   };
@@ -6111,6 +6212,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           {currentView === 'profile' && renderProfile()}
           {currentView === 'nova_help' && renderNovaHelp()}
           {currentView === 'nova_community' && renderNovaCommunity()}
+          {currentView === 'chat' && renderChat()}
         </>
       )}
     </>
