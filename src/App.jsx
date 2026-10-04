@@ -175,7 +175,7 @@ const AnimatedStatusBadge = ({ status }) => {
       </span>
     );
   }
-  
+
   const displayStatus = (status || '').replace(/^Processing\s*-\s*/i, '');
   return (
     <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-black bg-white border-[1.5px] border-indigo-200 shadow-[0_2px_12px_rgba(99,102,241,0.10)]">
@@ -279,10 +279,10 @@ export const ANSYS_WIZARDS = [
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isSplashExiting, setIsSplashExiting] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true); 
-  const [currentView, setCurrentView] = useState('landing'); 
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [currentView, setCurrentView] = useState('landing');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileTab, setProfileTab] = useState('info'); 
+  const [profileTab, setProfileTab] = useState('info');
   const [profileNotifPrefs, setProfileNotifPrefs] = useState({
     job_complete: true, job_failed: true, credit_low: true, sub_renew: true,
     community: false, product_updates: true, promos: false
@@ -290,15 +290,22 @@ export default function App() {
   const [selectedWizardForDemo, setSelectedWizardForDemo] = useState(null);
   const [isWizardDemoOpen, setIsWizardDemoOpen] = useState(false);
   const [selectedWizardForPricing, setSelectedWizardForPricing] = useState(null);
-  const [isWizardPricingOpen, setIsWizardPricingOpen] = useState(false); 
+  const [isWizardPricingOpen, setIsWizardPricingOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   const [currentUser, setCurrentUser] = useState({
     id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "", isApproved: false, plan: "Free", dailyCreditsTotal: 100, dailyCreditsRemaining: 100, isLifetimeMax: false
   });
   const [completedInvoice, setCompletedInvoice] = useState(null);
   const [invoiceCopiedKey, setInvoiceCopiedKey] = useState(false);
-  
+  const [activeDocumentViewer, setActiveDocumentViewer] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nova_payment_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [signupName, setSignupName] = useState("");
@@ -333,7 +340,7 @@ export default function App() {
           return parsed.filter(p => p && !mockIds.includes(p.id));
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return [];
   });
   const [newPostText, setNewPostText] = useState('');
@@ -376,7 +383,7 @@ export default function App() {
       return saved ? JSON.parse(saved) : [
         { id: 'notif_welcome', title: 'Workstation Online', message: 'Nova Autonomous FEA Platform initialized and permanently synchronized.', type: 'info', time: 'Just now', date: 'Today', read: false }
       ];
-    } catch(e) {
+    } catch (e) {
       return [];
     }
   });
@@ -390,7 +397,7 @@ export default function App() {
     try {
       const stored = localStorage.getItem('nova_saved_cards');
       if (stored) return JSON.parse(stored);
-    } catch (e) {}
+    } catch (e) { }
     return [
       { id: 'card_1', name: 'Dinesh Kumar Yadav', number: '4532 •••• •••• 8920', last4: '8920', brand: 'Visa', expiry: '09/28' },
       { id: 'card_2', name: 'Dinesh Kumar Yadav', number: '5424 •••• •••• 1042', last4: '1042', brand: 'Mastercard', expiry: '11/27' }
@@ -431,7 +438,7 @@ export default function App() {
           return clean;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return {};
   });
   const [expandedComments, setExpandedComments] = useState({});
@@ -459,7 +466,7 @@ export default function App() {
           return clean;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return {};
   });
   const [solvedPosts, setSolvedPosts] = useState(() => {
@@ -476,10 +483,10 @@ export default function App() {
           return clean;
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     return {};
   });
-  
+
   const [activeProductFilter, setActiveProductFilter] = useState('All');
   const [demoActiveTab, setDemoActiveTab] = useState('overview');
   const [selectedJobIds, setSelectedJobIds] = useState([]);
@@ -547,9 +554,9 @@ export default function App() {
     if (data?.session?.user) {
       const user = data.session.user;
       const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com';
-      
+
       if (isApprovedStatus) {
-        setupUser(user); 
+        setupUser(user);
         showNotification("Account Approved! You can now submit analysis jobs.", "success");
       }
     }
@@ -621,7 +628,7 @@ export default function App() {
     if (!job) return null;
     let p = job.json_payload;
     if (typeof p === 'string') {
-      try { p = JSON.parse(p); } catch (e) {}
+      try { p = JSON.parse(p); } catch (e) { }
     }
     const first = Array.isArray(p) ? p[0] : p;
     if (first && first.invoiceId) return first;
@@ -671,7 +678,7 @@ export default function App() {
         wbexFilename: targetWbex,
         result_url: isWiz ? `/wizards/${targetWbex}` : null,
         customerName: currentUser?.name || 'Dinesh',
-        customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
+        customerEmail: currentUser?.email || '',
         customerPhone: currentUser?.phone || 'Not Provided',
         company: currentUser?.company || 'Nova Engineering',
         term: isWiz ? '1 Month' : 'Monthly',
@@ -682,95 +689,134 @@ export default function App() {
   };
 
   const syncLicenseToGoogleScript = async (licenseRecord) => {
-    const wbexFile = licenseRecord.wbexFilename || 'Full_Nozzle.wbex';
+    const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + Date.now().toString().slice(-6);
     try {
       if (supabase) {
-        await supabase.from('ansys_jobs').insert([{
-          job_id_display: licenseRecord.licenseKey,
-          name: `${licenseRecord.productName} [${licenseRecord.licenseKey}]`,
-          status: 'Completed',
-          price: licenseRecord.amountInINR || 0,
-          type: 'License Provision',
-          result_url: `/wizards/${wbexFile}`,
-          error_message: `Expiry: ${licenseRecord.expiryDate} | Status: active`,
-          json_payload: [licenseRecord]
-        }]);
-        fetchJobs();
-      }
-    } catch(err) {
-      console.warn("Supabase permanent license save:", err);
-    }
-
-    try {
-      if (supabase) {
-        await supabase.from('nova_orders').insert([{
-          order_id: licenseRecord.invoiceId || ("ORD-" + Date.now()),
-          invoice_no: licenseRecord.invoiceId || ("INV-" + Date.now()),
-          user_email: currentUser?.email || 'dineshkumar2729304@gmail.com',
+        await supabase.from('nova_orders').upsert([{
+          order_id: licenseRecord.invoiceId || ('ORD-' + Date.now()),
+          invoice_no: licenseRecord.invoiceId || ('INV-' + Date.now()),
+          receipt_no: receiptNo,
+          user_email: currentUser?.email || '',
           user_name: currentUser?.name || 'Dinesh',
+          user_phone: currentUser?.phone || '+91 98765 43210',
+          user_company: currentUser?.company || 'Nova AI Technologies',
           plan_name: licenseRecord.productName,
+          plan_display: licenseRecord.productName?.includes('Max') ? 'Nova Max'
+            : licenseRecord.productName?.includes('Pro') ? 'Nova Pro'
+              : licenseRecord.productName?.includes('Basic') ? 'Nova Basic'
+                : licenseRecord.productName || 'Nova Plan',
           billing_cycle: licenseRecord.plan || 'monthly',
           amount: licenseRecord.amountInINR || 0,
+          base_amount: licenseRecord.baseAmount || Math.round((licenseRecord.amountInINR || 0) / 1.18),
+          cgst: licenseRecord.cgst || 0,
+          sgst: licenseRecord.sgst || 0,
           currency: 'INR',
           payment_gateway: 'Razorpay',
           payment_method: 'UPI / NetBanking / Cards',
           transaction_id: licenseRecord.paymentId || ('pay_' + Date.now()),
+          payment_status: 'PAID',
+          payment_date: new Date().toISOString(),
           status: 'PAID',
-          receipt_data: licenseRecord
-        }]);
+          receipt_data: licenseRecord,
+          created_at: new Date().toISOString(),
+          is_wizard: !!licenseRecord.isWizard,
+          license_key: licenseRecord.licenseKey || null,
+          expiry_date: licenseRecord.expiryDate || null,
+          wbex_filename: licenseRecord.wbexFilename || null
+        }], { onConflict: 'invoice_no' });
       }
-    } catch(err) {
-      console.warn("Supabase permanent nova_orders save:", err);
+    } catch (err) {
+      console.warn('Supabase nova_orders save error:', err);
     }
 
-    const scriptUrl = localStorage.getItem('nova_google_script_url') || 
-                      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GOOGLE_SCRIPT_URL) ||
-                      'https://script.google.com/macros/s/AKfycby-oOC4MImsnlW5VgehlD7OPe0uNGy35m0jbExMiKqvORC6FLRUpmYE3BbL3fdqD0BQ/exec';
-    if (scriptUrl) {
-      const payload = {
-        action: 'add',
-        license_key: licenseRecord.licenseKey,
-        licenseKey: licenseRecord.licenseKey,
-        expiry_date: licenseRecord.expiryDate,
-        expiryDate: licenseRecord.expiryDate,
-        mac: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
-        mac_address: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
-        registered_on: licenseRecord.registeredOn,
-        registeredOn: licenseRecord.registeredOn,
-        status: 'active',
-        productName: licenseRecord.productName,
-        plan: licenseRecord.plan
-      };
-
+    // Send commercial license delivery email through Supabase Edge Function
+    if (licenseRecord.isWizard && licenseRecord.licenseKey && supabase) {
       try {
-        await fetch(scriptUrl, {
+        await supabase.functions.invoke('send-license-email', {
+          body: {
+            customerEmail: currentUser?.email || '',
+            customerName: currentUser?.name || 'Valued Engineer',
+            licenseKey: licenseRecord.licenseKey,
+            expiryDate: licenseRecord.expiryDate,
+            productName: licenseRecord.productName,
+            invoiceNo: licenseRecord.invoiceId,
+            term: licenseRecord.plan,
+            wbexFilename: licenseRecord.wbexFilename || 'Full_Nozzle.wbex',
+            workstations: licenseRecord.workstations || 2
+          }
+        });
+      } catch (fnErr) {
+        console.warn('Supabase edge function email dispatch error:', fnErr);
+      }
+    }
+
+    // Ping Google Apps Script Web App URL if configured in environment
+    try {
+      const googleScriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBAPP_URL || '';
+      if (googleScriptUrl && googleScriptUrl.startsWith('http')) {
+        fetch(googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.warn("Google Apps Script POST sync error:", err);
+          body: JSON.stringify({
+            action: 'add_license',
+            license_key: licenseRecord.licenseKey,
+            expiry_date: licenseRecord.expiryDate,
+            user_email: currentUser?.email || '',
+            user_name: currentUser?.name || 'Dinesh',
+            product_name: licenseRecord.productName,
+            invoice_no: licenseRecord.invoiceId,
+            term: licenseRecord.plan,
+            wbex_filename: licenseRecord.wbexFilename,
+            workstations: licenseRecord.workstations || 2
+          })
+        }).catch(e => console.warn('Google Script ping non-fatal:', e));
       }
-
-      try {
-        const qs = new URLSearchParams({
-          action: 'add',
-          license_key: licenseRecord.licenseKey,
-          expiry_date: licenseRecord.expiryDate,
-          mac: licenseRecord.macAddress || '2C:7B:A0:8C:BC:CA',
-          registered_on: licenseRecord.registeredOn,
-          status: 'active'
-        }).toString();
-        await fetch(`${scriptUrl}?${qs}`, {
-          method: 'GET',
-          mode: 'no-cors'
-        });
-      } catch (err) {
-        console.warn("Google Apps Script GET sync error:", err);
-      }
-    }
+    } catch (e) {}
   };
+
+  const openDocumentModal = (entryOrData, type = 'invoice') => {
+    if (!entryOrData) return;
+    const rawAmt = Number(entryOrData.amountInINR || entryOrData.amount || 0);
+    const amt = rawAmt > 0 ? rawAmt : (
+      entryOrData.priceFormatted ? Number(String(entryOrData.priceFormatted).replace(/[^0-9]/g, '')) : 4980
+    ) || 4980;
+    const baseAmt = entryOrData.baseAmount || entryOrData.base_amount || Math.round(amt / 1.18);
+    const gstAmt = amt - baseAmt;
+    const cgst = (entryOrData.cgst !== undefined && entryOrData.cgst !== null) ? entryOrData.cgst : Math.round(gstAmt / 2);
+    const sgst = (entryOrData.sgst !== undefined && entryOrData.sgst !== null) ? entryOrData.sgst : (gstAmt - cgst);
+
+    const invId = entryOrData.invoiceId || entryOrData.invoice_no || ('INV-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6));
+    const rcpId = entryOrData.receiptNo || entryOrData.receipt_no || (invId ? invId.replace('INV-', 'RCP-') : ('RCP-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6)));
+
+    const normalized = {
+      ...entryOrData,
+      invoiceId: invId,
+      receiptNo: rcpId,
+      paymentId: entryOrData.paymentId || entryOrData.transaction_id || ('PAY-RAZORPAY-' + String(Date.now()).slice(-8)),
+      amountInINR: amt,
+      baseAmount: baseAmt,
+      cgst,
+      sgst,
+      priceFormatted: '₹' + amt.toLocaleString('en-IN'),
+      productName: entryOrData.productName || entryOrData.plan_name || 'Nova Max',
+      term: entryOrData.term || entryOrData.billing_cycle || (String(entryOrData.productName || entryOrData.plan_name || '').includes('Wizard') ? '6 Months License' : 'Monthly Subscription'),
+      customerName: entryOrData.customerName || entryOrData.user_name || currentUser?.name || 'Dinesh Kumar',
+      customerEmail: entryOrData.customerEmail || entryOrData.user_email || currentUser?.email || '',
+      customerPhone: entryOrData.customerPhone || entryOrData.user_phone || currentUser?.phone || 'Not Provided',
+      gateway: entryOrData.gateway || entryOrData.payment_gateway || 'Razorpay (Live Verified)',
+      method: entryOrData.method || entryOrData.payment_method || 'UPI / Cards / NetBanking',
+      status: 'PAID',
+      date: entryOrData.date || (entryOrData.created_at ? new Date(entryOrData.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })),
+      licenseKey: entryOrData.licenseKey || entryOrData.license_key || (entryOrData.receipt_data?.licenseKey || ''),
+      expiryDate: entryOrData.expiryDate || entryOrData.expiry_date || (entryOrData.receipt_data?.expiryDate || ''),
+      wbexFilename: entryOrData.wbexFilename || entryOrData.wbex_filename || (entryOrData.receipt_data?.wbexFilename || '')
+    };
+
+    setActiveDocumentViewer({ type, data: normalized });
+    setCompletedInvoice(normalized);
+  };
+
 
   const handleRazorpayCheckout = (productName, priceStr, productType = 'general', metadata = {}) => {
     const cleanPriceStr = String(priceStr || '').trim();
@@ -780,8 +826,8 @@ export default function App() {
     if (amountInINR < 1) amountInINR = 1;
     const amountInPaise = amountInINR * 100;
 
-    const isWizard = productType === 'wizard' || productType === 'wizard_purchase' || 
-                     productName.toLowerCase().indexOf('wizard') !== -1 || productName.toLowerCase().indexOf('.wbex') !== -1;
+    const isWizard = productType === 'wizard' || productType === 'wizard_purchase' ||
+      productName.toLowerCase().indexOf('wizard') !== -1 || productName.toLowerCase().indexOf('.wbex') !== -1;
 
     const baseAmount = Math.round(amountInINR / 1.18);
     const gstAmount = amountInINR - baseAmount;
@@ -792,32 +838,11 @@ export default function App() {
       const invoiceId = "INV-" + new Date().getFullYear() + "-" + Date.now().toString().slice(-6);
       const pId = paymentId || ("pay_rzp_" + Date.now().toString().slice(-8));
 
-      const licenseKey = generateNovaLicenseKey();
-
-      const chosenPlanOrTerm = metadata?.term || metadata?.planName || (isWizard ? '1 Month' : 'Monthly');
-      const expiryDate = calculateExpiryDate(chosenPlanOrTerm);
-
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, '0');
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const yyyy = now.getFullYear();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const min = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      const registeredOn = `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
-
-      let wbexFilename = null;
-      if (isWizard) {
-        if (metadata?.filename) {
-          wbexFilename = metadata.filename;
-        } else {
-          const pLower = (productName || '').toLowerCase();
-          if (pLower.includes('stress') || pLower.includes('curve')) wbexFilename = 'Stress-Strain_Curve.wbex';
-          else if (pLower.includes('head')) wbexFilename = 'Head_Nozzle.wbex';
-          else if (pLower.includes('shell')) wbexFilename = 'Shell_Nozzle.wbex';
-          else wbexFilename = 'Full_Nozzle.wbex';
-        }
-      }
+      const chosenPlanOrTerm = metadata?.term || metadata?.planName || 'Monthly';
+      const wizardLicenseKey = isWizard ? generateNovaLicenseKey() : null;
+      const wizardExpiryDate = isWizard ? calculateExpiryDate(chosenPlanOrTerm) : null;
+      const wizardFilename = isWizard ? (metadata?.filename || 'Full_Nozzle.wbex') : null;
+      const workstations = metadata?.workstations || (isWizard ? 2 : 1);
 
       const invoiceData = {
         invoiceId,
@@ -830,33 +855,41 @@ export default function App() {
         baseAmount,
         cgst,
         sgst,
-        isWizard,
-        licenseKey,
-        expiryDate,
-        registeredOn,
-        macAddress: '2C:7B:A0:8C:BC:CA',
-        wbexFilename,
-        result_url: isWizard ? `/wizards/${wbexFilename}` : null,
         customerName: currentUser?.name || 'Dinesh',
-        customerEmail: currentUser?.email || 'dineshkumar2729304@gmail.com',
+        customerEmail: currentUser?.email || '',
         customerPhone: currentUser?.phone || '+91 98765 43210',
         company: currentUser?.company || 'Nova Engineering Corp',
         term: chosenPlanOrTerm,
-        workstations: metadata?.workstations || (isWizard ? 1 : 'All Workstations')
+        isWizard,
+        licenseKey: wizardLicenseKey,
+        expiryDate: wizardExpiryDate,
+        wbexFilename: wizardFilename,
+        workstations
       };
 
       syncLicenseToGoogleScript({
-        licenseKey,
-        expiryDate,
-        registeredOn,
-        macAddress: '2C:7B:A0:8C:BC:CA',
-        status: 'active',
         productName,
         plan: chosenPlanOrTerm,
         amountInINR,
+        baseAmount,
+        cgst,
+        sgst,
+        paymentId: pId,
         invoiceId,
-        wbexFilename
+        status: 'active',
+        isWizard,
+        licenseKey: wizardLicenseKey,
+        expiryDate: wizardExpiryDate,
+        wbexFilename: wizardFilename,
+        workstations
       });
+
+      if (isWizard && wizardFilename) {
+        try {
+          downloadSecureWbexFile(wizardFilename, wizardLicenseKey, productName);
+        } catch (e) {}
+      }
+
 
       if (!isWizard && (productType === 'credit_subscription' || metadata?.planName)) {
         const planName = metadata?.planName || (productName.indexOf('Max') !== -1 ? 'Max' : productName.indexOf('Pro') !== -1 ? 'Pro' : 'Basic');
@@ -882,76 +915,28 @@ export default function App() {
           }
           localStorage.setItem("nova_credits_" + currentUser?.email, dailyCreds.toString());
           localStorage.setItem('nova_user_plan_permanent', JSON.stringify({ plan: planName, credits: dailyCreds }));
-        } catch(e) {}
+        } catch (e) { }
       }
 
-      try {
-        if (supabase) {
-          supabase.from('ansys_jobs').insert([{
-            name: productName,
-            status: 'Completed',
-            price: amountInINR,
-            type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
-            job_id_display: invoiceId,
-            result_url: isWizard ? `/wizards/${wbexFilename}` : null,
-            error_message: licenseKey ? `License: ${licenseKey} | Expiry: ${expiryDate}` : null,
-            json_payload: [invoiceData]
-          }]).then(({ error }) => {
-            if (error) console.warn("Supabase order insert error:", error);
-            fetchJobs();
-          });
-        }
-      } catch (err) {
-        console.warn("Supabase job insert error:", err);
-      }
+      // Save ALL purchases (plan + wizard) to paymentHistory — never to job status
+      const historyEntry = { ...invoiceData, savedAt: new Date().toISOString() };
+      setPaymentHistory(prev => {
+        const updated = [historyEntry, ...prev].slice(0, 20);
+        try { localStorage.setItem('nova_payment_history', JSON.stringify(updated)); } catch (e) { }
+        return updated;
+      });
 
-      const newJobRecord = {
-        id: "ord_" + Date.now(),
-        job_id_display: invoiceId,
-        name: productName,
-        status: 'Completed',
-        price: amountInINR,
-        type: isWizard ? 'Wizard Purchase' : 'Plan Subscription',
-        result_url: isWizard ? `/wizards/${wbexFilename}` : null,
-        created_at: new Date().toISOString()
-      };
-      setJobs(prev => [newJobRecord, ...prev]);
 
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'granted') {
-          try {
-            new Notification('NOVA AI - Payment Confirmed', {
-              body: isWizard 
-                ? ("Ansys ACT Wizard activated! License: " + licenseKey + " | Expiry: " + expiryDate) 
-                : ("Plan upgraded to " + productName + ". Invoice #" + invoiceId + " generated."),
-              icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
-            });
-          } catch(e) {}
-        } else if (Notification.permission !== 'denied') {
-          Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-              try {
-                new Notification('NOVA AI - Payment Confirmed', {
-                  body: isWizard 
-                    ? ("Ansys ACT Wizard activated! License: " + licenseKey + " | Expiry: " + expiryDate) 
-                    : ("Plan upgraded to " + productName + ". Invoice #" + invoiceId + " generated."),
-                  icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
-                });
-              } catch(e) {}
-            }
-          });
-        }
-      }
 
       showNotification(
-        isWizard 
-          ? ("Payment verified of ₹" + amountInINR.toLocaleString('en-IN') + "! Ansys ACT Wizard activated. License: " + licenseKey + " (Expires: " + expiryDate + ")") 
-          : ("Payment verified of ₹" + amountInINR.toLocaleString('en-IN') + "! Upgraded to " + productName + ". Invoice #" + invoiceId),
+        "Payment verified of ₹" + amountInINR.toLocaleString('en-IN') + "! " + productName + " — Invoice #" + invoiceId,
         'success',
-        isWizard ? 'Ansys Wizard License' : 'Subscription Upgrade'
+        'Payment Confirmed'
       );
 
+
       setCompletedInvoice(invoiceData);
+      openDocumentModal(invoiceData, 'invoice');
     };
 
     const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
@@ -976,7 +961,7 @@ export default function App() {
           },
           prefill: {
             name: currentUser?.name || "Dinesh",
-            email: currentUser?.email || "dineshkumar2729304@gmail.com",
+            email: currentUser?.email || '',
             contact: currentUser?.phone || "+919876543210"
           },
           notes: {
@@ -991,7 +976,7 @@ export default function App() {
             color: "#2874f0"
           },
           modal: {
-            ondismiss: function() {
+            ondismiss: function () {
               showNotification('Razorpay checkout window closed.', 'info', 'Razorpay Checkout');
             }
           }
@@ -1070,7 +1055,7 @@ export default function App() {
       const lines = text.split('\n').length;
       const ext = file.name.split('.').pop().toLowerCase();
       const lang = ext === 'py' || ext === 'wbex' ? 'python' : ext === 'mac' || ext === 'apdl' || ext === 'inp' ? 'apdl' : ext === 'json' ? 'json' : 'text';
-      
+
       setNewPostCode({
         content: text,
         filename: file.name,
@@ -1099,11 +1084,11 @@ export default function App() {
           const mockIds = ['post_asme_div2_scl_linearization', 'post_cyclic_fatigue_weld', 'post_spaceclaim_nozzle_blend', 'post_hexahedral_meshing_convergence'];
           const clean = data.filter(p => p && !mockIds.includes(p.id));
           setCommunityPosts(clean);
-          try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(clean)); } catch(e) {}
+          try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(clean)); } catch (e) { }
           return;
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.warn("fetchCommunityPosts error:", e);
     }
   };
@@ -1133,10 +1118,10 @@ export default function App() {
           });
 
           setPostComments(grouped);
-          try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(grouped)); } catch(e) {}
+          try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(grouped)); } catch (e) { }
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.warn("fetchCommunityComments error:", e);
     }
   };
@@ -1153,11 +1138,11 @@ export default function App() {
     }
     setIsPosting(true);
 
-    const generatedTitle = composerTitle.trim() || (rawContent.length > 70 
-      ? rawContent.substring(0, 70) + '...' 
+    const generatedTitle = composerTitle.trim() || (rawContent.length > 70
+      ? rawContent.substring(0, 70) + '...'
       : (rawContent || (rawCode ? `FEA Automation Script: ${composerCodeFilename}` : 'Engineering Discussion Topic')));
 
-    const newPostPayload = { 
+    const newPostPayload = {
       id: `post_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       user_name: currentUser?.name || 'Nova Engineer',
       user_email: currentUser?.email || 'user@nova.ai',
@@ -1182,7 +1167,7 @@ export default function App() {
 
     setCommunityPosts(prev => {
       const updated = [newPostPayload, ...prev];
-      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch (e) { }
       return updated;
     });
 
@@ -1202,12 +1187,12 @@ export default function App() {
         if (data && data[0]) {
           setCommunityPosts(prev => {
             const updated = prev.map(p => p.id === newPostPayload.id ? { ...p, id: data[0].id } : p);
-            try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+            try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch (e) { }
             return updated;
           });
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.warn("Supabase community post err:", e);
     }
 
@@ -1225,10 +1210,10 @@ export default function App() {
 
   const handleDeletePost = async (postId) => {
     if (!window.confirm('Are you sure you want to permanently delete this message?')) return;
-    
+
     setCommunityPosts(prev => {
       const updated = prev.filter(p => p.id !== postId);
-      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+      try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch (e) { }
       return updated;
     });
 
@@ -1236,7 +1221,7 @@ export default function App() {
       if (supabase) {
         await supabase.from('nova_community_posts').delete().eq('id', postId);
       }
-    } catch(e) {}
+    } catch (e) { }
 
     showNotification('Discussion permanently removed from community', 'info', 'Community');
   };
@@ -1245,7 +1230,7 @@ export default function App() {
     const isCurrently = !!bookmarkedPosts[postId];
     const updated = { ...bookmarkedPosts, [postId]: !isCurrently };
     setBookmarkedPosts(updated);
-    try { localStorage.setItem('nova_community_bookmarks', JSON.stringify(updated)); } catch(e) {}
+    try { localStorage.setItem('nova_community_bookmarks', JSON.stringify(updated)); } catch (e) { }
     showNotification(!isCurrently ? 'Discussion saved to your Bookmarks!' : 'Removed from Bookmarks', 'info', 'Bookmarks');
   };
 
@@ -1253,10 +1238,10 @@ export default function App() {
     const isCurrently = !!solvedPosts[postId];
     const updated = { ...solvedPosts, [postId]: !isCurrently };
     setSolvedPosts(updated);
-    try { localStorage.setItem('nova_community_solved', JSON.stringify(updated)); } catch(e) {}
+    try { localStorage.setItem('nova_community_solved', JSON.stringify(updated)); } catch (e) { }
     showNotification(!isCurrently ? 'Marked discussion as Solved! 💡' : 'Marked discussion as Open', 'success', 'Status Updated');
   };
-  
+
   const fetchJobs = async () => {
     try {
       const { data, error } = await supabase.from('ansys_jobs').select('*').order('created_at', { ascending: false });
@@ -1314,68 +1299,111 @@ export default function App() {
     }
   }, [isLoggedIn, currentUser.isApproved]);
   const setupUser = (user) => {
-      const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-      const isDinesh = user.email === 'dineshkumar2729304@gmail.com';
-      let userPlan = isDinesh ? 'Max' : 'Free';
-      let totalCredits = isDinesh ? 3000 : 100;
-      const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
-      if (savedSub && !isDinesh) {
-        try {
-          const parsed = JSON.parse(savedSub);
-          userPlan = parsed.plan || 'Free';
-          totalCredits = parsed.totalCredits || (userPlan === 'Max' ? 3000 : userPlan === 'Pro' ? 1500 : userPlan === 'Basic' ? 700 : 100);
-        } catch (e) {}
+    const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+    const isDinesh = user.email === 'dineshkumar2729304@gmail.com';
+    let userPlan = isDinesh ? 'Max' : 'Free';
+    let totalCredits = isDinesh ? 3000 : 100;
+    const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
+    if (savedSub && !isDinesh) {
+      try {
+        const parsed = JSON.parse(savedSub);
+        userPlan = parsed.plan || 'Free';
+        totalCredits = parsed.totalCredits || (userPlan === 'Max' ? 3000 : userPlan === 'Pro' ? 1500 : userPlan === 'Basic' ? 700 : 100);
+      } catch (e) { }
+    }
+    const savedCredits = localStorage.getItem(`nova_credits_${user.email}`);
+    let remainingCredits = totalCredits;
+    if (savedCredits !== null) {
+      remainingCredits = Math.min(totalCredits, parseInt(savedCredits, 10));
+    }
+    const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com' || isDinesh || userPlan !== 'Free';
+    setCurrentUser({
+      id: user.id,
+      name: fullName,
+      email: user.email,
+      initial: fullName.charAt(0).toUpperCase(),
+      avatar: user.user_metadata?.avatar_url || null,
+      company: user.user_metadata?.company || "Not Provided",
+      phone: user.user_metadata?.phone || "Not Provided",
+      joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+      isApproved: isApprovedStatus,
+      plan: userPlan,
+      dailyCreditsTotal: totalCredits,
+      dailyCreditsRemaining: remainingCredits,
+      isLifetimeMax: false
+    });
+
+    localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
+    setIsLoggedIn(true);
+    supabase.from('user_profiles').select('*').eq('email', user.email).maybeSingle().then(({ data: dbProfile, error }) => {
+      if (!error && dbProfile) {
+        const finalPlan = isDinesh ? 'Max' : (dbProfile.plan || userPlan);
+        const finalTotal = isDinesh ? 3000 : (dbProfile.daily_credits_total || totalCredits);
+        const finalRemaining = dbProfile.daily_credits_remaining !== null && dbProfile.daily_credits_remaining !== undefined
+          ? Math.min(finalTotal, dbProfile.daily_credits_remaining)
+          : finalTotal;
+        setCurrentUser(prev => ({
+          ...prev,
+          plan: finalPlan,
+          dailyCreditsTotal: finalTotal,
+          dailyCreditsRemaining: finalRemaining
+        }));
+      } else {
+        supabase.from('user_profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: fullName,
+          plan: userPlan,
+          daily_credits_total: totalCredits,
+          daily_credits_remaining: remainingCredits,
+          is_approved: isApprovedStatus
+        }, { onConflict: 'email' }).then();
       }
-      const savedCredits = localStorage.getItem(`nova_credits_${user.email}`);
-      let remainingCredits = totalCredits;
-      if (savedCredits !== null) {
-        remainingCredits = Math.min(totalCredits, parseInt(savedCredits, 10));
-      }
-      const isApprovedStatus = user.user_metadata?.is_approved === true || user.email === 'analysis.ai.nova@gmail.com' || isDinesh || userPlan !== 'Free';
-      setCurrentUser({
-        id: user.id,
-        name: fullName,
-        email: user.email,
-        initial: fullName.charAt(0).toUpperCase(),
-        avatar: user.user_metadata?.avatar_url || null, 
-        company: user.user_metadata?.company || "Not Provided",
-        phone: user.user_metadata?.phone || "Not Provided",
-        joined: new Date(user.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-        isApproved: isApprovedStatus,
-        plan: userPlan,
-        dailyCreditsTotal: totalCredits,
-        dailyCreditsRemaining: remainingCredits,
-        isLifetimeMax: false
-      });
-      
-      localStorage.setItem('nova_user', JSON.stringify({ id: user.id, email: user.email }));
-      setIsLoggedIn(true);
-      supabase.from('user_profiles').select('*').eq('email', user.email).maybeSingle().then(({ data: dbProfile, error }) => {
-        if (!error && dbProfile) {
-          const finalPlan = isDinesh ? 'Max' : (dbProfile.plan || userPlan);
-          const finalTotal = isDinesh ? 3000 : (dbProfile.daily_credits_total || totalCredits);
-          const finalRemaining = dbProfile.daily_credits_remaining !== null && dbProfile.daily_credits_remaining !== undefined 
-            ? Math.min(finalTotal, dbProfile.daily_credits_remaining)
-            : finalTotal;
-          setCurrentUser(prev => ({
-            ...prev,
-            plan: finalPlan,
-            dailyCreditsTotal: finalTotal,
-            dailyCreditsRemaining: finalRemaining
-          }));
-        } else {
-          supabase.from('user_profiles').upsert({
-            id: user.id,
-            email: user.email,
-            full_name: fullName,
-            plan: userPlan,
-            daily_credits_total: totalCredits,
-            daily_credits_remaining: remainingCredits,
-            is_approved: isApprovedStatus
-          }, { onConflict: 'email' }).then();
+    }).catch(err => console.warn('Supabase profile sync warning:', err));
+
+    if (user.email && supabase) {
+      supabase.from('nova_orders').select('*').eq('user_email', user.email).order('created_at', { ascending: false }).then(({ data: ordersData, error: ordersErr }) => {
+        if (!ordersErr && ordersData && ordersData.length > 0) {
+          const loadedHistory = ordersData.map(order => {
+            const rd = order.receipt_data || {};
+            const amt = Number(order.amount || rd.amountInINR || 0);
+            const baseAmt = order.base_amount || rd.baseAmount || (amt ? Math.round(amt / 1.18) : 0);
+            const gstAmt = amt - baseAmt;
+            const cgst = (order.cgst !== undefined && order.cgst !== null) ? order.cgst : Math.round(gstAmt / 2);
+            const sgst = (order.sgst !== undefined && order.sgst !== null) ? order.sgst : (gstAmt - cgst);
+            return {
+              invoiceId: order.invoice_no || order.order_id || rd.invoiceId,
+              receiptNo: order.receipt_no || rd.receiptNo || (order.invoice_no ? String(order.invoice_no).replace('INV-', 'RCP-') : 'RCP-2026-000000'),
+              paymentId: order.transaction_id || rd.paymentId || 'PAY-RAZORPAY-16940220',
+              date: order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : (rd.date || 'Today'),
+              productName: order.plan_name || rd.productName || 'Nova Subscription',
+              productType: order.is_wizard ? 'wizard_purchase' : (rd.productType || 'credit_subscription'),
+              priceFormatted: '₹' + amt.toLocaleString('en-IN'),
+              amountInINR: amt,
+              baseAmount: baseAmt,
+              cgst,
+              sgst,
+              customerName: order.user_name || fullName || 'Dinesh Kumar',
+              customerEmail: order.user_email || user.email,
+              customerPhone: order.user_phone || 'Not Provided',
+              company: order.user_company || 'Nova AI Technologies',
+              term: order.billing_cycle || rd.term || 'License',
+              workstations: rd.workstations || 1,
+              gateway: order.payment_gateway || 'Razorpay (Live Verified)',
+              method: order.payment_method || 'UPI / Cards / NetBanking',
+              status: order.payment_status || order.status || 'PAID',
+              licenseKey: order.license_key || rd.licenseKey || '',
+              expiryDate: order.expiry_date || rd.expiryDate || '',
+              wbexFilename: order.wbex_filename || rd.wbexFilename || '',
+              savedAt: order.created_at
+            };
+          });
+          setPaymentHistory(loadedHistory);
+          try { localStorage.setItem('nova_payment_history', JSON.stringify(loadedHistory)); } catch (e) { }
         }
-      }).catch(err => console.warn('Supabase profile sync warning:', err));
-    };
+      }).catch(err => console.warn('Supabase orders load warning:', err));
+    }
+  };
   const PLAN_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
   const canRunPlan = (requiredPlan) => {
     return true;
@@ -1404,7 +1432,7 @@ export default function App() {
     setCurrentView('landing');
     setIsSplashExiting(false);
     setShowSplash(true);
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   };
   const showNotification = (message, type = 'success', title = null) => {
     setNotification({ message, type });
@@ -1422,7 +1450,7 @@ export default function App() {
 
     setPersistentNotifications(prev => {
       const updated = [newNotif, ...(prev || []).slice(0, 49)];
-      try { localStorage.setItem('nova_persistent_notifications', JSON.stringify(updated)); } catch(e) {}
+      try { localStorage.setItem('nova_persistent_notifications', JSON.stringify(updated)); } catch (e) { }
       return updated;
     });
   };
@@ -1437,12 +1465,12 @@ export default function App() {
     else setCurrentView('login');
   };
   const callGeminiAPI = async (contents, systemInstructionText) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    
+
     const payload = { contents, systemInstruction: { parts: [{ text: systemInstructionText }] } };
     const delays = [1000, 2000, 4000, 8000, 16000];
-    
+
     for (let i = 0; i <= delays.length; i++) {
       try {
         const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -1568,7 +1596,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     if (!materialPrompt.trim()) return;
     setIsMaterialLoading(true);
     setMaterialResponse("");
-    
+
     const systemInstruction = "You are an expert metallurgist and pressure vessel engineer.";
     const prompt = `Based on these operating conditions: "${materialPrompt}", recommend 2-3 suitable ASME materials for a pressure vessel or heat exchanger component. State the material grade and provide a brief 1-sentence technical justification for each.`;
     const responseText = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], systemInstruction);
@@ -1581,7 +1609,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     if (!emailRegex.test(loginEmail)) errors.email = "Please enter a valid email address.";
     if (!loginPassword) errors.password = "Password is required.";
     if (Object.keys(errors).length > 0) return setAuthErrors(errors);
-    
+
     setAuthErrors({});
     setIsAuthLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -1637,13 +1665,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
       return;
     }
     setPwdErrors({});
-    
+
     const { error } = await supabase.auth.updateUser({ password: pwdForm.new });
     if (error) {
       setPwdErrors({ confirm: error.message });
       setIsPwdSuccess(false);
     } else {
-      setIsPwdSuccess(true); 
+      setIsPwdSuccess(true);
       showNotification("Password changed securely!");
       setTimeout(() => {
         setIsChangePasswordOpen(false);
@@ -1654,27 +1682,27 @@ Always provide professional, precise, technically accurate, and helpful answers.
     }
   };
   const handleEditProfile = async (e) => {
-      e.preventDefault();
-      const { error } = await supabase.auth.updateUser({
-        data: { company: editForm.company, phone: editForm.phone }
-      });
-      if (error) {
-        showNotification("Failed to update profile: " + error.message, "error");
-      } else {
-        setCurrentUser(prev => ({ ...prev, company: editForm.company, phone: editForm.phone }));
-        setIsEditProfileOpen(false);
-        showNotification("Profile updated successfully!", "success");
-      }
-    };
+    e.preventDefault();
+    const { error } = await supabase.auth.updateUser({
+      data: { company: editForm.company, phone: editForm.phone }
+    });
+    if (error) {
+      showNotification("Failed to update profile: " + error.message, "error");
+    } else {
+      setCurrentUser(prev => ({ ...prev, company: editForm.company, phone: editForm.phone }));
+      setIsEditProfileOpen(false);
+      showNotification("Profile updated successfully!", "success");
+    }
+  };
   const handleForgotEmailSubmit = async (e) => {
     e.preventDefault();
     if (!emailRegex.test(forgotEmail)) return setForgotErrors({ email: "Please enter a valid email address." });
-    
+
     setForgotErrors({});
     setIsForgotLoading(true);
-    
+
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail);
-    
+
     setIsForgotLoading(false);
     if (error) {
       setForgotErrors({ email: error.message });
@@ -1686,7 +1714,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
   const handleForgotCodeSubmit = async (e) => {
     e.preventDefault();
     if (forgotCode.length !== 6) return setForgotErrors({ code: "Invalid verification code." });
-    
+
     setForgotErrors({});
     setIsForgotLoading(true);
     const { error } = await supabase.auth.verifyOtp({
@@ -1716,36 +1744,36 @@ Always provide professional, precise, technically accurate, and helpful answers.
       setForgotErrors({ new: error.message });
     } else {
       setCurrentView('login');
-      setLoginPassword(''); 
+      setLoginPassword('');
       showNotification("Password reset successfully! Please log in.", "success");
       setForgotStep(1);
     }
   };
   const handleImageUpload = async (e) => {
-      const file = e.target.files[0];
-      if (!file || !currentUser.id) return;
-      showNotification("Uploading profile picture...", "info");
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file);
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { avatar_url: publicUrl }
-        });
-        if (updateError) throw updateError;
-        setCurrentUser(prev => ({ ...prev, avatar: publicUrl }));
-        showNotification("Profile picture updated successfully!", "success");
-      } catch (error) {
-        console.error('Upload error:', error);
-        showNotification("Error uploading picture: " + error.message, "error");
-      }
-    };
+    const file = e.target.files[0];
+    if (!file || !currentUser.id) return;
+    showNotification("Uploading profile picture...", "info");
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+      if (updateError) throw updateError;
+      setCurrentUser(prev => ({ ...prev, avatar: publicUrl }));
+      showNotification("Profile picture updated successfully!", "success");
+    } catch (error) {
+      console.error('Upload error:', error);
+      showNotification("Error uploading picture: " + error.message, "error");
+    }
+  };
   const openSubmitJob = (type) => {
     setSelectedJobType(type);
     setIsSubmitJobOpen(true);
@@ -1757,13 +1785,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
     setIsRequestingAccess(true);
     try {
       await emailjs.send(
-        "service_jknqgty",               
-        "template_nynl6qp",              
+        "service_jknqgty",
+        "template_nynl6qp",
         {
           user_name: currentUser.name,
           user_email: currentUser.email
         },
-        "ZTYpRTAZMIRlDw98k"                
+        "ZTYpRTAZMIRlDw98k"
       );
       showNotification("Access request sent to Admin successfully!", "success");
     } catch (error) {
@@ -1773,37 +1801,37 @@ Always provide professional, precise, technically accurate, and helpful answers.
       setIsRequestingAccess(false);
     }
   };
-  
+
   const handleJobSubmit = async (e) => {
-      e.preventDefault();
-      if (!currentUser.id) return;
-      const jobName = e.target.jobName.value;
-      const newJob = {
-        user_id: currentUser.id,
-        job_id_display: `NV-${1000 + jobs.length}`,
-        name: jobName,
-        type: selectedJobType,
-        status: 'Pending',
-        price: selectedJobType === 'Nozzle Analysis' ? 300 : selectedJobType === 'Bellow Analysis' ? 300 : 150 
-      };
-      try {
-        const { data: insertedJob, error } = await supabase
-          .from('ansys_jobs')
-          .insert([newJob])
-          .select()
-          .single();
-        if (error) throw error;
-        setIsSubmitJobOpen(false);
-        showNotification(`${selectedJobType} submitted! Added to queue.`, 'success');
-        fetchJobs(); 
-      } catch (error) {
-        console.error("Database Error:", error);
-        showNotification(`Error submitting job: ${error.message}`, "error");
-      }
+    e.preventDefault();
+    if (!currentUser.id) return;
+    const jobName = e.target.jobName.value;
+    const newJob = {
+      user_id: currentUser.id,
+      job_id_display: `NV-${1000 + jobs.length}`,
+      name: jobName,
+      type: selectedJobType,
+      status: 'Pending',
+      price: selectedJobType === 'Nozzle Analysis' ? 300 : selectedJobType === 'Bellow Analysis' ? 300 : 150
     };
-  const filteredJobs = jobFilter.startsWith('All') 
-  ? jobs 
-  : jobs.filter(j => {
+    try {
+      const { data: insertedJob, error } = await supabase
+        .from('ansys_jobs')
+        .insert([newJob])
+        .select()
+        .single();
+      if (error) throw error;
+      setIsSubmitJobOpen(false);
+      showNotification(`${selectedJobType} submitted! Added to queue.`, 'success');
+      fetchJobs();
+    } catch (error) {
+      console.error("Database Error:", error);
+      showNotification(`Error submitting job: ${error.message}`, "error");
+    }
+  };
+  const filteredJobs = jobFilter.startsWith('All')
+    ? jobs
+    : jobs.filter(j => {
       if (jobFilter === 'Bellow Analysis') return j.type.includes('Bellow');
       if (jobFilter === 'Nozzle Analysis') return j.type.includes('Nozzle');
       if (jobFilter === 'Flange Analysis') return j.type.includes('Flange');
@@ -1906,7 +1934,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         @keyframes glassFade { to { opacity: 1; } }
         @keyframes loadProgress { 0% { width: 0%; left: 0%; } 50% { width: 100%; left: 0%; } 100% { width: 0%; left: 100%; } }
       `}</style>
-      
+
       <div className="glass-panel-splash relative flex flex-col items-center justify-center p-6 md:p-12 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_0_80px_rgba(60,100,214,0.3)]">
         <svg className="w-20 md:w-32 h-20 md:h-32 mb-6 drop-shadow-2xl" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -1923,7 +1951,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           <circle cx="50" cy="50" r="35" stroke="url(#splashGrad1)" strokeWidth="2" fill="none" className="path-draw" filter="url(#splashGlow)" />
           <path d="M50 15 A35 35 0 0 1 85 50 A35 35 0 0 0 50 15 Z" fill="url(#splashGrad2)" className="fill-fade" />
           <path d="M15 50 A35 35 0 0 0 50 85 A35 35 0 0 1 15 50 Z" fill="url(#splashGrad1)" className="fill-fade" />
-          <circle cx="50" cy="50" r="20" fill="url(#splashGrad1)" filter="url(#splashGlow)" className="fill-fade" style={{animationDuration: '2s', animationDelay: '1.5s'}} />
+          <circle cx="50" cy="50" r="20" fill="url(#splashGrad1)" filter="url(#splashGlow)" className="fill-fade" style={{ animationDuration: '2s', animationDelay: '1.5s' }} />
           <circle cx="50" cy="50" r="35" stroke="url(#splashGrad1)" strokeWidth="4" className="path-draw" fill="none" />
           <circle cx="50" cy="50" r="35" stroke="url(#splashGrad2)" strokeWidth="2" opacity="0.8" strokeDasharray="15 10 5 10" className="path-draw-delayed" fill="none" />
           <g className="star-pop">
@@ -1934,9 +1962,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
           <h1 className="mb-2 text-xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 drop-shadow-lg">NOVA</h1>
           <p className="text-sm font-medium tracking-widest uppercase text-slate-300">Initializing Platform</p>
         </div>
-        
+
         <div className="w-32 md:w-48 h-1 mt-4 md:mt-8 overflow-hidden rounded-full text-reveal bg-white/10">
-           <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-1/2 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full relative" style={{animation: 'loadProgress 2s ease-out infinite'}}></div>
+          <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-1/2 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full relative" style={{ animation: 'loadProgress 2s ease-out infinite' }}></div>
         </div>
       </div>
     </div>
@@ -1948,33 +1976,33 @@ Always provide professional, precise, technically accurate, and helpful answers.
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-sm font-semibold text-slate-700 mb-4 md:mb-8">
             <Cpu className="w-4 h-4 text-[#3C64D6] animate-pulse" /> Advanced AI-Driven FEA Automation
           </div>
-          
+
           <h1 className="text-6xl md:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-[#1E293B] to-[#3C64D6] tracking-tight mb-4 md:mb-8 drop-shadow-sm">NOVA</h1>
-          
+
           <div className="flex flex-col items-center justify-center gap-4 mb-6 md:mb-12 sm:flex-row sm:gap-6">
             <div className="glass-panel px-4 md:px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(60,100,214,0.2)] transition-shadow">
-               <FileText className="w-6 h-6 text-blue-500" />
-               <span className="text-lg font-bold text-slate-800">Input Parameters</span>
+              <FileText className="w-6 h-6 text-blue-500" />
+              <span className="text-lg font-bold text-slate-800">Input Parameters</span>
             </div>
             <ArrowRight className="w-8 h-8 text-[#3C64D6] hidden sm:block animate-[pulse_2s_ease-in-out_infinite]" />
             <div className="glass-panel px-4 md:px-6 py-4 rounded-xl flex items-center gap-3 w-full sm:w-auto hover:shadow-[0_8px_32px_rgba(16,163,74,0.2)] transition-shadow">
-               <FileCheck className="w-6 h-6 text-emerald-500" />
-               <span className="text-lg font-bold text-slate-800">FE Report</span>
+              <FileCheck className="w-6 h-6 text-emerald-500" />
+              <span className="text-lg font-bold text-slate-800">FE Report</span>
             </div>
           </div>
           <h2 className="text-lg md:text-3xl font-bold text-[#3C64D6] mb-6">Automated FEA. Zero Manual Setup.</h2>
           <p className="max-w-2xl mx-auto mb-6 text-lg font-medium text-slate-700">Input your design specifications. Receive a fully code-compliant FEA stress report in record time directly from the cloud.</p>
-          
+
           <div className="mb-6 md:mb-12 text-sm font-semibold text-slate-600">
-             Eliminate the bottlenecks: <span className="font-normal text-slate-500">Manual Meshing | Tedious Modeling | Repetitive Iterations | Report Drafting</span>
+            Eliminate the bottlenecks: <span className="font-normal text-slate-500">Manual Meshing | Tedious Modeling | Repetitive Iterations | Report Drafting</span>
           </div>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-             <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-4 md:px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
-                <Shield className="relative z-10 w-5 h-5" /> <span className="relative z-10">Start Analysis</span>
-             </button>
-             <button onClick={() => scrollToSection('how-it-works')} className="px-4 md:px-8 py-4 font-bold transition-colors border rounded-full shadow-sm bg-white/50 backdrop-blur-md border-white/50 hover:bg-white/80 text-slate-800">
-                See How It Works ↓
-             </button>
+            <button onClick={handleRouteToAuth} className="relative flex items-center justify-center gap-2 px-4 md:px-8 py-4 overflow-hidden font-bold text-white transition-all duration-300 rounded-full glass-btn-blue hover:scale-105 group">
+              <Shield className="relative z-10 w-5 h-5" /> <span className="relative z-10">Start Analysis</span>
+            </button>
+            <button onClick={() => scrollToSection('how-it-works')} className="px-4 md:px-8 py-4 font-bold transition-colors border rounded-full shadow-sm bg-white/50 backdrop-blur-md border-white/50 hover:bg-white/80 text-slate-800">
+              See How It Works ↓
+            </button>
           </div>
         </div>
       </section>
@@ -1988,92 +2016,92 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">Engineering Components</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 md:gap-8 md:grid-cols-2">
-             <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group">
-                <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-blue-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
-                
-                <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-emerald-500/20 border-emerald-500/30 text-emerald-700 backdrop-blur-sm">
-                   <CheckCircle className="w-3 h-3" /> Available Now
+            <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group">
+              <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-blue-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
+
+              <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-emerald-500/20 border-emerald-500/30 text-emerald-700 backdrop-blur-sm">
+                <CheckCircle className="w-3 h-3" /> Available Now
+              </div>
+
+              <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6">
+                <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="20" y="15" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
+                  <rect x="20" y="75" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
+                  <path d="M 30 25 C 10 35, 10 65, 30 75" stroke="#8b5cf6" strokeWidth="6" strokeLinecap="round" fill="rgba(139, 92, 246, 0.2)" />
+                  <path d="M 50 25 C 30 35, 30 65, 50 75" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" fill="rgba(59, 130, 246, 0.2)" />
+                  <path d="M 70 25 C 50 35, 50 65, 70 75" stroke="#0ea5e9" strokeWidth="6" strokeLinecap="round" fill="rgba(14, 165, 233, 0.2)" />
+                  <path d="M 90 25 C 70 35, 70 65, 90 75" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" fill="none" />
+                  <line x1="30" y1="25" x2="30" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
+                  <line x1="50" y1="25" x2="50" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
+                  <line x1="70" y1="25" x2="70" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
+                </svg>
+              </div>
+
+              <h3 className="text-lg md:text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA</h3>
+              <p className="mb-4 md:mb-8 text-sm font-medium text-slate-600">Thick Convolute (Flanged & Flued)</p>
+
+              <div className="space-y-4 mb-4 md:mb-8 flex-1 bg-white/40 border border-white/50 p-4 md:p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
+                  <span className="text-sm font-semibold text-slate-700">Phase 1: Automated TEMA-based spring rate</span>
                 </div>
-                
-                <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6">
-                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                     <rect x="20" y="15" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
-                     <rect x="20" y="75" width="60" height="10" rx="5" fill="#3b82f6" opacity="0.9" />
-                     <path d="M 30 25 C 10 35, 10 65, 30 75" stroke="#8b5cf6" strokeWidth="6" strokeLinecap="round" fill="rgba(139, 92, 246, 0.2)" />
-                     <path d="M 50 25 C 30 35, 30 65, 50 75" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" fill="rgba(59, 130, 246, 0.2)" />
-                     <path d="M 70 25 C 50 35, 50 65, 70 75" stroke="#0ea5e9" strokeWidth="6" strokeLinecap="round" fill="rgba(14, 165, 233, 0.2)" />
-                     <path d="M 90 25 C 70 35, 70 65, 90 75" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" fill="none" />
-                     <line x1="30" y1="25" x2="30" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
-                     <line x1="50" y1="25" x2="50" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
-                     <line x1="70" y1="25" x2="70" y2="75" stroke="white" strokeWidth="2" opacity="0.6" />
-                  </svg>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
+                  <span className="text-sm font-semibold text-slate-700">Phase 2: Comprehensive FEA & validation</span>
                 </div>
-                
-                <h3 className="text-lg md:text-2xl font-bold text-[#1E293B] mb-2 drop-shadow-sm">Advanced Bellows FEA</h3>
-                <p className="mb-4 md:mb-8 text-sm font-medium text-slate-600">Thick Convolute (Flanged & Flued)</p>
-                
-                <div className="space-y-4 mb-4 md:mb-8 flex-1 bg-white/40 border border-white/50 p-4 md:p-6 rounded-2xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.7)] backdrop-blur-sm">
-                   <div className="flex items-start gap-3">
-                     <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
-                     <span className="text-sm font-semibold text-slate-700">Phase 1: Automated TEMA-based spring rate</span>
-                   </div>
-                   <div className="flex items-start gap-3">
-                     <Check className="w-5 h-5 text-[#3C64D6] shrink-0 drop-shadow-sm" />
-                     <span className="text-sm font-semibold text-slate-700">Phase 2: Comprehensive FEA & validation</span>
-                   </div>
-                   <div className="pt-3 mt-2 text-sm font-bold border-t text-slate-800 border-white/60 drop-shadow-sm">Core Capabilities:</div>
-                   <div className="flex items-center gap-3">
-                     <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Corroded / Uncorroded state analysis</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                     <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Multi-condition upset loads</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                     <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Strict ASME compliance verification</span>
-                   </div>
+                <div className="pt-3 mt-2 text-sm font-bold border-t text-slate-800 border-white/60 drop-shadow-sm">Core Capabilities:</div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Corroded / Uncorroded state analysis</span>
                 </div>
-                <button onClick={handleRouteToAuth} className="glass-btn w-full text-black py-4 rounded-2xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg">
-                   Launch Bellow Analysis <ArrowRight className="w-5 h-5" />
-                </button>
-             </div>
-             <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group opacity-95">
-                <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-amber-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
-                
-                <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-amber-500/20 border-amber-500/30 text-amber-700 backdrop-blur-sm">
-                   <Clock className="w-3 h-3" /> In Development
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Multi-condition upset loads</span>
                 </div>
-                
-                <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6 opacity-80 mix-blend-luminosity">
-                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                     <path d="M 10 80 Q 50 100, 90 80" stroke="#f59e0b" strokeWidth="8" strokeLinecap="round" fill="none" />
-                     <path d="M 10 90 Q 50 110, 90 90" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round" opacity="0.5" fill="none" />
-                     <rect x="35" y="20" width="30" height="50" fill="#ef4444" opacity="0.3" rx="4" />
-                     <path d="M 35 20 L 35 68" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
-                     <path d="M 65 20 L 65 68" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
-                     <rect x="25" y="10" width="50" height="10" rx="3" fill="#f59e0b" />
-                     <rect x="30" y="5" width="40" height="5" rx="2" fill="#ef4444" opacity="0.8" />
-                     <line x1="40" y1="20" x2="40" y2="65" stroke="white" strokeWidth="3" opacity="0.8" strokeLinecap="round" />
-                  </svg>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 drop-shadow-sm" /> <span className="text-sm text-slate-700">Strict ASME compliance verification</span>
                 </div>
-                
-                <h3 className="mb-2 text-lg md:text-2xl font-bold text-slate-700 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
-                <p className="mb-4 md:mb-8 text-sm font-medium text-slate-500">Local Load Analysis for Vessels</p>
-                
-                <div className="flex-1 p-4 md:p-6 mb-4 md:mb-8 space-y-4 border bg-white/20 border-white/30 rounded-2xl">
-                   <div className="flex items-start gap-3 opacity-80">
-                     <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                     <span className="text-sm font-semibold text-slate-700">High-fidelity local stress evaluation</span>
-                   </div>
-                   <div className="flex items-start gap-3 opacity-80">
-                     <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                     <span className="text-sm font-semibold text-slate-700">Automated structural integrity checks</span>
-                   </div>
-                   <div className="flex items-start gap-3 opacity-80">
-                     <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                     <span className="text-sm font-semibold text-slate-700">Compliant with ASME Section VIII, Div 2 Part 5</span>
-                   </div>
+              </div>
+              <button onClick={handleRouteToAuth} className="glass-btn w-full text-black py-4 rounded-2xl font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg">
+                Launch Bellow Analysis <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="glass-card glass-card-hover rounded-[2.5rem] p-10 flex flex-col h-full relative group opacity-95">
+              <div className="absolute top-0 right-0 w-40 h-40 transition-transform duration-700 rounded-bl-full bg-amber-400/20 filter blur-xl -z-10 group-hover:scale-125"></div>
+
+              <div className="flex items-center self-start gap-1 px-3 py-1 mb-4 md:mb-8 text-xs font-bold border rounded-full shadow-sm bg-amber-500/20 border-amber-500/30 text-amber-700 backdrop-blur-sm">
+                <Clock className="w-3 h-3" /> In Development
+              </div>
+
+              <div className="glass-icon-container w-14 md:w-20 h-14 md:h-20 rounded-[1.25rem] flex items-center justify-center mb-6 opacity-80 mix-blend-luminosity">
+                <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M 10 80 Q 50 100, 90 80" stroke="#f59e0b" strokeWidth="8" strokeLinecap="round" fill="none" />
+                  <path d="M 10 90 Q 50 110, 90 90" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round" opacity="0.5" fill="none" />
+                  <rect x="35" y="20" width="30" height="50" fill="#ef4444" opacity="0.3" rx="4" />
+                  <path d="M 35 20 L 35 68" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+                  <path d="M 65 20 L 65 68" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+                  <rect x="25" y="10" width="50" height="10" rx="3" fill="#f59e0b" />
+                  <rect x="30" y="5" width="40" height="5" rx="2" fill="#ef4444" opacity="0.8" />
+                  <line x1="40" y1="20" x2="40" y2="65" stroke="white" strokeWidth="3" opacity="0.8" strokeLinecap="round" />
+                </svg>
+              </div>
+
+              <h3 className="mb-2 text-lg md:text-2xl font-bold text-slate-700 drop-shadow-sm">Nozzle Junction Stress Analysis</h3>
+              <p className="mb-4 md:mb-8 text-sm font-medium text-slate-500">Local Load Analysis for Vessels</p>
+
+              <div className="flex-1 p-4 md:p-6 mb-4 md:mb-8 space-y-4 border bg-white/20 border-white/30 rounded-2xl">
+                <div className="flex items-start gap-3 opacity-80">
+                  <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span className="text-sm font-semibold text-slate-700">High-fidelity local stress evaluation</span>
                 </div>
-             </div>
+                <div className="flex items-start gap-3 opacity-80">
+                  <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span className="text-sm font-semibold text-slate-700">Automated structural integrity checks</span>
+                </div>
+                <div className="flex items-start gap-3 opacity-80">
+                  <svg className="w-5 h-5 text-amber-600 shrink-0 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span className="text-sm font-semibold text-slate-700">Compliant with ASME Section VIII, Div 2 Part 5</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -2084,32 +2112,32 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 drop-shadow-sm">What is NOVA?</h2>
           </div>
           <div className="grid items-center grid-cols-1 gap-16 md:grid-cols-2">
-             <div className="space-y-6">
-                <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">N</div>
-                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Numerical</div>
-                </div>
-                <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">O</div>
-                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Optimization &</div>
-                </div>
-                <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">V</div>
-                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Virtual</div>
-                </div>
-                <div className="flex items-center gap-5 group">
-                  <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">A</div>
-                  <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Analysis</div>
-                </div>
-             </div>
-             <div className="glass-panel p-10 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.1)]">
-               <p className="mb-6 text-lg font-medium leading-relaxed text-slate-700">
-                 NOVA (Numerical Optimization & Virtual Analysis) is an advanced cloud-based engineering platform designed to democratize Finite Element Analysis (FEA). We bridge the gap between complex <strong className="text-emerald-700">ASME BPVC code requirements</strong> and streamlined, automated execution.
-               </p>
-               <p className="text-lg font-medium leading-relaxed text-slate-700">
-                 By integrating <strong className="text-[#3C64D6]">AI-driven data extraction</strong> with industry-standard solvers like ANSYS, NOVA eliminates manual modeling, reducing design validation from weeks to hours.
-               </p>
-             </div>
+            <div className="space-y-6">
+              <div className="flex items-center gap-5 group">
+                <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">N</div>
+                <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Numerical</div>
+              </div>
+              <div className="flex items-center gap-5 group">
+                <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">O</div>
+                <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Optimization &</div>
+              </div>
+              <div className="flex items-center gap-5 group">
+                <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">V</div>
+                <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Virtual</div>
+              </div>
+              <div className="flex items-center gap-5 group">
+                <div className="flex items-center justify-center text-lg md:text-2xl font-bold text-white transition-transform shadow-md w-14 h-14 glass-btn-blue rounded-2xl group-hover:scale-110">A</div>
+                <div className="text-xl font-extrabold tracking-wide text-slate-700 drop-shadow-sm">Analysis</div>
+              </div>
+            </div>
+            <div className="glass-panel p-10 rounded-[2rem] shadow-[0_8px_32px_rgba(31,38,135,0.1)]">
+              <p className="mb-6 text-lg font-medium leading-relaxed text-slate-700">
+                NOVA (Numerical Optimization & Virtual Analysis) is an advanced cloud-based engineering platform designed to democratize Finite Element Analysis (FEA). We bridge the gap between complex <strong className="text-emerald-700">ASME BPVC code requirements</strong> and streamlined, automated execution.
+              </p>
+              <p className="text-lg font-medium leading-relaxed text-slate-700">
+                By integrating <strong className="text-[#3C64D6]">AI-driven data extraction</strong> with industry-standard solvers like ANSYS, NOVA eliminates manual modeling, reducing design validation from weeks to hours.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -2119,77 +2147,77 @@ Always provide professional, precise, technically accurate, and helpful answers.
           <h2 className="text-2xl md:text-4xl font-extrabold text-[#1E293B] mt-6 mb-4 drop-shadow-sm">How NOVA Works</h2>
           <p className="mb-20 text-lg font-medium text-slate-600">A streamlined 6-step workflow that transforms your engineering data into a compliant FE report</p>
           <div className="relative flex flex-col items-center justify-between gap-4 md:gap-8 md:flex-row md:items-start md:gap-4">
-             <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-gradient-to-r from-blue-300/50 via-purple-300/50 to-emerald-300/50 z-0"></div>
-             {[
-               { icon: UploadCloud, title: "Data Ingestion", desc: "Upload PV Elite or structural parameters" },
-               { icon: Cpu, title: "Intelligent Parsing", desc: "AI extracts geometry, materials, and loads" },
-               { icon: Box, title: "Automated Meshing", desc: "Smart algorithmic grid generation" },
-               { icon: GitMerge, title: "Cloud Solving", desc: "ANSYS backend computes stresses" },
-               { icon: Award, title: "Code Validation", desc: "ASME Sec VIII Div 2 Part 5 checks" },
-               { icon: Download, title: "Final Report", desc: "Download Report, audit-ready PDF" }
-             ].map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <div key={idx} className="relative z-10 flex flex-col items-center max-w-[150px] group">
-                     <div className="relative flex items-center justify-center w-14 md:w-20 h-14 md:h-20 mb-6 transition-all duration-300 shadow-md glass-panel group-hover:bg-white/60 rounded-2xl group-hover:-translate-y-2">
-                        <Icon className="w-8 h-8 text-[#1E293B] group-hover:text-[#3C64D6] transition-colors drop-shadow-sm" />
-                     </div>
-                     <h4 className="font-extrabold text-slate-800 mb-2 group-hover:text-[#3C64D6] transition-colors text-center drop-shadow-sm">{item.title}</h4>
-                     <p className="text-xs font-medium leading-relaxed text-center text-slate-600">{item.desc}</p>
+            <div className="hidden md:block absolute top-[2.5rem] left-0 w-full h-0.5 bg-gradient-to-r from-blue-300/50 via-purple-300/50 to-emerald-300/50 z-0"></div>
+            {[
+              { icon: UploadCloud, title: "Data Ingestion", desc: "Upload PV Elite or structural parameters" },
+              { icon: Cpu, title: "Intelligent Parsing", desc: "AI extracts geometry, materials, and loads" },
+              { icon: Box, title: "Automated Meshing", desc: "Smart algorithmic grid generation" },
+              { icon: GitMerge, title: "Cloud Solving", desc: "ANSYS backend computes stresses" },
+              { icon: Award, title: "Code Validation", desc: "ASME Sec VIII Div 2 Part 5 checks" },
+              { icon: Download, title: "Final Report", desc: "Download Report, audit-ready PDF" }
+            ].map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div key={idx} className="relative z-10 flex flex-col items-center max-w-[150px] group">
+                  <div className="relative flex items-center justify-center w-14 md:w-20 h-14 md:h-20 mb-6 transition-all duration-300 shadow-md glass-panel group-hover:bg-white/60 rounded-2xl group-hover:-translate-y-2">
+                    <Icon className="w-8 h-8 text-[#1E293B] group-hover:text-[#3C64D6] transition-colors drop-shadow-sm" />
                   </div>
-                );
-             })}
+                  <h4 className="font-extrabold text-slate-800 mb-2 group-hover:text-[#3C64D6] transition-colors text-center drop-shadow-sm">{item.title}</h4>
+                  <p className="text-xs font-medium leading-relaxed text-center text-slate-600">{item.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
       <section className="relative z-10 px-4 md:px-6 py-6 md:py-24 text-center transition-all duration-700 ease-out translate-y-10 opacity-0 reveal">
-         <div className="glass-panel max-w-4xl mx-auto rounded-[3rem] p-16 relative overflow-hidden shadow-[0_20px_60px_rgba(60,100,214,0.15)]">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full filter blur-[80px] -z-10"></div>
-           <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
-           <p className="relative z-10 mb-10 text-lg font-medium text-slate-600">From Days to Hours. Code-Compliant. Fully Automated.</p>
-           <button onClick={handleRouteToAuth} className="relative z-10 flex items-center justify-center gap-3 px-10 py-5 mx-auto text-lg font-bold transition-all rounded-full glass-btn-blue hover:scale-105">
-             Access Dashboard <ArrowRight className="w-6 h-6" />
-           </button>
-         </div>
+        <div className="glass-panel max-w-4xl mx-auto rounded-[3rem] p-16 relative overflow-hidden shadow-[0_20px_60px_rgba(60,100,214,0.15)]">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full filter blur-[80px] -z-10"></div>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[#1E293B] mb-6 relative z-10">Start Your Analysis Today</h2>
+          <p className="relative z-10 mb-10 text-lg font-medium text-slate-600">From Days to Hours. Code-Compliant. Fully Automated.</p>
+          <button onClick={handleRouteToAuth} className="relative z-10 flex items-center justify-center gap-3 px-10 py-5 mx-auto text-lg font-bold transition-all rounded-full glass-btn-blue hover:scale-105">
+            Access Dashboard <ArrowRight className="w-6 h-6" />
+          </button>
+        </div>
       </section>
       <footer className="glass-panel text-slate-600 py-6 md:py-12 px-4 md:px-6 relative z-10 mt-6 md:mt-12 border-b-0 rounded-t-[3rem] shadow-[0_-8px_32px_rgba(31,38,135,0.05)]">
         <div className="grid max-w-6xl grid-cols-1 gap-4 md:gap-8 pb-8 mx-auto mb-4 md:mb-8 border-b md:grid-cols-3 border-slate-300/50">
-           <div>
-              <h3 className="font-bold text-[#1E293B] text-xl mb-4 flex items-center gap-2 cursor-pointer hover:text-[#3C64D6] transition-colors" onClick={handleLogoClick}>
-                <CosmicLogo className="w-8 h-8" /> NOVA
-              </h3>
-              <p className="text-sm font-medium">Numerical Optimization & Virtual Analysis Platform</p>
-           </div>
-           <div>
-              <h4 className="font-bold text-[#1E293B] mb-4">Navigation</h4>
-              <ul className="space-y-2 text-sm font-medium">
-                 <li><button onClick={() => scrollToSection('why-nova')} className="hover:text-[#3C64D6] transition-colors">About NOVA</button></li>
-                 <li><button onClick={() => scrollToSection('how-it-works')} className="hover:text-[#3C64D6] transition-colors">Methodology</button></li>
-                 <li><button onClick={() => scrollToSection('solution')} className="hover:text-[#3C64D6] transition-colors">Engineering Solutions</button></li>
-              </ul>
-           </div>
-           <div>
-              <h4 className="font-bold text-[#1E293B] mb-4">Support & Contact</h4>
-              <a href="mailto:analysis.ai.nova@gmail.com" className="text-sm font-medium flex items-center gap-2 mb-2 hover:text-[#3C64D6] transition-colors group">
-                 <Mail className="w-4 h-4 group-hover:text-[#3C64D6] transition-colors" /> analysis.ai.nova@gmail.com
-              </a>
-           </div>
+          <div>
+            <h3 className="font-bold text-[#1E293B] text-xl mb-4 flex items-center gap-2 cursor-pointer hover:text-[#3C64D6] transition-colors" onClick={handleLogoClick}>
+              <CosmicLogo className="w-8 h-8" /> NOVA
+            </h3>
+            <p className="text-sm font-medium">Numerical Optimization & Virtual Analysis Platform</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-[#1E293B] mb-4">Navigation</h4>
+            <ul className="space-y-2 text-sm font-medium">
+              <li><button onClick={() => scrollToSection('why-nova')} className="hover:text-[#3C64D6] transition-colors">About NOVA</button></li>
+              <li><button onClick={() => scrollToSection('how-it-works')} className="hover:text-[#3C64D6] transition-colors">Methodology</button></li>
+              <li><button onClick={() => scrollToSection('solution')} className="hover:text-[#3C64D6] transition-colors">Engineering Solutions</button></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-[#1E293B] mb-4">Support & Contact</h4>
+            <a href="mailto:analysis.ai.nova@gmail.com" className="text-sm font-medium flex items-center gap-2 mb-2 hover:text-[#3C64D6] transition-colors group">
+              <Mail className="w-4 h-4 group-hover:text-[#3C64D6] transition-colors" /> analysis.ai.nova@gmail.com
+            </a>
+          </div>
         </div>
         <div className="flex items-center justify-between max-w-6xl mx-auto text-sm font-medium">
-           <p>© 2026 NOVA Intelligence. All Rights Reserved.</p>
-           <button onClick={() => window.scrollTo(0,0)} className="flex items-center justify-center p-3 text-white transition-transform border-none rounded-full shadow-md glass-btn-blue hover:scale-110">
-              <ChevronDown className="w-5 h-5 rotate-180" />
-           </button>
+          <p>© 2026 NOVA Intelligence. All Rights Reserved.</p>
+          <button onClick={() => window.scrollTo(0, 0)} className="flex items-center justify-center p-3 text-white transition-transform border-none rounded-full shadow-md glass-btn-blue hover:scale-110">
+            <ChevronDown className="w-5 h-5 rotate-180" />
+          </button>
         </div>
       </footer>
-      <a 
-        href="https://wa.me/918757014303?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis." 
-        target="_blank" 
+      <a
+        href="https://wa.me/918757014303?text=Hi%20NOVA-CORE,%20I%20need%20help%20with%20an%20analysis."
+        target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex items-center justify-center p-4 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-md bg-white/20 border border-white/30 hover:bg-white/30 hover:scale-110 transition-all duration-300 cursor-pointer"
       >
         <svg viewBox="0 0 24 24" width="32" height="32" className="text-[#25D366] drop-shadow-lg" fill="currentColor">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
         </svg>
       </a>
     </div>
@@ -2198,20 +2226,20 @@ Always provide professional, precise, technically accurate, and helpful answers.
     <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
       {notification && (
         <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-           <CheckCircle className="w-5 h-5" /> {notification.message}
+          <CheckCircle className="w-5 h-5" /> {notification.message}
         </div>
       )}
       <button onClick={() => setCurrentView('landing')} className="absolute top-6 left-6 glass-panel px-4 py-2 rounded-full text-slate-700 hover:text-[#3C64D6] flex items-center gap-2 font-semibold transition-colors">
         <ArrowRight className="w-4 h-4 rotate-180" /> Home
       </button>
-      
+
       <div className="max-w-md w-full glass-panel rounded-[2.5rem] shadow-[0_20px_60px_rgba(31,38,135,0.15)] p-10 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/30 rounded-full filter blur-[40px]"></div>
         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400/30 rounded-full filter blur-[40px]"></div>
-        
+
         <div className="relative z-10 mb-4 md:mb-8 space-y-2 text-center">
           <div className="flex justify-center mb-4 cursor-pointer" onClick={handleLogoClick}>
-             <CosmicLogo className="w-14 md:w-20 h-14 md:h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
+            <CosmicLogo className="w-14 md:w-20 h-14 md:h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
           </div>
           <h1 className="text-xl md:text-3xl font-extrabold text-[#1E293B] tracking-tight">NOVA 1.0</h1>
           <p className="text-sm font-semibold tracking-wider uppercase text-slate-600">Authentication</p>
@@ -2228,7 +2256,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       <form onSubmit={handleLogin} className="space-y-5">
         <div className="space-y-1.5">
           <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
-          <input type="email" value={loginEmail} onChange={(e) => { setLoginEmail(e.target.value); setAuthErrors({...authErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
+          <input type="email" value={loginEmail} onChange={(e) => { setLoginEmail(e.target.value); setAuthErrors({ ...authErrors, email: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
           {authErrors.email && <p className="pl-1 text-xs font-bold text-red-500 animate-in fade-in">{authErrors.email}</p>}
         </div>
         <div className="space-y-1.5">
@@ -2237,7 +2265,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <button type="button" onClick={() => { setCurrentView('forgot'); setForgotStep(1); setForgotEmail(loginEmail); setForgotCode(''); setForgotNewPwd(''); setForgotConfirmPwd(''); setForgotErrors({}); }} className="text-xs text-[#3C64D6] font-bold hover:underline focus:outline-none">Forgot password?</button>
           </div>
           <div className="relative">
-            <input type={showLoginPwd ? "text" : "password"} value={loginPassword} onChange={(e) => { setLoginPassword(e.target.value); setAuthErrors({...authErrors, password: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${authErrors.password ? '!border-red-500' : ''}`} required />
+            <input type={showLoginPwd ? "text" : "password"} value={loginPassword} onChange={(e) => { setLoginPassword(e.target.value); setAuthErrors({ ...authErrors, password: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${authErrors.password ? '!border-red-500' : ''}`} required />
             <button type="button" onClick={() => setShowLoginPwd(!showLoginPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
               {showLoginPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -2259,18 +2287,18 @@ Always provide professional, precise, technically accurate, and helpful answers.
       <form onSubmit={handleSignup} className="space-y-5">
         <div className="space-y-1.5">
           <label className="pl-1 text-sm font-bold text-slate-700">Full Name</label>
-          <input type="text" value={signupName} onChange={(e) => { setSignupName(e.target.value); setAuthErrors({...authErrors, name: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.name ? '!border-red-500' : ''}`} required />
+          <input type="text" value={signupName} onChange={(e) => { setSignupName(e.target.value); setAuthErrors({ ...authErrors, name: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.name ? '!border-red-500' : ''}`} required />
           {authErrors.name && <p className="pl-1 text-xs font-bold text-red-500">{authErrors.name}</p>}
         </div>
         <div className="space-y-1.5">
           <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
-          <input type="email" value={signupEmail} onChange={(e) => { setSignupEmail(e.target.value); setAuthErrors({...authErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
+          <input type="email" value={signupEmail} onChange={(e) => { setSignupEmail(e.target.value); setAuthErrors({ ...authErrors, email: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${authErrors.email ? '!border-red-500' : ''}`} required />
           {authErrors.email && <p className="pl-1 text-xs font-bold text-red-500">{authErrors.email}</p>}
         </div>
         <div className="space-y-1.5">
           <label className="pl-1 text-sm font-bold text-slate-700">Password</label>
           <div className="relative">
-            <input type={showSignupPwd ? "text" : "password"} value={signupPassword} onChange={(e) => { setSignupPassword(e.target.value); setAuthErrors({...authErrors, password: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${authErrors.password ? '!border-red-500' : ''}`} required />
+            <input type={showSignupPwd ? "text" : "password"} value={signupPassword} onChange={(e) => { setSignupPassword(e.target.value); setAuthErrors({ ...authErrors, password: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${authErrors.password ? '!border-red-500' : ''}`} required />
             <button type="button" onClick={() => setShowSignupPwd(!showSignupPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
               {showSignupPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -2300,7 +2328,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         <form onSubmit={handleForgotEmailSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <label className="pl-1 text-sm font-bold text-slate-700">Email Address</label>
-            <input type="email" value={forgotEmail} onChange={(e) => { setForgotEmail(e.target.value); setForgotErrors({...forgotErrors, email: null}); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${forgotErrors.email ? '!border-red-500' : ''}`} required />
+            <input type="email" value={forgotEmail} onChange={(e) => { setForgotEmail(e.target.value); setForgotErrors({ ...forgotErrors, email: null }); }} className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium ${forgotErrors.email ? '!border-red-500' : ''}`} required />
             {forgotErrors.email && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.email}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading} className="w-full glass-btn-blue disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
@@ -2310,9 +2338,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
       )}
       {forgotStep === 2 && (
         <form onSubmit={handleForgotCodeSubmit} className="space-y-5">
-           <div className="space-y-1.5">
+          <div className="space-y-1.5">
             <label className="block pl-1 text-sm font-bold text-center text-slate-700">Verification Code</label>
-            <input type="text" maxLength="6" placeholder="••••••" value={forgotCode} onChange={(e) => { setForgotCode(e.target.value.replace(/\D/g, '')); setForgotErrors({...forgotErrors, code: null}); }} className={`w-full px-4 py-4 glass-input rounded-xl text-center text-xl md:text-3xl tracking-[0.5em] font-extrabold text-[#3C64D6] ${forgotErrors.code ? '!border-red-500' : ''}`} required />
+            <input type="text" maxLength="6" placeholder="••••••" value={forgotCode} onChange={(e) => { setForgotCode(e.target.value.replace(/\D/g, '')); setForgotErrors({ ...forgotErrors, code: null }); }} className={`w-full px-4 py-4 glass-input rounded-xl text-center text-xl md:text-3xl tracking-[0.5em] font-extrabold text-[#3C64D6] ${forgotErrors.code ? '!border-red-500' : ''}`} required />
             {forgotErrors.code && <p className="mt-2 text-xs font-bold text-center text-red-500">{forgotErrors.code}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading || forgotCode.length !== 6} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
@@ -2322,26 +2350,26 @@ Always provide professional, precise, technically accurate, and helpful answers.
       )}
       {forgotStep === 3 && (
         <form onSubmit={handleForgotResetSubmit} className="space-y-5">
-           <div className="space-y-1.5">
-             <label className="pl-1 text-sm font-bold text-slate-700">New Password</label>
-             <div className="relative">
-               <input type={showForgotPwd.new ? "text" : "password"} value={forgotNewPwd} onChange={(e) => { setForgotNewPwd(e.target.value); setForgotErrors({...forgotErrors, new: null}); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.new ? '!border-red-500' : ''}`} />
-               <button type="button" onClick={() => setShowForgotPwd({...showForgotPwd, new: !showForgotPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
-                 {showForgotPwd.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-               </button>
-             </div>
-             {forgotErrors.new && <p className="pl-1 text-xs font-bold leading-tight text-red-500">{forgotErrors.new}</p>}
-          </div>
-          
           <div className="space-y-1.5">
-             <label className="pl-1 text-sm font-bold text-slate-700">Confirm Password</label>
-             <div className="relative">
-               <input type={showForgotPwd.confirm ? "text" : "password"} value={forgotConfirmPwd} onChange={(e) => { setForgotConfirmPwd(e.target.value); setForgotErrors({...forgotErrors, confirm: null}); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.confirm ? '!border-red-500' : ''}`} />
-               <button type="button" onClick={() => setShowForgotPwd({...showForgotPwd, confirm: !showForgotPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
-                 {showForgotPwd.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-               </button>
-             </div>
-             {forgotErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.confirm}</p>}
+            <label className="pl-1 text-sm font-bold text-slate-700">New Password</label>
+            <div className="relative">
+              <input type={showForgotPwd.new ? "text" : "password"} value={forgotNewPwd} onChange={(e) => { setForgotNewPwd(e.target.value); setForgotErrors({ ...forgotErrors, new: null }); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.new ? '!border-red-500' : ''}`} />
+              <button type="button" onClick={() => setShowForgotPwd({ ...showForgotPwd, new: !showForgotPwd.new })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
+                {showForgotPwd.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {forgotErrors.new && <p className="pl-1 text-xs font-bold leading-tight text-red-500">{forgotErrors.new}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="pl-1 text-sm font-bold text-slate-700">Confirm Password</label>
+            <div className="relative">
+              <input type={showForgotPwd.confirm ? "text" : "password"} value={forgotConfirmPwd} onChange={(e) => { setForgotConfirmPwd(e.target.value); setForgotErrors({ ...forgotErrors, confirm: null }); }} required className={`w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium pr-12 ${forgotErrors.confirm ? '!border-red-500' : ''}`} />
+              <button type="button" onClick={() => setShowForgotPwd({ ...showForgotPwd, confirm: !showForgotPwd.confirm })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[#3C64D6] transition-colors">
+                {showForgotPwd.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {forgotErrors.confirm && <p className="pl-1 text-xs font-bold text-red-500">{forgotErrors.confirm}</p>}
           </div>
           <button type="submit" disabled={isForgotLoading} className="w-full glass-btn-green disabled:opacity-70 py-4 rounded-xl font-bold transition-all hover:scale-[1.02] flex justify-center items-center gap-2 mt-4 shadow-lg">
             {isForgotLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save New Password"}
@@ -2349,7 +2377,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         </form>
       )}
       <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
-         Remember your password? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
+        Remember your password? <button onClick={() => setCurrentView('login')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign in</button>
       </div>
     </>
   );
@@ -2366,26 +2394,26 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </button>
         </div>
         <div className="p-4 md:p-8 space-y-6">
-           <div className="mb-2">
-              <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
-              <p className="text-lg md:text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
-              <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
-           </div>
-           <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
-              {isInsightLoading ? (
-                 <div className="flex flex-col items-center justify-center h-full py-4 md:py-8 space-y-4 text-purple-600">
-                    <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
-                    <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
-                 </div>
-              ) : (
-                 <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
-                    {insightResponse}
-                 </div>
-              )}
-           </div>
-           <div className="flex justify-end mt-4 md:mt-8">
-             <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
-           </div>
+          <div className="mb-2">
+            <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
+            <p className="text-lg md:text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
+            <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
+          </div>
+          <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
+            {isInsightLoading ? (
+              <div className="flex flex-col items-center justify-center h-full py-4 md:py-8 space-y-4 text-purple-600">
+                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
+                <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
+              </div>
+            ) : (
+              <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
+                {insightResponse}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end mt-4 md:mt-8">
+            <button onClick={() => setIsInsightsOpen(false)} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2394,7 +2422,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     if (!job) return;
     let payload = job.json_payload || job.geometry_data?.runs || job.geometry_data || [];
     if (typeof payload === 'string') {
-      try { payload = JSON.parse(payload); } catch(e) {}
+      try { payload = JSON.parse(payload); } catch (e) { }
     }
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -2404,6 +2432,311 @@ Always provide professional, precise, technically accurate, and helpful answers.
     downloadAnchor.click();
     downloadAnchor.remove();
   };
+  // ─── NOVA Receipt PDF (Image-1 style: clean simple receipt) ────────────────
+  const generateReceiptPDF = (inv) => {
+    if (!inv) return;
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const mg = 18;
+      let y = mg;
+
+      // Header brand
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, W, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.text('NOVA AI', mg, 14);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 200, 150);
+      doc.text('nova-analysis.vercel.app', W - mg, 14, { align: 'right' });
+      y = 34;
+
+      // Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Receipt', mg, y);
+      y += 10;
+
+      // Meta info block
+      const metaData = [
+        ['Invoice number', inv.invoiceId || 'INV-2026-000001'],
+        ['Receipt number', (inv.receiptNo || ('RCP-' + Date.now().toString().slice(-6)))],
+        ['Date paid', inv.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })],
+        ['Payment method', 'Razorpay (UPI / Cards / NetBanking)'],
+      ];
+      doc.setFontSize(9);
+      metaData.forEach(([label, val]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(label, mg, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(val, 60, y);
+        y += 5.5;
+      });
+      y += 6;
+
+      // Divider
+      doc.setDrawColor(226, 232, 240);
+      doc.line(mg, y, W - mg, y);
+      y += 6;
+
+      // Seller & Buyer grid
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Nova AI Technologies', mg, y);
+      doc.text('Bill to', W / 2 + 2, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      const sellerLines = [
+        'Nova AI, Surat, Gujarat 395003, India',
+        'GSTIN: 07AABCN1234F1Z5',
+        'HSN / SAC: 998313',
+        'analysis.ai.nova@gmail.com',
+      ];
+      const buyerLines = [
+        inv.customerName || currentUser?.name || 'Valued Engineer',
+        inv.customerEmail || currentUser?.email || '',
+        inv.customerPhone || currentUser?.phone || '',
+        inv.company || '',
+      ].filter(Boolean);
+      const maxRows = Math.max(sellerLines.length, buyerLines.length);
+      for (let i = 0; i < maxRows; i++) {
+        if (sellerLines[i]) doc.text(sellerLines[i], mg, y);
+        if (buyerLines[i]) doc.text(buyerLines[i], W / 2 + 2, y);
+        y += 5;
+      }
+      y += 8;
+
+      // Amount hero
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(15, 23, 42);
+      doc.text(inv.priceFormatted + ' paid on ' + (inv.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })), mg, y);
+      y += 12;
+
+      // Items table
+      const planDisplay = inv.isWizard ? inv.productName : (inv.productName && inv.productName.includes('Max') ? 'Nova Max' : inv.productName && inv.productName.includes('Pro') ? 'Nova Pro' : 'Nova Basic');
+      const termStr = inv.term || 'Monthly Subscription';
+      autoTable(doc, {
+        startY: y,
+        margin: { left: mg, right: mg },
+        head: [['Description', 'Qty', 'Unit price', 'Amount']],
+        body: [
+          [planDisplay + '\n' + termStr, '1', inv.priceFormatted, inv.priceFormatted],
+        ],
+        foot: [
+          [{ content: 'Subtotal', colSpan: 3, styles: { halign: 'right', fontStyle: 'normal' } }, inv.priceFormatted],
+          [{ content: 'Total', colSpan: 3, styles: { halign: 'right', fontStyle: 'normal' } }, inv.priceFormatted],
+          [{ content: 'Amount paid', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } }, inv.priceFormatted],
+        ],
+        headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontStyle: 'normal', fontSize: 8, lineColor: [226, 232, 240], lineWidth: 0.2 },
+        bodyStyles: { textColor: [15, 23, 42], fontSize: 9 },
+        footStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42], fontSize: 9, lineColor: [226, 232, 240], lineWidth: 0.2 },
+        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center', cellWidth: 15 }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+        styles: { lineColor: [226, 232, 240], lineWidth: 0.2 },
+        didParseCell: (data) => {
+          if (data.section === 'foot' && data.row.index === 2) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      });
+      const finalY = doc.lastAutoTable.finalY + 8;
+
+      // Footer
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text((inv.receiptNo || 'RCP-NOVA') + ' · ' + inv.priceFormatted + ' paid on ' + (inv.date || ''), mg, H - 10);
+      doc.text('Page 1 of 1', W - mg, H - 10, { align: 'right' });
+
+      doc.save('NOVA_Receipt_' + (inv.invoiceId || Date.now()) + '.pdf');
+      showNotification('Receipt PDF downloaded!', 'success', 'Receipt Downloaded');
+    } catch (err) {
+      console.error('Receipt PDF error:', err);
+      showNotification('Failed to generate receipt PDF.', 'error', 'PDF Error');
+    }
+  };
+
+  // ─── NOVA Invoice PDF (Image-2 style: formal GST invoice) ──────────────────
+  const generateInvoicePDF = (inv) => {
+    if (!inv) return;
+    try {
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const mg = 18;
+      let y = mg;
+
+      // Header
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, W, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.text('NOVA AI', mg, 14);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 200, 150);
+      doc.text('nova-analysis.vercel.app', W - mg, 14, { align: 'right' });
+      y = 34;
+
+      // Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Tax Invoice', mg, y);
+      y += 10;
+
+      // Meta grid
+      const issueDate = inv.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+      const metaData = [
+        ['Invoice number', inv.invoiceId || 'INV-2026-000001'],
+        ['Date of issue', issueDate],
+        ['Date due', issueDate],
+      ];
+      doc.setFontSize(9);
+      metaData.forEach(([label, val]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(label, mg, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(val, 60, y);
+        y += 5.5;
+      });
+      y += 6;
+
+      // Divider
+      doc.setDrawColor(226, 232, 240);
+      doc.line(mg, y, W - mg, y);
+      y += 6;
+
+      // Seller and Buyer
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(37, 99, 235);
+      doc.text('Nova AI Technologies', mg, y);
+      doc.setTextColor(37, 99, 235);
+      doc.text('Bill to', W / 2 + 2, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      const sellerLines = [
+        'Nova AI, Surat, Gujarat 395003, India',
+        'GSTIN: 07AABCN1234F1Z5',
+        'CIN: U72900DL2024PTC123456',
+        'HSN / SAC Code: 998313',
+        'analysis.ai.nova@gmail.com',
+        'nova-analysis.vercel.app',
+      ];
+      const buyerLines = [
+        inv.customerName || currentUser?.name || 'Valued Engineer',
+        inv.customerEmail || currentUser?.email || '',
+        inv.customerPhone || currentUser?.phone || '',
+        inv.company || '',
+        'India',
+      ].filter(Boolean);
+      const maxRows2 = Math.max(sellerLines.length, buyerLines.length);
+      for (let i = 0; i < maxRows2; i++) {
+        if (sellerLines[i]) doc.text(sellerLines[i], mg, y);
+        if (buyerLines[i]) doc.text(buyerLines[i], W / 2 + 2, y);
+        y += 5;
+      }
+      y += 8;
+
+      // Amount hero
+      const baseAmt = inv.baseAmount || Math.round(inv.amountInINR / 1.18);
+      const cgst = inv.cgst || Math.round((inv.amountInINR - baseAmt) / 2);
+      const sgst = inv.sgst || (inv.amountInINR - baseAmt - cgst);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(17);
+      doc.setTextColor(15, 23, 42);
+      doc.text(inv.priceFormatted + ' due ' + issueDate, mg, y);
+      y += 12;
+
+      // Status badge
+      doc.setFillColor(220, 252, 231);
+      doc.roundedRect(mg, y - 5, 50, 8, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(22, 163, 74);
+      doc.text('PAID · Payment Verified', mg + 4, y + 0.5);
+      y += 10;
+
+      // Items table
+      const planDisplay2 = inv.isWizard ? inv.productName : (inv.productName && inv.productName.includes('Max') ? 'Nova Max' : inv.productName && inv.productName.includes('Pro') ? 'Nova Pro' : 'Nova Basic');
+      const termStr2 = inv.term || 'Monthly Subscription';
+      autoTable(doc, {
+        startY: y,
+        margin: { left: mg, right: mg },
+        head: [['Description', 'Qty', 'Unit price', 'Tax', 'Amount']],
+        body: [
+          [planDisplay2 + '\n' + termStr2, '1', '₹' + baseAmt.toLocaleString('en-IN'), '18% GST', inv.priceFormatted],
+        ],
+        foot: [
+          [{ content: 'Subtotal', colSpan: 4, styles: { halign: 'right', fontStyle: 'normal', textColor: [37, 99, 235] } }, '₹' + baseAmt.toLocaleString('en-IN')],
+          [{ content: 'Total excluding tax', colSpan: 4, styles: { halign: 'right', fontStyle: 'normal', textColor: [37, 99, 235] } }, '₹' + baseAmt.toLocaleString('en-IN')],
+          [{ content: 'CGST (9%)', colSpan: 4, styles: { halign: 'right', fontStyle: 'normal', textColor: [71, 85, 105] } }, '₹' + cgst.toLocaleString('en-IN')],
+          [{ content: 'SGST (9%)', colSpan: 4, styles: { halign: 'right', fontStyle: 'normal', textColor: [71, 85, 105] } }, '₹' + sgst.toLocaleString('en-IN')],
+          [{ content: 'Total (incl. 18% GST)', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, inv.priceFormatted],
+          [{ content: 'Amount paid', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, inv.priceFormatted],
+        ],
+        headStyles: { fillColor: [248, 250, 252], textColor: [71, 85, 105], fontStyle: 'normal', fontSize: 8, lineColor: [226, 232, 240], lineWidth: 0.2 },
+        bodyStyles: { textColor: [15, 23, 42], fontSize: 9 },
+        footStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42], fontSize: 9, lineColor: [226, 232, 240], lineWidth: 0.2 },
+        columnStyles: { 0: { cellWidth: 78 }, 1: { halign: 'center', cellWidth: 12 }, 2: { halign: 'right' }, 3: { halign: 'center', cellWidth: 18 }, 4: { halign: 'right' } },
+        styles: { lineColor: [226, 232, 240], lineWidth: 0.2 },
+      });
+
+      // Payment details section
+      const tableEndY = doc.lastAutoTable.finalY + 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Payment Details', mg, tableEndY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      const pd = [
+        ['Payment ID', inv.paymentId || '—'],
+        ['Gateway', 'Razorpay (Live Verified)'],
+        ['Method', 'UPI / Cards / NetBanking'],
+        ['Status', 'PAID ✔'],
+      ];
+      let pdY = tableEndY + 5;
+      pd.forEach(([k, v]) => {
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(k + ':', mg, pdY);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+        doc.text(v, 62, pdY);
+        pdY += 5;
+      });
+
+      // Footer
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text((inv.invoiceId || 'INV-NOVA') + ' · ' + inv.priceFormatted + ' due ' + issueDate, mg, H - 10);
+      doc.text('Page 1 of 1', W - mg, H - 10, { align: 'right' });
+
+      doc.save('NOVA_Invoice_' + (inv.invoiceId || Date.now()) + '.pdf');
+      showNotification('Invoice PDF downloaded!', 'success', 'Invoice Downloaded');
+    } catch (err) {
+      console.error('Invoice PDF error:', err);
+      showNotification('Failed to generate invoice PDF.', 'error', 'PDF Error');
+    }
+  };
+
   const generateInputPDF = (job, index = 0) => {
     if (!job || !job.json_payload) {
       showNotification('No input data available to generate PDF.', 'error', 'PDF Export');
@@ -2413,20 +2746,20 @@ Always provide professional, precise, technically accurate, and helpful answers.
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       let payloads = job.json_payload;
       if (typeof payloads === 'string') {
-        try { payloads = JSON.parse(payloads); } catch (e) {}
+        try { payloads = JSON.parse(payloads); } catch (e) { }
       }
       let p = Array.isArray(payloads) ? payloads[index] : payloads;
       if (!p) p = Array.isArray(payloads) ? payloads[0] : payloads;
       const W = 210, margin = 14, contentW = W - 28;
       const analysisType = p.Analysis_Type || '';
-      const isLimitLoad  = analysisType === 'Limit-Load Analysis';
-      const thermalReq   = p.Thermal_Required || 'No';
-      const showThermal  = thermalReq === 'Yes';
-      const nType        = p.N_TYPE ?? p.Nozzle_Type ?? '';
-      const isBarrel     = String(nType).toLowerCase() === 'barrel' || String(nType).toLowerCase() === 'srn';
-      const padVal       = p.Pad_Required ?? p.pad ?? 'No';
-      const isPad        = String(padVal).toLowerCase() === 'yes';
-      const isHead       = !!p.Head_TYPE; // True if it's a Vessel Head analysis
+      const isLimitLoad = analysisType === 'Limit-Load Analysis';
+      const thermalReq = p.Thermal_Required || 'No';
+      const showThermal = thermalReq === 'Yes';
+      const nType = p.N_TYPE ?? p.Nozzle_Type ?? '';
+      const isBarrel = String(nType).toLowerCase() === 'barrel' || String(nType).toLowerCase() === 'srn';
+      const padVal = p.Pad_Required ?? p.pad ?? 'No';
+      const isPad = String(padVal).toLowerCase() === 'yes';
+      const isHead = !!p.Head_TYPE; // True if it's a Vessel Head analysis
       doc.setFillColor(20, 20, 20);
       doc.rect(0, 0, W, 28, 'F');
       doc.setTextColor(255, 255, 255);
@@ -2440,9 +2773,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
       doc.text("INPUT PARAMETERS", W - margin, 12, { align: 'right' });
       doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
       doc.setTextColor(200, 200, 200);
-      
-      const typeStr = isHead ? `Vessel Head Analysis ${index+1}` : `Shell Nozzle Analysis ${index+1}`;
-      doc.text(typeStr + '  |  ' + (job.job_id_display || job.id.substring(0,8)), W - margin, 18, { align: 'right' });
+
+      const typeStr = isHead ? `Vessel Head Analysis ${index + 1}` : `Shell Nozzle Analysis ${index + 1}`;
+      doc.text(typeStr + '  |  ' + (job.job_id_display || job.id.substring(0, 8)), W - margin, 18, { align: 'right' });
       doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), W - margin, 24, { align: 'right' });
       let y = 36;
       const addSection = (num, title) => {
@@ -2477,93 +2810,93 @@ Always provide professional, precise, technically accurate, and helpful answers.
         rowAlt = !rowAlt;
       };
       addSection(1, 'Project & Conditions'); rowAlt = false;
-      if (p.File_Path)           addRow('Analysis Folder', p.File_Path);
+      if (p.File_Path) addRow('Analysis Folder', p.File_Path);
       if (isHead && p.Head_TYPE) addRow('Head Type', p.Head_TYPE);
-      if (analysisType)          addRow('Analysis Type', analysisType);
-      
+      if (analysisType) addRow('Analysis Type', analysisType);
+
       if (isLimitLoad && p.Material_Type) addRow('Material Model', p.Material_Type);
-      if (p.DesignTemp != null)  addRow('Design Temp.', p.DesignTemp, '\u00b0C');
-      if (p.p != null)           addRow('Internal Pressure', p.p, 'MPa');
-      
+      if (p.DesignTemp != null) addRow('Design Temp.', p.DesignTemp, '\u00b0C');
+      if (p.p != null) addRow('Internal Pressure', p.p, 'MPa');
+
       addRow('Thermal Required', thermalReq);
       if (showThermal) {
-        if (p.T_op != null)           addRow('Operating Temperature', p.T_op, '\u00b0C');
-        if (p.shell_id_htc != null)   addRow('Shell ID HTC', p.shell_id_htc, 'W/m\u00b2\u00b7\u00b0C');
-        if (p.nozzle_id_htc != null)  addRow('Nozzle ID HTC', p.nozzle_id_htc, 'W/m\u00b2\u00b7\u00b0C');
+        if (p.T_op != null) addRow('Operating Temperature', p.T_op, '\u00b0C');
+        if (p.shell_id_htc != null) addRow('Shell ID HTC', p.shell_id_htc, 'W/m\u00b2\u00b7\u00b0C');
+        if (p.nozzle_id_htc != null) addRow('Nozzle ID HTC', p.nozzle_id_htc, 'W/m\u00b2\u00b7\u00b0C');
         if (p.outside_id_htc != null) addRow('Outside Surface HTC', p.outside_id_htc, 'W/m\u00b2\u00b7\u00b0C');
       }
       y += 3;
       addSection(2, 'Materials'); rowAlt = false;
-      if (p.Shell_Material)      addRow('Shell Material', p.Shell_Material);
-      if (p.Nozzle_Material)     addRow('Nozzle Material', p.Nozzle_Material);
+      if (p.Shell_Material) addRow('Shell Material', p.Shell_Material);
+      if (p.Nozzle_Material) addRow('Nozzle Material', p.Nozzle_Material);
       addRow('Pad Required', isPad ? 'Yes' : 'No');
       if (isPad && p.Pad_Material) addRow('Pad Material', p.Pad_Material);
       y += 3;
       addSection(3, isHead ? 'Head & Nozzle Geometry' : 'Shell & Nozzle Geometry'); rowAlt = false;
       if (!isHead) {
-        const sOD  = p.S_OD  ?? p.Shell_D_o;
+        const sOD = p.S_OD ?? p.Shell_D_o;
         const sTHK = p.S_THK ?? p.Shell_T;
-        const sH   = p.S_H   ?? p.Shell_L;
+        const sH = p.S_H ?? p.Shell_L;
         const nOff = p.N_OFF ?? p.Offset;
         const corr = p.CorrosionAllowance ?? p.Corrosion;
-        if (sOD  != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
+        if (sOD != null) addRow('Shell Outer Dia (OD)', sOD, 'mm');
         if (sTHK != null) addRow('Shell Thickness', sTHK, 'mm');
-        if (sH   != null) addRow('Shell Height', sH, 'mm');
+        if (sH != null) addRow('Shell Height', sH, 'mm');
         if (nOff != null) addRow('Nozzle Offset', nOff, 'mm');
         if (corr != null) addRow('Corrosion Allowance', corr, 'mm');
       } else {
         const hType = p.Head_TYPE;
         if (hType === 'Ellipsoidal Head') {
-            if (p.H_ID != null) addRow('Head Inner Dia (ID)', p.H_ID, 'mm');
-            if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
-            if (p.ratio != null) addRow('a:b Ratio', p.ratio);
-            if (p.S_OFF != null) addRow('Straight Flange Offset', p.S_OFF, 'mm');
-            if (p.S_THK != null) addRow('Attached Shell Thickness', p.S_THK, 'mm');
-            if (p.S_H != null) addRow('Attached Shell Height', p.S_H, 'mm');
+          if (p.H_ID != null) addRow('Head Inner Dia (ID)', p.H_ID, 'mm');
+          if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
+          if (p.ratio != null) addRow('a:b Ratio', p.ratio);
+          if (p.S_OFF != null) addRow('Straight Flange Offset', p.S_OFF, 'mm');
+          if (p.S_THK != null) addRow('Attached Shell Thickness', p.S_THK, 'mm');
+          if (p.S_H != null) addRow('Attached Shell Height', p.S_H, 'mm');
         } else if (hType === 'Flat Head') {
-            if (p.H_OD != null) addRow('Head Outer Dia (OD)', p.H_OD, 'mm');
-            if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
-            if (p.S_ID != null) addRow('Shell Inner Dia (ID)', p.S_ID, 'mm');
-            if (p.T_LEN != null) addRow('Transition Length', p.T_LEN, 'mm');
-            if (p.S_H != null) addRow('Shell Height', p.S_H, 'mm');
-            if (p.S_THK != null) addRow('Shell Thickness', p.S_THK, 'mm');
+          if (p.H_OD != null) addRow('Head Outer Dia (OD)', p.H_OD, 'mm');
+          if (p.H_THK != null) addRow('Head Thickness', p.H_THK, 'mm');
+          if (p.S_ID != null) addRow('Shell Inner Dia (ID)', p.S_ID, 'mm');
+          if (p.T_LEN != null) addRow('Transition Length', p.T_LEN, 'mm');
+          if (p.S_H != null) addRow('Shell Height', p.S_H, 'mm');
+          if (p.S_THK != null) addRow('Shell Thickness', p.S_THK, 'mm');
         } else if (hType === 'Torispherical Head') {
-            if (p.TH_H_ID != null) addRow('Crown Radius (Head ID)', p.TH_H_ID, 'mm');
-            if (p.TH_H_THK != null) addRow('Head Thickness', p.TH_H_THK, 'mm');
-            if (p.H_KR != null) addRow('Knuckle Radius', p.H_KR, 'mm');
-            if (p.TH_S_OFF != null) addRow('Straight Flange Offset', p.TH_S_OFF, 'mm');
-            if (p.TH_S_H != null) addRow('Shell Height', p.TH_S_H, 'mm');
-            if (p.TH_S_THK != null) addRow('Shell Thickness', p.TH_S_THK, 'mm');
+          if (p.TH_H_ID != null) addRow('Crown Radius (Head ID)', p.TH_H_ID, 'mm');
+          if (p.TH_H_THK != null) addRow('Head Thickness', p.TH_H_THK, 'mm');
+          if (p.H_KR != null) addRow('Knuckle Radius', p.H_KR, 'mm');
+          if (p.TH_S_OFF != null) addRow('Straight Flange Offset', p.TH_S_OFF, 'mm');
+          if (p.TH_S_H != null) addRow('Shell Height', p.TH_S_H, 'mm');
+          if (p.TH_S_THK != null) addRow('Shell Thickness', p.TH_S_THK, 'mm');
         }
       }
-      const nL1  = p.N_L1  ?? p.h;
-      const nOD  = p.N_OD  ?? p.Nozzle_D_o;
+      const nL1 = p.N_L1 ?? p.h;
+      const nOD = p.N_OD ?? p.Nozzle_D_o;
       const nTHK = p.N_THK ?? p.Nozzle_T;
-      const nP   = p.N_P   ?? p.Nozzle_L;
+      const nP = p.N_P ?? p.Nozzle_L;
       if (nType) addRow('Nozzle Type', nType);
-      if (nL1  != null && !isHead) addRow('Nozzle Location Height', nL1, 'mm');
-      if (nOD  != null) addRow('Neck OD', nOD, 'mm');
+      if (nL1 != null && !isHead) addRow('Nozzle Location Height', nL1, 'mm');
+      if (nOD != null) addRow('Neck OD', nOD, 'mm');
       if (nTHK != null) addRow('Neck Thickness', nTHK, 'mm');
-      if (nP   != null) addRow('Nozzle Projection', nP, 'mm');
+      if (nP != null) addRow('Nozzle Projection', nP, 'mm');
       if (isBarrel) {
-        if (p.Hub_OD  != null) addRow('Hub OD', p.Hub_OD, 'mm');
+        if (p.Hub_OD != null) addRow('Hub OD', p.Hub_OD, 'mm');
         if (p.Hub_LEN != null) addRow('Hub Length', p.Hub_LEN, 'mm');
-        if (p.T_LEN   != null && hType !== 'Flat Head') addRow('Transition Length', p.T_LEN, 'mm');
+        if (p.T_LEN != null && hType !== 'Flat Head') addRow('Transition Length', p.T_LEN, 'mm');
       }
-      if (p.Fillet_Radius  != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
+      if (p.Fillet_Radius != null) addRow('Weld Fillet Radius', p.Fillet_Radius, 'mm');
       if (p.Nozzle_In_Proj != null) addRow('Inward Projection', p.Nozzle_In_Proj, 'mm');
       if (isPad) {
-        const pW   = p.P_W   ?? p.Pad_Width;
+        const pW = p.P_W ?? p.Pad_Width;
         const pTHK = p.P_THK ?? p.Pad_T;
-        if (pW   != null) addRow('Pad Width', pW, 'mm');
+        if (pW != null) addRow('Pad Width', pW, 'mm');
         if (pTHK != null) addRow('Pad Thickness', pTHK, 'mm');
       }
       y += 3;
       addSection(4, 'Meshing & Loading'); rowAlt = false;
-      const bSize     = p.B_size    ?? p.Mesh_Size;
-      const mMeth     = p.m_method  ?? p.Mesh_Method;
-      const nDiv      = p.N_D       ?? p.Edge_Divisions;
-      const nThrust   = p.N_analysis ?? p.Nozzle_Thrust;
+      const bSize = p.B_size ?? p.Mesh_Size;
+      const mMeth = p.m_method ?? p.Mesh_Method;
+      const nDiv = p.N_D ?? p.Edge_Divisions;
+      const nThrust = p.N_analysis ?? p.Nozzle_Thrust;
       const loadBound = p.N_Location ?? p.Load_Boundary;
       const fL = p.FX ?? p.F_L;
       const mT = p.MY ?? p.M_T;
@@ -2571,10 +2904,10 @@ Always provide professional, precise, technically accurate, and helpful answers.
       const mC = p.MZ ?? p.M_C;
       const fA = p.FY ?? p.F_A ?? p.P;
       const mL = p.MX ?? p.M_L;
-      if (bSize     != null) addRow('Global Body Sizing', bSize, 'mm');
-      if (mMeth     != null) addRow('Mesh Method', mMeth);
-      if (nDiv      != null) addRow('Edge Divisions', nDiv);
-      if (nThrust   != null) addRow('Nozzle Thrust Analysis', nThrust);
+      if (bSize != null) addRow('Global Body Sizing', bSize, 'mm');
+      if (mMeth != null) addRow('Mesh Method', mMeth);
+      if (nDiv != null) addRow('Edge Divisions', nDiv);
+      if (nThrust != null) addRow('Nozzle Thrust Analysis', nThrust);
       if (loadBound != null) addRow('Load Boundary', loadBound);
       if (fL != null) addRow('FL  Longitudinal Shear Force', fL, 'N');
       if (mT != null) addRow('MT  Torsional Moment', mT, 'N mm');
@@ -2593,7 +2926,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         doc.text("NOVA Cloud Engineering Platform  |  ASME Sec VIII Div 2", margin, 290);
         doc.text('Page ' + pg + ' / ' + totalPages, W - margin, 290, { align: 'right' });
       }
-      doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0,8)) + '_' + (index+1) + '.pdf');
+      doc.save('NOVA_Input_' + (job.job_id_display || job.id.substring(0, 8)) + '_' + (index + 1) + '.pdf');
     } catch (err) {
       console.error("Error generating PDF:", err);
       showNotification('Failed to generate PDF. Please try again.', 'error', 'PDF Export');
@@ -2614,7 +2947,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     if (Array.isArray(geom.runs) && geom.runs.length > 0) runs = geom.runs;
     else if (Array.isArray(job.json_payload) && job.json_payload.length > 0) runs = job.json_payload;
     else if (typeof job.json_payload === 'string') {
-      try { const p = JSON.parse(job.json_payload); if (Array.isArray(p)) runs = p; } catch (e) {}
+      try { const p = JSON.parse(job.json_payload); if (Array.isArray(p)) runs = p; } catch (e) { }
     }
     if (!Array.isArray(runs) || runs.length === 0) runs = [geom];
     const reportHtml = `<!DOCTYPE html>
@@ -2663,7 +2996,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         <div style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">Finite Element Analysis & Structural Verification</div>
       </div>
       <div class="meta-box">
-        <div style="font-weight: 800; font-size: 16px; color: #3b82f6;">${job.job_id_display || job.id.substring(0,8)}</div>
+        <div style="font-weight: 800; font-size: 16px; color: #3b82f6;">${job.job_id_display || job.id.substring(0, 8)}</div>
         <div style="margin-top: 2px;">${new Date(job.created_at).toLocaleString()}</div>
         <span class="job-badge">${job.status}</span>
       </div>
@@ -2711,7 +3044,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     const statusLabel = selectedJobDetails.status;
     let payloads = selectedJobDetails.json_payload;
     if (typeof payloads === 'string') {
-      try { payloads = JSON.parse(payloads); } catch (e) {}
+      try { payloads = JSON.parse(payloads); } catch (e) { }
     }
     if (!Array.isArray(payloads)) payloads = [payloads];
     const isBatch = payloads.length > 1;
@@ -2731,7 +3064,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         } else if (Array.isArray(arrStr) && arrStr.length > idx) {
           return arrStr[idx];
         }
-      } catch (e) {}
+      } catch (e) { }
       return fallback;
     };
 
@@ -2746,7 +3079,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0,8)}</span>
+              <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0, 8)}</span>
               <span className="px-3 py-1 text-xs font-extrabold text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full">
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
@@ -2825,7 +3158,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               const pResultUrl = isBatch ? getBatchItem(selectedJobDetails.result_urls, idx, selectedJobDetails.result_url) : selectedJobDetails.result_url;
               const isPSuccess = pStatus === 'Completed' || pStatus === 'Success';
               const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
-              
+
               return (
                 <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                   {isBatch && (
@@ -2903,10 +3236,10 @@ Always provide professional, precise, technically accurate, and helpful answers.
               <div className="flex items-center text-sm mt-1.5 font-bold text-slate-600">
                 <span>NOVA Dashboard - {jobs.length} Jobs</span>
                 <span className={`ml-3 flex items-center px-2.5 py-1 rounded-full text-xs shadow-sm border ${currentUser.isApproved ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-800' : 'bg-amber-500/20 border-amber-500/30 text-amber-800'}`}>
-                  {currentUser.isApproved ? ( 
-                    <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Online</> 
-                  ) : ( 
-                    <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Pending Owner Confirmation</> 
+                  {currentUser.isApproved ? (
+                    <><CheckCircle className="w-3.5 h-3.5 mr-1" /> Online</>
+                  ) : (
+                    <><AlertTriangle className="w-3.5 h-3.5 mr-1" /> Pending Owner Confirmation</>
                   )}
                 </span>
               </div>
@@ -2930,7 +3263,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               </div>
               <ChevronDown className={`w-4 h-4 text-slate-600 hidden sm:block transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
-            
+
             {isDropdownOpen && (
               <div className="absolute right-0 mt-3 w-60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl py-2 z-[100] text-slate-800 animate-in fade-in slide-in-from-top-2 border border-slate-200">
                 <button onClick={() => { setCurrentView('profile'); setProfileTab('info'); setIsDropdownOpen(false); }} className="flex items-center w-full px-5 py-3 text-sm font-bold text-left transition-colors hover:bg-white/60">
@@ -2954,540 +3287,540 @@ Always provide professional, precise, technically accurate, and helpful answers.
     </div>
   );
   const renderDashboard = () => (
-      <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-        {notification && (
-          <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-            <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
+    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
+          <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
+        </div>
+      )}
+      <div className="max-w-[1200px] mx-auto">
+        <DashboardHeader isProfile={false} />
+        {!currentUser.isApproved && (
+          <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-4 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
+            <div className="flex items-start gap-4">
+              <Shield className="w-8 h-8 mt-1 text-amber-600 shrink-0 sm:mt-0" />
+              <div>
+                <h4 className="text-lg font-extrabold text-amber-800">Account Verification Required</h4>
+              </div>
+            </div>
+
+            <button
+              onClick={handleRequestAccess}
+              disabled={isRequestingAccess}
+              className="flex items-center gap-2 px-4 md:px-6 py-3 font-bold text-white transition-colors shadow-md bg-amber-600 hover:bg-amber-700 rounded-xl whitespace-nowrap disabled:opacity-70"
+            >
+              {isRequestingAccess ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
+              {isRequestingAccess ? 'Sending...' : 'Request Access'}
+            </button>
           </div>
         )}
-        <div className="max-w-[1200px] mx-auto">
-          <DashboardHeader isProfile={false} />
-          {!currentUser.isApproved && (
-            <div className="bg-amber-100 border border-amber-300 rounded-2xl p-5 mb-4 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm max-w-[1000px] mx-auto">
-              <div className="flex items-start gap-4">
-                <Shield className="w-8 h-8 mt-1 text-amber-600 shrink-0 sm:mt-0" />
-                <div>
-                    <h4 className="text-lg font-extrabold text-amber-800">Account Verification Required</h4>
-                </div>
-              </div>
-              
-              <button 
-                onClick={handleRequestAccess} 
-                disabled={isRequestingAccess}
-                className="flex items-center gap-2 px-4 md:px-6 py-3 font-bold text-white transition-colors shadow-md bg-amber-600 hover:bg-amber-700 rounded-xl whitespace-nowrap disabled:opacity-70"
-              >
-                {isRequestingAccess ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
-                {isRequestingAccess ? 'Sending...' : 'Request Access'}
-              </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10"> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
+          <div>
+            <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+              {!canRunPlan('Basic') ? (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                  <Lock className="w-3 h-3" /> Locked
+                </span>
+              ) : (
+                <div className="h-5"></div>
+              )}
             </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10"> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Basic') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Basic') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Nozzle Analysis', 300, 'Basic', () => window.location.href = '/Nozzle8.html')} 
-                    className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Basic Plan to submit Nozzle Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Basic Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Basic') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Basic') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Bellow Analysis', 300, 'Basic', () => window.location.href = '/bellow.html')} 
-                    className="glass-btn-green w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Basic Plan to submit Bellow Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Basic Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Pro') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Pro') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Flange Analysis', 200, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/flange.html')} 
-                    className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Pro Plan to submit Flange Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Pro Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Basic') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
-                </h3>
-              </div>
-              
-              {canRunPlan('Basic') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Local PWHT', 125, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/pwht.html')} 
-                    className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Basic Plan to submit Local PWHT jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Basic Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Basic') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Basic') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Saddle Analysis', 150, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/saddle.html')} 
-                    className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Basic Plan to submit Saddle Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-rose-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Basic Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Pro') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Pro') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Hot Box Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/hot.html')} 
-                    className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Pro Plan to submit Hot Box Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Pro Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Max') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <CircleDot className="w-6 h-6 text-purple-600" /> Stiffener Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Max') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Stiffener Analysis', 150, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html')} 
-                    className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Max Plan to submit Stiffener Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white shadow-md hover:shadow-purple-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Max Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Max') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Max') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Tubesheet Analysis', 250, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html')} 
-                    className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Max Plan to submit Tubesheet Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Max Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Pro') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Pro') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Lug Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/lug.html')} 
-                    className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Pro Plan to submit Lug Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Pro Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Max') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
-                </h3>
-              </div>
-              
-              {canRunPlan('Max') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('Trunnion Analysis', 175, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html')} 
-                    className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
-                    Submit New Job
-                  </button>
-                ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Max Plan to submit Trunnion Analysis jobs.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-sky-600 hover:from-amber-600 hover:to-sky-700 text-white shadow-md hover:shadow-sky-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Max Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  <div className="h-5"></div>
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Database className="w-6 h-6 text-blue-600" /> ASME Materials
-                </h3>
-              </div>
-              
-              <button 
-                onClick={() => consumeCredits('ASME Materials', 10, 'Free', () => window.location.href = 'https://asme-material.vercel.app/')} 
-                className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
-                Open Database
-              </button>
-            </div> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  <div className="h-5"></div>
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
-                </h3>
-              </div>
-              
-              <button 
-                onClick={() => consumeCredits('Stress-Strain Curve', 10, 'Free', () => window.location.href = 'https://nova-analysis.vercel.app/curve.html')} 
+            <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+              <Cylinder className="w-6 h-6 text-indigo-600" /> Nozzle Analysis
+            </h3>
+          </div>
+
+          {canRunPlan('Basic') ? (
+            currentUser.isApproved ? (
+              <button
+                onClick={() => consumeCredits('Nozzle Analysis', 300, 'Basic', () => window.location.href = '/Nozzle8.html')}
                 className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
-                Open Generator
+                Submit New Job
               </button>
-            </div> <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
-                  {!canRunPlan('Max') ? (
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                      <Lock className="w-3 h-3" /> Locked
-                    </span>
-                  ) : (
-                    <div className="h-5"></div>
-                  )}
-                </div>
-                <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
-                  <Box className="w-6 h-6 text-teal-600" /> CAD AI
-                </h3>
-              </div>
-              
-              {canRunPlan('Max') ? (
-                currentUser.isApproved ? (
-                  <button 
-                    onClick={() => consumeCredits('CAD AI', 75, 'Max', () => window.location.href = 'https://swcad-ai.vercel.app/chat')} 
-                    className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
-                    Launch Agent
-                  </button>
+            ) : (
+              <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Lock className="w-4 h-4" /> Pending Approval
+              </button>
+            )
+          ) : (
+            <button
+              onClick={() => {
+                setCurrentView('dashboard');
+                showNotification('⚡ Upgrade to Basic Plan to submit Nozzle Analysis jobs.', 'info');
+              }}
+              className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+              title="Requires Basic Plan. Click to Upgrade."
+            >
+              <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+              <span>Upgrade to Submit Job</span>
+              <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+            </button>
+          )}
+        </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Basic') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
                 ) : (
-                  <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Pending Approval
-                  </button>
-                )
-              ) : (
-                <button 
-                  onClick={() => {
-                    setCurrentView('dashboard');
-                    showNotification('⚡ Upgrade to Max Plan to launch CAD AI.', 'info');
-                  }} 
-                  className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-teal-600 hover:from-amber-600 hover:to-teal-700 text-white shadow-md hover:shadow-teal-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
-                  title="Requires Max Plan. Click to Upgrade."
-                >
-                  <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
-                  <span>Upgrade to Submit Job</span>
-                  <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
-                </button>
-              )}
-            </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
                   <div className="h-5"></div>
-                </div>
-                <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
-                  <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
-                </h3>
-                <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
+                )}
               </div>
-              <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
-                <Sparkles className="w-4 h-4" /> ✨ Smart Setup
-              </button>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Waves className="w-6 h-6 text-emerald-500" /> Bellow Analysis
+              </h3>
             </div>
-          </div><div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
+
+            {canRunPlan('Basic') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Bellow Analysis', 300, 'Basic', () => window.location.href = '/bellow.html')}
+                  className="glass-btn-green w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Basic Plan to submit Bellow Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Basic Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-amber-500/20 bg-amber-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(245,158,11,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Pro') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <CircleDashed className="w-6 h-6 text-amber-600" /> Flange Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Pro') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Flange Analysis', 200, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/flange.html')}
+                  className="bg-amber-600 hover:bg-amber-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-amber-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Pro Plan to submit Flange Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Pro Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(234,88,12,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Basic') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Flame className="w-6 h-6 text-orange-500" /> Local PWHT
+              </h3>
+            </div>
+
+            {canRunPlan('Basic') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Local PWHT', 125, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/pwht.html')}
+                  className="glass-btn-orange w-full py-3.5 rounded-xl font-bold text-white transition-transform hover:scale-105 shadow-md">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Basic Plan to submit Local PWHT jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Basic Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-rose-500/20 bg-rose-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(225,29,72,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Basic') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Cylinder className="w-6 h-6 text-rose-600" /> Saddle Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Basic') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Saddle Analysis', 150, 'Basic', () => window.location.href = 'https://nova-analysis.vercel.app/saddle.html')}
+                  className="bg-rose-600 hover:bg-rose-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-rose-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Basic Plan to submit Saddle Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-rose-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Basic Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Basic</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-orange-500/20 bg-orange-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(249,115,22,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Pro') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Flame className="w-6 h-6 text-orange-600" /> Hot Box Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Pro') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Hot Box Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/hot.html')}
+                  className="bg-orange-600 hover:bg-orange-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-orange-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Pro Plan to submit Hot Box Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Pro Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Max') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <CircleDot className="w-6 h-6 text-purple-600" /> Stiffener Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Max') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Stiffener Analysis', 150, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/stiffener.html')}
+                  className="bg-purple-600 hover:bg-purple-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-purple-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Max Plan to submit Stiffener Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white shadow-md hover:shadow-purple-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Max Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-emerald-500/20 bg-emerald-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(16,185,129,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Max') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Target className="w-6 h-6 text-emerald-600" /> Tubesheet Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Max') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Tubesheet Analysis', 250, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/tubesheet.html')}
+                  className="bg-emerald-600 hover:bg-emerald-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-emerald-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Max Plan to submit Tubesheet Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-600 hover:from-amber-600 hover:to-emerald-700 text-white shadow-md hover:shadow-emerald-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Max Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-cyan-500/20 bg-cyan-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(6,182,212,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Pro') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Link className="w-6 h-6 text-cyan-600" /> Lug Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Pro') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Lug Analysis', 75, 'Pro', () => window.location.href = 'https://nova-analysis.vercel.app/lug.html')}
+                  className="bg-cyan-600 hover:bg-cyan-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-cyan-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Pro Plan to submit Lug Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white shadow-md hover:shadow-cyan-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Pro Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Pro</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-sky-500/20 bg-sky-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(14,165,233,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Max') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Dumbbell className="w-6 h-6 text-sky-600" /> Trunnion Analysis
+              </h3>
+            </div>
+
+            {canRunPlan('Max') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('Trunnion Analysis', 175, 'Max', () => window.location.href = 'https://nova-analysis.vercel.app/trunnion.html')}
+                  className="bg-sky-600 hover:bg-sky-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-sky-600/25">
+                  Submit New Job
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Max Plan to submit Trunnion Analysis jobs.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-sky-600 hover:from-amber-600 hover:to-sky-700 text-white shadow-md hover:shadow-sky-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Max Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-blue-500/20 bg-blue-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                <div className="h-5"></div>
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Database className="w-6 h-6 text-blue-600" /> ASME Materials
+              </h3>
+            </div>
+
+            <button
+              onClick={() => consumeCredits('ASME Materials', 10, 'Free', () => window.location.href = 'https://asme-material.vercel.app/')}
+              className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
+              Open Database
+            </button>
+          </div> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                <div className="h-5"></div>
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <LineChart className="w-6 h-6 text-indigo-600" /> Stress-Strain Curve
+              </h3>
+            </div>
+
+            <button
+              onClick={() => consumeCredits('Stress-Strain Curve', 10, 'Free', () => window.location.href = 'https://nova-analysis.vercel.app/curve.html')}
+              className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
+              Open Generator
+            </button>
+          </div> <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                {!canRunPlan('Max') ? (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" /> Locked
+                  </span>
+                ) : (
+                  <div className="h-5"></div>
+                )}
+              </div>
+              <h3 className="mb-6 text-xl font-extrabold text-slate-800 drop-shadow-sm flex flex-col items-center gap-2">
+                <Box className="w-6 h-6 text-teal-600" /> CAD AI
+              </h3>
+            </div>
+
+            {canRunPlan('Max') ? (
+              currentUser.isApproved ? (
+                <button
+                  onClick={() => consumeCredits('CAD AI', 75, 'Max', () => window.location.href = 'https://swcad-ai.vercel.app/chat')}
+                  className="bg-teal-600 hover:bg-teal-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-teal-600/25">
+                  Launch Agent
+                </button>
+              ) : (
+                <button disabled className="bg-slate-200 text-slate-500 w-full py-3.5 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                  <Lock className="w-4 h-4" /> Pending Approval
+                </button>
+              )
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  showNotification('⚡ Upgrade to Max Plan to launch CAD AI.', 'info');
+                }}
+                className="w-full py-3.5 rounded-xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-rose-500 to-teal-600 hover:from-amber-600 hover:to-teal-700 text-white shadow-md hover:shadow-teal-500/25 flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 group"
+                title="Requires Max Plan. Click to Upgrade."
+              >
+                <Lock className="w-4 h-4 text-amber-200 group-hover:scale-110 transition-transform" />
+                <span>Upgrade to Submit Job</span>
+                <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
+              </button>
+            )}
+          </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
+                <div className="h-5"></div>
+              </div>
+              <h3 className="flex items-center justify-center gap-2 mb-2 text-xl font-extrabold text-slate-800 drop-shadow-sm">
+                <Sparkles className="w-5 h-5 text-purple-600" /> AI Recommender
+              </h3>
+              <p className="mb-6 text-xs font-medium text-slate-600">Not sure which analysis to run? Describe your scenario.</p>
+            </div>
+            <button onClick={() => setIsAiModalOpen(true)} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-full py-3.5 rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 shadow-md">
+              <Sparkles className="w-4 h-4" /> ✨ Smart Setup
+            </button>
+          </div>
+        </div><div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
           <div className="flex flex-col items-center justify-between gap-4 mb-4 md:mb-8 sm:flex-row">
             <h2 className="text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="glass-input text-[#3C64D6] text-sm rounded-xl px-5 py-2.5 outline-none font-bold cursor-pointer shadow-sm border-white/60 focus:ring-2 focus:ring-blue-500">
@@ -3533,159 +3866,158 @@ Always provide professional, precise, technically accurate, and helpful answers.
               <Database className="w-8 h-8 sm:w-12 sm:h-12 text-[#3C64D6] opacity-80" />
             </div>
             <h3 className="mb-3 text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">No Analysis Jobs Yet</h3>
-            <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br/>Submit your first job to get started!</p>
+            <p className="max-w-sm mx-auto mb-4 md:mb-8 text-sm font-medium leading-relaxed text-slate-600">Your engineering analysis jobs will appear here.<br />Submit your first job to get started!</p>
             {canRunPlan('Basic') ? (
               currentUser.isApproved ? (
                 <button onClick={() => openSubmitJob('Nozzle Analysis')} className="glass-btn-green font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
-                   <Plus className="w-5 h-5 mr-2" /> Start First Job
+                  <Plus className="w-5 h-5 mr-2" /> Start First Job
                 </button>
               ) : (
                 <button disabled className="flex items-center px-4 md:px-6 py-3.5 text-sm font-bold shadow-sm cursor-not-allowed bg-slate-200 text-slate-500 rounded-xl">
-                   <Lock className="w-5 h-5 mr-2" /> Pending Approval
+                  <Lock className="w-5 h-5 mr-2" /> Pending Approval
                 </button>
               )
             ) : (
               <button onClick={() => setCurrentView('dashboard')} className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white font-bold py-3.5 px-4 md:px-6 rounded-xl transition-all hover:scale-105 flex items-center shadow-lg text-sm">
-                 <Lock className="w-5 h-5 mr-2 text-amber-200" /> Upgrade to Submit Job
+                <Lock className="w-5 h-5 mr-2 text-amber-200" /> Upgrade to Submit Job
               </button>
             )}
           </div>
         ) : (
           <div className="glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
-             <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
-                <div className="flex items-center gap-3">
-                  <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
-                  <span className="text-xs font-bold text-slate-500 bg-white/60 px-2.5 py-1 rounded-full border border-slate-200/60">
-                    {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
-                  </span>
-                </div>
-                {selectedJobIds.length > 0 && (
-                  <button 
-                    onClick={handleDeleteSelectedJobs} 
-                    disabled={isDeletingJobs}
-                    className="flex items-center gap-2 px-4 py-2 text-xs font-black text-white transition-all bg-red-600 rounded-xl shadow-md hover:bg-red-700 hover:scale-105 disabled:opacity-50"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete Selected ({selectedJobIds.length})
-                  </button>
-                )}
-             </div>
-             <div className="p-4 overflow-x-auto">
-               <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
-                 <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
-                   <tr>
-                     <th className="w-12 px-4 py-2.5 text-center">
-                       <input 
-                         type="checkbox" 
-                         className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]" 
-                         checked={filteredJobs.length > 0 && filteredJobs.every(j => selectedJobIds.includes(j.id))} 
-                         onChange={handleToggleSelectAll} 
-                         title="Select / Deselect All" 
-                       />
-                     </th>
-                     <th className="px-4 md:px-6 py-2.5">Job ID</th>
-                     <th className="px-4 md:px-6 py-2.5">Type</th>
-                     <th className="px-4 md:px-6 py-2.5">Date &amp; Time</th>
-                     <th className="px-4 md:px-6 py-2.5 text-right">Actions</th>
-                   </tr>
-                 </thead>
-                 <tbody>
-                   {filteredJobs.map(job => {
-                     const isSelected = selectedJobIds.includes(job.id);
-                     const isJobSuccess = job.status === 'Completed' || job.status === 'Success';
-                     const isJobFailed = job.status === 'Failed';
-                     const isJobPending = job.status === 'Pending';
-                     const isJobProcessing = !isJobSuccess && !isJobFailed && !isJobPending;
-                     return (
-                       <tr key={job.id} className={`transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
-                         <td className="w-12 px-4 py-4 text-center first:rounded-l-xl">
-                           <input 
-                             type="checkbox" 
-                             className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]" 
-                             checked={isSelected} 
-                             onChange={(e) => handleToggleSelectJob(job.id, e)} 
-                             title="Select Job" 
-                           />
-                         </td>
-                         <td className="px-4 md:px-6 py-4 font-black text-[#3C64D6]">
-                           {job.job_id_display || job.id.substring(0,8)}
-                         </td>
-                         <td className="px-4 md:px-6 py-4 font-semibold text-slate-700">
-                           <span className="inline-flex items-center gap-1.5">
-                             <Box className="w-3.5 h-3.5 text-indigo-500" />
-                             {job.type}
-                           </span>
-                         </td>
-                         <td className="px-4 md:px-6 py-4 font-medium text-slate-600 text-xs">
-                           {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                           <span className="block text-[11px] text-slate-400 font-semibold">
-                             {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                           </span>
-                         </td>
-                         <td className="px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                            <AnimatedStatusBadge status={job.status} /> {(job.report_url || isJobSuccess) && (
-                              job.report_url ? (
-                                <a 
-                                  href={job.report_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  title="Download MS Word FEA Report (.docx)"
-                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
-                                >
-                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
-                                </a>
-                              ) : (
-                                <button 
-                                  onClick={() => generateAndOpenReport(job)} 
-                                  title="Download / View Analysis Report"
-                                  className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
-                                >
-                                  <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
-                                </button>
-                              )
-                            )} {job.result_url && (
-                              <a 
-                                href={job.result_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                title="Download Full Analysis ZIP Archive"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
+              <div className="flex items-center gap-3">
+                <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
+                <span className="text-xs font-bold text-slate-500 bg-white/60 px-2.5 py-1 rounded-full border border-slate-200/60">
+                  {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
+                </span>
+              </div>
+              {selectedJobIds.length > 0 && (
+                <button
+                  onClick={handleDeleteSelectedJobs}
+                  disabled={isDeletingJobs}
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-black text-white transition-all bg-red-600 rounded-xl shadow-md hover:bg-red-700 hover:scale-105 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete Selected ({selectedJobIds.length})
+                </button>
+              )}
+            </div>
+            <div className="p-4 overflow-x-auto">
+              <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
+                <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
+                  <tr>
+                    <th className="w-12 px-4 py-2.5 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]"
+                        checked={filteredJobs.length > 0 && filteredJobs.every(j => selectedJobIds.includes(j.id))}
+                        onChange={handleToggleSelectAll}
+                        title="Select / Deselect All"
+                      />
+                    </th>
+                    <th className="px-4 md:px-6 py-2.5">Job ID</th>
+                    <th className="px-4 md:px-6 py-2.5">Type</th>
+                    <th className="px-4 md:px-6 py-2.5">Date &amp; Time</th>
+                    <th className="px-4 md:px-6 py-2.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredJobs.map(job => {
+                    const isSelected = selectedJobIds.includes(job.id);
+                    const isJobSuccess = job.status === 'Completed' || job.status === 'Success';
+                    const isJobFailed = job.status === 'Failed';
+                    const isJobPending = job.status === 'Pending';
+                    const isJobProcessing = !isJobSuccess && !isJobFailed && !isJobPending;
+                    return (
+                      <tr key={job.id} className={`transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
+                        <td className="w-12 px-4 py-4 text-center first:rounded-l-xl">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]"
+                            checked={isSelected}
+                            onChange={(e) => handleToggleSelectJob(job.id, e)}
+                            title="Select Job"
+                          />
+                        </td>
+                        <td className="px-4 md:px-6 py-4 font-black text-[#3C64D6]">
+                          {job.job_id_display || job.id.substring(0, 8)}
+                        </td>
+                        <td className="px-4 md:px-6 py-4 font-semibold text-slate-700">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Box className="w-3.5 h-3.5 text-indigo-500" />
+                            {job.type}
+                          </span>
+                        </td>
+                        <td className="px-4 md:px-6 py-4 font-medium text-slate-600 text-xs">
+                          {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          <span className="block text-[11px] text-slate-400 font-semibold">
+                            {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </td>
+                        <td className="px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
+                          <AnimatedStatusBadge status={job.status} /> {(job.report_url || isJobSuccess) && (
+                            job.report_url ? (
+                              <a
+                                href={job.report_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Download MS Word FEA Report (.docx)"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                               >
-                                <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                               </a>
-                            )} <button 
-                              onClick={() => { 
-                                setSelectedJobDetails(job); 
-                                setActiveDetailRun(0); 
-                                setCopiedError(false); 
-                                setIsJobDetailsOpen(true); 
-                              }} 
-                              title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
-                              className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${
-                                job.status === 'Failed' 
-                                  ? 'text-red-700 hover:bg-red-50/80 border border-red-300' 
-                                  : 'text-slate-700 hover:bg-white/80 border border-slate-300'
+                            ) : (
+                              <button
+                                onClick={() => generateAndOpenReport(job)}
+                                title="Download / View Analysis Report"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                              </button>
+                            )
+                          )} {job.result_url && (
+                            <a
+                              href={job.result_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Download Full Analysis ZIP Archive"
+                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
+                            >
+                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
+                            </a>
+                          )} <button
+                            onClick={() => {
+                              setSelectedJobDetails(job);
+                              setActiveDetailRun(0);
+                              setCopiedError(false);
+                              setIsJobDetailsOpen(true);
+                            }}
+                            title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
+                            className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${job.status === 'Failed'
+                                ? 'text-red-700 hover:bg-red-50/80 border border-red-300'
+                                : 'text-slate-700 hover:bg-white/80 border border-slate-300'
                               }`}
-                            >
-                              {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />} 
-                              Details
-                            </button> <button
-                              onClick={(e) => handleDeleteJob(job.id, e)}
-                              disabled={isDeletingJobs}
-                              title="Delete Job"
-                              className="p-1.5 text-red-600 transition-all border border-red-200 hover:bg-red-50 rounded-lg shadow-sm hover:scale-105 disabled:opacity-50 bg-white"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                         </td>
-                       </tr>
-                     );
-                   })}
-                 </tbody>
-               </table>
-             </div>
+                          >
+                            {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />}
+                            Details
+                          </button> <button
+                            onClick={(e) => handleDeleteJob(job.id, e)}
+                            disabled={isDeletingJobs}
+                            title="Delete Job"
+                            className="p-1.5 text-red-600 transition-all border border-red-200 hover:bg-red-50 rounded-lg shadow-sm hover:scale-105 disabled:opacity-50 bg-white"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-        
+
         {isSubmitJobOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSubmitJobOpen(false)}></div>
@@ -3699,12 +4031,12 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   <label className="pl-1 text-sm font-bold text-slate-800">Project Name</label>
                   <input name="jobName" type="text" className="w-full px-4 py-3.5 glass-input rounded-xl text-sm font-medium" required autoFocus placeholder="e.g. Shell Nozzle Analysis" />
                 </div>
-                
+
                 <div className="pt-4 mt-2 border-t border-slate-300/40">
                   <button type="button" onClick={() => setShowMaterialConsultant(!showMaterialConsultant)} className="flex items-center gap-2 text-sm font-extrabold text-purple-700 hover:underline">
                     <Sparkles className="w-4 h-4" /> Need AI Material Recommendations?
                   </button>
-                  
+
                   {showMaterialConsultant && (
                     <div className="p-4 mt-4 border bg-purple-500/10 border-purple-500/20 rounded-xl backdrop-blur-sm animate-in fade-in slide-in-from-top-2">
                       <textarea
@@ -3716,7 +4048,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                       <button type="button" onClick={handleMaterialConsultant} disabled={isMaterialLoading || !materialPrompt.trim()} className="bg-gradient-to-r from-purple-600 to-indigo-600 disabled:opacity-50 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-sm w-full">
                         {isMaterialLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Ask AI Consultant
                       </button>
-                      
+
                       {materialResponse && (
                         <div className="p-4 mt-4 text-xs font-medium leading-relaxed whitespace-pre-wrap border rounded-lg shadow-sm text-slate-800 glass-panel border-white/50">
                           {materialResponse}
@@ -3734,7 +4066,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           </div>
         )}
         {isInsightsOpen && renderInsightsModal()}
-        
+
         {isJobDetailsOpen && renderJobDetailsModal()}
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -3748,7 +4080,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
                 <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                   <p className="pl-1 mb-3 text-sm font-bold text-purple-900 drop-shadow-sm">Describe your engineering scenario below:</p>
@@ -3759,7 +4091,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     onChange={(e) => setAiSetupPrompt(e.target.value)}
                   />
                   <div className="flex justify-end mt-4">
-                    <button 
+                    <button
                       onClick={handleAiSetupSubmit}
                       disabled={isAiSetupLoading || !aiSetupPrompt.trim()}
                       className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-4 md:px-6 rounded-xl flex items-center gap-2 transition-all hover:scale-[1.02] shadow-md"
@@ -3772,7 +4104,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 {aiSetupResponse && (
                   <div className="p-4 md:p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
                     <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
-                      <Bot className="w-4 h-4"/> AI Recommendation
+                      <Bot className="w-4 h-4" /> AI Recommendation
                     </h4>
                     <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
                       {aiSetupResponse}
@@ -3817,7 +4149,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       price: currentUser.plan === 'Max' ? '$576.00' : currentUser.plan === 'Pro' ? '$399.00' : '$199.00',
       method: 'Direct Payment (Live Verified)',
       date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      userEmail: currentUser.email || 'dineshkumar2729304@gmail.com',
+      userEmail: currentUser.email || '',
       userName: currentUser.name || 'Dinesh Kumar Yadav',
       status: 'PAID',
       isWizardProduct: false,
@@ -3963,293 +4295,292 @@ Always provide professional, precise, technically accurate, and helpful answers.
     return (
       <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8  flex flex-col items-center justify-start">
         <div className="max-w-[1020px] w-full mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 space-y-8"> <div className="bg-white p-6 sm:p-10 md:p-12 rounded-[2.5rem] border-2 border-slate-200/90 shadow-2xl space-y-8 print:border-none print:shadow-none print:p-0"> <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-200">
-              <div className="flex items-center gap-3">
-                <CosmicLogo className="w-10 h-10" />
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
-                </div>
-              </div>
-              <div className="text-center sm:text-right">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider border border-emerald-300 shadow-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Daily Credits Active
-                </span>
-                <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
-              </div>
-            </div> <div className="text-center space-y-4 py-2">
-              <div className="relative inline-flex items-center justify-center">
-                <div className="absolute w-24 h-24 rounded-full bg-emerald-400/20 animate-ping"></div>
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 relative z-10">
-                  <CheckCircle2 className="w-10 h-10" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black uppercase tracking-wider">
-                  <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 animate-pulse" /> Daily Credits Unlocked & Ready
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                  Welcome to {currentUser.isLifetimeMax ? 'Max Plan' : `${currentUser.plan} Plan`}!
-                </h2>
-                <p className="text-slate-600 text-xs sm:text-sm font-medium max-w-xl mx-auto leading-relaxed">
-                  Your payment has been verified. Your account has been upgraded with <strong className="text-indigo-900 font-black">{currentUser.dailyCreditsTotal} Daily Credits</strong> refreshed automatically every 24 hours at 00:00 UTC.
-                </p>
-              </div>
-            </div> <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="relative z-10 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block mb-2">
-                      ⚡ Daily Engineering Quota
-                    </span>
-                    <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                      {currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}
-                      <span className="text-base sm:text-lg font-bold text-slate-300">Credits / Day</span>
-                    </h3>
-                  </div>
-                  
-                  <div className="sm:text-right">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider border border-emerald-400/30">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                      {currentUser.isLifetimeMax ? 'Max Plan (Forever Active)' : `${currentUser.plan} Plan Active`}
-                    </span>
-                    <p className="text-xs text-slate-400 font-medium mt-1">Refreshes every 24h at 00:00 UTC</p>
-                  </div>
-                </div> <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <span>Available Balance Today</span>
-                    <span className="text-emerald-400 font-mono">100% Full Quota Active</span>
-                  </div>
-                  <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60 shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 rounded-full w-full shadow-lg shadow-emerald-500/50"></div>
-                  </div>
-                </div> <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                      <RefreshCw className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-300">Daily Reset</div>
-                      <div className="text-sm font-black text-white">00:00 UTC (100%)</div>
-                    </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                      <Cpu className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-300">Cloud Solver</div>
-                      <div className="text-sm font-black text-white">High-Speed GPU Cluster</div>
-                    </div>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-                      <Award className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-300">ASME Div 1 & 2</div>
-                      <div className="text-sm font-black text-white">All Modules Unlocked</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div> <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h4 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-indigo-600" />
-                    Interactive Daily Credit Run Simulator
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Test your daily capacity by selecting any engineering analysis module:
-                  </p>
-                </div>
-                <div className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-200 shrink-0">
-                  Daily Quota: {currentUser.dailyCreditsTotal} Credits
-                </div>
-              </div> <div className="flex flex-wrap gap-2 pt-1">
-                {modulesData.map((mod) => (
-                  <button
-                    key={mod.id}
-                    onClick={() => setCreditSimModule(mod.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      creditSimModule === mod.id
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {mod.name} ({mod.credits} cr)
-                  </button>
-                ))}
-              </div> <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-inner grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
-                <div>
-                  <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Analysis Cost</span>
-                  <div className="text-xl font-black text-slate-900 font-mono">{currentSim.credits} Credits</div>
-                  <div className="text-[11px] text-slate-500 font-medium">{currentSim.code}</div>
-                </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">Runs Possible Today</span>
-                  <div className="text-xl font-black text-emerald-700 font-mono">{runsPossible} Full Runs / Day</div>
-                  <div className="text-[11px] text-slate-500 font-medium">100% daily reset guaranteed</div>
-                </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Balance After 1 Run</span>
-                  <div className="text-xl font-black text-indigo-900 font-mono">{balanceAfterOneRun} Credits</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Remaining for other analyses</div>
-                </div>
-              </div>
-            </div> <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-emerald-600" />
-                    Ready to Solve: Your Unlocked Analysis Modules
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Click any module below to immediately launch the solver with your active daily quota:
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setCurrentView('dashboard')}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline shrink-0"
-                >
-                  View Resource Guide →
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {modulesData.map((m) => {
-                  const IconComp = m.icon;
-                  return (
-                    <div 
-                      key={m.id}
-                      className="bg-white rounded-2xl p-5 border border-slate-200/90 hover:border-indigo-400 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
-                    >
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${m.color}`}>
-                            <IconComp className="w-5 h-5" />
-                          </div>
-                          <span className="font-mono text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            ⚡ {m.credits} Credits
-                          </span>
-                        </div>
-                        
-                        <div>
-                          <h5 className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
-                            {m.name}
-                          </h5>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{m.code}</p>
-                          <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">{m.desc}</p>
-                        </div>
-                      </div>
-                      <div className="pt-4 mt-3 border-t border-slate-100">
-                        <button
-                          onClick={m.action}
-                          className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-900 hover:bg-indigo-600 text-white transition-all flex items-center justify-center gap-1.5 shadow-sm group-hover:shadow"
-                        >
-                          <span>Launch Solver</span>
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Billed To (Client):</span>
-                <div className="font-extrabold text-slate-900 text-sm">{receipt.userName || currentUser.name || 'Valued Engineer'}</div>
-                <div className="font-medium text-slate-600">{receipt.userEmail || currentUser.email}</div>
-                <div className="font-medium text-slate-500">Account Type: Verified Professional</div>
-              </div>
-              <div className="space-y-1.5 sm:text-right">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Order & Transaction Details:</span>
-                <div className="font-mono font-bold text-slate-800 flex items-center sm:justify-end gap-1.5">
-                  Order ID: <span className="text-slate-900 font-extrabold">{receipt.orderId}</span>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard?.writeText(receipt.orderId);
-                      showNotification('Order ID copied to clipboard!', 'success', 'Copied');
-                    }}
-                    className="p-1 hover:bg-slate-200 rounded text-slate-600"
-                    title="Copy Order ID"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="text-slate-600">Date: {receipt.date}</div>
-                <div className="text-slate-600">Payment Gateway: <strong className="text-slate-800">{receipt.method}</strong></div>
-              </div>
-            </div> <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
-                    <th className="p-3.5">Subscription Plan / Service</th>
-                    <th className="p-3.5">Daily Credits Allocation</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                  <tr>
-                    <td className="p-3.5 font-bold text-slate-900">
-                      <div>{receipt.plan}</div>
-                      <div className="text-[10px] font-normal text-slate-500">
-                        Full Cloud FEA, Batch Mode & Automated Report Generation
-                      </div>
-                    </td>
-                    <td className="p-3.5 font-mono font-bold text-emerald-700">
-                      ⚡ {currentUser.dailyCreditsTotal} Credits / Day (100% Daily Reset)
-                    </td>
-                    <td className="p-3.5">
-                      <span className="inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
-                        ACTIVATED
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right font-black text-slate-900 text-sm">
-                      {receipt.price}
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-700">
-                  <tr>
-                    <td colSpan="3" className="p-3 text-right">Subtotal:</td>
-                    <td className="p-3 text-right">{receipt.price}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan="3" className="p-3 text-right text-slate-500">Estimated Tax (0%):</td>
-                    <td className="p-3 text-right text-slate-500">$0.00</td>
-                  </tr>
-                  <tr className="border-t border-slate-300 font-black text-slate-900 text-sm">
-                    <td colSpan="3" className="p-3 text-right">Total Paid:</td>
-                    <td className="p-3 text-right text-emerald-700 font-mono">{receipt.price}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div> <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 print:hidden">
-              <button 
-                onClick={handlePrintInvoice}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-md hover:scale-105"
-              >
-                <Printer className="w-4 h-4 text-emerald-400" /> Print / Save Tax Receipt (PDF)
-              </button>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button 
-                  onClick={() => setCurrentView('dashboard')}
-                  className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center justify-center gap-1.5"
-                >
-                  <BookOpen className="w-4 h-4 text-emerald-600" /> View 100% Daily Credits Guide
-                </button>
-                <button 
-                  onClick={() => setCurrentView('dashboard')} 
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs transition-all shadow-md hover:scale-105 flex items-center justify-center gap-1.5"
-                >
-                  Start Analysis on Dashboard →
-                </button>
-              </div>
+          <div className="flex items-center gap-3">
+            <CosmicLogo className="w-10 h-10" />
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
             </div>
           </div>
+          <div className="text-center sm:text-right">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider border border-emerald-300 shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 100% Daily Credits Active
+            </span>
+            <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
+          </div>
+        </div> <div className="text-center space-y-4 py-2">
+            <div className="relative inline-flex items-center justify-center">
+              <div className="absolute w-24 h-24 rounded-full bg-emerald-400/20 animate-ping"></div>
+              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 relative z-10">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black uppercase tracking-wider">
+                <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 animate-pulse" /> Daily Credits Unlocked & Ready
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Welcome to {currentUser.isLifetimeMax ? 'Max Plan' : `${currentUser.plan} Plan`}!
+              </h2>
+              <p className="text-slate-600 text-xs sm:text-sm font-medium max-w-xl mx-auto leading-relaxed">
+                Your payment has been verified. Your account has been upgraded with <strong className="text-indigo-900 font-black">{currentUser.dailyCreditsTotal} Daily Credits</strong> refreshed automatically every 24 hours at 00:00 UTC.
+              </p>
+            </div>
+          </div> <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="relative z-10 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block mb-2">
+                    ⚡ Daily Engineering Quota
+                  </span>
+                  <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                    {currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}
+                    <span className="text-base sm:text-lg font-bold text-slate-300">Credits / Day</span>
+                  </h3>
+                </div>
+
+                <div className="sm:text-right">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-wider border border-emerald-400/30">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    {currentUser.isLifetimeMax ? 'Max Plan (Forever Active)' : `${currentUser.plan} Plan Active`}
+                  </span>
+                  <p className="text-xs text-slate-400 font-medium mt-1">Refreshes every 24h at 00:00 UTC</p>
+                </div>
+              </div> <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                  <span>Available Balance Today</span>
+                  <span className="text-emerald-400 font-mono">100% Full Quota Active</span>
+                </div>
+                <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60 shadow-inner">
+                  <div className="h-full bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 rounded-full w-full shadow-lg shadow-emerald-500/50"></div>
+                </div>
+              </div> <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <RefreshCw className="w-5 h-5 animate-spin" style={{ animationDuration: '8s' }} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-300">Daily Reset</div>
+                    <div className="text-sm font-black text-white">00:00 UTC (100%)</div>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                    <Cpu className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-300">Cloud Solver</div>
+                    <div className="text-sm font-black text-white">High-Speed GPU Cluster</div>
+                  </div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-300">ASME Div 1 & 2</div>
+                    <div className="text-sm font-black text-white">All Modules Unlocked</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div> <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
+                  Interactive Daily Credit Run Simulator
+                </h4>
+                <p className="text-xs text-slate-500 font-medium">
+                  Test your daily capacity by selecting any engineering analysis module:
+                </p>
+              </div>
+              <div className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-200 shrink-0">
+                Daily Quota: {currentUser.dailyCreditsTotal} Credits
+              </div>
+            </div> <div className="flex flex-wrap gap-2 pt-1">
+              {modulesData.map((mod) => (
+                <button
+                  key={mod.id}
+                  onClick={() => setCreditSimModule(mod.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${creditSimModule === mod.id
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                >
+                  {mod.name} ({mod.credits} cr)
+                </button>
+              ))}
+            </div> <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-inner grid grid-cols-1 sm:grid-cols-3 gap-4 text-center sm:text-left">
+              <div>
+                <span className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">Analysis Cost</span>
+                <div className="text-xl font-black text-slate-900 font-mono">{currentSim.credits} Credits</div>
+                <div className="text-[11px] text-slate-500 font-medium">{currentSim.code}</div>
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">Runs Possible Today</span>
+                <div className="text-xl font-black text-emerald-700 font-mono">{runsPossible} Full Runs / Day</div>
+                <div className="text-[11px] text-slate-500 font-medium">100% daily reset guaranteed</div>
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Balance After 1 Run</span>
+                <div className="text-xl font-black text-indigo-900 font-mono">{balanceAfterOneRun} Credits</div>
+                <div className="text-[11px] text-slate-500 font-medium">Remaining for other analyses</div>
+              </div>
+            </div>
+          </div> <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-600" />
+                  Ready to Solve: Your Unlocked Analysis Modules
+                </h4>
+                <p className="text-xs text-slate-500 font-medium">
+                  Click any module below to immediately launch the solver with your active daily quota:
+                </p>
+              </div>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline shrink-0"
+              >
+                View Resource Guide →
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {modulesData.map((m) => {
+                const IconComp = m.icon;
+                return (
+                  <div
+                    key={m.id}
+                    className="bg-white rounded-2xl p-5 border border-slate-200/90 hover:border-indigo-400 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${m.color}`}>
+                          <IconComp className="w-5 h-5" />
+                        </div>
+                        <span className="font-mono text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          ⚡ {m.credits} Credits
+                        </span>
+                      </div>
+
+                      <div>
+                        <h5 className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                          {m.name}
+                        </h5>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{m.code}</p>
+                        <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">{m.desc}</p>
+                      </div>
+                    </div>
+                    <div className="pt-4 mt-3 border-t border-slate-100">
+                      <button
+                        onClick={m.action}
+                        className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-900 hover:bg-indigo-600 text-white transition-all flex items-center justify-center gap-1.5 shadow-sm group-hover:shadow"
+                      >
+                        <span>Launch Solver</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Billed To (Client):</span>
+              <div className="font-extrabold text-slate-900 text-sm">{receipt.userName || currentUser.name || 'Valued Engineer'}</div>
+              <div className="font-medium text-slate-600">{receipt.userEmail || currentUser.email}</div>
+              <div className="font-medium text-slate-500">Account Type: Verified Professional</div>
+            </div>
+            <div className="space-y-1.5 sm:text-right">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Order & Transaction Details:</span>
+              <div className="font-mono font-bold text-slate-800 flex items-center sm:justify-end gap-1.5">
+                Order ID: <span className="text-slate-900 font-extrabold">{receipt.orderId}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(receipt.orderId);
+                    showNotification('Order ID copied to clipboard!', 'success', 'Copied');
+                  }}
+                  className="p-1 hover:bg-slate-200 rounded text-slate-600"
+                  title="Copy Order ID"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="text-slate-600">Date: {receipt.date}</div>
+              <div className="text-slate-600">Payment Gateway: <strong className="text-slate-800">{receipt.method}</strong></div>
+            </div>
+          </div> <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                  <th className="p-3.5">Subscription Plan / Service</th>
+                  <th className="p-3.5">Daily Credits Allocation</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                <tr>
+                  <td className="p-3.5 font-bold text-slate-900">
+                    <div>{receipt.plan}</div>
+                    <div className="text-[10px] font-normal text-slate-500">
+                      Full Cloud FEA, Batch Mode & Automated Report Generation
+                    </div>
+                  </td>
+                  <td className="p-3.5 font-mono font-bold text-emerald-700">
+                    ⚡ {currentUser.dailyCreditsTotal} Credits / Day (100% Daily Reset)
+                  </td>
+                  <td className="p-3.5">
+                    <span className="inline-block px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                      ACTIVATED
+                    </span>
+                  </td>
+                  <td className="p-3.5 text-right font-black text-slate-900 text-sm">
+                    {receipt.price}
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-700">
+                <tr>
+                  <td colSpan="3" className="p-3 text-right">Subtotal:</td>
+                  <td className="p-3 text-right">{receipt.price}</td>
+                </tr>
+                <tr>
+                  <td colSpan="3" className="p-3 text-right text-slate-500">Estimated Tax (0%):</td>
+                  <td className="p-3 text-right text-slate-500">$0.00</td>
+                </tr>
+                <tr className="border-t border-slate-300 font-black text-slate-900 text-sm">
+                  <td colSpan="3" className="p-3 text-right">Total Paid:</td>
+                  <td className="p-3 text-right text-emerald-700 font-mono">{receipt.price}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div> <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 print:hidden">
+            <button
+              onClick={handlePrintInvoice}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-md hover:scale-105"
+            >
+              <Printer className="w-4 h-4 text-emerald-400" /> Print / Save Tax Receipt (PDF)
+            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center justify-center gap-1.5"
+              >
+                <BookOpen className="w-4 h-4 text-emerald-600" /> View 100% Daily Credits Guide
+              </button>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs transition-all shadow-md hover:scale-105 flex items-center justify-center gap-1.5"
+              >
+                Start Analysis on Dashboard →
+              </button>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
     );
@@ -4262,15 +4593,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
       price: '$399.00',
       method: 'Razorpay Standard (Live Verified)',
       date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      userEmail: currentUser.email || 'dineshkumar2729304@gmail.com',
+      userEmail: currentUser.email || '',
       userName: currentUser.name || 'Dinesh Kumar Yadav',
       status: 'PAID',
       isWizardProduct: true,
       licenseKey: 'NOV-ACT-WBEX-7F4B-9E21-A3C8'
     };
     if (!receipt.isWizardProduct && !(receipt.plan && (
-      receipt.plan.toLowerCase().includes('wizard') || 
-      receipt.plan.toLowerCase().includes('.wbex') || 
+      receipt.plan.toLowerCase().includes('wizard') ||
+      receipt.plan.toLowerCase().includes('.wbex') ||
       receipt.plan.toLowerCase().includes('month license') ||
       receipt.plan.toLowerCase().includes('act extension')
     ))) {
@@ -4280,20 +4611,20 @@ Always provide professional, precise, technically accurate, and helpful answers.
       <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-900 md:p-8  flex items-center justify-center">
         <div className="max-w-[800px] w-full mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
           <div className="bg-white p-6 sm:p-10 md:p-12 rounded-[2.5rem] border-2 border-slate-200/90 shadow-2xl space-y-8 print:border-none print:shadow-none print:p-0"> <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-200">
-              <div className="flex items-center gap-3">
-                <CosmicLogo className="w-10 h-10" />
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
-                </div>
+            <div className="flex items-center gap-3">
+              <CosmicLogo className="w-10 h-10" />
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</h3>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pressure Vessel FEA Platform</p>
               </div>
-              <div className="text-center sm:text-right">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black uppercase tracking-wider border border-indigo-300">
-                  <Package className="w-4 h-4 text-indigo-600" /> Commercial ACT License Active
-                </span>
-                <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
-              </div>
-            </div> <div className="text-center space-y-2">
+            </div>
+            <div className="text-center sm:text-right">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black uppercase tracking-wider border border-indigo-300">
+                <Package className="w-4 h-4 text-indigo-600" /> Commercial ACT License Active
+              </span>
+              <p className="text-[11px] font-mono text-slate-500 mt-1">Invoice: {receipt.invoiceNumber || 'INV-2026-004812'}</p>
+            </div>
+          </div> <div className="text-center space-y-2">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black uppercase tracking-wider">
                 <Lock className="w-3.5 h-3.5 text-indigo-600" /> Official Ansys ACT Deliverable
               </div>
@@ -4316,7 +4647,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <span className="font-mono font-black text-sm sm:text-base text-indigo-800 tracking-widest select-all">
                   {receipt.licenseKey || 'NOV-ACT-WBEX-7F4B-9E21-A3C8'}
                 </span>
-                <button 
+                <button
                   onClick={() => {
                     navigator.clipboard?.writeText(receipt.licenseKey || 'NOV-ACT-WBEX-7F4B-9E21-A3C8');
                     showNotification('Commercial license key copied to clipboard!', 'success', 'Copied');
@@ -4338,7 +4669,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   Includes automated meshing, stress linearization, and ASME Section VIII Div 2 Part 5 validation. Compatible with Workbench 2021 R1 - 2024 R2.
                 </p>
               </div>
-              <button 
+              <button
                 onClick={handleDownloadWbex}
                 className="px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 text-indigo-950 font-black text-sm shadow-xl flex items-center gap-2 shrink-0 transition-all hover:scale-105 active:scale-95"
               >
@@ -4422,21 +4753,21 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </tfoot>
               </table>
             </div> <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 print:hidden">
-              <button 
+              <button
                 onClick={handlePrintInvoice}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-all shadow-md hover:scale-105"
               >
                 <Printer className="w-4 h-4 text-emerald-400" /> Print / Save Tax Receipt (PDF)
               </button>
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => setCurrentView('wizard_demo')}
                   className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center gap-1.5 justify-center"
                 >
                   <PlayCircle className="w-4 h-4 text-indigo-600" /> Watch Setup Tutorial
                 </button>
-                <button 
-                  onClick={() => setCurrentView('dashboard')} 
+                <button
+                  onClick={() => setCurrentView('dashboard')}
                   className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs transition-all shadow-md hover:scale-105"
                 >
                   Return to Dashboard →
@@ -4465,7 +4796,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       const isCurrentlyLiked = !!likedPosts[postId];
       const updatedLiked = { ...likedPosts, [postId]: !isCurrentlyLiked };
       setLikedPosts(updatedLiked);
-      try { localStorage.setItem('nova_community_likes_permanent', JSON.stringify(updatedLiked)); } catch(e) {}
+      try { localStorage.setItem('nova_community_likes_permanent', JSON.stringify(updatedLiked)); } catch (e) { }
 
       let newCount = 0;
       setCommunityPosts(prev => {
@@ -4479,7 +4810,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           }
           return p;
         });
-        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
 
@@ -4487,7 +4818,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         if (supabase) {
           await supabase.from('nova_community_posts').update({ likes_count: newCount }).eq('id', postId);
         }
-      } catch(err) {
+      } catch (err) {
         console.warn("Supabase like update err:", err);
       }
 
@@ -4497,7 +4828,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     const handleAddComment = async (postId, customText = null, customUser = null, customRole = null, customInitial = null) => {
       const text = (customText || replyText[postId] || '').trim();
       if (!text) return;
-      
+
       const newCmt = {
         id: "cmt_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
         user: customUser || currentUser?.name || 'Nova Engineer',
@@ -4516,7 +4847,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           ...prev,
           [postId]: [...(prev[postId] || []), newCmt]
         };
-        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
 
@@ -4540,7 +4871,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             }));
           }
         }
-      } catch(err) {
+      } catch (err) {
         console.warn("Supabase comment insert err:", err);
       }
 
@@ -4553,7 +4884,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           ...prev,
           [postId]: (prev[postId] || []).filter(c => c.id !== commentId)
         };
-        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
 
@@ -4561,7 +4892,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         if (supabase) {
           await supabase.from('nova_community_comments').delete().eq('id', commentId);
         }
-      } catch(err) {
+      } catch (err) {
         console.warn("Supabase comment delete err:", err);
       }
 
@@ -4575,7 +4906,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           ...prev,
           [postId]: (prev[postId] || []).map(c => c.id === commentId ? { ...c, text: updatedText.trim() } : c)
         };
-        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch(e) {}
+        try { localStorage.setItem('nova_community_comments_permanent', JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
       setEditingCommentId(null);
@@ -4584,7 +4915,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         if (supabase) {
           await supabase.from('nova_community_comments').update({ comment: updatedText.trim() }).eq('id', commentId);
         }
-      } catch(err) {
+      } catch (err) {
         console.warn("Supabase comment edit err:", err);
       }
 
@@ -4606,7 +4937,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           }
           return p;
         });
-        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch(e) {}
+        try { localStorage.setItem('nova_community_posts_permanent', JSON.stringify(updated)); } catch (e) { }
         return updated;
       });
       setEditingPostId(null);
@@ -4619,7 +4950,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             updated_at: new Date().toISOString()
           }).eq('id', postId);
         }
-      } catch(err) {
+      } catch (err) {
         console.warn("Supabase post edit err:", err);
       }
 
@@ -4788,7 +5119,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
         if (!bookmarkedPosts[p.id]) return false;
       } else if (communityActiveTab === 'my_posts') {
         const isMine = (p.user_email && currentUser?.email && p.user_email === currentUser.email) ||
-                       (p.user_name === currentUser?.name);
+          (p.user_name === currentUser?.name);
         if (!isMine) return false;
       }
 
@@ -4797,7 +5128,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
       // Search filter
       const q = communitySearch.toLowerCase().trim();
-      const matchSearch = !q || 
+      const matchSearch = !q ||
         (p.title && p.title.toLowerCase().includes(q)) ||
         (p.content && p.content.toLowerCase().includes(q)) ||
         (p.code_snippet && p.code_snippet.toLowerCase().includes(q)) ||
@@ -4884,7 +5215,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
     return (
       <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
         <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
-          
+
           {/* Top Dashboard Header */}
           <DashboardHeader isProfile={false} customTitle="Nova Community" />
 
@@ -4929,10 +5260,10 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
           {/* 3-Column Community Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
+
             {/* LEFT COLUMN: Feeds, Domains, ASME Standard (3 Cols) */}
             <div className="lg:col-span-3 space-y-5">
-              
+
               {/* Feeds Selector Card */}
               <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200/90 shadow-xl space-y-2">
                 <div className="text-xs font-black text-slate-400 uppercase tracking-wider px-2 mb-2">Feed View</div>
@@ -4949,20 +5280,18 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                     onClick={() => {
                       setCommunityActiveTab(tab.id);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                      communityActiveTab === tab.id
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${communityActiveTab === tab.id
                         ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md'
                         : 'text-slate-700 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     <span className="flex items-center gap-2.5">
                       {tab.icon}
                       {tab.label}
                     </span>
                     {tab.id === 'bookmarked' && Object.values(bookmarkedPosts).filter(Boolean).length > 0 && (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                        communityActiveTab === tab.id ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${communityActiveTab === tab.id ? 'bg-white text-indigo-700' : 'bg-amber-100 text-amber-800'
+                        }`}>
                         {Object.values(bookmarkedPosts).filter(Boolean).length}
                       </span>
                     )}
@@ -4974,8 +5303,8 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
               <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200/90 shadow-xl space-y-2">
                 <div className="text-xs font-black text-slate-400 uppercase tracking-wider px-2 mb-2">Engineering Domains</div>
                 {categoriesList.map(cat => {
-                  const count = cat.name === 'All' 
-                    ? displayPosts.length 
+                  const count = cat.name === 'All'
+                    ? displayPosts.length
                     : displayPosts.filter(p => p.category === cat.name).length;
                   return (
                     <button
@@ -4983,19 +5312,17 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                       onClick={() => {
                         setCommunityCategory(cat.name);
                       }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
-                        communityCategory === cat.name
+                      className={`w-full flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${communityCategory === cat.name
                           ? 'bg-slate-900 text-white shadow-md'
                           : 'text-slate-700 hover:bg-slate-100'
-                      }`}
+                        }`}
                     >
                       <span className="flex items-center gap-2.5">
                         {cat.icon}
                         {cat.name}
                       </span>
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                        communityCategory === cat.name ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${communityCategory === cat.name ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
                         {count}
                       </span>
                     </button>
@@ -5017,21 +5344,21 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
             {/* MIDDLE COLUMN: WhatsApp-Style Chatbox & Discussions Stream (6 Cols) */}
             <div className="lg:col-span-6 space-y-5">
-              
+
               {/* Search & Sort Bar */}
               <div className="bg-white rounded-3xl p-4 border-2 border-slate-200/90 shadow-xl space-y-3">
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <div className="relative flex-1 w-full">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={communitySearch}
                       onChange={(e) => setCommunitySearch(e.target.value)}
                       placeholder="Search topics, ASME codes, ACT scripts, or authors..."
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
                     />
                     {communitySearch && (
-                      <button 
+                      <button
                         onClick={() => setCommunitySearch('')}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                       >
@@ -5039,7 +5366,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                       </button>
                     )}
                   </div>
-                  
+
                   {/* Sort Dropdown */}
                   <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
                     <span className="text-[11px] font-bold text-slate-400">Sort:</span>
@@ -5077,7 +5404,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
               {/* WHATSAPP-STYLE INTERACTIVE CHATBOX COMPOSER */}
               <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-emerald-500/30 shadow-2xl relative">
-                
+
                 {/* Chatbox Top Header / Status */}
                 <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2.5">
@@ -5122,7 +5449,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                 {/* Staged Attachments Preview Pills (Floating above chat input) */}
                 {(newPostMedia || composerCodeContent.trim() || newPostCode) && (
                   <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 bg-slate-900 rounded-2xl text-white border border-slate-800 animate-in fade-in">
-                    
+
                     {/* Staged Code Snippet Pill */}
                     {(composerCodeContent.trim() || newPostCode) && (
                       <div className="flex items-center gap-2 bg-slate-800 border border-indigo-500/50 px-3 py-1.5 rounded-xl text-xs">
@@ -5183,17 +5510,16 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
                 {/* WhatsApp Chat Input Box */}
                 <div className="relative flex items-end gap-2 bg-slate-50 border-2 border-slate-200 rounded-3xl p-2 focus-within:border-emerald-500 focus-within:bg-white transition-all">
-                  
+
                   {/* Paperclip / Plus Attachment Menu Button */}
                   <div className="relative shrink-0">
                     <button
                       type="button"
                       onClick={() => setShowAttachMenu(!showAttachMenu)}
-                      className={`p-2.5 rounded-full transition-all ${
-                        showAttachMenu 
-                          ? 'bg-emerald-600 text-white rotate-45 shadow-md' 
+                      className={`p-2.5 rounded-full transition-all ${showAttachMenu
+                          ? 'bg-emerald-600 text-white rotate-45 shadow-md'
                           : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-200/80'
-                      }`}
+                        }`}
                       title="Attach code, media, or draft with AI"
                     >
                       <Paperclip className="w-5 h-5" />
@@ -5205,7 +5531,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                         <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 pt-1">
                           Attach to Chat
                         </div>
-                        
+
                         {/* 1. Code / ACT Script Modal Trigger */}
                         <button
                           type="button"
@@ -5310,11 +5636,10 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                       setCodeModalLang(composerCodeLang || 'python');
                       setShowCodeModal(true);
                     }}
-                    className={`p-2.5 rounded-full transition-all shrink-0 ${
-                      composerCodeContent.trim()
+                    className={`p-2.5 rounded-full transition-all shrink-0 ${composerCodeContent.trim()
                         ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
                         : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-200/60'
-                    }`}
+                      }`}
                     title="Open Dedicated Code Modal"
                   >
                     <Code className="w-5 h-5" />
@@ -5379,16 +5704,15 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                     const comments = postComments[post.id] || [];
                     const isExpanded = !!expandedComments[post.id];
                     const isAuthor = (post.user_email && currentUser?.email && post.user_email === currentUser.email) ||
-                                     (post.user_name === currentUser?.name);
+                      (post.user_name === currentUser?.name);
 
                     return (
-                      <div 
+                      <div
                         key={post.id}
-                        className={`bg-white rounded-3xl p-5 sm:p-6 border-2 transition-all space-y-4 shadow-xl ${
-                          post.is_pinned 
-                            ? 'border-indigo-400/80 bg-gradient-to-b from-indigo-50/30 to-white' 
+                        className={`bg-white rounded-3xl p-5 sm:p-6 border-2 transition-all space-y-4 shadow-xl ${post.is_pinned
+                            ? 'border-indigo-400/80 bg-gradient-to-b from-indigo-50/30 to-white'
                             : 'border-slate-200/90 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         {/* Post Header */}
                         <div className="flex items-start justify-between gap-3">
@@ -5444,7 +5768,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                             )}
                             {isAuthor && (
                               <div className="flex items-center gap-1 border-l border-slate-200 pl-1.5 ml-1">
-                                <button 
+                                <button
                                   onClick={() => {
                                     setEditingPostId(post.id);
                                     setEditPostTitle(post.title || '');
@@ -5455,7 +5779,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 >
                                   <Settings2 className="w-3.5 h-3.5" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleDeletePost(post.id)}
                                   className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-xs font-bold"
                                   title="Delete discussion"
@@ -5471,14 +5795,14 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                         {editingPostId === post.id ? (
                           <div className="p-4 bg-slate-50 rounded-2xl border-2 border-indigo-200 space-y-3">
                             <div className="text-xs font-black text-indigo-700 uppercase">Edit Message</div>
-                            <input 
+                            <input
                               type="text"
                               value={editPostTitle}
                               onChange={(e) => setEditPostTitle(e.target.value)}
                               placeholder="Discussion Title"
                               className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
-                            <textarea 
+                            <textarea
                               value={editPostContent}
                               onChange={(e) => setEditPostContent(e.target.value)}
                               rows="3"
@@ -5486,13 +5810,13 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                               className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                             />
                             <div className="flex items-center justify-end gap-2">
-                              <button 
+                              <button
                                 onClick={() => setEditingPostId(null)}
                                 className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl"
                               >
                                 Cancel
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleSavePostEdit(post.id)}
                                 className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm"
                               >
@@ -5527,7 +5851,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 </span>
                               </span>
                               <div className="flex items-center gap-2">
-                                <button 
+                                <button
                                   onClick={() => {
                                     navigator.clipboard.writeText(post.code_snippet);
                                     setCopiedCodeId(post.id);
@@ -5537,7 +5861,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 >
                                   {copiedCodeId === post.id ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => downloadCodeSnippet(post.code_filename, post.code_snippet)}
                                   className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 transition-all shadow-md hover:scale-105"
                                 >
@@ -5555,7 +5879,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                             {post.media_type === 'video' || (post.media_url && post.media_url.includes('video')) ? (
                               <video controls src={post.media_url || post.image_url} className="w-full max-h-96" />
                             ) : (
-                              <div 
+                              <div
                                 className="relative group cursor-pointer w-full flex items-center justify-center bg-slate-900/50"
                                 onClick={() => setSelectedMediaModal(post.media_url || post.image_url)}
                               >
@@ -5572,35 +5896,32 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs font-bold text-slate-600">
                           <div className="flex items-center gap-4">
                             {/* Upvote */}
-                            <button 
+                            <button
                               onClick={() => handleLikePost(post.id)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                                isLiked 
-                                  ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-200' 
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${isLiked
+                                  ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-200'
                                   : 'hover:bg-slate-100 text-slate-700'
-                              }`}
+                                }`}
                             >
                               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current text-rose-600' : ''}`} />
                               <span>{(post.likes_count || 0) + (isLiked ? 1 : 0)} Upvotes</span>
                             </button>
 
                             {/* Comments Toggle */}
-                            <button 
+                            <button
                               onClick={() => setExpandedComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                                isExpanded ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-100 text-slate-700'
-                              }`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${isExpanded ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-100 text-slate-700'
+                                }`}
                             >
                               <MessageSquare className="w-4 h-4 text-blue-600" />
                               <span>{comments.length} Comments</span>
                             </button>
 
                             {/* Bookmark */}
-                            <button 
+                            <button
                               onClick={() => handleToggleBookmark(post.id)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                                isBookmarked ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-200' : 'hover:bg-slate-100 text-slate-700'
-                              }`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${isBookmarked ? 'bg-amber-50 text-amber-600 ring-1 ring-amber-200' : 'hover:bg-slate-100 text-slate-700'
+                                }`}
                             >
                               <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current text-amber-500' : ''}`} />
                               <span className="hidden sm:inline">{isBookmarked ? 'Saved' : 'Save'}</span>
@@ -5609,7 +5930,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
                           <div className="flex items-center gap-2">
                             {/* Ask AI Review for this Post */}
-                            <button 
+                            <button
                               onClick={() => handleTriggerAiReview(post)}
                               className="px-3 py-1.5 rounded-xl text-indigo-700 hover:bg-indigo-50 font-bold text-xs flex items-center gap-1.5 transition-colors border border-indigo-200/60"
                               title="Ask Nova AI to review and solve this topic"
@@ -5620,11 +5941,10 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
                             {/* Mark Solved Toggle (for author) */}
                             {isAuthor && (
-                              <button 
+                              <button
                                 onClick={() => handleToggleSolved(post.id)}
-                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
-                                  isSolved ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
-                                }`}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${isSolved ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
+                                  }`}
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
                                 <span>{isSolved ? 'Solved ✓' : 'Mark Solved'}</span>
@@ -5632,7 +5952,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                             )}
 
                             {/* Share Link */}
-                            <button 
+                            <button
                               onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
                                 showNotification('Discussion link copied to clipboard!', 'info');
@@ -5656,7 +5976,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                               ) : (
                                 comments.map((c) => {
                                   const isCommentAuthor = (c.email && currentUser?.email && c.email === currentUser.email) ||
-                                                         (c.user === currentUser?.name);
+                                    (c.user === currentUser?.name);
 
                                   return (
                                     <div key={c.id} className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-3">
@@ -5677,7 +5997,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                             <span className="text-[10px] text-slate-400">{c.time || 'Recently'}</span>
                                             {isCommentAuthor && (
                                               <div className="flex items-center gap-1">
-                                                <button 
+                                                <button
                                                   onClick={() => {
                                                     setEditingCommentId(c.id);
                                                     setEditCommentText(c.text || '');
@@ -5686,8 +6006,8 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                                 >
                                                   Edit
                                                 </button>
-                                                <button 
-                                                  onClick={() => handleDeleteComment(post.id, c.id)} 
+                                                <button
+                                                  onClick={() => handleDeleteComment(post.id, c.id)}
                                                   className="text-slate-400 hover:text-rose-500 text-[10px] font-bold px-1"
                                                 >
                                                   Delete
@@ -5699,16 +6019,16 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
                                         {editingCommentId === c.id ? (
                                           <div className="mt-1 space-y-1.5">
-                                            <input 
-                                              type="text" 
-                                              value={editCommentText} 
+                                            <input
+                                              type="text"
+                                              value={editCommentText}
                                               onChange={(e) => setEditCommentText(e.target.value)}
-                                              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500" 
+                                              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                             />
                                             <div className="flex justify-end gap-1.5">
                                               <button onClick={() => setEditingCommentId(null)} className="px-2 py-0.5 text-[10px] text-slate-500">Cancel</button>
-                                              <button 
-                                                onClick={() => handleEditComment(post.id, c.id, editCommentText)} 
+                                              <button
+                                                onClick={() => handleEditComment(post.id, c.id, editCommentText)}
                                                 className="px-2.5 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded"
                                               >
                                                 Save
@@ -5718,7 +6038,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                         ) : (
                                           <div className="space-y-1">
                                             <p className="text-xs text-slate-700 font-medium leading-relaxed">{c.text}</p>
-                                            <button 
+                                            <button
                                               onClick={() => {
                                                 const mention = `@${c.user} `;
                                                 setReplyText(prev => ({
@@ -5741,8 +6061,8 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
                             {/* WhatsApp Style Reply Input */}
                             <div className="flex gap-2 pt-2">
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 value={replyText[post.id] || ''}
                                 onChange={(e) => setReplyText({ ...replyText, [post.id]: e.target.value })}
                                 onKeyDown={(e) => {
@@ -5751,7 +6071,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                                 placeholder={`Reply to ${post.user_name}... (Press Enter to send)`}
                                 className="flex-1 bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-sm"
                               />
-                              <button 
+                              <button
                                 onClick={() => handleAddComment(post.id)}
                                 disabled={!(replyText[post.id] || '').trim()}
                                 className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white font-black text-xs rounded-2xl shadow-sm transition-all shrink-0 hover:scale-105"
@@ -5772,7 +6092,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
 
             {/* RIGHT COLUMN: Leaderboard, ASME Tip of Day, Nova AI Widget (3 Cols) */}
             <div className="lg:col-span-3 space-y-5">
-              
+
               {/* Leaderboard Card */}
               <div className="bg-white rounded-3xl p-5 border-2 border-slate-200/90 shadow-xl space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -5786,11 +6106,10 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
                   {contributorsList.map((c, idx) => (
                     <div key={c.name} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                          idx === 0 ? 'bg-amber-100 text-amber-800' :
-                          idx === 1 ? 'bg-slate-200 text-slate-700' :
-                          idx === 2 ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-500'
-                        }`}>
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${idx === 0 ? 'bg-amber-100 text-amber-800' :
+                            idx === 1 ? 'bg-slate-200 text-slate-700' :
+                              idx === 2 ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-500'
+                          }`}>
                           {idx + 1}
                         </span>
                         <div>
@@ -5870,7 +6189,7 @@ def evaluate_scl_path(model, scl_path_name, allowable_s):
         {showCodeModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
             <div className="bg-slate-900 text-white w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl border-2 border-indigo-500/50 flex flex-col max-h-[90vh] animate-in zoom-in-95">
-              
+
               {/* Code Modal Header */}
               <div className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800">
                 <div className="flex items-center gap-3">
@@ -6030,7 +6349,7 @@ def compute_scl_path(model, path_name, allowable_s):
         {selectedMediaModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
             <div className="relative max-w-5xl max-h-[90vh] bg-slate-900 rounded-3xl overflow-hidden border border-slate-700 p-2 shadow-2xl flex flex-col items-center">
-              <button 
+              <button
                 onClick={() => setSelectedMediaModal(null)}
                 className="absolute top-4 right-4 z-10 p-2 bg-black/60 hover:bg-black text-white rounded-full transition-colors"
               >
@@ -6049,7 +6368,7 @@ def compute_scl_path(model, path_name, allowable_s):
                 <span className="flex items-center gap-2 font-black text-sm sm:text-base">
                   <Sparkles className="w-5 h-5" /> Nova AI Engineering Analysis & Solution
                 </span>
-                <button 
+                <button
                   onClick={() => setShowAskAiCommunityModal(false)}
                   className="p-1 rounded-full hover:bg-white/20 transition-colors"
                 >
@@ -6082,7 +6401,7 @@ def compute_scl_path(model, path_name, allowable_s):
               <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 text-xs">
                 <span className="text-[11px] text-slate-400 font-bold">Grounded in ASME VIII Div 2 & Ansys ACT APIs</span>
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     onClick={() => {
                       navigator.clipboard.writeText(aiCommunityResponse);
                       showNotification('AI analysis copied to clipboard!', 'success');
@@ -6093,13 +6412,13 @@ def compute_scl_path(model, path_name, allowable_s):
                   </button>
 
                   {selectedPostForAi && (
-                    <button 
+                    <button
                       onClick={() => {
                         handleAddComment(
-                          selectedPostForAi.id, 
-                          aiCommunityResponse, 
-                          'Nova AI Assistant ✨', 
-                          'AI Simulation Copilot', 
+                          selectedPostForAi.id,
+                          aiCommunityResponse,
+                          'Nova AI Assistant ✨',
+                          'AI Simulation Copilot',
                           '🤖'
                         );
                         setExpandedComments(prev => ({ ...prev, [selectedPostForAi.id]: true }));
@@ -6124,7 +6443,7 @@ def compute_scl_path(model, path_name, allowable_s):
                 <span className="flex items-center gap-2 font-black text-sm sm:text-base">
                   <Sparkles className="w-5 h-5" /> ✨ Draft Discussion with Nova AI
                 </span>
-                <button 
+                <button
                   onClick={() => setShowAiDraftModal(false)}
                   className="p-1 rounded-full hover:bg-white/20 transition-colors"
                 >
@@ -6139,7 +6458,7 @@ def compute_scl_path(model, path_name, allowable_s):
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">What would you like to discuss or publish?</label>
-                  <textarea 
+                  <textarea
                     value={aiDraftPrompt}
                     onChange={(e) => setAiDraftPrompt(e.target.value)}
                     placeholder="e.g. ASME VIII Div 2 Part 5 SCL linearization path setup for cylindrical shell nozzle with attached ACT macro..."
@@ -6171,13 +6490,13 @@ def compute_scl_path(model, path_name, allowable_s):
               </div>
 
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end items-center gap-2">
-                <button 
+                <button
                   onClick={() => setShowAiDraftModal(false)}
                   className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleAiDraftPost}
                   disabled={isAiDraftLoading}
                   className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
@@ -6196,60 +6515,60 @@ def compute_scl_path(model, path_name, allowable_s):
 
   const renderProfile = () => {
     return (
-    <div className="relative z-10 min-h-screen font-sans text-slate-800 bg-[#f1f3f6]" style={{fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
-      {notification && (
-        <div className={`fixed top-4 right-4 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 text-sm border ${notification.type === 'success' ? 'bg-[#388e3c] border-[#2e7d32]' : notification.type === 'info' ? 'bg-[#1976d2] border-[#1565c0]' : 'bg-[#d32f2f] border-[#c62828]'}`}>
-          <CheckCircle className="w-4 h-4 shrink-0" /> {notification.message}
-        </div>
-      )} <div className="bg-[#2874f0] text-white sticky top-0 z-50 shadow-lg">
-        <div className="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold transition-colors">
-              <ArrowRight className="w-4 h-4 rotate-180" /> Dashboard
-            </button>
-            <span className="text-white/40">/</span>
-            <span className="text-white text-sm font-black">My Account</span>
+      <div className="relative z-10 min-h-screen font-sans text-slate-800 bg-[#f1f3f6]" style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+        {notification && (
+          <div className={`fixed top-4 right-4 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 text-sm border ${notification.type === 'success' ? 'bg-[#388e3c] border-[#2e7d32]' : notification.type === 'info' ? 'bg-[#1976d2] border-[#1565c0]' : 'bg-[#d32f2f] border-[#c62828]'}`}>
+            <CheckCircle className="w-4 h-4 shrink-0" /> {notification.message}
           </div>
-          <div className="flex items-center gap-2">
-            {currentUser.avatar
-              ? <img src={currentUser.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border-2 border-white/40" />
-              : <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-sm border-2 border-white/40">{currentUser.initial}</div>
-            }
-            <span className="font-bold text-sm hidden sm:block">{currentUser.name}</span>
-          </div>
-        </div>
-      </div>
-      <div className="max-w-[1280px] mx-auto px-3 sm:px-4 py-6 flex flex-col lg:flex-row gap-5 items-start"> <div className="w-full lg:w-[260px] shrink-0 space-y-3"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center gap-4">
-              <div className="relative group">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-2xl font-black border-4 border-white shadow-lg">
-                  {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
-                </div>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
-                  <span className="text-white text-[10px] font-bold text-center leading-tight">Change</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-slate-500 font-medium">Hello,</div>
-                <div className="font-black text-slate-900 text-sm truncate">{currentUser.name}</div>
-                <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800' : currentUser.plan === 'Pro' ? 'bg-blue-100 text-blue-800' : currentUser.plan === 'Basic' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
-                  <Sparkles className="w-2.5 h-2.5" /> {currentUser.plan} Plan
-                </div>
-                
-              </div>
+        )} <div className="bg-[#2874f0] text-white sticky top-0 z-50 shadow-lg">
+          <div className="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold transition-colors">
+                <ArrowRight className="w-4 h-4 rotate-180" /> Dashboard
+              </button>
+              <span className="text-white/40">/</span>
+              <span className="text-white text-sm font-black">My Account</span>
             </div>
-          </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="flex items-center gap-2">
+              {currentUser.avatar
+                ? <img src={currentUser.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover border-2 border-white/40" />
+                : <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-sm border-2 border-white/40">{currentUser.initial}</div>
+              }
+              <span className="font-bold text-sm hidden sm:block">{currentUser.name}</span>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-[1280px] mx-auto px-3 sm:px-4 py-6 flex flex-col lg:flex-row gap-5 items-start"> <div className="w-full lg:w-[260px] shrink-0 space-y-3"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-2xl font-black border-4 border-white shadow-lg">
+                {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
+              </div>
+              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                <span className="text-white text-[10px] font-bold text-center leading-tight">Change</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              </label>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-slate-500 font-medium">Hello,</div>
+              <div className="font-black text-slate-900 text-sm truncate">{currentUser.name}</div>
+              <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full mt-1 ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800' : currentUser.plan === 'Pro' ? 'bg-blue-100 text-blue-800' : currentUser.plan === 'Basic' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                <Sparkles className="w-2.5 h-2.5" /> {currentUser.plan} Plan
+              </div>
+
+            </div>
+          </div>
+        </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             {[
-              { id: 'info',         icon: <User className="w-4 h-4" />,        label: 'Profile Information',     color: 'text-[#2874f0]' },
-              { id: 'orders',       icon: <Receipt className="w-4 h-4" />,     label: 'My Orders & Jobs',        color: 'text-[#ff6161]' },
-              { id: 'subscription', icon: <Sparkles className="w-4 h-4" />,    label: 'Plan & Subscription',     color: 'text-[#9c27b0]' },
-              { id: 'security',     icon: <Lock className="w-4 h-4" />,        label: 'Security Settings',       color: 'text-[#e53935]' },
-              { id: 'notifications',icon: <Bell className="w-4 h-4" />,        label: 'Notifications',           color: 'text-[#0288d1]' },
-              { id: 'help',         icon: <HelpCircle className="w-4 h-4" />,  label: 'Help & Support',          color: 'text-[#00796b]' },
-              { id: 'wizard',       icon: <Package className="w-4 h-4" />,     label: 'Ansys Wizard Product',    color: 'text-[#e65100]' },
-              { id: 'community',    icon: <Users className="w-4 h-4" />,       label: 'Nova Community',          color: 'text-[#2e7d32]' },
-              { id: 'nova_help',    icon: <BookOpen className="w-4 h-4" />,    label: 'Nova Help',               color: 'text-[#1565c0]' },
+              { id: 'info', icon: <User className="w-4 h-4" />, label: 'Profile Information', color: 'text-[#2874f0]' },
+              { id: 'orders', icon: <Receipt className="w-4 h-4" />, label: 'My Orders & Jobs', color: 'text-[#ff6161]' },
+              { id: 'subscription', icon: <Sparkles className="w-4 h-4" />, label: 'Plan & Subscription', color: 'text-[#9c27b0]' },
+              { id: 'security', icon: <Lock className="w-4 h-4" />, label: 'Security Settings', color: 'text-[#e53935]' },
+              { id: 'notifications', icon: <Bell className="w-4 h-4" />, label: 'Notifications', color: 'text-[#0288d1]' },
+              { id: 'help', icon: <HelpCircle className="w-4 h-4" />, label: 'Help & Support', color: 'text-[#00796b]' },
+              { id: 'wizard', icon: <Package className="w-4 h-4" />, label: 'Ansys Wizard Product', color: 'text-[#e65100]' },
+              { id: 'community', icon: <Users className="w-4 h-4" />, label: 'Nova Community', color: 'text-[#2e7d32]' },
+              { id: 'nova_help', icon: <BookOpen className="w-4 h-4" />, label: 'Nova Help', color: 'text-[#1565c0]' },
             ].map((item) => (
               <button
                 key={item.id}
@@ -6275,805 +6594,874 @@ def compute_scl_path(model, path_name, allowable_s):
             </button>
           </div>
         </div> <div className="flex-1 min-w-0 space-y-4"> {profileTab === 'info' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Personal Information</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Manage your name, email and contact details</p>
+              </div>
+              <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#2874f0] hover:bg-[#1a5dc9] text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+                <Settings className="w-3.5 h-3.5" /> Edit
+              </button>
+            </div>
+            <div className="px-6 py-5 border-b border-slate-100 bg-[#f8fafc]">
+              <div className="flex items-center gap-5">
+                <div className="relative group cursor-pointer">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-3xl font-black border-4 border-white shadow-lg">
+                    {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                    <span className="text-white text-[10px] font-bold">Change</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  </label>
+                </div>
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Personal Information</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Manage your name, email and contact details</p>
-                </div>
-                <button onClick={() => { setEditForm({ company: currentUser.company, phone: currentUser.phone }); setIsEditProfileOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-[#2874f0] hover:bg-[#1a5dc9] text-white text-sm font-bold rounded-lg transition-all shadow-sm">
-                  <Settings className="w-3.5 h-3.5" /> Edit
-                </button>
-              </div>
-              <div className="px-6 py-5 border-b border-slate-100 bg-[#f8fafc]">
-                <div className="flex items-center gap-5">
-                  <div className="relative group cursor-pointer">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-3xl font-black border-4 border-white shadow-lg">
-                      {currentUser.avatar ? <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" /> : currentUser.initial}
-                    </div>
-                    <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
-                      <span className="text-white text-[10px] font-bold">Change</span>
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
-                  </div>
-                  <div>
-                    <div className="font-black text-lg text-slate-900">{currentUser.name}</div>
-                    <div className="text-sm text-slate-500">{currentUser.email}</div>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
-                        {currentUser.isApproved ? '✓ Verified' : '⚠ Pending'}
-                      </span>
-                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
-                        {currentUser.plan} Plan
-                      </span>
+                  <div className="font-black text-lg text-slate-900">{currentUser.name}</div>
+                  <div className="text-sm text-slate-500">{currentUser.email}</div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
+                      {currentUser.isApproved ? '✓ Verified' : '⚠ Pending'}
+                    </span>
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${currentUser.plan === 'Max' ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-blue-100 text-blue-800 border-blue-200'}`}>
+                      {currentUser.plan} Plan
+                    </span>
 
-                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="px-6 py-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { label: 'Full Name',           value: currentUser.name,                                        icon: <User className="w-4 h-4 text-[#2874f0]" /> },
-                    { label: 'Email Address',        value: currentUser.email,                                       icon: <Mail className="w-4 h-4 text-[#2874f0]" /> },
-                    { label: 'Phone Number',         value: currentUser.phone || 'Not provided',                    icon: <Smartphone className="w-4 h-4 text-[#2874f0]" /> },
-                    { label: 'Company / Institute',  value: currentUser.company || 'Not provided',                  icon: <Landmark className="w-4 h-4 text-[#2874f0]" /> },
-                    { label: 'Member Since',         value: currentUser.joined,                                      icon: <Clock className="w-4 h-4 text-[#2874f0]" /> },
-                    { label: 'Analysis Jobs',        value: `${jobs.length} Total · ${stats.completed} Completed`, icon: <Activity className="w-4 h-4 text-[#2874f0]" /> },
-                  ].map((field, i) => (
-                    <div key={i} className="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-slate-200 hover:border-[#2874f0]/30 transition-all">
-                      <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">{field.icon}</div>
-                      <div className="min-w-0">
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">{field.label}</div>
-                        <div className="text-sm font-bold text-slate-800 truncate">{field.value}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="px-6 pb-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Total',      value: stats.total,      color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                    { label: 'Completed',  value: stats.completed,  color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                    { label: 'Processing', value: stats.processing, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-                    { label: 'Pending',    value: stats.pending,    color: 'bg-amber-50 text-amber-700 border-amber-200' },
-                  ].map((s, i) => (
-                    <div key={i} className={`rounded-xl border px-4 py-3 text-center ${s.color}`}>
-                      <div className="text-2xl font-black">{s.value}</div>
-                      <div className="text-[11px] font-bold mt-0.5">{s.label}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
-          )} {profileTab === 'orders' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="px-6 py-5 border-b border-slate-100">
-                <h2 className="text-lg font-black text-slate-900">My Analysis Orders</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{jobs.length} total jobs</p>
+            <div className="px-6 py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { label: 'Full Name', value: currentUser.name, icon: <User className="w-4 h-4 text-[#2874f0]" /> },
+                  { label: 'Email Address', value: currentUser.email, icon: <Mail className="w-4 h-4 text-[#2874f0]" /> },
+                  { label: 'Phone Number', value: currentUser.phone || 'Not provided', icon: <Smartphone className="w-4 h-4 text-[#2874f0]" /> },
+                  { label: 'Company / Institute', value: currentUser.company || 'Not provided', icon: <Landmark className="w-4 h-4 text-[#2874f0]" /> },
+                  { label: 'Member Since', value: currentUser.joined, icon: <Clock className="w-4 h-4 text-[#2874f0]" /> },
+                  { label: 'Analysis Jobs', value: `${jobs.length} Total · ${stats.completed} Completed`, icon: <Activity className="w-4 h-4 text-[#2874f0]" /> },
+                ].map((field, i) => (
+                  <div key={i} className="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-slate-200 hover:border-[#2874f0]/30 transition-all">
+                    <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] flex items-center justify-center shrink-0">{field.icon}</div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">{field.label}</div>
+                      <div className="text-sm font-bold text-slate-800 truncate">{field.value}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              {jobs.length === 0 ? (
-                <div className="text-center py-16 px-6">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4"><Receipt className="w-7 h-7 text-slate-400" /></div>
-                  <h3 className="font-bold text-slate-700 mb-2">No orders yet</h3>
-                  <p className="text-sm text-slate-400 mb-4">Submit your first FEA analysis from the Dashboard</p>
-                  <button onClick={() => setCurrentView('dashboard')} className="px-5 py-2.5 bg-[#2874f0] text-white text-sm font-bold rounded-lg hover:bg-[#1a5dc9]">Go to Dashboard</button>
+            </div>
+            <div className="px-6 pb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Total', value: stats.total, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                  { label: 'Completed', value: stats.completed, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                  { label: 'Processing', value: stats.processing, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                  { label: 'Pending', value: stats.pending, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+                ].map((s, i) => (
+                  <div key={i} className={`rounded-xl border px-4 py-3 text-center ${s.color}`}>
+                    <div className="text-2xl font-black">{s.value}</div>
+                    <div className="text-[11px] font-bold mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )} {profileTab === 'orders' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-black text-slate-900">My Analysis Orders</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{jobs.length} total jobs</p>
+            </div>
+            {jobs.length === 0 ? (
+              <div className="text-center py-16 px-6">
+                <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4"><Receipt className="w-7 h-7 text-slate-400" /></div>
+                <h3 className="font-bold text-slate-700 mb-2">No orders yet</h3>
+                <p className="text-sm text-slate-400 mb-4">Submit your first FEA analysis from the Dashboard</p>
+                <button onClick={() => setCurrentView('dashboard')} className="px-5 py-2.5 bg-[#2874f0] text-white text-sm font-bold rounded-lg hover:bg-[#1a5dc9]">Go to Dashboard</button>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {jobs.map((job) => {
+                  const normStatus = (job.status || '').toLowerCase();
+                  const isCompleted = normStatus === 'completed' || normStatus === 'success';
+                  const isFailed = normStatus === 'failed' || normStatus === 'error';
+                  const isPending = !isCompleted && !isFailed;
+                  return (
+                    <div key={job.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#e8f0fe] flex items-center justify-center shrink-0"><Cpu className="w-5 h-5 text-[#2874f0]" /></div>
+                          <div>
+                            <div className="font-bold text-slate-900 text-sm">{job.name}</div>
+                            <div className="text-xs text-slate-500">Order: <span className="font-mono font-bold">{job.job_id_display || `NV-${(job.id || '').toString().slice(0, 6)}`}</span></div>
+                            <div className="text-[11px] text-slate-400">{new Date(job.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-sm">
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span className="tracking-wide uppercase">Completed</span>
+                            </span>
+                          )}
+                          {isFailed && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-50 text-red-700 border border-red-300 shadow-sm">
+                              <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                              <span className="tracking-wide uppercase">Failed</span>
+                            </span>
+                          )}
+                          {isPending && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-300 shadow-sm">
+                              <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0 animate-pulse" />
+                              <span className="tracking-wide uppercase">{job.status || 'Pending'}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )} {profileTab === 'subscription' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className={`rounded-xl overflow-hidden shadow-lg ${currentUser.plan === 'Max' ? 'bg-gradient-to-r from-purple-700 to-indigo-700' : currentUser.plan === 'Pro' ? 'bg-gradient-to-r from-[#2874f0] to-[#0c47ba]' : currentUser.plan === 'Basic' ? 'bg-gradient-to-r from-[#43a047] to-[#1b5e20]' : 'bg-gradient-to-r from-slate-700 to-slate-900'}`}>
+              <div className="p-6 text-white">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-xs text-white/70 font-semibold uppercase tracking-wider mb-1">Active Plan</div>
+                    <h2 className="text-3xl font-black">{currentUser.plan} Plan</h2>
+                    <div className="flex items-center gap-3 mt-2 text-sm text-white/80 font-semibold">
+                      <span>{currentUser.dailyCreditsTotal} Credits/day</span>
+                      <span>·</span>
+                      <span>{currentUser.dailyCreditsRemaining} remaining today</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-white/70 mb-1">Resets at</div>
+                    <div className="font-black text-lg">00:00 UTC</div>
+                    <div className="text-xs text-white/60">05:30 AM IST</div>
+                  </div>
+                </div>
+                <div className="mt-5">
+                  <div className="flex justify-between text-xs text-white/70 mb-1.5">
+                    <span>Quota Used Today</span>
+                    <span>{currentUser.dailyCreditsTotal - currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-white rounded-full" style={{ width: `${Math.round((currentUser.dailyCreditsRemaining / currentUser.dailyCreditsTotal) * 100)}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {(() => {
+                const PLAN_TIER_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
+                const userCurrentTierRank = PLAN_TIER_RANKS[currentUser?.plan || 'Free'] ?? 0;
+                const allPlans = [
+                  { name: 'Free', price: '$0', credits: '100 cr/day', badge: null, color: 'border-slate-300', features: ['ASME Materials (10 cr)', 'Stress-Strain Curves', 'AI Recommender Free', 'Daily Auto-Reset'] },
+                  { name: 'Basic', price: '$10', credits: '700 cr/day', badge: null, color: 'border-emerald-400', features: ['Nozzle Analysis (300 cr)', 'Bellow Analysis (300 cr)', 'Saddle Analysis', 'Full DOCX Reports'] },
+                  { name: 'Pro', price: '$35', credits: '1,500 cr/day', badge: 'Popular', color: 'border-[#2874f0]', features: ['All Basic features', 'Flange & Lug Analysis', 'Priority Queue', '5-10 FEA solves/day'] },
+                  { name: 'Max', price: '$60', credits: '3,000 cr/day', badge: 'Best Value', color: 'border-purple-500', features: ['All Pro features', 'Trunnion Analysis', 'CAD AI Generator', 'Tubesheet FEA'] },
+                ];
+                const upgradeablePlans = allPlans.filter(p => PLAN_TIER_RANKS[p.name] >= userCurrentTierRank);
+
+                return upgradeablePlans.map((plan) => {
+                  const isCurrent = (currentUser?.plan || 'Free') === plan.name;
+                  return (
+                    <div key={plan.name} className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : plan.color} hover:shadow-md transition-all`}>
+                      {plan.badge && <div className="bg-[#fb641b] text-white text-[10px] font-black py-1 text-center tracking-wider">{plan.badge}</div>}
+                      <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex items-center justify-between">
+                          <div className="font-black text-xl text-slate-900">{plan.name}</div>
+                          {isCurrent && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              Active Plan
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-baseline gap-1 mt-1 mb-2">
+                          <span className="text-3xl font-black text-slate-900">{plan.price}</span>
+                          <span className="text-sm text-slate-500">/mo</span>
+                        </div>
+                        <div className="text-xs font-bold text-[#2874f0] bg-[#e8f0fe] px-2.5 py-1 rounded-lg mb-4">{plan.credits}</div>
+                        <div className="space-y-2 flex-1">
+                          {plan.features.map((f, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-slate-600"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" /> {f}</div>
+                          ))}
+                        </div>
+                        {isCurrent ? (
+                          <button
+                            disabled
+                            className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-emerald-50 text-emerald-700 border-2 border-emerald-300 cursor-default flex items-center justify-center gap-1.5"
+                          >
+                            <CheckCircle className="w-4 h-4 text-emerald-600" /> Current Plan (Active)
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (plan.name === 'Basic') {
+                                handleRazorpayCheckout('Basic Plan (Monthly Subscription)', '₹899', 'credit_subscription', { planName: 'Basic', credits: 700 });
+                              } else if (plan.name === 'Pro') {
+                                handleRazorpayCheckout('Pro Plan (Monthly Subscription)', '₹2,999', 'credit_subscription', { planName: 'Pro', credits: 1500 });
+                              } else if (plan.name === 'Max') {
+                                handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 });
+                              }
+                            }}
+                            className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-[#2874f0] hover:bg-[#1a5dc9] text-white shadow-md hover:scale-105 transition-all flex items-center justify-center gap-1.5"
+                          >
+                            Upgrade to {plan.name} →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            {currentUser.plan !== 'Max' && (
+              <div className="bg-gradient-to-r from-[#2874f0] to-[#0c47ba] rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                <div>
+                  <div className="font-black text-lg">Unlock All 14 Analysis Modules</div>
+                  <div className="text-white/80 text-sm mt-0.5">Upgrade to Max — 3,000 credits/day, full enterprise access</div>
+                </div>
+                <button onClick={() => handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 })} className="shrink-0 px-6 py-3 bg-[#fb641b] hover:bg-[#e55a16] text-white font-black rounded-xl shadow-md text-sm hover:scale-105 transition-all">Upgrade to Max Plan (₹4,999) →</button>
+              </div>
+            )}
+
+            {/* ── Payment History ── show only if user has purchased a plan */}
+            {paymentHistory.length > 0 && (
+              <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-indigo-500" /> Payment History
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Your recent plan purchases</p>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                    {paymentHistory.length} Record{paymentHistory.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {paymentHistory.slice(0, 5).map((entry, idx) => {
+                    const planLabel = entry.productName?.includes('Max') ? 'Nova Max'
+                      : entry.productName?.includes('Pro') ? 'Nova Pro'
+                        : entry.productName?.includes('Basic') ? 'Nova Basic'
+                          : entry.productName || 'Nova Plan';
+                    return (
+                      <div key={idx} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-5 h-5 text-indigo-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-slate-900">{planLabel}</div>
+                            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              {entry.date}&nbsp;·&nbsp;
+                              <span className="text-emerald-600 font-bold">{entry.priceFormatted}</span>
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400">{entry.invoiceId}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">PAID</span>
+                          <button
+                            type="button"
+                            onClick={() => openDocumentModal(entry, 'invoice')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
+                            title="View Authentic Tax Invoice"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-indigo-600" /> View Invoice
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openDocumentModal(entry, 'receipt')}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
+                            title="View Payment Receipt"
+                          >
+                            <Receipt className="w-3.5 h-3.5 text-indigo-600" /> View Receipt
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {paymentHistory.length > 5 && (
+                  <div className="px-5 py-3 border-t border-slate-100 text-center">
+                    <span className="text-xs text-slate-400">Showing 5 of {paymentHistory.length} payments</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )} {profileTab === 'security' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-black text-slate-900">Security Settings</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Manage password and account security</p>
+            </div>
+            <div className="px-6 py-6 space-y-4">
+              <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl hover:border-[#2874f0]/40 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center shrink-0"><Lock className="w-5 h-5 text-red-600" /></div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">Password</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Last changed recently</div>
+                  </div>
+                </div>
+                <button onClick={() => setIsChangePasswordOpen(true)} className="px-4 py-2 border-2 border-[#2874f0] text-[#2874f0] text-sm font-bold rounded-lg hover:bg-[#e8f0fe] transition-all shrink-0">Change</button>
+              </div>
+              <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0"><Mail className="w-5 h-5 text-emerald-600" /></div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">Email Verification</div>
+                    <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{currentUser.email}</div>
+                  </div>
+                </div>
+                <span className="px-3 py-1 text-[11px] font-black bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200 shrink-0">Verified</span>
+              </div>
+              <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center shrink-0"><Shield className="w-5 h-5 text-blue-600" /></div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">Account Status</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Platform approval</div>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 text-[11px] font-black rounded-full border shrink-0 ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>{currentUser.isApproved ? 'Approved' : 'Pending'}</span>
+              </div>
+              <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl bg-slate-50">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center shrink-0"><Smartphone className="w-5 h-5 text-purple-600" /></div>
+                  <div>
+                    <div className="font-bold text-slate-700 text-sm">Two-Factor Authentication</div>
+                    <div className="text-xs text-slate-400 mt-0.5">SMS and Authenticator app</div>
+                  </div>
+                </div>
+                <span className="px-3 py-1 text-[11px] font-black bg-slate-200 text-slate-500 rounded-full shrink-0">Coming Soon</span>
+              </div>
+              <div className="border-2 border-red-200 rounded-xl p-5 bg-red-50">
+                <div className="text-sm font-black text-red-800 mb-1">Danger Zone</div>
+                <div className="text-xs text-red-600 mb-3">Permanently delete your account. This action is irreversible.</div>
+                <button className="px-4 py-2 border-2 border-red-400 text-red-700 text-xs font-black rounded-lg hover:bg-red-100 transition-all">Delete My Account</button>
+              </div>
+            </div>
+          </div>
+        )} {profileTab === 'notifications' && (
+          <div className="space-y-5 animate-in fade-in duration-300"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Activity & Alerts Log</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Real-time alerts, transactions, and community events saved permanently</p>
+              </div>
+              {persistentNotifications.length > 0 && (
+                <button
+                  onClick={() => {
+                    setPersistentNotifications([]);
+                    try { localStorage.removeItem('nova_persistent_notifications'); } catch (e) { }
+                    showNotification('Alert history cleared', 'info');
+                  }}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
+                >
+                  Clear Log
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+              {persistentNotifications.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                  No alerts or notifications recorded yet.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
-                  {jobs.map((job) => {
-                    const normStatus = (job.status || '').toLowerCase();
-                    const isCompleted = normStatus === 'completed' || normStatus === 'success';
-                    const isFailed = normStatus === 'failed' || normStatus === 'error';
-                    const isPending = !isCompleted && !isFailed;
+                persistentNotifications.map((notif) => (
+                  <div key={notif.id} className="p-4 hover:bg-slate-50 flex items-start gap-3 transition-colors">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                        notif.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                      }`}>
+                      {notif.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
+                        notif.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-bold text-xs text-slate-900">{notif.title}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{notif.time || 'Today'}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">{notif.message}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100">
+                <h2 className="text-lg font-black text-slate-900">Notification Preferences</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Configure automated push and email channels</p>
+              </div>
+              <div className="px-6 py-2">
+                {[
+                  { key: 'job_complete', label: 'Job Completion', desc: 'Alert when your FEA analysis finishes' },
+                  { key: 'job_failed', label: 'Job Failed', desc: 'Alert when a job fails or has errors' },
+                  { key: 'credit_low', label: 'Low Credit Warning', desc: 'Warn when daily credits fall below 20%' },
+                  { key: 'sub_renew', label: 'Subscription Renewal', desc: 'Reminder 3 days before plan renews' },
+                  { key: 'community', label: 'Community Activity', desc: 'Likes, comments and replies on posts' },
+                  { key: 'product_updates', label: 'Product Updates', desc: 'New features and platform improvements' },
+                  { key: 'promos', label: 'Offers & Promotions', desc: 'Discounts and special offers' },
+                ].map((pref) => (
+                  <div key={pref.key} className="flex items-center justify-between py-4 border-b border-slate-100 last:border-b-0">
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">{pref.label}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{pref.desc}</div>
+                    </div>
+                    <button
+                      onClick={() => setProfileNotifPrefs(prev => ({ ...prev, [pref.key]: !prev[pref.key] }))}
+                      className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ml-4 ${profileNotifPrefs[pref.key] ? 'bg-[#2874f0]' : 'bg-slate-300'}`}
+                    >
+                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${profileNotifPrefs[pref.key] ? 'left-7' : 'left-1'}`}></span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
+                <button onClick={() => showNotification('Notification preferences saved!', 'success', 'Preferences')} className="px-6 py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all">Save Preferences</button>
+              </div>
+            </div>
+          </div>
+        )} {profileTab === 'help' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
+                <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-4"><Mail className="w-7 h-7 text-blue-600" /></div>
+                <h3 className="font-black text-slate-900 mb-2">Email Support</h3>
+                <p className="text-xs text-slate-500 mb-4">Technical issues, billing and licensing queries</p>
+                <a href="mailto:analysis.ai.nova@gmail.com" className="w-full py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all block">analysis.ai.nova@gmail.com</a>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
+                <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4"><Users className="w-7 h-7 text-emerald-600" /></div>
+                <h3 className="font-black text-slate-900 mb-2">Nova Community</h3>
+                <p className="text-xs text-slate-500 mb-4">Share results, ask questions, peer support</p>
+                <button onClick={() => setCurrentView('nova_community')} className="w-full py-2.5 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-all">Open Community</button>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100"><h2 className="font-black text-slate-900">Frequently Asked Questions</h2></div>
+              <div className="divide-y divide-slate-100">
+                {[
+                  { q: 'When do daily credits reset?', a: 'Credits reset at 00:00 UTC (05:30 AM IST) every day, automatically and fully to 100%.' },
+                  { q: 'What if I run out of credits mid-session?', a: 'The job will not submit if credits are insufficient. Upgrade your plan or wait for the midnight reset.' },
+                  { q: 'How do I download my FEA report?', a: 'Dashboard → click any completed job → click View Report to download your DOCX or PDF.' },
+                  { q: 'Is the payment system secure?', a: 'Yes. 256-bit SSL encryption. We support Visa, Mastercard, RuPay, UPI, Net Banking, and PayPal via secure certified gateways.' },
+                  { q: 'How many computers can I use the ACT Wizard on?', a: '6-Month license: 2 workstation activations. 1-Month and 3-Month: 1 workstation activation each.' },
+                  { q: 'How do I cancel my subscription?', a: 'Email analysis.ai.nova@gmail.com. Cancellations take effect at the end of the billing cycle.' },
+                ].map((item, i) => (
+                  <details key={i} className="group px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors">
+                    <summary className="flex items-center justify-between font-bold text-sm text-slate-800 list-none">
+                      {item.q}
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform shrink-0 ml-3" />
+                    </summary>
+                    <p className="text-sm text-slate-500 mt-3 leading-relaxed font-medium pr-4">{item.a}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#e8f0fe] flex items-center justify-center"><Bot className="w-5 h-5 text-[#2874f0]" /></div>
+                <div>
+                  <div className="font-black text-slate-900 text-sm">NOVA AI Support</div>
+                  <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online</div>
+                </div>
+              </div>
+              <div className="h-52 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
+                {supportChat.map((m, i) => (
+                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`px-4 py-2.5 rounded-2xl text-xs font-medium max-w-[80%] leading-relaxed ${m.role === 'user' ? 'bg-[#2874f0] text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'}`}>{m.text}</div>
+                  </div>
+                ))}
+                {isSupportLoading && (
+                  <div className="flex justify-start">
+                    <div className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-400 flex items-center gap-2 shadow-sm">
+                      <Loader2 className="w-3 h-3 animate-spin text-[#2874f0]" /> Typing...
+                    </div>
+                  </div>
+                )}
+              </div>
+              <form onSubmit={handleSupportSubmit} className="flex gap-2 p-4 border-t border-slate-100">
+                <input type="text" className="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#2874f0] focus:bg-white" value={supportInput} onChange={e => setSupportInput(e.target.value)} placeholder="Ask anything about NOVA..." />
+                <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="px-4 py-2.5 bg-[#2874f0] text-white rounded-xl font-bold hover:bg-[#1a5dc9] transition-all disabled:opacity-50 flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+        )} {profileTab === 'wizard' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Ansys ACT Wizards</h2>
+                <p className="text-xs text-slate-500 mt-1">Automate your FEA workflows with our premium .WBEX extensions</p>
+              </div>
+              <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
+                <Package className="w-5 h-5 text-[#d84315]" />
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              {ANSYS_WIZARDS.map((item, i) => {
+                const purchasedJob = (jobs || []).find(j => {
+                  const isCompleted = (j.status || '').toLowerCase() === 'completed';
+                  const jName = (j.name || '').toLowerCase();
+                  const isWiz = j.type === 'Wizard Purchase' || jName.includes('wizard') || jName.includes('.wbex');
+                  if (!isCompleted || !isWiz) return false;
+                  if (item.id === 'stress_strain' && (jName.includes('stress') || jName.includes('curve'))) return true;
+                  if (item.id === 'head' && jName.includes('head')) return true;
+                  if (item.id === 'shell' && jName.includes('shell')) return true;
+                  if (item.id === 'full' && (jName.includes('full') || (!jName.includes('head') && !jName.includes('shell') && !jName.includes('stress')))) return true;
+                  return false;
+                });
+                const isPurchased = !!purchasedJob;
+                const itemIcon = item.id === 'stress_strain'
+                  ? <LineChart className="w-6 h-6 text-[#2874f0]" />
+                  : item.id === 'shell'
+                    ? <Cylinder className="w-6 h-6 text-[#2874f0]" />
+                    : item.id === 'head'
+                      ? <Disc className="w-6 h-6 text-[#2874f0]" />
+                      : <Box className="w-6 h-6 text-[#2874f0]" />;
+
+                return (
+                  <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-200 rounded-2xl bg-white hover:border-slate-300 transition-all gap-4 shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center shrink-0">
+                        {itemIcon}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name}</h3>
+                        <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      <button
+                        onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2"
+                      >
+                        <PlayCircle className="w-4 h-4 text-slate-700" /> View Demo
+                      </button>
+                      {isPurchased ? (
+                        <button
+                          onClick={() => window.open('mailto:analysis.ai.nova@gmail.com', '_blank')}
+                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2"
+                        >
+                          <Mail className="w-4 h-4" /> Contact Support
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
+                          className="px-6 py-2.5 bg-gradient-to-r from-[#d84315] to-[#bf360c] hover:from-[#c23b12] hover:to-[#a72e09] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:scale-105"
+                        >
+                          <ShoppingCart className="w-4 h-4" /> Buy
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )} {profileTab === 'community' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-10 h-10 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Community Hub</h2>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Connect with fellow engineers, share your FEA results, ask questions, and collaborate on complex structural analysis problems.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="font-black text-xl text-slate-800">500+</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase">Engineers</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="font-black text-xl text-slate-800">1.2k</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase">Discussions</div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="font-black text-xl text-slate-800">Daily</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase">New Resources</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('nova_community')}
+                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+              >
+                <Users className="w-5 h-5" /> Enter Nova Community
+              </button>
+            </div>
+          </div>
+        )} {profileTab === 'nova_help' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="w-10 h-10 text-[#1565c0]" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Knowledge Base</h2>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Access comprehensive documentation, video tutorials, API references, and engineering guides for all Nova Analysis modules.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-8 text-left">
+                <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
+                  <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-800 text-sm">Module Documentation</div>
+                    <div className="text-xs text-slate-500 mt-0.5">Detailed input guidelines and result interpretations.</div>
+                  </div>
+                </div>
+                <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
+                  <Video className="w-5 h-5 text-red-500 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-800 text-sm">Video Tutorials</div>
+                    <div className="text-xs text-slate-500 mt-0.5">Step-by-step FEA workflow guides.</div>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentView('nova_help')}
+                className="px-8 py-3.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+              >
+                <BookOpen className="w-5 h-5" /> Access Help Center
+              </button>
+            </div>
+          </div>
+        )}
+          </div>
+        </div> {isEditProfileOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
+            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+              <div className="flex items-center justify-between px-6 py-5 bg-[#2874f0] text-white">
+                <span className="flex items-center gap-2 font-black text-lg"><Settings className="w-5 h-5" /> Edit Profile</span>
+                <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleEditProfile} className="p-6 space-y-5">
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">Company / Institute</label>
+                  <input type="text" value={editForm.company} onChange={e => setEditForm({ ...editForm, company: e.target.value })} required placeholder="e.g. Larsen and Toubro Ltd." className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">Phone Number</label>
+                  <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} required placeholder="+91 98765 43210" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50">Cancel</button>
+                  <button type="submit" className="flex-1 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white rounded-xl font-bold text-sm shadow-md">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )} {isWizardDemoOpen && selectedWizardForDemo && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setIsWizardDemoOpen(false)}></div>
+            <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
+              <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
+                <span className="flex items-center gap-3 font-bold text-lg">
+                  <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
+                </span>
+                <button onClick={() => setIsWizardDemoOpen(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-slate-300" />
+                </button>
+              </div>
+              <div className="p-0 bg-black relative aspect-video">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src="https://www.youtube.com/embed/A65i5WT83bs?autoplay=1"
+                  title="Nova Wizard Demo"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                ></iframe>
+              </div>
+              <div className="px-6 py-4 bg-slate-800 border-t border-slate-700 text-slate-300 space-y-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
+                  <button
+                    onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
+                    className="px-6 py-2.5 bg-[#d84315] hover:bg-[#bf360c] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0"
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Buy
+                  </button>
+                </div>
+                {(selectedWizardForDemo.id === 'stress_strain' || selectedWizardForDemo.curveTypes) && (
+                  <div className="pt-2 border-t border-slate-700/70">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Supported Curve Types:</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      {(selectedWizardForDemo.curveTypes || [
+                        'True Stress-Strain',
+                        'Cyclic Stress-Strain',
+                        'Isochronous Stress-Strain',
+                        'Tangent Modulus Stress-Strain'
+                      ]).map((curve, ci) => (
+                        <div key={ci} className="bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-700 text-emerald-400 font-medium text-center">
+                          {curve}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )} {isWizardPricingOpen && selectedWizardForPricing && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsWizardPricingOpen(false)}></div>
+            <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                <span className="flex items-center gap-3 font-bold text-lg text-slate-900">
+                  <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
+                </span>
+                <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 bg-slate-50">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Choose your licensing term</h3>
+                  <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {(selectedWizardForPricing.pricing || [
+                    { term: '1 Month', price: '₹4,999', desc: 'Short-term access for single projects', workstations: 1, recommend: false },
+                    { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
+                    { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
+                  ]).map((plan, i) => {
                     return (
-                      <div key={job.id} className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setSelectedJobDetails(job); setIsJobDetailsOpen(true); }}>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#e8f0fe] flex items-center justify-center shrink-0"><Cpu className="w-5 h-5 text-[#2874f0]" /></div>
-                            <div>
-                              <div className="font-bold text-slate-900 text-sm">{job.name}</div>
-                              <div className="text-xs text-slate-500">Order: <span className="font-mono font-bold">{job.job_id_display || `NV-${(job.id || '').toString().slice(0,6)}`}</span></div>
-                              <div className="text-[11px] text-slate-400">{new Date(job.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                      <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#d84315] shadow-md ring-4 ring-[#d84315]/10' : 'border-slate-200 hover:border-slate-300'}`}>
+                        {plan.recommend && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d84315] text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                            Recommended
+                          </div>
+                        )}
+                        <div className="p-5 flex-1 text-center flex flex-col justify-between">
+                          <div>
+                            <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
+                            <div className="text-3xl font-black text-slate-900">{plan.price}</div>
+                            <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
+                            <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
+                            <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
+                              <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 sm:flex-col sm:items-end">
-                            {isCompleted && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-sm">
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                <span className="tracking-wide uppercase">Completed</span>
-                              </span>
-                            )}
-                            {isFailed && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-50 text-red-700 border border-red-300 shadow-sm">
-                                <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                                <span className="tracking-wide uppercase">Failed</span>
-                              </span>
-                            )}
-                            {isPending && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-700 border border-amber-300 shadow-sm">
-                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0 animate-pulse" />
-                                <span className="tracking-wide uppercase">{job.status || 'Pending'}</span>
-                              </span>
-                            )}
+                          <div>
+                            <button
+                              onClick={() => {
+                                setIsWizardPricingOpen(false);
+                                handleRazorpayCheckout(
+                                  `${selectedWizardForPricing.name} (${plan.term} License)`,
+                                  plan.price,
+                                  'wizard_purchase',
+                                  {
+                                    term: plan.term,
+                                    workstations: plan.workstations,
+                                    productName: selectedWizardForPricing.name,
+                                    wizardId: selectedWizardForPricing.id,
+                                    filename: selectedWizardForPricing.filename
+                                  }
+                                );
+                              }}
+                              className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#d84315] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                            >
+                              <CreditCard className="w-4 h-4" /> Select {plan.term}
+                            </button>
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          )} {profileTab === 'subscription' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              <div className={`rounded-xl overflow-hidden shadow-lg ${currentUser.plan === 'Max' ? 'bg-gradient-to-r from-purple-700 to-indigo-700' : currentUser.plan === 'Pro' ? 'bg-gradient-to-r from-[#2874f0] to-[#0c47ba]' : currentUser.plan === 'Basic' ? 'bg-gradient-to-r from-[#43a047] to-[#1b5e20]' : 'bg-gradient-to-r from-slate-700 to-slate-900'}`}>
-                <div className="p-6 text-white">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xs text-white/70 font-semibold uppercase tracking-wider mb-1">Active Plan</div>
-                      <h2 className="text-3xl font-black">{currentUser.plan} Plan</h2>
-                      <div className="flex items-center gap-3 mt-2 text-sm text-white/80 font-semibold">
-                        <span>{currentUser.dailyCreditsTotal} Credits/day</span>
-                        <span>·</span>
-                        <span>{currentUser.dailyCreditsRemaining} remaining today</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-white/70 mb-1">Resets at</div>
-                      <div className="font-black text-lg">00:00 UTC</div>
-                      <div className="text-xs text-white/60">05:30 AM IST</div>
-                    </div>
-                  </div>
-                  <div className="mt-5">
-                    <div className="flex justify-between text-xs text-white/70 mb-1.5">
-                      <span>Quota Used Today</span>
-                      <span>{currentUser.dailyCreditsTotal - currentUser.dailyCreditsRemaining} / {currentUser.dailyCreditsTotal}</span>
-                    </div>
-                    <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
-                      <div className="h-full bg-white rounded-full" style={{ width: `${Math.round((currentUser.dailyCreditsRemaining / currentUser.dailyCreditsTotal) * 100)}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {(() => {
-                  const PLAN_TIER_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
-                  const userCurrentTierRank = PLAN_TIER_RANKS[currentUser?.plan || 'Free'] ?? 0;
-                  const allPlans = [
-                    { name: 'Free',  price: '$0',   credits: '100 cr/day',   badge: null,         color: 'border-slate-300',   features: ['ASME Materials (10 cr)','Stress-Strain Curves','AI Recommender Free','Daily Auto-Reset'] },
-                    { name: 'Basic', price: '$10',  credits: '700 cr/day',   badge: null,         color: 'border-emerald-400', features: ['Nozzle Analysis (300 cr)','Bellow Analysis (300 cr)','Saddle Analysis','Full DOCX Reports'] },
-                    { name: 'Pro',   price: '$35',  credits: '1,500 cr/day', badge: 'Popular',    color: 'border-[#2874f0]',   features: ['All Basic features','Flange & Lug Analysis','Priority Queue','5-10 FEA solves/day'] },
-                    { name: 'Max',   price: '$60',  credits: '3,000 cr/day', badge: 'Best Value', color: 'border-purple-500',  features: ['All Pro features','Trunnion Analysis','CAD AI Generator','Tubesheet FEA'] },
-                  ];
-                  const upgradeablePlans = allPlans.filter(p => PLAN_TIER_RANKS[p.name] >= userCurrentTierRank);
-
-                  return upgradeablePlans.map((plan) => {
-                    const isCurrent = (currentUser?.plan || 'Free') === plan.name;
-                    return (
-                      <div key={plan.name} className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : plan.color} hover:shadow-md transition-all`}>
-                        {plan.badge && <div className="bg-[#fb641b] text-white text-[10px] font-black py-1 text-center tracking-wider">{plan.badge}</div>}
-                        <div className="p-5 flex-1 flex flex-col">
-                          <div className="flex items-center justify-between">
-                            <div className="font-black text-xl text-slate-900">{plan.name}</div>
-                            {isCurrent && (
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                Active Plan
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-baseline gap-1 mt-1 mb-2">
-                            <span className="text-3xl font-black text-slate-900">{plan.price}</span>
-                            <span className="text-sm text-slate-500">/mo</span>
-                          </div>
-                          <div className="text-xs font-bold text-[#2874f0] bg-[#e8f0fe] px-2.5 py-1 rounded-lg mb-4">{plan.credits}</div>
-                          <div className="space-y-2 flex-1">
-                            {plan.features.map((f, i) => (
-                              <div key={i} className="flex items-start gap-2 text-xs text-slate-600"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" /> {f}</div>
-                            ))}
-                          </div>
-                          {isCurrent ? (
-                            <button 
-                              disabled 
-                              className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-emerald-50 text-emerald-700 border-2 border-emerald-300 cursor-default flex items-center justify-center gap-1.5"
-                            >
-                              <CheckCircle className="w-4 h-4 text-emerald-600" /> Current Plan (Active)
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                if (plan.name === 'Basic') {
-                                  handleRazorpayCheckout('Basic Plan (Monthly Subscription)', '₹899', 'credit_subscription', { planName: 'Basic', credits: 700 });
-                                } else if (plan.name === 'Pro') {
-                                  handleRazorpayCheckout('Pro Plan (Monthly Subscription)', '₹2,999', 'credit_subscription', { planName: 'Pro', credits: 1500 });
-                                } else if (plan.name === 'Max') {
-                                  handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 });
-                                }
-                              }} 
-                              className="mt-4 w-full py-2.5 rounded-xl text-sm font-black bg-[#2874f0] hover:bg-[#1a5dc9] text-white shadow-md hover:scale-105 transition-all flex items-center justify-center gap-1.5"
-                            >
-                              Upgrade to {plan.name} →
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-              {currentUser.plan !== 'Max' && (
-                <div className="bg-gradient-to-r from-[#2874f0] to-[#0c47ba] rounded-xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-                  <div>
-                    <div className="font-black text-lg">Unlock All 14 Analysis Modules</div>
-                    <div className="text-white/80 text-sm mt-0.5">Upgrade to Max — 3,000 credits/day, full enterprise access</div>
-                  </div>
-                  <button onClick={() => handleRazorpayCheckout('Max Plan (Monthly Subscription)', '₹4,999', 'credit_subscription', { planName: 'Max', credits: 3000 })} className="shrink-0 px-6 py-3 bg-[#fb641b] hover:bg-[#e55a16] text-white font-black rounded-xl shadow-md text-sm hover:scale-105 transition-all">Upgrade to Max Plan (₹4,999) →</button>
-                </div>
-              )}
-            </div>
-          )} {profileTab === 'security' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="px-6 py-5 border-b border-slate-100">
-                <h2 className="text-lg font-black text-slate-900">Security Settings</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Manage password and account security</p>
-              </div>
-              <div className="px-6 py-6 space-y-4">
-                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl hover:border-[#2874f0]/40 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center shrink-0"><Lock className="w-5 h-5 text-red-600" /></div>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">Password</div>
-                      <div className="text-xs text-slate-400 mt-0.5">Last changed recently</div>
-                    </div>
-                  </div>
-                  <button onClick={() => setIsChangePasswordOpen(true)} className="px-4 py-2 border-2 border-[#2874f0] text-[#2874f0] text-sm font-bold rounded-lg hover:bg-[#e8f0fe] transition-all shrink-0">Change</button>
-                </div>
-                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0"><Mail className="w-5 h-5 text-emerald-600" /></div>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">Email Verification</div>
-                      <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{currentUser.email}</div>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 text-[11px] font-black bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200 shrink-0">Verified</span>
-                </div>
-                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center shrink-0"><Shield className="w-5 h-5 text-blue-600" /></div>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">Account Status</div>
-                      <div className="text-xs text-slate-400 mt-0.5">Platform approval</div>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 text-[11px] font-black rounded-full border shrink-0 ${currentUser.isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>{currentUser.isApproved ? 'Approved' : 'Pending'}</span>
-                </div>
-                <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl bg-slate-50">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center shrink-0"><Smartphone className="w-5 h-5 text-purple-600" /></div>
-                    <div>
-                      <div className="font-bold text-slate-700 text-sm">Two-Factor Authentication</div>
-                      <div className="text-xs text-slate-400 mt-0.5">SMS and Authenticator app</div>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 text-[11px] font-black bg-slate-200 text-slate-500 rounded-full shrink-0">Coming Soon</span>
-                </div>
-                <div className="border-2 border-red-200 rounded-xl p-5 bg-red-50">
-                  <div className="text-sm font-black text-red-800 mb-1">Danger Zone</div>
-                  <div className="text-xs text-red-600 mb-3">Permanently delete your account. This action is irreversible.</div>
-                  <button className="px-4 py-2 border-2 border-red-400 text-red-700 text-xs font-black rounded-lg hover:bg-red-100 transition-all">Delete My Account</button>
-                </div>
-              </div>
-            </div>
-          )} {profileTab === 'notifications' && (
-            <div className="space-y-5 animate-in fade-in duration-300"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">Activity & Alerts Log</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Real-time alerts, transactions, and community events saved permanently</p>
-                  </div>
-                  {persistentNotifications.length > 0 && (
-                    <button 
-                      onClick={() => {
-                        setPersistentNotifications([]);
-                        try { localStorage.removeItem('nova_persistent_notifications'); } catch(e) {}
-                        showNotification('Alert history cleared', 'info');
-                      }}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Log
-                    </button>
-                  )}
-                </div>
-                <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                  {persistentNotifications.length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 text-xs font-medium">
-                      No alerts or notifications recorded yet.
-                    </div>
-                  ) : (
-                    persistentNotifications.map((notif) => (
-                      <div key={notif.id} className="p-4 hover:bg-slate-50 flex items-start gap-3 transition-colors">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                          notif.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
-                          notif.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-                        }`}>
-                          {notif.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
-                           notif.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="font-bold text-xs text-slate-900">{notif.title}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">{notif.time || 'Today'}</span>
-                          </div>
-                          <p className="text-xs text-slate-600 font-medium leading-relaxed">{notif.message}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100">
-                  <h2 className="text-lg font-black text-slate-900">Notification Preferences</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Configure automated push and email channels</p>
-                </div>
-                <div className="px-6 py-2">
-                  {[
-                    { key: 'job_complete',    label: 'Job Completion',       desc: 'Alert when your FEA analysis finishes' },
-                    { key: 'job_failed',      label: 'Job Failed',           desc: 'Alert when a job fails or has errors' },
-                    { key: 'credit_low',      label: 'Low Credit Warning',   desc: 'Warn when daily credits fall below 20%' },
-                    { key: 'sub_renew',       label: 'Subscription Renewal', desc: 'Reminder 3 days before plan renews' },
-                    { key: 'community',       label: 'Community Activity',   desc: 'Likes, comments and replies on posts' },
-                    { key: 'product_updates', label: 'Product Updates',      desc: 'New features and platform improvements' },
-                    { key: 'promos',          label: 'Offers & Promotions',  desc: 'Discounts and special offers' },
-                  ].map((pref) => (
-                    <div key={pref.key} className="flex items-center justify-between py-4 border-b border-slate-100 last:border-b-0">
-                      <div>
-                        <div className="text-sm font-bold text-slate-800">{pref.label}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{pref.desc}</div>
-                      </div>
-                      <button
-                        onClick={() => setProfileNotifPrefs(prev => ({ ...prev, [pref.key]: !prev[pref.key] }))}
-                        className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ml-4 ${profileNotifPrefs[pref.key] ? 'bg-[#2874f0]' : 'bg-slate-300'}`}
-                      >
-                        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${profileNotifPrefs[pref.key] ? 'left-7' : 'left-1'}`}></span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
-                  <button onClick={() => showNotification('Notification preferences saved!', 'success', 'Preferences')} className="px-6 py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all">Save Preferences</button>
-                </div>
-              </div>
-            </div>
-          )} {profileTab === 'help' && (
-            <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-4"><Mail className="w-7 h-7 text-blue-600" /></div>
-                  <h3 className="font-black text-slate-900 mb-2">Email Support</h3>
-                  <p className="text-xs text-slate-500 mb-4">Technical issues, billing and licensing queries</p>
-                  <a href="mailto:analysis.ai.nova@gmail.com" className="w-full py-2.5 bg-[#2874f0] text-white font-bold text-sm rounded-xl hover:bg-[#1a5dc9] transition-all block">analysis.ai.nova@gmail.com</a>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4"><Users className="w-7 h-7 text-emerald-600" /></div>
-                  <h3 className="font-black text-slate-900 mb-2">Nova Community</h3>
-                  <p className="text-xs text-slate-500 mb-4">Share results, ask questions, peer support</p>
-                  <button onClick={() => setCurrentView('nova_community')} className="w-full py-2.5 bg-emerald-600 text-white font-bold text-sm rounded-xl hover:bg-emerald-700 transition-all">Open Community</button>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100"><h2 className="font-black text-slate-900">Frequently Asked Questions</h2></div>
-                <div className="divide-y divide-slate-100">
-                  {[
-                    { q: 'When do daily credits reset?', a: 'Credits reset at 00:00 UTC (05:30 AM IST) every day, automatically and fully to 100%.' },
-                    { q: 'What if I run out of credits mid-session?', a: 'The job will not submit if credits are insufficient. Upgrade your plan or wait for the midnight reset.' },
-                    { q: 'How do I download my FEA report?', a: 'Dashboard → click any completed job → click View Report to download your DOCX or PDF.' },
-                    { q: 'Is the payment system secure?', a: 'Yes. 256-bit SSL encryption. We support Visa, Mastercard, RuPay, UPI, Net Banking, and PayPal via secure certified gateways.' },
-                    { q: 'How many computers can I use the ACT Wizard on?', a: '6-Month license: 2 workstation activations. 1-Month and 3-Month: 1 workstation activation each.' },
-                    { q: 'How do I cancel my subscription?', a: 'Email analysis.ai.nova@gmail.com. Cancellations take effect at the end of the billing cycle.' },
-                  ].map((item, i) => (
-                    <details key={i} className="group px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors">
-                      <summary className="flex items-center justify-between font-bold text-sm text-slate-800 list-none">
-                        {item.q}
-                        <ChevronRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform shrink-0 ml-3" />
-                      </summary>
-                      <p className="text-sm text-slate-500 mt-3 leading-relaxed font-medium pr-4">{item.a}</p>
-                    </details>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2">Secure Payments Via</span>
+                  {['UPI', 'Visa', 'Mastercard', 'Net Banking', 'RuPay'].map(m => (
+                    <span key={m} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">{m}</span>
                   ))}
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#e8f0fe] flex items-center justify-center"><Bot className="w-5 h-5 text-[#2874f0]" /></div>
-                  <div>
-                    <div className="font-black text-slate-900 text-sm">NOVA AI Support</div>
-                    <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online</div>
-                  </div>
-                </div>
-                <div className="h-52 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
-                  {supportChat.map((m, i) => (
-                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`px-4 py-2.5 rounded-2xl text-xs font-medium max-w-[80%] leading-relaxed ${m.role === 'user' ? 'bg-[#2874f0] text-white rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'}`}>{m.text}</div>
-                    </div>
-                  ))}
-                  {isSupportLoading && (
-                    <div className="flex justify-start">
-                      <div className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-400 flex items-center gap-2 shadow-sm">
-                        <Loader2 className="w-3 h-3 animate-spin text-[#2874f0]" /> Typing...
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <form onSubmit={handleSupportSubmit} className="flex gap-2 p-4 border-t border-slate-100">
-                  <input type="text" className="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#2874f0] focus:bg-white" value={supportInput} onChange={e => setSupportInput(e.target.value)} placeholder="Ask anything about NOVA..." />
-                  <button type="submit" disabled={!supportInput.trim() || isSupportLoading} className="px-4 py-2.5 bg-[#2874f0] text-white rounded-xl font-bold hover:bg-[#1a5dc9] transition-all disabled:opacity-50 flex items-center gap-2">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              </div>
             </div>
-          )} {profileTab === 'wizard' && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          </div>
+        )} {isChangePasswordOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
+            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+              <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
+                <span className="flex items-center gap-2 font-black text-lg">
+                  {isPwdSuccess ? <CheckCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                  {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
+                </span>
+                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({ current: '', new: '', confirm: '' }); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Ansys ACT Wizards</h2>
-                  <p className="text-xs text-slate-500 mt-1">Automate your FEA workflows with our premium .WBEX extensions</p>
-                </div>
-                <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center">
-                  <Package className="w-5 h-5 text-[#d84315]" />
-                </div>
-              </div>
-              <div className="p-6 space-y-4">
-                {ANSYS_WIZARDS.map((item, i) => {
-                  const purchasedJob = (jobs || []).find(j => {
-                    const isCompleted = (j.status || '').toLowerCase() === 'completed';
-                    const jName = (j.name || '').toLowerCase();
-                    const isWiz = j.type === 'Wizard Purchase' || jName.includes('wizard') || jName.includes('.wbex');
-                    if (!isCompleted || !isWiz) return false;
-                    if (item.id === 'stress_strain' && (jName.includes('stress') || jName.includes('curve'))) return true;
-                    if (item.id === 'head' && jName.includes('head')) return true;
-                    if (item.id === 'shell' && jName.includes('shell')) return true;
-                    if (item.id === 'full' && (jName.includes('full') || (!jName.includes('head') && !jName.includes('shell') && !jName.includes('stress')))) return true;
-                    return false;
-                  });
-                  const isPurchased = !!purchasedJob;
-                  const itemIcon = item.id === 'stress_strain' 
-                    ? <LineChart className="w-6 h-6 text-[#2874f0]" />
-                    : item.id === 'shell' 
-                    ? <Cylinder className="w-6 h-6 text-[#2874f0]" />
-                    : item.id === 'head'
-                    ? <Disc className="w-6 h-6 text-[#2874f0]" />
-                    : <Box className="w-6 h-6 text-[#2874f0]" />;
-
-                  return (
-                    <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-200 rounded-2xl bg-white hover:border-slate-300 transition-all gap-4 shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#e8f0fe] rounded-2xl flex items-center justify-center shrink-0">
-                          {itemIcon}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name}</h3>
-                          <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                        <button 
-                          onClick={() => { setSelectedWizardForDemo(item); setIsWizardDemoOpen(true); }}
-                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2"
-                        >
-                          <PlayCircle className="w-4 h-4 text-slate-700" /> View Demo
-                        </button>
-                        {isPurchased ? (
-                          <button 
-                            onClick={() => downloadSecureWbexFile(item.filename, purchasedJob?.job_id_display || 'Active', item.name)}
-                            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2"
-                          >
-                            <Download className="w-4 h-4" /> Download .WBEX
-                          </button>
-                        ) : (
-                          <button 
-                            onClick={() => { setSelectedWizardForPricing(item); setIsWizardPricingOpen(true); }}
-                            className="px-6 py-2.5 bg-gradient-to-r from-[#d84315] to-[#bf360c] hover:from-[#c23b12] hover:to-[#a72e09] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all flex items-center gap-2 hover:scale-105"
-                          >
-                            <ShoppingCart className="w-4 h-4" /> Buy
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )} {profileTab === 'community' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="p-8 text-center">
-                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-10 h-10 text-emerald-600" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Community Hub</h2>
-                <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Connect with fellow engineers, share your FEA results, ask questions, and collaborate on complex structural analysis problems.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="font-black text-xl text-slate-800">500+</div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">Engineers</div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
+                  <div className="relative">
+                    <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({ ...pwdForm, new: e.target.value }); setPwdErrors({ ...pwdErrors, new: null }); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                    <button type="button" onClick={() => setShowPwd({ ...showPwd, new: !showPwd.new })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="font-black text-xl text-slate-800">1.2k</div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">Discussions</div>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="font-black text-xl text-slate-800">Daily</div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">New Resources</div>
-                  </div>
+                  {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
                 </div>
-                <button 
-                  onClick={() => setCurrentView('nova_community')}
-                  className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
-                >
-                  <Users className="w-5 h-5" /> Enter Nova Community
-                </button>
-              </div>
-            </div>
-          )} {profileTab === 'nova_help' && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
-              <div className="p-8 text-center">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-10 h-10 text-[#1565c0]" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 mb-2">Nova Knowledge Base</h2>
-                <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">Access comprehensive documentation, video tutorials, API references, and engineering guides for all Nova Analysis modules.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-8 text-left">
-                  <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
-                    <FileText className="w-5 h-5 text-blue-500 shrink-0" />
-                    <div>
-                      <div className="font-bold text-slate-800 text-sm">Module Documentation</div>
-                      <div className="text-xs text-slate-500 mt-0.5">Detailed input guidelines and result interpretations.</div>
-                    </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
+                  <div className="relative">
+                    <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({ ...pwdForm, confirm: e.target.value }); setPwdErrors({ ...pwdErrors, confirm: null }); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                    <button type="button" onClick={() => setShowPwd({ ...showPwd, confirm: !showPwd.confirm })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                   </div>
-                  <div className="p-4 border border-slate-200 rounded-xl flex items-start gap-3">
-                    <Video className="w-5 h-5 text-red-500 shrink-0" />
-                    <div>
-                      <div className="font-bold text-slate-800 text-sm">Video Tutorials</div>
-                      <div className="text-xs text-slate-500 mt-0.5">Step-by-step FEA workflow guides.</div>
-                    </div>
-                  </div>
+                  {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
                 </div>
-                <button 
-                  onClick={() => setCurrentView('nova_help')}
-                  className="px-8 py-3.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
-                >
-                  <BookOpen className="w-5 h-5" /> Access Help Center
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div> {isEditProfileOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditProfileOpen(false)}></div>
-          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
-            <div className="flex items-center justify-between px-6 py-5 bg-[#2874f0] text-white">
-              <span className="flex items-center gap-2 font-black text-lg"><Settings className="w-5 h-5"/> Edit Profile</span>
-              <button onClick={() => setIsEditProfileOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
-            </div>
-            <form onSubmit={handleEditProfile} className="p-6 space-y-5">
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Company / Institute</label>
-                <input type="text" value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} required placeholder="e.g. Larsen and Toubro Ltd." className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
-              </div>
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Phone Number</label>
-                <input type="tel" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} required placeholder="+91 98765 43210" className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2874f0]" />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setIsEditProfileOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50">Cancel</button>
-                <button type="submit" className="flex-1 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white rounded-xl font-bold text-sm shadow-md">Save Changes</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )} {isWizardDemoOpen && selectedWizardForDemo && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setIsWizardDemoOpen(false)}></div>
-          <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
-            <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
-              <span className="flex items-center gap-3 font-bold text-lg">
-                <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
-              </span>
-              <button onClick={() => setIsWizardDemoOpen(false)} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
-                <X className="w-5 h-5 text-slate-300"/>
-              </button>
-            </div>
-            <div className="p-0 bg-black relative aspect-video">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                src="https://www.youtube.com/embed/A65i5WT83bs?autoplay=1" 
-                title="Nova Wizard Demo" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-                className="w-full h-full"
-              ></iframe>
-            </div>
-            <div className="px-6 py-4 bg-slate-800 border-t border-slate-700 text-slate-300 space-y-3">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div className="text-sm font-semibold">{selectedWizardForDemo.desc}</div>
-                <button 
-                  onClick={() => { setIsWizardDemoOpen(false); setSelectedWizardForPricing(selectedWizardForDemo); setIsWizardPricingOpen(true); }}
-                  className="px-6 py-2.5 bg-[#d84315] hover:bg-[#bf360c] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0"
-                >
-                  <ShoppingCart className="w-4 h-4" /> Buy
-                </button>
-              </div>
-              {(selectedWizardForDemo.id === 'stress_strain' || selectedWizardForDemo.curveTypes) && (
-                <div className="pt-2 border-t border-slate-700/70">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Supported Curve Types:</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    {(selectedWizardForDemo.curveTypes || [
-                      'True Stress-Strain',
-                      'Cyclic Stress-Strain',
-                      'Isochronous Stress-Strain',
-                      'Tangent Modulus Stress-Strain'
-                    ]).map((curve, ci) => (
-                      <div key={ci} className="bg-slate-900/90 px-3 py-2 rounded-lg border border-slate-700 text-emerald-400 font-medium text-center">
-                        {curve}
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
+                  <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
+                    {isPwdSuccess ? 'Updated!' : 'Update Password'}
+                  </button>
                 </div>
-              )}
+              </form>
             </div>
           </div>
-        </div>
-      )} {isWizardPricingOpen && selectedWizardForPricing && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsWizardPricingOpen(false)}></div>
-          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <span className="flex items-center gap-3 font-bold text-lg text-slate-900">
-                <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
-              </span>
-              <button onClick={() => setIsWizardPricingOpen(false)} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
-                <X className="w-5 h-5"/>
-              </button>
-            </div>
-            <div className="p-6 bg-slate-50">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Choose your licensing term</h3>
-                <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
+        )} {isChangePasswordOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
+            <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
+              <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
+                <span className="flex items-center gap-2 font-black text-lg">
+                  {isPwdSuccess ? <CheckCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                  {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
+                </span>
+                <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({ current: '', new: '', confirm: '' }); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5" /></button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {(selectedWizardForPricing.pricing || [
-                  { term: '1 Month', price: '₹4,999', desc: 'Short-term access for single projects', workstations: 1, recommend: false },
-                  { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
-                  { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
-                ]).map((plan, i) => (
-                  <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#d84315] shadow-md ring-4 ring-[#d84315]/10' : 'border-slate-200 hover:border-slate-300'}`}>
-                    {plan.recommend && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d84315] text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                        Recommended
-                      </div>
-                    )}
-                    <div className="p-5 flex-1 text-center flex flex-col justify-between">
-                      <div>
-                        <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
-                        <div className="text-3xl font-black text-slate-900">{plan.price}</div>
-                        <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
-                        <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
-                        <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
-                          <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setIsWizardPricingOpen(false);
-                          handleRazorpayCheckout(
-                            `${selectedWizardForPricing.name} (${plan.term} License)`,
-                            plan.price,
-                            'wizard_purchase',
-                            {
-                              term: plan.term,
-                              workstations: plan.workstations,
-                              productName: selectedWizardForPricing.name,
-                              wizardId: selectedWizardForPricing.id,
-                              filename: selectedWizardForPricing.filename
-                            }
-                          );
-                        }}
-                        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#d84315] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                      >
-                        <CreditCard className="w-4 h-4" /> Select {plan.term}
-                      </button>
-                    </div>
+              <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
+                  <div className="relative">
+                    <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({ ...pwdForm, new: e.target.value }); setPwdErrors({ ...pwdErrors, new: null }); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                    <button type="button" onClick={() => setShowPwd({ ...showPwd, new: !showPwd.new })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                   </div>
-                ))}
-              </div>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-2">Secure Payments Via</span>
-                {['UPI', 'Visa', 'Mastercard', 'Net Banking', 'RuPay'].map(m => (
-                  <span key={m} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">{m}</span>
-                ))}
-              </div>
+                  {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
+                  <div className="relative">
+                    <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({ ...pwdForm, confirm: e.target.value }); setPwdErrors({ ...pwdErrors, confirm: null }); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
+                    <button type="button" onClick={() => setShowPwd({ ...showPwd, confirm: !showPwd.confirm })} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+                  </div>
+                  {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
+                  <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
+                    {isPwdSuccess ? 'Updated!' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )} {isChangePasswordOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
-          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
-            <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
-              <span className="flex items-center gap-2 font-black text-lg">
-                {isPwdSuccess ? <CheckCircle className="w-5 h-5"/> : <Lock className="w-5 h-5"/>}
-                {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
-              </span>
-              <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current:'',new:'',confirm:''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
-            </div>
-            <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
-                <div className="relative">
-                  <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({...pwdForm, new: e.target.value}); setPwdErrors({...pwdErrors, new: null}); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                  <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                </div>
-                {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
-              </div>
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
-                <div className="relative">
-                  <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({...pwdForm, confirm: e.target.value}); setPwdErrors({...pwdErrors, confirm: null}); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                  <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                </div>
-                {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
-                  {isPwdSuccess ? 'Updated!' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )} {isChangePasswordOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsChangePasswordOpen(false)}></div>
-          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 relative z-10">
-            <div className={`flex items-center justify-between px-6 py-5 text-white ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f]'}`}>
-              <span className="flex items-center gap-2 font-black text-lg">
-                {isPwdSuccess ? <CheckCircle className="w-5 h-5"/> : <Lock className="w-5 h-5"/>}
-                {isPwdSuccess ? 'Password Updated!' : 'Change Password'}
-              </span>
-              <button onClick={() => { setIsChangePasswordOpen(false); setPwdErrors({}); setPwdForm({current:'',new:'',confirm:''}); setIsPwdSuccess(false); }} className="hover:bg-white/20 p-1.5 rounded-full"><X className="w-5 h-5"/></button>
-            </div>
-            <form onSubmit={handlePasswordChange} className="p-6 space-y-4">
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">New Password</label>
-                <div className="relative">
-                  <input type={showPwd.new ? 'text' : 'password'} value={pwdForm.new} onChange={e => { setPwdForm({...pwdForm, new: e.target.value}); setPwdErrors({...pwdErrors, new: null}); }} required placeholder="Min 8 chars, 1 number, 1 symbol" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.new ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                  <button type="button" onClick={() => setShowPwd({...showPwd, new: !showPwd.new})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.new ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                </div>
-                {pwdErrors.new && <p className="text-xs text-red-500 mt-1">{pwdErrors.new}</p>}
-              </div>
-              <div>
-                <label className="text-sm font-bold text-slate-700 mb-1.5 block">Confirm New Password</label>
-                <div className="relative">
-                  <input type={showPwd.confirm ? 'text' : 'password'} value={pwdForm.confirm} onChange={e => { setPwdForm({...pwdForm, confirm: e.target.value}); setPwdErrors({...pwdErrors, confirm: null}); }} required placeholder="Re-enter new password" className={`w-full px-4 py-3 border rounded-xl text-sm pr-12 focus:outline-none focus:ring-2 ${pwdErrors.confirm ? 'border-red-400 focus:ring-red-400' : 'border-slate-300 focus:ring-[#2874f0]'}`} />
-                  <button type="button" onClick={() => setShowPwd({...showPwd, confirm: !showPwd.confirm})} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">{showPwd.confirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                </div>
-                {pwdErrors.confirm && <p className="text-xs text-red-500 mt-1">{pwdErrors.confirm}</p>}
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setIsChangePasswordOpen(false)} className="flex-1 py-3 border border-slate-300 text-slate-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" className={`flex-1 py-3 text-white rounded-xl font-bold text-sm shadow-md ${isPwdSuccess ? 'bg-[#388e3c]' : 'bg-[#d32f2f] hover:bg-[#c62828]'}`}>
-                  {isPwdSuccess ? 'Updated!' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     );
   };
   return (
@@ -7152,185 +7540,271 @@ def compute_scl_path(model, path_name, allowable_s):
           left: 200%;
         }
       `}</style>
-      
+
       <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
-         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
-         <div className="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
-         <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000"></div>
-      </div>   {completedInvoice && (
-        <div className="fixed inset-0 z-[300] bg-black/70 flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-auto text-slate-800 print:m-0 print:p-0 print:border-none print:shadow-none"> <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between print:hidden">
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
-                <span className="font-black text-sm uppercase tracking-wider text-emerald-400">Payment Verified · Tax Invoice Generated</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => window.print()}
-                  className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                  title="Print / Save PDF"
-                >
-                  <Printer className="w-3.5 h-3.5 text-emerald-400" /> Print / Save PDF
-                </button>
-                <button 
-                  onClick={() => setCompletedInvoice(null)}
-                  className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-slate-300 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div> <div className="p-6 sm:p-8 space-y-6"> <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b-2 border-slate-900/10 pb-6">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-1.5">
-                    <CosmicLogo className="w-8 h-8" />
-                    <span className="text-xl font-black text-slate-900 tracking-tight">NOVA AI TECHNOLOGIES</span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium">Pressure Vessel FEA & Computational Simulation Cloud</p>
-                  <div className="text-[11px] text-slate-500 mt-2 space-y-0.5 font-mono">
-                    <div>GSTIN: <strong className="text-slate-700">07AABCN1234F1Z5</strong> · CIN: U72900DL2024PTC123456</div>
-                    <div>HSN / SAC Code: <strong>998313</strong> (IT & Engineering Software Services)</div>
-                    <div>Support: analysis.ai.nova@gmail.com · Portal: nova-platform.ai</div>
-                  </div>
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
+        <div className="absolute top-[20%] right-[-10%] w-[60%] h-[60%] bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob animation-delay-4000"></div>
+      </div>   {(activeDocumentViewer || completedInvoice) && (() => {
+        const docData = activeDocumentViewer?.data || completedInvoice;
+        const docMode = activeDocumentViewer?.type || 'invoice';
+
+        const docAmt = Number(docData?.amountInINR || docData?.amount || 4980);
+        const docBaseAmt = docData?.baseAmount || docData?.base_amount || (docAmt ? Math.round(docAmt / 1.18) : 4220);
+        const docGstAmt = docAmt - docBaseAmt;
+        const docCgst = (docData?.cgst !== undefined && docData?.cgst !== null) ? docData.cgst : Math.round(docGstAmt / 2);
+        const docSgst = (docData?.sgst !== undefined && docData?.sgst !== null) ? docData.sgst : (docGstAmt - docCgst);
+
+        const docInvId = docData?.invoiceId || docData?.invoice_no || 'INV-2026-940221';
+        const docRcpId = docData?.receiptNo || docData?.receipt_no || (docInvId ? String(docInvId).replace('INV-', 'RCP-') : 'RCP-2026-940221');
+        const docPaymentId = docData?.paymentId || docData?.transaction_id || 'PAY-RAZORPAY-16940220';
+        const docDateStr = docData?.date || (docData?.created_at ? new Date(docData.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '04 Oct 2026, 05:59 PM');
+
+        const docCustomerName = docData?.customerName || docData?.user_name || currentUser?.name || 'Dinesh Kumar';
+        const docCustomerEmail = docData?.customerEmail || docData?.user_email || currentUser?.email || '';
+
+        const docProductName = docData?.productName || docData?.plan_name || 'Nova Max';
+        const docTerm = docData?.term || docData?.billing_cycle || (String(docProductName).includes('Wizard') ? '6 Months License' : 'Monthly Subscription');
+
+        return (
+          <div className="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-40 print:p-0 print:bg-white print:static animate-in fade-in">
+            <div className="max-w-[800px] w-full mx-auto flex flex-col items-center">
+              {/* Top Control Bar (print-hidden) */}
+              <div className="invoice-modal-bar w-full flex items-center justify-between gap-3 bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200 mb-6 sticky top-2 z-20 print:hidden">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDocumentViewer(prev => ({ ...(prev || { data: docData }), type: 'invoice' }))}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      docMode === 'invoice'
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Tax Invoice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDocumentViewer(prev => ({ ...(prev || { data: docData }), type: 'receipt' }))}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      docMode === 'receipt'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Receipt className="w-3.5 h-3.5" /> Payment Receipt
+                  </button>
                 </div>
 
-                <div className="sm:text-right bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black uppercase rounded-full mb-2">
-                    Tax Invoice / Receipt
-                  </span>
-                  <div className="font-mono text-xs font-bold text-slate-900">Invoice: {completedInvoice.invoiceId}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Date: {completedInvoice.date}</div>
-                  <div className="text-[11px] text-slate-500 font-mono mt-1">Payment ID: <span className="font-bold text-slate-800">{completedInvoice.paymentId}</span></div>
-                  <div className="text-[11px] text-emerald-600 font-black mt-1">● Gateway: Razorpay (Live Verified)</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setActiveDocumentViewer(null); setCompletedInvoice(null); }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
+                    title="Close document viewer"
+                  >
+                    <X className="w-4 h-4" /> Close
+                  </button>
                 </div>
-              </div> <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Customer / Billed To:</div>
-                  <div className="font-black text-slate-900 text-sm">{completedInvoice.customerName}</div>
-                  <div className="text-slate-600 mt-0.5">{completedInvoice.customerEmail}</div>
-                  <div className="text-slate-600 font-mono mt-0.5">{completedInvoice.customerPhone}</div>
-                  {completedInvoice.company && <div className="text-slate-500 font-medium mt-0.5">{completedInvoice.company}</div>}
-                </div>
-                <div className="sm:text-right">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Order Details:</div>
-                  <div className="font-bold text-slate-800">{completedInvoice.productName}</div>
-                  <div className="text-slate-500 mt-0.5">License Term: <strong>{completedInvoice.term}</strong></div>
-                  <div className="text-slate-500 mt-0.5">Authorized Activations: <strong>{completedInvoice.workstations} Workstation(s)</strong></div>
-                  <div className="text-emerald-700 font-black mt-1">Status: PAYMENT VERIFIED & ACTIVE</div>
-                </div>
-              </div> <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 uppercase font-black border-y border-slate-200">
-                      <th className="py-2.5 px-3">Description</th>
-                      <th className="py-2.5 px-3 text-center">HSN/SAC</th>
-                      <th className="py-2.5 px-3 text-right">Taxable Value</th>
-                      <th className="py-2.5 px-3 text-right">CGST (9%)</th>
-                      <th className="py-2.5 px-3 text-right">SGST (9%)</th>
-                      <th className="py-2.5 px-3 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="py-3 px-3">
-                        <div className="font-black text-slate-900">{completedInvoice.productName}</div>
-                        <div className="text-[11px] text-slate-500 font-medium">Digital engineering software license / cloud compute allocation</div>
-                      </td>
-                      <td className="py-3 px-3 text-center font-mono text-slate-600">998313</td>
-                      <td className="py-3 px-3 text-right font-mono font-bold">₹{completedInvoice.baseAmount?.toLocaleString('en-IN')}</td>
-                      <td className="py-3 px-3 text-right font-mono text-slate-600">₹{completedInvoice.cgst?.toLocaleString('en-IN')}</td>
-                      <td className="py-3 px-3 text-right font-mono text-slate-600">₹{completedInvoice.sgst?.toLocaleString('en-IN')}</td>
-                      <td className="py-3 px-3 text-right font-mono font-black text-slate-900">{completedInvoice.priceFormatted}</td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-slate-900/20 font-black text-sm bg-slate-50">
-                      <td colSpan="5" className="py-3 px-3 text-right text-slate-800">Grand Total (Inclusive of 18% GST):</td>
-                      <td className="py-3 px-3 text-right text-[#2874f0] font-black">{completedInvoice.priceFormatted}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div> {completedInvoice.isWizard && (
-                <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-indigo-500/10 border-2 border-orange-400 rounded-3xl p-5 sm:p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg shrink-0">
-                        <Package className="w-6 h-6" />
-                      </div>
+              </div>
+
+              {/* Authentic Invoice / Receipt Container */}
+              <div className="invoice-container shadow-2xl mb-10 print:mb-0 print:shadow-none" id="invoice-printable">
+                <div className="content-wrapper">
+                  {/* Header */}
+                  <div className="header">
+                    <div className="logo-section">
+                      <div className="logo-icon">N</div>
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-wider text-orange-600">Authorized License Activation</div>
-                        <h4 className="font-black text-base text-slate-900">Ansys ACT Extension Package (.WBEX)</h4>
+                        <div className="company-title">NOVA AI</div>
+                        <div className="company-subtitle">Smarter Analytics. Bigger Decisions.</div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-black text-xs border border-emerald-300 self-start sm:self-auto">
-                      ● Active & Authenticated
+                  </div>
+
+                  {/* Title */}
+                  <h1>{docMode === 'receipt' ? 'Payment Receipt' : 'Tax Invoice'}</h1>
+
+                  {/* Invoice Info */}
+                  <div className="info-grid">
+                    {docMode === 'receipt' ? (
+                      <>
+                        <span className="info-label">Receipt Number</span> <span className="info-value">{docRcpId}</span>
+                        <span className="info-label">Invoice Number</span> <span className="info-value">{docInvId}</span>
+                        <span className="info-label">Date of Payment</span> <span className="info-value">{docDateStr}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="info-label">Invoice Number</span> <span className="info-value">{docInvId}</span>
+                        <span className="info-label">Date of Issue</span> <span className="info-value">{docDateStr}</span>
+                        <span className="info-label">Due Date</span> <span className="info-value">{docDateStr}</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="divider"></div>
+
+                  {/* Addresses */}
+                  <div className="address-grid">
+                    <div className="address-left">
+                      <div className="section-title">Billed To</div>
+                      <div className="address-name">{docCustomerName}</div>
+                      <div>{docCustomerEmail}</div>
+                      <div>Not Provided</div>
+                      <div>Not Provided</div>
+                      <div>India</div>
+                    </div>
+
+                    <div className="address-right">
+                      <div className="section-title">From</div>
+                      <div className="address-name">Nova AI Technologies</div>
+                      <div>Nova AI, Surat, Gujarat 395003, India</div>
+
+                      <div className="company-details-grid">
+                        <div className="company-details-label">GSTIN</div>
+                        <div>: 07AABCN1234F1Z5</div>
+                        <div className="company-details-label">CIN</div>
+                        <div>: UT2900DL2024PTC123456</div>
+                        <div className="company-details-label">HSN / SAC Code</div>
+                        <div>: 998313</div>
+                      </div>
+
+                      <a href="mailto:analysis.ai.nova@gmail.com" className="icon-text">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        analysis.ai.nova@gmail.com
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="divider"></div>
+
+                  {/* Summary */}
+                  <h2>{docMode === 'receipt' ? 'Receipt Summary' : 'Invoice Summary'}</h2>
+                  <div className="summary-subtitle">
+                    ₹{docAmt.toLocaleString('en-IN')}{' '}
+                    <span>{docMode === 'receipt' ? `paid on ${docDateStr}` : `due ${docDateStr}`}</span>
+                  </div>
+
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th className="col-qty">Qty</th>
+                        <th className="col-price">Unit price</th>
+                        <th className="col-tax">Tax</th>
+                        <th className="col-amount">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div style={{ fontWeight: 600, color: '#111827', marginBottom: '4px' }}>{docProductName}</div>
+                          <div style={{ color: '#6b7280', fontSize: '12px' }}>{docTerm}</div>
+                        </td>
+                        <td>1</td>
+                        <td>₹{docBaseAmt.toLocaleString('en-IN')}</td>
+                        <td>18% GST</td>
+                        <td className="col-amount">₹{docAmt.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="calc-row">
+                        <td colSpan="4" className="calc-label">Subtotal</td>
+                        <td className="calc-value">₹{docBaseAmt.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="calc-row">
+                        <td colSpan="4" className="calc-label">Total excluding tax</td>
+                        <td className="calc-value">₹{docBaseAmt.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="calc-row">
+                        <td colSpan="4" className="calc-label">CGST (9%)</td>
+                        <td className="calc-value">₹{docCgst.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="calc-row">
+                        <td colSpan="4" className="calc-label">SGST (9%)</td>
+                        <td className="calc-value">₹{docSgst.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="total-row">
+                        <td colSpan="4" className="calc-label">Total (incl. 18% GST)</td>
+                        <td className="calc-value">₹{docAmt.toLocaleString('en-IN')}</td>
+                      </tr>
+                      <tr className="amount-paid-row">
+                        <td colSpan="4" className="calc-label">Amount paid</td>
+                        <td className="calc-value" style={{ fontWeight: 600 }}>₹{docAmt.toLocaleString('en-IN')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div className="divider"></div>
+
+                  {/* Payment Details */}
+                  <h2>Payment Details</h2>
+                  <div className="payment-grid">
+                    <span className="info-label">Payment ID</span> <span className="info-value">{docPaymentId}</span>
+                    <span className="info-label">Gateway</span> <span className="info-value">{docData?.gateway || 'Razorpay (Live Verified)'}</span>
+                    <span className="info-label">Method</span> <span className="info-value">{docData?.method || 'UPI / Cards / NetBanking'}</span>
+                    <span className="info-label">Status</span>
+                    <span>
+                      <div className="badge-paid">
+                        <svg style={{ width: '10px', height: '10px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        PAID
+                      </div>
                     </span>
-                  </div> <div className="bg-slate-900 text-slate-100 rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-inner space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">License Key (Ansys ACT Activation)</div>
-                        <div className="font-mono text-base sm:text-lg font-black text-amber-400 tracking-wider select-all mt-0.5">
-                          {completedInvoice.licenseKey}
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(completedInvoice.licenseKey);
-                          setInvoiceCopiedKey(true);
-                          setTimeout(() => setInvoiceCopiedKey(false), 2500);
-                        }}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0"
-                      >
-                        {invoiceCopiedKey ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied!</> : <><Copy className="w-3.5 h-3.5" /> Copy Key</>}
-                      </button>
-                    </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">Expiry Date</div>
-                        <div className="font-bold text-emerald-400 font-mono mt-0.5">{completedInvoice.expiryDate}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">Registered On</div>
-                        <div className="font-medium text-slate-300 font-mono mt-0.5">{completedInvoice.registeredOn}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">License Status</div>
-                        <div className="font-bold text-emerald-400 flex items-center gap-1 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Active & Auto-Provisioned
-                        </div>
+                  {/* If Ansys ACT license is attached */}
+                  {docData?.licenseKey && (
+                    <div style={{ marginTop: '10px', marginBottom: '20px', padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}>
+                      <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>Commercial Ansys ACT Extension Deliverable</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: '#475569' }}>
+                        <span>License Key: <strong style={{ color: '#0f172a', fontFamily: 'monospace' }}>{docData.licenseKey}</strong></span>
+                        {docData.expiryDate && <span>Expiry Date: <strong style={{ color: '#0f172a' }}>{docData.expiryDate}</strong></span>}
+                        {docData.wbexFilename && <span>Binary Package: <strong style={{ color: '#0f172a' }}>{docData.wbexFilename}</strong></span>}
                       </div>
                     </div>
-                  </div> <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                    <button 
-                      onClick={() => {
-                        downloadSecureWbexFile(completedInvoice.wbexFilename || 'Shell_Nozzle.wbex', completedInvoice.licenseKey, completedInvoice.productName);
-                      }}
-                      className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-105"
-                    >
-                      <Download className="w-4 h-4" /> Download Ansys Wizard (.WBEX)
-                    </button>
-                    <span className="text-xs text-slate-500 font-medium">Secure local direct binary download for ANSYS Workbench</span>
+                  )}
+
+                  {/* Dynamic flexbox footer */}
+                  <div className="footer">
+                    <div>
+                      <div className="footer-company">Nova AI</div>
+                      <div>Smarter Analytics. Bigger Decisions.</div>
+                    </div>
+                    <div className="footer-links">
+                      <a href="https://nova-analysis.vercel.app" target="_blank" rel="noopener noreferrer" className="footer-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                        </svg>
+                        nova-analysis.vercel.app
+                      </a>
+                      <div className="vert-divider"></div>
+                      <a href="mailto:analysis.ai.nova@gmail.com" className="footer-link">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        analysis.ai.nova@gmail.com
+                      </a>
+                    </div>
                   </div>
                 </div>
-              )} <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">
-                <button 
-                  onClick={() => window.print()}
-                  className="w-full sm:w-auto px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
-                >
-                  <Printer className="w-4 h-4 text-emerald-400" /> Download Invoice (PDF)
-                </button>
-                <button 
-                  onClick={() => setCompletedInvoice(null)}
-                  className="w-full sm:w-auto px-6 py-3 bg-[#2874f0] hover:bg-[#1a5dc9] text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-105"
-                >
-                  Done / Close Invoice
-                </button>
               </div>
 
+              {/* Bottom Close Button for effortless navigation after scrolling */}
+              <div className="w-full text-center pb-12 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => { setActiveDocumentViewer(null); setCompletedInvoice(null); }}
+                  className="px-6 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs shadow-lg border border-slate-200 transition-all cursor-pointer inline-flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" /> Close Document
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showSplash && renderSplash()}
       {!showSplash && (
