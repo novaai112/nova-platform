@@ -8,7 +8,8 @@ import {
   Plus, Users, ChevronDown, CheckCircle, RefreshCw, Eye, EyeOff, Grip,
   Hash, Radio, Settings, UserPlus, LogOut, MessageSquarePlus, UserX,
   ChevronRight, Play, Square, Info, Shield, ShieldAlert, Sparkle,
-  PhoneIncoming, PhoneMissed, Clock, Edit2
+  PhoneIncoming, PhoneMissed, Clock, Edit2, Sun, Moon, Lock, Unlock,
+  CheckCheck as DoubleCheck
 } from "lucide-react";
 
 const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉", "👏"];
@@ -33,6 +34,19 @@ const STICKER_PACKS = [
 ];
 
 export default function NovaMessenger({ currentUser, initialRecipient, onClose }) {
+  // Theme state: default clean white light mode with Dark Mode toggle
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("nova_messenger_dark") === "true";
+  });
+
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("nova_messenger_dark", String(next));
+      return next;
+    });
+  };
+
   // Navigation & View States
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -49,7 +63,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [showRequestsPanel, setShowRequestsPanel] = useState(false);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
@@ -77,7 +90,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const voiceTimerRef = useRef(null);
 
   // WebRTC & Audio/Video Call Screen State
-  const [activeCall, setActiveCall] = useState(null); // { type: 'audio'|'video', status: 'calling'|'incoming'|'connected', duration: 0, caller, callee }
+  const [activeCall, setActiveCall] = useState(null);
   const [incomingCallData, setIncomingCallData] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
   const [isMicMuted, setIsMicMuted] = useState(false);
@@ -91,22 +104,17 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // Group Create State
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedGroupUsers, setSelectedGroupUsers] = useState([]);
-  const [groupSearchQuery, setGroupSearchQuery] = useState("");
   const [groupWallpaper, setGroupWallpaper] = useState("");
-  const [groupAvatar, setGroupAvatar] = useState("");
 
   // User Blocks & Nicknames
   const [isTargetBlocked, setIsTargetBlocked] = useState(false);
   const [hasBlockedTarget, setHasBlockedTarget] = useState(false);
   const [customNickname, setCustomNickname] = useState("");
-  const [isEditingNickname, setIsEditingNickname] = useState(false);
 
   // Refs
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
-  const groupAvatarInputRef = useRef(null);
-  const groupWallpaperInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const callTimerRef = useRef(null);
   const callRecRef = useRef(null);
@@ -124,6 +132,28 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const myName = currentUser?.name || currentUser?.full_name || myEmail.split("@")[0];
   const myAvatar = currentUser?.avatar || currentUser?.avatar_url || null;
   const myUserId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
+
+  // Request & Acceptance status calculation
+  const isPendingRequestForMe = activeConv?.is_request && activeConv?.created_by !== myUserId;
+  const isPendingRequestByMe = activeConv?.is_request && activeConv?.created_by === myUserId;
+  const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
+
+  // Dynamic Theme Colors
+  const theme = {
+    bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
+    modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200",
+    sidebarBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-slate-50/95 border-slate-200",
+    chatBg: isDarkMode ? "bg-slate-950" : "bg-[#f8fafc]",
+    headerBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-white/95 border-slate-200",
+    cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
+    hoverBg: isDarkMode ? "hover:bg-slate-800/60" : "hover:bg-slate-100",
+    activeConvBg: isDarkMode ? "bg-blue-600/20 border-l-4 border-blue-500" : "bg-blue-50/80 border-l-4 border-blue-600",
+    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-100/90 border-slate-300 text-slate-900 placeholder-slate-400",
+    secondaryText: isDarkMode ? "text-slate-400" : "text-slate-500",
+    iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900",
+    incomingBubble: isDarkMode ? "bg-slate-800/95 text-slate-100 border border-slate-700/60" : "bg-white text-slate-900 border border-slate-200 shadow-sm",
+    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md",
+  };
 
   // =========================================================================
   // 1. LOAD REGISTERED USERS & PROFILES
@@ -332,6 +362,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             avatar: partnerAvatar,
             wallpaper_url: null,
             is_request: false,
+            created_by: null,
             lastMessage: msg.content || "Attachment",
             lastTime: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             lastRawTime: msg.created_at,
@@ -345,7 +376,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         }
       });
 
-      // Incorporate registered users so user can 1-click message anyone
+      // Incorporate registered users
       registeredUsers.forEach((u) => {
         const uEmail = u.email?.toLowerCase();
         if (uEmail && !seenEmails.has(uEmail)) {
@@ -358,7 +389,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             email: u.email,
             avatar: u.avatar_url,
             wallpaper_url: null,
-            is_request: false,
+            is_request: true,
+            created_by: myUserId,
             lastMessage: "No messages yet",
             lastTime: "",
             lastRawTime: u.created_at || new Date().toISOString(),
@@ -400,16 +432,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     setActiveConv(conv);
     setActiveConvId(conv.id);
     setActiveRecipient(conv.otherUser || { name: conv.name, email: conv.email, avatar: conv.avatar });
-    setShowRequestsPanel(false);
     setShowDetailsPanel(false);
     setReplyingTo(null);
     setSearchQuery("");
 
-    // Load custom nickname
     const storedNick = localStorage.getItem(`nova_nick_${conv.id}_${myUserId}`);
     setCustomNickname(storedNick || "");
 
-    // Check block status if DM
     if (conv.otherUser?.user_id) {
       checkBlockStatus(conv.otherUser.user_id);
     }
@@ -441,18 +470,49 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (!otherId || !myUserId) return;
 
     if (hasBlockedTarget) {
-      // Unblock
       await supabase
         .from("user_blocks")
         .delete()
         .or(`and(blocker_id.eq.${myUserId},blocked_id.eq.${otherId}),and(user_id.eq.${myUserId},blocked_user_id.eq.${otherId})`);
       setHasBlockedTarget(false);
     } else {
-      // Block
       await supabase.from("user_blocks").insert([
         { blocker_id: myUserId, blocked_id: otherId, user_id: myUserId, blocked_user_id: otherId }
       ]);
       setHasBlockedTarget(true);
+    }
+  };
+
+  // Accept Message Request
+  const handleAcceptRequest = async () => {
+    if (!activeConv?.conv_id) return;
+    try {
+      await supabase.rpc("accept_conversation_request", { _conv_id: activeConv.conv_id });
+      setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
+      setConversations((prev) => prev.map((c) => c.id === activeConv.id ? { ...c, is_request: false } : c));
+      // Notify other user
+      if (rtcChannelRef.current) {
+        rtcChannelRef.current.send({
+          type: "broadcast",
+          event: "request-accepted",
+          payload: { conversation_id: activeConv.conv_id, from: myUserId }
+        });
+      }
+    } catch (err) {
+      console.warn("Accept request error:", err);
+    }
+  };
+
+  // Reject / Ignore Message Request
+  const handleRejectRequest = async () => {
+    if (!activeConv?.conv_id) return;
+    try {
+      await supabase.from("conversation_participants").delete().eq("conversation_id", activeConv.conv_id).eq("user_id", myUserId);
+      setConversations((prev) => prev.filter((c) => c.id !== activeConv.id));
+      setActiveConv(null);
+      setActiveConvId(null);
+    } catch (err) {
+      console.warn("Reject request error:", err);
     }
   };
 
@@ -467,7 +527,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
     try {
       if (activeConv.conv_id) {
-        // Fetch from messages table
         const { data: msgsData } = await supabase
           .from("messages")
           .select("*")
@@ -477,11 +536,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         const msgList = msgsData || [];
         setMessages(msgList);
 
-        // Find pinned message
         const pinned = msgList.find((m) => m.is_pinned);
         setPinnedMessage(pinned || null);
 
-        // Fetch reactions
         const msgIds = msgList.map((m) => m.id);
         if (msgIds.length > 0) {
           const { data: rxData } = await supabase
@@ -491,14 +548,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           setReactions(rxData || []);
         }
 
-        // Mark unread messages as read
         const unreadMine = msgList.filter((m) => m.user_id !== myUserId);
         if (unreadMine.length > 0) {
           const readsToUpsert = unreadMine.map((m) => ({ message_id: m.id, user_id: myUserId }));
           await supabase.from("message_reads").upsert(readsToUpsert, { onConflict: "message_id,user_id", ignoreDuplicates: true });
         }
       } else if (activeConv.email) {
-        // Fetch from nova_messages fallback table
         const otherEmail = activeConv.email;
         const { data: directData } = await supabase
           .from("nova_messages")
@@ -533,18 +588,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     loadMessages();
   }, [loadMessages]);
 
-  // Realtime subscription for current active conversation
+  // Realtime subscription for active conversation
   useEffect(() => {
     if (!activeConv?.conv_id) return;
     const cid = activeConv.conv_id;
 
     const ch = supabase
-      .channel(`rt-conv-${cid}`)
+      .channel(`rt-conv-v2-${cid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, () => {
         loadMessages();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
         loadMessages();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `id=eq.${cid}` }, (payload) => {
+        if (payload.new) {
+          setActiveConv((prev) => prev ? { ...prev, ...payload.new } : null);
+        }
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "typing_indicators", filter: `conversation_id=eq.${cid}` }, async () => {
         const { data } = await supabase
@@ -556,6 +616,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         setTypingUsers(typingIds);
       })
       .on("broadcast", { event: "webrtc-signal" }, handleWebRTCSignal)
+      .on("broadcast", { event: "request-accepted" }, () => {
+        setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
+      })
       .subscribe();
 
     rtcChannelRef.current = ch;
@@ -586,12 +649,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     setShowStickerPicker(false);
     setShowGifPicker(false);
 
-    // If active conversation doesn't have a DB conversation_id yet, create or get DM via RPC
     let convId = activeConv?.conv_id;
     if (!convId && activeRecipient?.user_id) {
       try {
         const { data: rpcConvId } = await supabase.rpc("get_or_create_dm", {
-          _other_user: activeRecipient.user_id
+          _other_user: activeRecipient.user_id,
+          _sender_user: myUserId
         });
         if (rpcConvId) {
           convId = rpcConvId;
@@ -602,7 +665,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       }
     }
 
-    // Process all pending attachments or single message
     const itemsToSend = [];
     if (pendingAttachments.length > 0) {
       for (const att of pendingAttachments) {
@@ -629,7 +691,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
     for (const item of itemsToSend) {
       if (convId) {
-        // Insert into Supabase `messages` table
         const msgRow = {
           conversation_id: convId,
           user_id: myUserId,
@@ -644,7 +705,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           created_at: new Date().toISOString()
         };
 
-        // Optimistic update
         setMessages((prev) => [...prev, { id: "temp_" + Date.now(), ...msgRow }]);
 
         try {
@@ -654,7 +714,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           console.warn("Insert message error:", err);
         }
       } else {
-        // Fallback to nova_messages table
         const legacyRow = {
           sender_email: myEmail,
           sender_name: myName,
@@ -682,7 +741,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // Typing indicator broadcaster
   const handleTextChange = (e) => {
     setMessageText(e.target.value);
     if (!activeConv?.conv_id || !myUserId) return;
@@ -713,7 +771,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       const { data: pub } = supabase.storage.from("chat-media").getPublicUrl(filePath);
       return pub.publicUrl;
     } catch (err) {
-      console.warn("Upload storage error, using base64 fallback:", err);
+      console.warn("Upload storage error, using fallback:", err);
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
@@ -805,8 +863,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // =========================================================================
   const handleToggleReaction = async (msgId, emoji) => {
     if (!msgId) return;
-
-    // Check if user already reacted with this emoji
     const existing = reactions.find((r) => r.message_id === msgId && r.user_id === myUserId && r.emoji === emoji);
     if (existing) {
       setReactions((prev) => prev.filter((r) => r.id !== existing.id));
@@ -841,7 +897,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const openSecureViewOnce = async (msg) => {
     if (msg.user_id === myUserId) {
-      // Sender can view freely
       setSecureLightboxMsg(msg);
       return;
     }
@@ -862,7 +917,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 10. REAL WEBRTC AUDIO & VIDEO CALLING
+  // 10. REAL WEBRTC AUDIO & VIDEO CALLING (ONLY FOR ACCEPTED USERS)
   // =========================================================================
   const handleWebRTCSignal = async (payload) => {
     const data = payload.payload;
@@ -943,6 +998,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   const initiateCall = async (type) => {
+    if (activeConv?.is_request) {
+      alert("⚠️ Calls are locked until the message request is accepted by both users.");
+      return;
+    }
+
     const targetUserId = activeRecipient?.user_id || activeRecipient?.id;
     if (!targetUserId) {
       alert("Please select an active user to call.");
@@ -975,7 +1035,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         });
       }
 
-      // Log to calls table
       if (activeConv?.conv_id) {
         await supabase.from("calls").insert([
           {
@@ -991,7 +1050,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       }
     } catch (err) {
       console.warn("Call setup error:", err);
-      // Fallback simulated call
       startCallTimer();
     }
   };
@@ -1054,7 +1112,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       });
     }
 
-    // Post call summary log to chat
     if (callDuration > 0) {
       handleSendMessage(`📞 Call ended • Duration: ${formatDuration(callDuration)}`);
     }
@@ -1160,7 +1217,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         .insert({
           type: "group",
           name: newGroupName.trim(),
-          created_by: myUserId
+          created_by: myUserId,
+          is_request: false
         })
         .select("id")
         .single();
@@ -1210,11 +1268,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  // Count pending requests for receiver
+  const pendingRequestsCount = conversations.filter((c) => c.is_request && c.created_by !== myUserId).length;
+
   // Filtered conversation list
   const filteredConvs = conversations.filter((c) => {
     const matchSearch = (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (c.email || "").toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchSearch) return false;
-    if (activeTab === "direct") return c.type === "dm";
+    if (activeTab === "direct") return c.type === "dm" && !c.is_request;
     if (activeTab === "groups") return c.type === "group";
     if (activeTab === "requests") return c.is_request;
     return true;
@@ -1222,7 +1283,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   return (
     <div className="fixed inset-0 z-[250] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-5 animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 text-slate-100 rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative">
+      <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-200`}>
 
         {/* ================================================================= */}
         {/* 1. CALL SCREEN OVERLAY (AUDIO / VIDEO / FACETIME / KEYPAD)         */}
@@ -1385,41 +1446,52 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 2. LEFT SIDEBAR: CONVERSATION LIST & SEARCH                       */}
+        {/* 2. LEFT SIDEBAR: CONVERSATIONS, SEARCH & THEME TOGGLE             */}
         {/* ================================================================= */}
-        <div className="w-full sm:w-80 md:w-96 border-r border-slate-800/80 flex flex-col bg-slate-900/60 shrink-0">
-          {/* Top User Bar */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div className={`w-full sm:w-80 md:w-96 border-r ${theme.sidebarBg} flex flex-col shrink-0`}>
+          {/* Top User Bar with Dark/Light Mode Switch */}
+          <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center overflow-hidden border border-slate-700">
+              <div className="relative w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-700">
                 {myAvatar ? <img src={myAvatar} alt="" className="w-full h-full object-cover" /> : myName[0].toUpperCase()}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm text-white">{myName}</h3>
-                <p className="text-[11px] text-slate-400 truncate max-w-[130px]">{myEmail}</p>
+                <h3 className="font-extrabold text-sm">{myName}</h3>
+                <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[130px]`}>{myEmail}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              {/* Dark / Light Mode Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              </button>
+
               <button
                 onClick={() => setShowNewChatModal(true)}
-                className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white transition-all"
+                className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white transition-all"
                 title="New Direct Message"
               >
                 <MessageSquarePlus className="w-4 h-4" />
               </button>
+
               <button
                 onClick={() => setShowCreateGroupModal(true)}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
                 title="Create Group"
               >
                 <Users className="w-4 h-4" />
               </button>
+
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                  className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1430,29 +1502,29 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           {/* Search bar */}
           <div className="p-3">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+              <Search className={`w-4 h-4 absolute left-3 top-2.5 ${theme.secondaryText}`} />
               <input
                 type="text"
-                placeholder="Search chats or registered users..."
+                placeholder="Search chats or registered engineers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className={`w-full pl-9 pr-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
             </div>
           </div>
 
           {/* Filter Tabs */}
-          <div className="px-3 pb-2 flex gap-1 border-b border-slate-800/60">
+          <div className={`px-3 pb-2 flex gap-1 border-b ${theme.modalBorder}`}>
             {[
               { id: "all", label: "All Chats" },
               { id: "direct", label: "Direct" },
               { id: "groups", label: "Groups" },
-              { id: "requests", label: "Requests" }
+              { id: "requests", label: `Requests${pendingRequestsCount > 0 ? ` (${pendingRequestsCount})` : ""}` }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeTab === tab.id ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white hover:bg-slate-800/50"}`}
+                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${activeTab === tab.id ? "bg-blue-600 text-white shadow" : `${theme.secondaryText} ${theme.hoverBg}`}`}
               >
                 {tab.label}
               </button>
@@ -1460,45 +1532,52 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           </div>
 
           {/* Conversations Scroll List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40">
+          <div className={`flex-1 overflow-y-auto divide-y ${isDarkMode ? "divide-slate-800/40" : "divide-slate-200/60"}`}>
             {filteredConvs.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 space-y-2">
-                <MessageSquare className="w-8 h-8 mx-auto text-slate-600" />
-                <p className="text-xs font-bold text-slate-400">No conversations found</p>
-                <p className="text-[11px]">Click + to start chatting with any engineer.</p>
+              <div className="p-8 text-center space-y-2">
+                <MessageSquare className={`w-8 h-8 mx-auto ${theme.secondaryText}`} />
+                <p className="text-xs font-bold">No conversations in this tab</p>
+                <p className={`text-[11px] ${theme.secondaryText}`}>Click + to start chatting with any registered engineer.</p>
               </div>
             ) : (
               filteredConvs.map((c) => {
                 const isSelected = activeConvId === c.id;
                 const isOnline = c.email && onlineUsers.has(c.email);
+                const isPendingReq = c.is_request && c.created_by !== myUserId;
+
                 return (
                   <button
                     key={c.id}
                     onClick={() => selectConversation(c)}
-                    className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${isSelected ? "bg-blue-600/15 border-l-4 border-blue-500" : "hover:bg-slate-800/40"}`}
+                    className={`w-full p-3 flex items-center gap-3 text-left transition-colors ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
                   >
                     <div className="relative shrink-0">
-                      <div className="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-slate-200 overflow-hidden">
+                      <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden`}>
                         {c.avatar ? (
                           <img src={c.avatar} alt="" className="w-full h-full object-cover" />
                         ) : c.type === "group" ? (
-                          <Users className="w-5 h-5 text-blue-400" />
+                          <Users className="w-5 h-5 text-blue-500" />
                         ) : (
                           (c.name || "U")[0].toUpperCase()
                         )}
                       </div>
                       {isOnline && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" />
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs text-white truncate">{c.name}</h4>
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap ml-1">{c.lastTime}</span>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <h4 className="font-bold text-xs truncate">{c.name}</h4>
+                          {isPendingReq && (
+                            <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded text-[9px] font-extrabold">Request</span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] ${theme.secondaryText} whitespace-nowrap ml-1`}>{c.lastTime}</span>
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-[11px] text-slate-400 truncate max-w-[170px]">{c.lastMessage}</p>
+                        <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[170px]`}>{c.lastMessage}</p>
                         {c.unread > 0 && (
                           <span className="px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-[9px] font-black">{c.unread}</span>
                         )}
@@ -1515,37 +1594,43 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* 3. RIGHT MAIN CHAT ROOM                                          */}
         {/* ================================================================= */}
         {activeConv ? (
-          <div className="flex-1 flex flex-col bg-slate-950 relative min-w-0" style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
-            {/* Dark glass backdrop if wallpaper is present */}
-            {activeConv.wallpaper_url && <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm pointer-events-none" />}
+          <div className={`flex-1 flex flex-col ${theme.chatBg} relative min-w-0`} style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
+            {/* Wallpaper overlay */}
+            {activeConv.wallpaper_url && <div className={`absolute inset-0 ${isDarkMode ? "bg-slate-950/80" : "bg-white/80"} backdrop-blur-sm pointer-events-none`} />}
 
             {/* Chat Room Header */}
-            <div className="relative z-10 p-3.5 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md flex items-center justify-between">
+            <div className={`relative z-10 p-3.5 border-b ${theme.headerBg} backdrop-blur-md flex items-center justify-between`}>
               <div className="flex items-center gap-3 min-w-0">
-                <div className="relative w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-slate-200 overflow-hidden shrink-0">
+                <div className={`relative w-10 h-10 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0`}>
                   {activeConv.avatar ? (
                     <img src={activeConv.avatar} alt="" className="w-full h-full object-cover" />
                   ) : activeConv.type === "group" ? (
-                    <Users className="w-5 h-5 text-blue-400" />
+                    <Users className="w-5 h-5 text-blue-500" />
                   ) : (
                     (activeConv.name || "U")[0].toUpperCase()
                   )}
                   {activeConv.email && onlineUsers.has(activeConv.email) && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full" />
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
                   )}
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-sm text-white truncate">
+                    <h3 className="font-extrabold text-sm truncate">
                       {customNickname || activeConv.name}
                     </h3>
-                    {activeConv.type === "group" && (
-                      <span className="px-2 py-0.5 bg-blue-600/20 text-blue-400 rounded text-[10px] font-bold">Group</span>
+                    {activeConv.type === "group" ? (
+                      <span className="px-2 py-0.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
+                    ) : activeConv.is_request ? (
+                      <span className="px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Connected
+                      </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {activeConv.type === "group" ? "Multi-engineer discussion" : onlineUsers.has(activeConv.email) ? "Online now" : activeConv.email || "Active"}
+                  <p className={`text-[11px] ${theme.secondaryText} truncate`}>
+                    {activeConv.type === "group" ? "Multi-engineer discussion" : onlineUsers.has(activeConv.email) ? "Active now" : activeConv.email || "Active"}
                   </p>
                 </div>
               </div>
@@ -1554,23 +1639,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => initiateCall("audio")}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-all"
-                  title="Start Audio Call"
+                  className={`p-2.5 rounded-xl transition-all ${canCallAndSend ? theme.iconBtn : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
+                  title={canCallAndSend ? "Start Audio Call" : "Calls are locked until request is accepted"}
                 >
                   <Phone className="w-4 h-4" />
                 </button>
 
                 <button
                   onClick={() => initiateCall("video")}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-all"
-                  title="Start Video Call"
+                  className={`p-2.5 rounded-xl transition-all ${canCallAndSend ? theme.iconBtn : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
+                  title={canCallAndSend ? "Start Video Call" : "Video call is locked until request is accepted"}
                 >
                   <Video className="w-4 h-4" />
                 </button>
 
                 <button
                   onClick={() => setChatSearchOpen((p) => !p)}
-                  className={`p-2.5 rounded-xl transition-all ${chatSearchOpen ? "bg-blue-600 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"}`}
+                  className={`p-2.5 rounded-xl transition-all ${chatSearchOpen ? "bg-blue-600 text-white" : theme.iconBtn}`}
                   title="Search Messages"
                 >
                   <Search className="w-4 h-4" />
@@ -1579,7 +1664,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 {activeConv.type === "group" ? (
                   <button
                     onClick={() => setShowGroupSettings(true)}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all`}
                     title="Group Settings"
                   >
                     <Settings className="w-4 h-4" />
@@ -1587,7 +1672,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 ) : (
                   <button
                     onClick={() => setShowDetailsPanel((p) => !p)}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all`}
                     title="Contact Details"
                   >
                     <Info className="w-4 h-4" />
@@ -1596,19 +1681,54 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             </div>
 
+            {/* MESSAGE REQUEST ACCEPT / REJECT BANNER FOR RECEIVER */}
+            {isPendingRequestForMe && (
+              <div className="relative z-10 px-4 py-3 bg-amber-500/10 border-b border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top">
+                <div className="flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+                  <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-extrabold">{activeConv.name}</span> wants to connect with you.
+                    <p className="text-[11px] opacity-80">Accept this request to unlock direct voice/video calls, media sharing, and replies.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleAcceptRequest}
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Accept Request
+                  </button>
+                  <button
+                    onClick={handleRejectRequest}
+                    className="px-4 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SENDER WAITING NOTICE */}
+            {isPendingRequestByMe && (
+              <div className="relative z-10 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
+                <Clock className="w-4 h-4 text-blue-500 animate-spin" />
+                <span>Message request sent. Audio/video calls and direct features will unlock once <strong>{activeConv.name}</strong> accepts.</span>
+              </div>
+            )}
+
             {/* Chat In-Line Search Bar */}
             {chatSearchOpen && (
-              <div className="relative z-10 p-2 bg-slate-900 border-b border-slate-800 flex items-center gap-2">
-                <Search className="w-4 h-4 text-slate-400 ml-2" />
+              <div className={`relative z-10 p-2 ${theme.headerBg} border-b ${theme.modalBorder} flex items-center gap-2`}>
+                <Search className={`w-4 h-4 ${theme.secondaryText} ml-2`} />
                 <input
                   type="text"
-                  placeholder="Search in this chat..."
+                  placeholder="Search in this chat transcript..."
                   value={chatSearchText}
                   onChange={(e) => setChatSearchText(e.target.value)}
-                  className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
+                  className="flex-1 bg-transparent text-xs focus:outline-none"
                   autoFocus
                 />
-                <button onClick={() => { setChatSearchOpen(false); setChatSearchText(""); }} className="p-1 text-slate-400 hover:text-white">
+                <button onClick={() => { setChatSearchOpen(false); setChatSearchText(""); }} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -1616,13 +1736,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
             {/* Pinned Message Banner */}
             {pinnedMessage && (
-              <div className="relative z-10 px-4 py-2 bg-blue-950/80 border-b border-blue-900/60 flex items-center justify-between">
+              <div className="relative z-10 px-4 py-2 bg-blue-600/10 border-b border-blue-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Pin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="text-[11px] font-bold text-blue-300">Pinned:</span>
-                  <p className="text-[11px] text-slate-200 truncate">{pinnedMessage.content}</p>
+                  <Pin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300">Pinned:</span>
+                  <p className="text-[11px] truncate">{pinnedMessage.content}</p>
                 </div>
-                <button onClick={() => handleTogglePin(pinnedMessage)} className="text-slate-400 hover:text-white p-1">
+                <button onClick={() => handleTogglePin(pinnedMessage)} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1631,11 +1751,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             {/* Messages Stream */}
             <div className="relative z-10 flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
-                  <Sparkles className="w-10 h-10 text-blue-500/60" />
-                  <p className="text-sm font-bold text-slate-300">End-to-End Encrypted Real-Time Chat</p>
-                  <p className="text-xs text-slate-500 max-w-xs text-center">
-                    Send files, voice notes, code, engineering blueprints, or start an audio/video call.
+                <div className={`h-full flex flex-col items-center justify-center ${theme.secondaryText} space-y-3`}>
+                  <Sparkles className="w-10 h-10 text-blue-600 dark:text-blue-400 opacity-70" />
+                  <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">Real-Time Encrypted Messaging</p>
+                  <p className="text-xs max-w-xs text-center">
+                    Send high-resolution blueprints, voice notes, engineering calculations, or initiate audio/video calls.
                   </p>
                 </div>
               ) : (
@@ -1648,21 +1768,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                     return (
                       <div key={m.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"} group`}>
-                        {/* Reply Preview inside bubble */}
                         {m.reply_to_id && (
-                          <div className={`mb-1 px-3 py-1 rounded-xl text-[10px] bg-slate-800/80 border-l-2 border-blue-500 text-slate-300 max-w-xs truncate`}>
+                          <div className={`mb-1 px-3 py-1 rounded-xl text-[10px] ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-200 text-slate-700"} border-l-2 border-blue-500 max-w-xs truncate`}>
                             Replying to message
                           </div>
                         )}
 
                         <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%]">
                           {!isMine && (
-                            <div className="w-7 h-7 rounded-full bg-slate-800 text-white font-bold text-[10px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-700">
+                            <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[10px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700">
                               {m.sender_avatar ? <img src={m.sender_avatar} alt="" className="w-full h-full object-cover" /> : (m.sender_name || "E")[0].toUpperCase()}
                             </div>
                           )}
 
-                          <div className={`relative px-4 py-2.5 rounded-2xl shadow-md text-xs leading-relaxed ${isMine ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-xs" : "bg-slate-800/90 text-slate-100 rounded-bl-xs border border-slate-700/60"}`}>
+                          <div className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}>
                             {/* View-Once Media */}
                             {m.view_limit > 0 ? (
                               isViewOnceExpired ? (
@@ -1697,20 +1816,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                             {/* Voice Note Audio Player */}
                             {m.media_type === "voice" && m.media_url && (
-                              <div className="flex items-center gap-2 my-1 bg-black/20 p-2 rounded-xl">
+                              <div className="flex items-center gap-2 my-1 bg-black/10 dark:bg-black/30 p-2 rounded-xl">
                                 <audio src={m.media_url} controls className="w-48 sm:w-56 h-8" />
                               </div>
                             )}
 
                             {/* Generic File Attachment */}
                             {m.media_type === "file" && m.media_url && (
-                              <a href={m.media_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 my-1 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors">
-                                <FileText className="w-5 h-5 text-blue-300" />
+                              <a href={m.media_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 my-1 p-2 bg-black/10 dark:bg-black/30 hover:bg-black/20 rounded-xl transition-colors">
+                                <FileText className="w-5 h-5 text-blue-400" />
                                 <div className="min-w-0">
                                   <p className="font-bold text-[11px] truncate">{m.media_metadata?.name || "Attached File"}</p>
-                                  <p className="text-[9px] text-slate-300">{m.media_metadata?.size || "Download"}</p>
+                                  <p className="text-[9px] opacity-80">{m.media_metadata?.size || "Download"}</p>
                                 </div>
-                                <Download className="w-4 h-4 ml-auto text-white" />
+                                <Download className="w-4 h-4 ml-auto" />
                               </a>
                             )}
 
@@ -1724,26 +1843,26 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               <p className="whitespace-pre-wrap break-words">{m.content}</p>
                             )}
 
-                            {/* Timestamp and status */}
-                            <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-200" : "text-slate-400"}`}>
+                            {/* Timestamp & double checkmarks */}
+                            <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : theme.secondaryText}`}>
                               <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              {isMine && <CheckCheck className="w-3 h-3 text-emerald-300" />}
+                              {isMine && <DoubleCheck className="w-3 h-3 text-emerald-300" />}
                             </div>
                           </div>
 
                           {/* Hover Action Menu */}
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                            <button onClick={() => setReplyingTo(m)} className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white" title="Reply">
+                            <button onClick={() => setReplyingTo(m)} className={`p-1 rounded-full ${theme.iconBtn}`} title="Reply">
                               <MessageSquare className="w-3 h-3" />
                             </button>
-                            <button onClick={() => handleToggleReaction(m.id, "❤️")} className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400" title="Love">
+                            <button onClick={() => handleToggleReaction(m.id, "❤️")} className={`p-1 rounded-full ${theme.iconBtn} hover:text-rose-500`} title="Love">
                               <Heart className="w-3 h-3" />
                             </button>
-                            <button onClick={() => handleTogglePin(m)} className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-blue-400" title="Pin">
+                            <button onClick={() => handleTogglePin(m)} className={`p-1 rounded-full ${theme.iconBtn} hover:text-blue-500`} title="Pin">
                               <Pin className="w-3 h-3" />
                             </button>
                             {isMine && (
-                              <button onClick={() => handleDeleteMessage(m.id)} className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400" title="Delete">
+                              <button onClick={() => handleDeleteMessage(m.id)} className={`p-1 rounded-full ${theme.iconBtn} hover:text-rose-500`} title="Delete">
                                 <Trash2 className="w-3 h-3" />
                               </button>
                             )}
@@ -1759,10 +1878,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                                 <button
                                   key={emoji}
                                   onClick={() => handleToggleReaction(m.id, emoji)}
-                                  className="px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-bold flex items-center gap-1 hover:scale-110 transition-transform"
+                                  className={`px-1.5 py-0.5 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-300 shadow-sm"} border text-[10px] font-bold flex items-center gap-1 hover:scale-110 transition-transform`}
                                 >
                                   <span>{emoji}</span>
-                                  <span className="text-slate-400">{count}</span>
+                                  <span className={theme.secondaryText}>{count}</span>
                                 </button>
                               );
                             })}
@@ -1777,21 +1896,21 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
             {/* Typing Indicator */}
             {typingUsers.length > 0 && (
-              <div className="px-4 py-1.5 text-[11px] text-blue-400 italic flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+              <div className="px-4 py-1.5 text-[11px] text-blue-600 dark:text-blue-400 italic flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                 <span>Engineer is typing...</span>
               </div>
             )}
 
             {/* Staged Attachments Preview Bar */}
             {pendingAttachments.length > 0 && (
-              <div className="relative z-10 px-4 py-2 bg-slate-900 border-t border-slate-800 flex items-center gap-3 overflow-x-auto">
+              <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center gap-3 overflow-x-auto`}>
                 {pendingAttachments.map((att, idx) => (
-                  <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500/50 shrink-0 bg-slate-800 flex items-center justify-center">
+                  <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500/50 shrink-0 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
                     {att.type === "image" ? (
                       <img src={att.preview} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <FileText className="w-6 h-6 text-blue-400" />
+                      <FileText className="w-6 h-6 text-blue-500" />
                     )}
                     <button
                       onClick={() => setPendingAttachments((prev) => prev.filter((_, i) => i !== idx))}
@@ -1806,15 +1925,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
             {/* Replying Banner */}
             {replyingTo && (
-              <div className="relative z-10 px-4 py-2 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between">
+              <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center justify-between`}>
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-1 h-8 bg-blue-500 rounded-full shrink-0" />
+                  <div className="w-1 h-8 bg-blue-600 rounded-full shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-blue-400">Replying to message</p>
-                    <p className="text-[11px] text-slate-300 truncate">{replyingTo.content}</p>
+                    <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400">Replying to message</p>
+                    <p className={`text-[11px] ${theme.secondaryText} truncate`}>{replyingTo.content}</p>
                   </div>
                 </div>
-                <button onClick={() => setReplyingTo(null)} className="p-1 text-slate-400 hover:text-white">
+                <button onClick={() => setReplyingTo(null)} className={`p-1 ${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -1822,14 +1941,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
             {/* EMOJI / STICKER / GIF PICKERS */}
             {showEmojiPicker && (
-              <div className="relative z-20 p-3 bg-slate-900 border-t border-slate-800 max-h-48 overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                  <span className="text-xs font-bold text-slate-300">Emoji Picker</span>
-                  <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
+              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-48 overflow-y-auto`}>
+                <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-2 mb-2`}>
+                  <span className="text-xs font-bold">Emoji Picker</span>
+                  <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4" /></button>
                 </div>
                 {Object.entries(EMOJI_CATEGORIES).map(([cat, emojis]) => (
                   <div key={cat} className="mb-2">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{cat}</p>
+                    <p className={`text-[10px] font-bold ${theme.secondaryText} uppercase tracking-wider mb-1`}>{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {emojis.map((em) => (
                         <button key={em} onClick={() => setMessageText((p) => p + em)} className="text-lg hover:scale-125 transition-transform">
@@ -1843,17 +1962,17 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             )}
 
             {showStickerPicker && (
-              <div className="relative z-20 p-3 bg-slate-900 border-t border-slate-800 max-h-48 overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                  <span className="text-xs font-bold text-slate-300">Animated Stickers</span>
-                  <button onClick={() => setShowStickerPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
+              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-48 overflow-y-auto`}>
+                <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-2 mb-2`}>
+                  <span className="text-xs font-bold">Animated Stickers</span>
+                  <button onClick={() => setShowStickerPicker(false)}><X className="w-4 h-4" /></button>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {STICKER_PACKS.map((stk) => (
                     <button
                       key={stk.id}
                       onClick={() => handleSendMessage(`Sticker: ${stk.name}`, "gif", stk.url)}
-                      className="p-1 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center hover:scale-105 transition-all"
+                      className={`p-1 ${theme.iconBtn} rounded-xl flex items-center justify-center hover:scale-105 transition-all`}
                     >
                       <img src={stk.url} alt={stk.name} className="w-16 h-16 object-contain" />
                     </button>
@@ -1863,28 +1982,28 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             )}
 
             {showGifPicker && (
-              <div className="relative z-20 p-3 bg-slate-900 border-t border-slate-800 max-h-56 overflow-y-auto">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2 mb-2">
-                  <Search className="w-4 h-4 text-slate-400" />
+              <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-56 overflow-y-auto`}>
+                <div className={`flex items-center gap-2 border-b ${theme.modalBorder} pb-2 mb-2`}>
+                  <Search className={`w-4 h-4 ${theme.secondaryText}`} />
                   <input
                     type="text"
-                    placeholder="Search Tenor GIFs (e.g. engineering, happy)..."
+                    placeholder="Search Tenor GIFs..."
                     value={gifSearchQuery}
                     onChange={(e) => searchGifs(e.target.value)}
-                    className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
+                    className="flex-1 bg-transparent text-xs focus:outline-none"
                     autoFocus
                   />
-                  <button onClick={() => setShowGifPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
+                  <button onClick={() => setShowGifPicker(false)}><X className="w-4 h-4" /></button>
                 </div>
                 {gifLoading ? (
-                  <div className="p-4 text-center text-xs text-slate-500">Searching GIFs...</div>
+                  <div className={`p-4 text-center text-xs ${theme.secondaryText}`}>Searching GIFs...</div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {gifResults.map((gif) => (
                       <button
                         key={gif.id}
                         onClick={() => handleSendMessage("GIF", "gif", gif.url)}
-                        className="rounded-xl overflow-hidden hover:opacity-90 hover:scale-105 transition-all h-20 bg-slate-800"
+                        className="rounded-xl overflow-hidden hover:opacity-90 hover:scale-105 transition-all h-20 bg-slate-200 dark:bg-slate-800"
                       >
                         <img src={gif.url} alt="" className="w-full h-full object-cover" />
                       </button>
@@ -1895,16 +2014,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             )}
 
             {/* Bottom Chat Composer Input */}
-            <div className="relative z-10 p-3 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md">
+            <div className={`relative z-10 p-3 border-t ${theme.modalBorder} ${theme.headerBg} backdrop-blur-md`}>
               {isRecordingVoice ? (
-                <div className="flex items-center justify-between bg-rose-950/60 border border-rose-600/50 p-3 rounded-2xl animate-pulse">
+                <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/40 p-3 rounded-2xl animate-pulse">
                   <div className="flex items-center gap-3">
                     <span className="w-3 h-3 bg-rose-500 rounded-full animate-ping" />
-                    <span className="font-mono text-sm font-bold text-rose-300">{formatDuration(voiceDuration)}</span>
-                    <span className="text-xs text-slate-400">Recording voice note...</span>
+                    <span className="font-mono text-sm font-bold text-rose-600 dark:text-rose-400">{formatDuration(voiceDuration)}</span>
+                    <span className="text-xs text-rose-500">Recording voice note...</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={cancelVoiceRecording} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-xl">
+                    <button onClick={cancelVoiceRecording} className={`px-3 py-1.5 ${theme.iconBtn} text-xs font-bold rounded-xl`}>
                       Cancel
                     </button>
                     <button onClick={stopVoiceRecording} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1">
@@ -1914,13 +2033,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  {/* Attach files & images */}
                   <input ref={imageInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleStageFiles(e, "image")} />
                   <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleStageFiles(e, "file")} />
 
                   <button
                     onClick={() => imageInputRef.current?.click()}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Upload Image/Video"
                   >
                     <ImageIcon className="w-4 h-4" />
@@ -1928,25 +2046,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Attach Files"
                   >
                     <Paperclip className="w-4 h-4" />
                   </button>
 
-                  {/* View-Once Toggle */}
                   <button
                     onClick={() => setViewOnceMode((p) => !p)}
-                    className={`p-2.5 rounded-xl transition-all shrink-0 ${viewOnceMode ? "bg-amber-500 text-white font-bold" : "bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white"}`}
-                    title={viewOnceMode ? "View-Once Active" : "Enable View-Once (Self-Destruct)"}
+                    className={`p-2.5 rounded-xl transition-all shrink-0 ${viewOnceMode ? "bg-amber-500 text-white font-bold" : theme.iconBtn}`}
+                    title={viewOnceMode ? "View-Once Active" : "Enable View-Once"}
                   >
                     <Eye className="w-4 h-4" />
                   </button>
 
-                  {/* Emojis & Stickers */}
                   <button
                     onClick={() => { setShowEmojiPicker((p) => !p); setShowStickerPicker(false); setShowGifPicker(false); }}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Emojis"
                   >
                     <Smile className="w-4 h-4" />
@@ -1954,7 +2070,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   <button
                     onClick={() => { setShowStickerPicker((p) => !p); setShowEmojiPicker(false); setShowGifPicker(false); }}
-                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
                     title="Stickers"
                   >
                     <Sparkles className="w-4 h-4" />
@@ -1962,7 +2078,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   <button
                     onClick={() => { setShowGifPicker((p) => !p); setShowEmojiPicker(false); setShowStickerPicker(false); }}
-                    className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-bold text-[11px] transition-all shrink-0"
+                    className={`px-2.5 py-1.5 rounded-xl ${theme.iconBtn} font-bold text-[11px] transition-all shrink-0`}
                     title="GIFs"
                   >
                     GIF
@@ -1971,8 +2087,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   {/* Text Input */}
                   <input
                     type="text"
-                    placeholder={viewOnceMode ? "Add a view-once note..." : "Type your message..."}
+                    placeholder={isPendingRequestForMe ? "Accept request above to reply..." : viewOnceMode ? "Add a view-once note..." : "Type your message..."}
                     value={messageText}
+                    disabled={isPendingRequestForMe}
                     onChange={handleTextChange}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -1980,7 +2097,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                         handleSendMessage();
                       }
                     }}
-                    className="flex-1 bg-slate-950/90 border border-slate-800 rounded-2xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all"
+                    className={`flex-1 ${theme.inputBg} rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
                   />
 
                   {/* Voice Note or Send Button */}
@@ -1995,7 +2112,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   ) : (
                     <button
                       onClick={startVoiceRecording}
-                      className="p-2.5 rounded-2xl bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white transition-all shrink-0"
+                      disabled={isPendingRequestForMe}
+                      className={`p-2.5 rounded-2xl ${theme.iconBtn} hover:bg-blue-600 hover:text-white transition-all shrink-0 disabled:opacity-40`}
                       title="Hold to Record Voice Note"
                     >
                       <Mic className="w-4 h-4" />
@@ -2006,11 +2124,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-3">
-            <MessageSquare className="w-12 h-12 text-slate-600" />
-            <h3 className="font-extrabold text-base text-slate-300">Nova Real-Time Messenger</h3>
-            <p className="text-xs text-slate-500 max-w-sm">
-              Select an engineer from the left sidebar or create a new group discussion to start collaborating.
+          <div className={`flex-1 flex flex-col items-center justify-center p-8 text-center ${theme.secondaryText} space-y-3`}>
+            <MessageSquare className="w-12 h-12 opacity-50" />
+            <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-200">Nova Real-Time Messenger</h3>
+            <p className="text-xs max-w-sm">
+              Select an engineer from the left sidebar or start a new conversation.
             </p>
           </div>
         )}
@@ -2019,49 +2137,45 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* 4. DETAILS / USER PROFILE PANEL                                   */}
         {/* ================================================================= */}
         {showDetailsPanel && activeRecipient && (
-          <div className="w-72 border-l border-slate-800 bg-slate-900/95 p-5 flex flex-col space-y-5 animate-in slide-in-from-right">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h4 className="font-extrabold text-sm text-white">Contact Info</h4>
-              <button onClick={() => setShowDetailsPanel(false)} className="text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
+          <div className={`w-72 border-l ${theme.sidebarBg} p-5 flex flex-col space-y-5 animate-in slide-in-from-right`}>
+            <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+              <h4 className="font-extrabold text-sm">Contact Info</h4>
+              <button onClick={() => setShowDetailsPanel(false)}><X className="w-4 h-4" /></button>
             </div>
 
             <div className="text-center space-y-2">
-              <div className="w-20 h-20 rounded-full bg-blue-600 text-white font-black text-2xl flex items-center justify-center mx-auto overflow-hidden border-2 border-slate-700">
+              <div className="w-20 h-20 rounded-full bg-blue-600 text-white font-black text-2xl flex items-center justify-center mx-auto overflow-hidden border-2 border-slate-300 dark:border-slate-700">
                 {activeRecipient.avatar_url || activeRecipient.avatar ? (
                   <img src={activeRecipient.avatar_url || activeRecipient.avatar} alt="" className="w-full h-full object-cover" />
                 ) : (
                   (activeRecipient.display_name || activeRecipient.name || "E")[0].toUpperCase()
                 )}
               </div>
-              <h3 className="font-extrabold text-base text-white">{customNickname || activeRecipient.display_name || activeRecipient.name}</h3>
-              <p className="text-xs text-slate-400">{activeRecipient.email}</p>
-              <span className="inline-block px-2.5 py-0.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full text-[10px] font-bold">
+              <h3 className="font-extrabold text-base">{customNickname || activeRecipient.display_name || activeRecipient.name}</h3>
+              <p className={`text-xs ${theme.secondaryText}`}>{activeRecipient.email}</p>
+              <span className="inline-block px-2.5 py-0.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-full text-[10px] font-bold">
                 {activeRecipient.plan || "Engineer"}
               </span>
             </div>
 
-            {/* Custom Nickname */}
-            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-              <label className="text-[11px] font-bold text-slate-400">Custom Nickname (Only you see this)</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. Chief Lead"
-                  value={customNickname}
-                  onChange={(e) => {
-                    setCustomNickname(e.target.value);
-                    localStorage.setItem(`nova_nick_${activeConv?.id}_${myUserId}`, e.target.value);
-                  }}
-                  className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none"
-                />
-              </div>
+            <div className={`p-3 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"} rounded-2xl border space-y-2`}>
+              <label className={`text-[11px] font-bold ${theme.secondaryText}`}>Private Nickname</label>
+              <input
+                type="text"
+                placeholder="e.g. Lead FEA"
+                value={customNickname}
+                onChange={(e) => {
+                  setCustomNickname(e.target.value);
+                  localStorage.setItem(`nova_nick_${activeConv?.id}_${myUserId}`, e.target.value);
+                }}
+                className={`w-full px-2.5 py-1.5 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
+              />
             </div>
 
-            {/* Block / Unblock */}
             <div className="mt-auto space-y-2">
               <button
                 onClick={handleToggleBlock}
-                className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${hasBlockedTarget ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white"}`}
+                className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${hasBlockedTarget ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-500/15 hover:bg-rose-600 text-rose-600 dark:text-rose-400 hover:text-white"}`}
               >
                 <UserX className="w-4 h-4" />
                 {hasBlockedTarget ? "Unblock User" : "Block User"}
@@ -2075,22 +2189,21 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* ================================================================= */}
         {showGroupSettings && activeConv && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="font-extrabold text-base text-white">Group Settings & Customization</h3>
-                <button onClick={() => setShowGroupSettings(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <h3 className="font-extrabold text-base">Group Settings</h3>
+                <button onClick={() => setShowGroupSettings(false)}><X className="w-5 h-5" /></button>
               </div>
 
-              {/* Group Avatar & Name */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-400">Group Name</label>
+                  <label className={`text-xs font-bold ${theme.secondaryText}`}>Group Name</label>
                   <div className="flex gap-2 mt-1">
                     <input
                       type="text"
                       value={newGroupName || activeConv.name || ""}
                       onChange={(e) => setNewGroupName(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                      className={`flex-1 px-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
                     />
                     <button
                       onClick={async () => {
@@ -2107,16 +2220,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </div>
                 </div>
 
-                {/* Wallpaper Customization */}
                 <div>
-                  <label className="text-xs font-bold text-slate-400">Chat Wallpaper Image URL</label>
+                  <label className={`text-xs font-bold ${theme.secondaryText}`}>Chat Wallpaper Image URL</label>
                   <div className="flex gap-2 mt-1">
                     <input
                       type="text"
                       placeholder="https://images.unsplash.com/..."
                       value={groupWallpaper || activeConv.wallpaper_url || ""}
                       onChange={(e) => setGroupWallpaper(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                      className={`flex-1 px-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
                     />
                     <button
                       onClick={async () => {
@@ -2134,17 +2246,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
               </div>
 
-              {/* Add Members to Group */}
               <div>
-                <label className="text-xs font-bold text-slate-400">Add Registered Engineers</label>
-                <div className="max-h-40 overflow-y-auto divide-y divide-slate-800/60 mt-2">
+                <label className={`text-xs font-bold ${theme.secondaryText}`}>Add Registered Engineers</label>
+                <div className={`max-h-40 overflow-y-auto divide-y ${theme.modalBorder} mt-2`}>
                   {registeredUsers.map((u) => (
-                    <div key={u.id} className="p-2 flex items-center justify-between hover:bg-slate-800/40 rounded-xl">
+                    <div key={u.id} className={`p-2 flex items-center justify-between ${theme.hoverBg} rounded-xl`}>
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center">
                           {(u.full_name || u.email)[0].toUpperCase()}
                         </div>
-                        <span className="text-xs font-bold text-white">{u.full_name || u.email}</span>
+                        <span className="text-xs font-bold">{u.full_name || u.email}</span>
                       </div>
                       <button
                         onClick={async () => {
@@ -2155,7 +2266,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             alert("Added " + (u.full_name || u.email) + " to group!");
                           }
                         }}
-                        className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-[11px] font-bold"
+                        className="px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-lg text-[11px] font-bold"
                       >
                         + Add
                       </button>
@@ -2172,26 +2283,26 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* ================================================================= */}
         {showCreateGroupModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="font-extrabold text-base text-white">Create Engineering Group</h3>
-                <button onClick={() => setShowCreateGroupModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <h3 className="font-extrabold text-base">Create Engineering Group</h3>
+                <button onClick={() => setShowCreateGroupModal(false)}><X className="w-5 h-5" /></button>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-400">Group Name</label>
+                <label className={`text-xs font-bold ${theme.secondaryText}`}>Group Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. FEA Stress Specialists"
+                  placeholder="e.g. FEA Analysis Squad"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full px-3.5 py-2.5 mt-1 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-400">Select Members ({selectedGroupUsers.length})</label>
-                <div className="max-h-48 overflow-y-auto divide-y divide-slate-800/60 mt-2">
+                <label className={`text-xs font-bold ${theme.secondaryText}`}>Select Members ({selectedGroupUsers.length})</label>
+                <div className={`max-h-48 overflow-y-auto divide-y ${theme.modalBorder} mt-2`}>
                   {registeredUsers.map((u) => {
                     const isSel = selectedGroupUsers.some((s) => (s.id || s.user_id) === (u.id || u.user_id));
                     return (
@@ -2201,15 +2312,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                         onClick={() => {
                           setSelectedGroupUsers((prev) => isSel ? prev.filter((s) => (s.id || s.user_id) !== (u.id || u.user_id)) : [...prev, u]);
                         }}
-                        className={`w-full p-2.5 flex items-center justify-between rounded-xl transition-all ${isSel ? "bg-blue-600/20 text-white" : "hover:bg-slate-800/40 text-slate-300"}`}
+                        className={`w-full p-2.5 flex items-center justify-between rounded-xl transition-all ${isSel ? "bg-blue-600/20 text-blue-600 dark:text-white" : theme.hoverBg}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 font-bold text-xs flex items-center justify-center">
                             {(u.full_name || u.email)[0].toUpperCase()}
                           </div>
                           <span className="text-xs font-bold">{u.full_name || u.email}</span>
                         </div>
-                        {isSel && <CheckCircle className="w-4 h-4 text-blue-400" />}
+                        {isSel && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                       </button>
                     );
                   })}
@@ -2232,15 +2343,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* ================================================================= */}
         {showNewChatModal && (
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="font-extrabold text-base text-white">Start New Conversation</h3>
-                <button onClick={() => setShowNewChatModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <h3 className="font-extrabold text-base">New Conversation</h3>
+                <button onClick={() => setShowNewChatModal(false)}><X className="w-5 h-5" /></button>
               </div>
 
-              <p className="text-xs text-slate-400">Select any registered engineer in the Nova platform:</p>
+              <p className={`text-xs ${theme.secondaryText}`}>Select any registered engineer in the Nova platform:</p>
 
-              <div className="max-h-64 overflow-y-auto divide-y divide-slate-800/60">
+              <div className={`max-h-64 overflow-y-auto divide-y ${theme.modalBorder}`}>
                 {registeredUsers.map((u) => (
                   <button
                     key={u.id}
@@ -2252,18 +2363,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                         name: u.full_name || u.display_name || u.email,
                         email: u.email,
                         avatar: u.avatar_url,
+                        is_request: true,
+                        created_by: myUserId,
                         otherUser: u
                       });
                       setShowNewChatModal(false);
                     }}
-                    className="w-full p-3 flex items-center gap-3 hover:bg-blue-600/10 rounded-2xl transition-colors text-left"
+                    className={`w-full p-3 flex items-center gap-3 ${theme.hoverBg} rounded-2xl transition-colors text-left`}
                   >
                     <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
                       {(u.full_name || u.email)[0].toUpperCase()}
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-white">{u.full_name || u.display_name || u.email}</h4>
-                      <p className="text-[11px] text-slate-400">{u.email}</p>
+                      <h4 className="font-bold text-xs">{u.full_name || u.display_name || u.email}</h4>
+                      <p className={`text-[11px] ${theme.secondaryText}`}>{u.email}</p>
                     </div>
                   </button>
                 ))}
