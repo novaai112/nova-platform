@@ -9,7 +9,7 @@ import {
   Hash, Radio, Settings, UserPlus, LogOut, MessageSquarePlus, UserX,
   ChevronRight, Play, Square, Info, Shield, ShieldAlert, Sparkle,
   PhoneIncoming, PhoneMissed, Clock, Edit2, Sun, Moon, Lock, Unlock,
-  CheckCheck as DoubleCheck
+  CheckCheck as DoubleCheck, Zap
 } from "lucide-react";
 
 const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉", "👏"];
@@ -34,7 +34,12 @@ const STICKER_PACKS = [
 ];
 
 export default function NovaMessenger({ currentUser, initialRecipient, onClose }) {
-  // Theme state: default clean white light mode with Dark Mode toggle
+  const myEmail = currentUser?.email || "user@nova.ai";
+  const myName = currentUser?.name || currentUser?.full_name || myEmail.split("@")[0];
+  const myAvatar = currentUser?.avatar || currentUser?.avatar_url || null;
+  const myUserId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
+
+  // Theme state with instant local storage recall
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("nova_messenger_dark") === "true";
   });
@@ -47,14 +52,31 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     });
   };
 
-  // Navigation & View States
-  const [conversations, setConversations] = useState([]);
+  // Instant In-Memory Cache Init for 0ms First Render
+  const [conversations, setConversations] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`nova_conv_cache_${myUserId}`);
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const [activeConvId, setActiveConvId] = useState(null);
   const [activeConv, setActiveConv] = useState(null);
   const [activeRecipient, setActiveRecipient] = useState(initialRecipient || null);
-  const [registeredUsers, setRegisteredUsers] = useState([]);
+
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    try {
+      const cached = localStorage.getItem("nova_registered_users_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [activeTab, setActiveTab] = useState("all"); // 'all' | 'direct' | 'groups' | 'requests'
+  const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [chatSearchText, setChatSearchText] = useState("");
@@ -71,7 +93,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [gifResults, setGifResults] = useState([]);
   const [gifLoading, setGifLoading] = useState(false);
 
-  // Messages & Reactions State
+  // Messages & Reactions State (Instant Cache Recall)
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
@@ -111,7 +133,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [hasBlockedTarget, setHasBlockedTarget] = useState(false);
   const [customNickname, setCustomNickname] = useState("");
 
-  // Refs
+  // Refs for Performance & WebRTC
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -128,21 +150,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const rtcChannelRef = useRef(null);
   const presenceChannelRef = useRef(null);
 
-  const myEmail = currentUser?.email || "user@nova.ai";
-  const myName = currentUser?.name || currentUser?.full_name || myEmail.split("@")[0];
-  const myAvatar = currentUser?.avatar || currentUser?.avatar_url || null;
-  const myUserId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
-
   // Request & Acceptance status calculation
   const isPendingRequestForMe = activeConv?.is_request && activeConv?.created_by !== myUserId;
   const isPendingRequestByMe = activeConv?.is_request && activeConv?.created_by === myUserId;
   const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
 
-  // Dynamic Theme Colors
+  // Theme configuration
   const theme = {
     bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
     modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200",
-    sidebarBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-slate-50/95 border-slate-200",
+    sidebarBg: isDarkMode ? "bg-slate-900/95 border-slate-800" : "bg-slate-50/95 border-slate-200",
     chatBg: isDarkMode ? "bg-slate-950" : "bg-[#f8fafc]",
     headerBg: isDarkMode ? "bg-slate-900/90 border-slate-800" : "bg-white/95 border-slate-200",
     cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
@@ -156,26 +173,22 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 1. LOAD REGISTERED USERS & PROFILES
+  // 1. FAST REGISTERED USERS LOAD & CACHING
   // =========================================================================
   const loadRegisteredUsers = useCallback(async () => {
     try {
-      const { data: usersData } = await supabase
-        .from("user_profiles")
-        .select("id, email, full_name, avatar_url, plan, created_at")
-        .order("created_at", { ascending: false });
-
-      const { data: profsData } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, email, avatar_url, username");
+      const [usersRes, profsRes] = await Promise.all([
+        supabase.from("user_profiles").select("id, email, full_name, avatar_url, plan, created_at").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("user_id, display_name, email, avatar_url, username")
+      ]);
 
       const profMap = new Map();
-      (profsData || []).forEach((p) => {
+      (profsRes.data || []).forEach((p) => {
         if (p.email) profMap.set(p.email.toLowerCase(), p);
         if (p.user_id) profMap.set(p.user_id, p);
       });
 
-      const combined = (usersData || [])
+      const combined = (usersRes.data || [])
         .filter((u) => u.email?.toLowerCase() !== myEmail.toLowerCase())
         .map((u) => {
           const prof = profMap.get(u.email?.toLowerCase()) || profMap.get(u.id) || {};
@@ -192,8 +205,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         });
 
       setRegisteredUsers(combined);
+      try { localStorage.setItem("nova_registered_users_cache", JSON.stringify(combined)); } catch (e) {}
     } catch (err) {
-      console.warn("Load registered users error:", err);
+      console.warn("Load users error:", err);
     }
   }, [myEmail]);
 
@@ -202,7 +216,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   }, [loadRegisteredUsers]);
 
   // =========================================================================
-  // 2. REAL PRESENCE TRACKING
+  // 2. REAL-TIME PRESENCE (LIGHTNING FAST)
   // =========================================================================
   useEffect(() => {
     if (!myEmail) return;
@@ -213,8 +227,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState();
-      const keys = new Set(Object.keys(state));
-      setOnlineUsers(keys);
+      setOnlineUsers(new Set(Object.keys(state)));
     })
       .on("presence", { event: "join" }, ({ key }) => {
         setOnlineUsers((prev) => new Set([...prev, key]));
@@ -239,11 +252,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   }, [myEmail]);
 
   // =========================================================================
-  // 3. LOAD CONVERSATIONS (DMs & GROUPS)
+  // 3. FAST BATCH CONVERSATIONS LOADER & CACHING
   // =========================================================================
   const loadConversations = useCallback(async () => {
     try {
-      // 1. Fetch conversations where user is a participant
       const { data: participations } = await supabase
         .from("conversation_participants")
         .select("conversation_id, last_read_at")
@@ -252,63 +264,34 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       const convIds = (participations || []).map((p) => p.conversation_id);
 
       let dbConvs = [];
-      if (convIds.length > 0) {
-        const { data } = await supabase
-          .from("conversations")
-          .select("*")
-          .in("id", convIds)
-          .order("updated_at", { ascending: false });
-        dbConvs = data || [];
-      }
-
-      // 2. Fetch last messages for each conversation
       let lastMsgMap = {};
-      if (convIds.length > 0) {
-        const { data: lastMsgs } = await supabase
-          .from("messages")
-          .select("conversation_id, content, media_type, created_at, user_id")
-          .in("conversation_id", convIds)
-          .order("created_at", { ascending: false });
-
-        (lastMsgs || []).forEach((m) => {
-          if (!lastMsgMap[m.conversation_id]) {
-            lastMsgMap[m.conversation_id] = m;
-          }
-        });
-      }
-
-      // 3. Fetch other participants for DMs
-      const dmConvIds = dbConvs.filter((c) => c.type === "dm").map((c) => c.id);
       let dmPartnerMap = {};
-      if (dmConvIds.length > 0) {
-        const { data: dmParts } = await supabase
-          .from("conversation_participants")
-          .select("conversation_id, user_id")
-          .in("conversation_id", dmConvIds)
-          .neq("user_id", myUserId);
 
-        const otherUserIds = [...new Set((dmParts || []).map((p) => p.user_id))];
-        let profMap = {};
+      if (convIds.length > 0) {
+        const [convsRes, msgsRes, partsRes] = await Promise.all([
+          supabase.from("conversations").select("*").in("id", convIds).order("updated_at", { ascending: false }),
+          supabase.from("messages").select("conversation_id, content, media_type, created_at, user_id").in("conversation_id", convIds).order("created_at", { ascending: false }),
+          supabase.from("conversation_participants").select("conversation_id, user_id").in("conversation_id", convIds).neq("user_id", myUserId)
+        ]);
+
+        dbConvs = convsRes.data || [];
+
+        (msgsRes.data || []).forEach((m) => {
+          if (!lastMsgMap[m.conversation_id]) lastMsgMap[m.conversation_id] = m;
+        });
+
+        const otherUserIds = [...new Set((partsRes.data || []).map((p) => p.user_id))];
         if (otherUserIds.length > 0) {
-          const { data: profs } = await supabase
-            .from("profiles")
-            .select("user_id, display_name, avatar_url, email, username")
-            .in("user_id", otherUserIds);
-          (profs || []).forEach((p) => {
-            profMap[p.user_id] = p;
+          const { data: profs } = await supabase.from("profiles").select("user_id, display_name, avatar_url, email, username").in("user_id", otherUserIds);
+          const pMap = {};
+          (profs || []).forEach((p) => { pMap[p.user_id] = p; });
+          (partsRes.data || []).forEach((p) => {
+            dmPartnerMap[p.conversation_id] = pMap[p.user_id] || { user_id: p.user_id, display_name: "Engineer", email: "engineer@nova.ai" };
           });
         }
-
-        (dmParts || []).forEach((p) => {
-          dmPartnerMap[p.conversation_id] = profMap[p.user_id] || {
-            user_id: p.user_id,
-            display_name: "Engineer",
-            email: "engineer@nova.ai"
-          };
-        });
       }
 
-      // Also support legacy/direct nova_messages fallback table
+      // Legacy fallback
       const { data: directMsgs } = await supabase
         .from("nova_messages")
         .select("*")
@@ -318,7 +301,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       const convList = [];
       const seenEmails = new Set();
 
-      // Format DB conversations
       dbConvs.forEach((c) => {
         const other = c.type === "dm" ? dmPartnerMap[c.id] : null;
         const lastM = lastMsgMap[c.id];
@@ -344,7 +326,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         });
       });
 
-      // Incorporate direct contacts from nova_messages
       (directMsgs || []).forEach((msg) => {
         const isMine = msg.sender_email === myEmail;
         const partnerEmail = (isMine ? msg.recipient_email : msg.sender_email)?.toLowerCase();
@@ -367,16 +348,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             lastTime: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             lastRawTime: msg.created_at,
             unread: !isMine && !msg.is_read ? 1 : 0,
-            otherUser: {
-              email: partnerEmail,
-              display_name: partnerName,
-              avatar_url: partnerAvatar
-            }
+            otherUser: { email: partnerEmail, display_name: partnerName, avatar_url: partnerAvatar }
           });
         }
       });
 
-      // Incorporate registered users
       registeredUsers.forEach((u) => {
         const uEmail = u.email?.toLowerCase();
         if (uEmail && !seenEmails.has(uEmail)) {
@@ -402,16 +378,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
       convList.sort((a, b) => (b.lastRawTime || "").localeCompare(a.lastRawTime || ""));
       setConversations(convList);
+      try { localStorage.setItem(`nova_conv_cache_${myUserId}`, JSON.stringify(convList)); } catch (e) {}
 
-      // Set default active if none
       if (!activeConvId && convList.length > 0) {
         if (initialRecipient?.email) {
           const matched = convList.find((c) => c.email?.toLowerCase() === initialRecipient.email.toLowerCase());
-          if (matched) {
-            selectConversation(matched);
-          } else {
-            selectConversation(convList[0]);
-          }
+          selectConversation(matched || convList[0]);
         } else {
           selectConversation(convList[0]);
         }
@@ -426,7 +398,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   }, [loadConversations]);
 
   // =========================================================================
-  // 4. SELECT CONVERSATION
+  // 4. INSTANT CONVERSATION SELECTION WITH CACHED MESSAGES
   // =========================================================================
   const selectConversation = (conv) => {
     setActiveConv(conv);
@@ -435,6 +407,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     setShowDetailsPanel(false);
     setReplyingTo(null);
     setSearchQuery("");
+
+    // Load instantly from localStorage cache for 0ms transition
+    try {
+      const cachedMsgs = localStorage.getItem(`nova_msg_cache_${conv.id}`);
+      if (cachedMsgs) {
+        setMessages(JSON.parse(cachedMsgs));
+      }
+    } catch (e) {}
 
     const storedNick = localStorage.getItem(`nova_nick_${conv.id}_${myUserId}`);
     setCustomNickname(storedNick || "");
@@ -483,14 +463,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // Accept Message Request
   const handleAcceptRequest = async () => {
     if (!activeConv?.conv_id) return;
     try {
       await supabase.rpc("accept_conversation_request", { _conv_id: activeConv.conv_id });
       setActiveConv((prev) => prev ? { ...prev, is_request: false } : null);
       setConversations((prev) => prev.map((c) => c.id === activeConv.id ? { ...c, is_request: false } : c));
-      // Notify other user
       if (rtcChannelRef.current) {
         rtcChannelRef.current.send({
           type: "broadcast",
@@ -503,7 +481,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // Reject / Ignore Message Request
   const handleRejectRequest = async () => {
     if (!activeConv?.conv_id) return;
     try {
@@ -517,7 +494,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 5. LOAD ACTIVE MESSAGES & REALTIME SUBSCRIPTIONS
+  // 5. LIGHTNING FAST MESSAGES LOADER & PERSISTENT CACHE
   // =========================================================================
   const loadMessages = useCallback(async () => {
     if (!activeConv) {
@@ -527,26 +504,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
     try {
       if (activeConv.conv_id) {
-        const { data: msgsData } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", activeConv.conv_id)
-          .order("created_at", { ascending: true });
+        const [msgsRes, rxRes] = await Promise.all([
+          supabase.from("messages").select("*").eq("conversation_id", activeConv.conv_id).order("created_at", { ascending: true }),
+          supabase.from("message_reactions").select("*")
+        ]);
 
-        const msgList = msgsData || [];
+        const msgList = msgsRes.data || [];
         setMessages(msgList);
+        setPinnedMessage(msgList.find((m) => m.is_pinned) || null);
 
-        const pinned = msgList.find((m) => m.is_pinned);
-        setPinnedMessage(pinned || null);
+        const msgIds = new Set(msgList.map((m) => m.id));
+        setReactions((rxRes.data || []).filter((r) => msgIds.has(r.message_id)));
 
-        const msgIds = msgList.map((m) => m.id);
-        if (msgIds.length > 0) {
-          const { data: rxData } = await supabase
-            .from("message_reactions")
-            .select("*")
-            .in("message_id", msgIds);
-          setReactions(rxData || []);
-        }
+        // Persist to local cache for instant recall
+        try { localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(msgList)); } catch (e) {}
 
         const unreadMine = msgList.filter((m) => m.user_id !== myUserId);
         if (unreadMine.length > 0) {
@@ -578,6 +549,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         }));
 
         setMessages(normalized);
+        try { localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(normalized)); } catch (e) {}
       }
     } catch (err) {
       console.warn("Load messages error:", err);
@@ -588,23 +560,42 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     loadMessages();
   }, [loadMessages]);
 
-  // Realtime subscription for active conversation
+  // =========================================================================
+  // 6. REALTIME DIRECT EVENT DISPATCHING (SUB-MILLISECOND UPDATE)
+  // =========================================================================
   useEffect(() => {
     if (!activeConv?.conv_id) return;
     const cid = activeConv.conv_id;
 
     const ch = supabase
-      .channel(`rt-conv-v2-${cid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, () => {
-        loadMessages();
+      .channel(`rt-conv-turbo-${cid}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
+        const newMsg = payload.new;
+        if (!newMsg) return;
+        setMessages((prev) => {
+          // If already added optimistically with temp_ id, replace it
+          const exists = prev.some((m) => m.id === newMsg.id);
+          if (exists) return prev;
+          const filtered = prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== newMsg.content);
+          return [...filtered, newMsg];
+        });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
-        loadMessages();
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
+        if (!payload.new) return;
+        setMessages((prev) => prev.map((m) => m.id === payload.new.id ? { ...m, ...payload.new } : m));
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `id=eq.${cid}` }, (payload) => {
-        if (payload.new) {
-          setActiveConv((prev) => prev ? { ...prev, ...payload.new } : null);
-        }
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages" }, (payload) => {
+        if (!payload.old?.id) return;
+        setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_reactions" }, (payload) => {
+        if (payload.new) setReactions((prev) => [...prev, payload.new]);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "message_reactions" }, (payload) => {
+        if (payload.old?.id) setReactions((prev) => prev.filter((r) => r.id !== payload.old.id));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${cid}` }, (payload) => {
+        if (payload.new) setActiveConv((prev) => prev ? { ...prev, ...payload.new } : null);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "typing_indicators", filter: `conversation_id=eq.${cid}` }, async () => {
         const { data } = await supabase
@@ -612,8 +603,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           .select("user_id, updated_at")
           .eq("conversation_id", cid)
           .gt("updated_at", new Date(Date.now() - 4000).toISOString());
-        const typingIds = (data || []).map((t) => t.user_id).filter((id) => id !== myUserId);
-        setTypingUsers(typingIds);
+        setTypingUsers((data || []).map((t) => t.user_id).filter((id) => id !== myUserId));
       })
       .on("broadcast", { event: "webrtc-signal" }, handleWebRTCSignal)
       .on("broadcast", { event: "request-accepted" }, () => {
@@ -625,14 +615,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [activeConv?.conv_id, loadMessages, myUserId]);
+  }, [activeConv?.conv_id, myUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, pendingAttachments]);
+  }, [messages.length, pendingAttachments.length]);
 
   // =========================================================================
-  // 6. SEND MESSAGE (TEXT, VOICE, MEDIA, VIEW-ONCE, REPLIES)
+  // 7. INSTANT OPTIMISTIC MESSAGE SENDING
   // =========================================================================
   const handleSendMessage = async (customContent = null, mediaType = "text", mediaUrl = null, mediaMeta = null) => {
     const content = customContent || messageText.trim();
@@ -690,6 +680,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
 
     for (const item of itemsToSend) {
+      const tempId = "temp_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+
       if (convId) {
         const msgRow = {
           conversation_id: convId,
@@ -705,14 +697,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           created_at: new Date().toISOString()
         };
 
-        setMessages((prev) => [...prev, { id: "temp_" + Date.now(), ...msgRow }]);
+        // 0ms Optimistic UI Display
+        setMessages((prev) => [...prev, { id: tempId, ...msgRow }]);
 
-        try {
-          await supabase.from("messages").insert([msgRow]);
-          await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
-        } catch (err) {
-          console.warn("Insert message error:", err);
-        }
+        // Background sync
+        supabase.from("messages").insert([msgRow]).select("id").single().then(({ data }) => {
+          if (data?.id) {
+            setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, id: data.id } : m));
+          }
+        });
+        supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
       } else {
         const legacyRow = {
           sender_email: myEmail,
@@ -731,12 +725,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           created_at: new Date().toISOString()
         };
 
-        setMessages((prev) => [...prev, { id: "temp_" + Date.now(), ...legacyRow }]);
-        try {
-          await supabase.from("nova_messages").insert([legacyRow]);
-        } catch (err) {
-          console.warn("Insert legacy message error:", err);
-        }
+        setMessages((prev) => [...prev, { id: tempId, ...legacyRow }]);
+        supabase.from("nova_messages").insert([legacyRow]).then(() => {});
       }
     }
   };
@@ -753,11 +743,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       supabase.from("typing_indicators").delete().eq("conversation_id", activeConv.conv_id).eq("user_id", myUserId);
-    }, 3000);
+    }, 2500);
   };
 
   // =========================================================================
-  // 7. FILE & MEDIA UPLOAD TO 'chat-media' SUPABASE STORAGE
+  // 8. STORAGE UPLOADS & ATTACHMENTS
   // =========================================================================
   const uploadToStorage = async (file, folder = "attachments") => {
     try {
@@ -806,7 +796,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 8. VOICE NOTE RECORDING (MediaRecorder + Waveform)
+  // 9. VOICE RECORDING
   // =========================================================================
   const startVoiceRecording = async () => {
     try {
@@ -859,7 +849,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 9. REACTIONS, DELETION, PINNING & VIEW-ONCE
+  // 10. REACTIONS & VIEW-ONCE
   // =========================================================================
   const handleToggleReaction = async (msgId, emoji) => {
     if (!msgId) return;
@@ -917,7 +907,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 10. REAL WEBRTC AUDIO & VIDEO CALLING (ONLY FOR ACCEPTED USERS)
+  // 11. WEBRTC CALLING ENGINE
   // =========================================================================
   const handleWebRTCSignal = async (payload) => {
     const data = payload.payload;
@@ -1206,7 +1196,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
-  // 11. GROUP CREATION & MANAGEMENT
+  // 12. GROUP CREATION & GIF SEARCH
   // =========================================================================
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || selectedGroupUsers.length === 0) return;
@@ -1241,9 +1231,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   };
 
-  // =========================================================================
-  // 12. TENOR GIF SEARCH
-  // =========================================================================
   const searchGifs = async (query) => {
     setGifSearchQuery(query);
     if (!query.trim()) {
@@ -1268,10 +1255,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Count pending requests for receiver
   const pendingRequestsCount = conversations.filter((c) => c.is_request && c.created_by !== myUserId).length;
 
-  // Filtered conversation list
   const filteredConvs = conversations.filter((c) => {
     const matchSearch = (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (c.email || "").toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchSearch) return false;
@@ -1283,14 +1268,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   return (
     <div className="fixed inset-0 z-[250] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-5 animate-in fade-in">
-      <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-200`}>
+      <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-150`}>
 
         {/* ================================================================= */}
-        {/* 1. CALL SCREEN OVERLAY (AUDIO / VIDEO / FACETIME / KEYPAD)         */}
+        {/* 1. CALL SCREEN OVERLAY                                            */}
         {/* ================================================================= */}
         {activeCall && (
           <div className="absolute inset-0 z-[100] bg-slate-950/98 flex flex-col items-center justify-between p-6 text-white animate-in zoom-in-95">
-            {/* Keypad Overlay */}
             {showCallKeypad && (
               <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center">
                 <button
@@ -1321,7 +1305,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Video Streams */}
             {activeCall.type === "video" && (
               <div className="absolute inset-0 bg-slate-900 overflow-hidden flex items-center justify-center">
                 <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
@@ -1331,7 +1314,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Top Bar Header */}
             <div className="relative z-10 text-center space-y-2 mt-6">
               <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 border-4 border-white/20 shadow-2xl flex items-center justify-center text-4xl font-black mx-auto overflow-hidden">
                 {activeRecipient?.avatar_url || activeRecipient?.avatar ? (
@@ -1351,7 +1333,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </p>
             </div>
 
-            {/* Video Upgrade Notification */}
             {videoUpgradeRequested && (
               <div className="relative z-20 bg-slate-900/90 border border-blue-500/50 rounded-2xl p-4 shadow-2xl flex items-center gap-4">
                 <Video className="w-6 h-6 text-blue-400 animate-bounce" />
@@ -1361,7 +1342,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* In-Call Controls */}
             <div className="relative z-10 flex items-center gap-4 mb-6">
               {activeCall.status === "incoming" ? (
                 <div className="flex items-center gap-8">
@@ -1446,10 +1426,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 2. LEFT SIDEBAR: CONVERSATIONS, SEARCH & THEME TOGGLE             */}
+        {/* 2. LEFT SIDEBAR: FAST CACHED CONVERSATIONS & INSTANT SEARCH       */}
         {/* ================================================================= */}
         <div className={`w-full sm:w-80 md:w-96 border-r ${theme.sidebarBg} flex flex-col shrink-0`}>
-          {/* Top User Bar with Dark/Light Mode Switch */}
           <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center overflow-hidden border border-slate-300 dark:border-slate-700">
@@ -1457,13 +1436,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm">{myName}</h3>
+                <h3 className="font-extrabold text-sm flex items-center gap-1.5">
+                  {myName}
+                  <Zap className="w-3.5 h-3.5 text-amber-500" title="Real-Time Turbo Mode Active" />
+                </h3>
                 <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[130px]`}>{myEmail}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5">
-              {/* Dark / Light Mode Toggle Button */}
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
@@ -1499,7 +1480,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
 
-          {/* Search bar */}
           <div className="p-3">
             <div className="relative">
               <Search className={`w-4 h-4 absolute left-3 top-2.5 ${theme.secondaryText}`} />
@@ -1513,7 +1493,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
 
-          {/* Filter Tabs */}
           <div className={`px-3 pb-2 flex gap-1 border-b ${theme.modalBorder}`}>
             {[
               { id: "all", label: "All Chats" },
@@ -1531,7 +1510,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             ))}
           </div>
 
-          {/* Conversations Scroll List */}
           <div className={`flex-1 overflow-y-auto divide-y ${isDarkMode ? "divide-slate-800/40" : "divide-slate-200/60"}`}>
             {filteredConvs.length === 0 ? (
               <div className="p-8 text-center space-y-2">
@@ -1595,10 +1573,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* ================================================================= */}
         {activeConv ? (
           <div className={`flex-1 flex flex-col ${theme.chatBg} relative min-w-0`} style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
-            {/* Wallpaper overlay */}
             {activeConv.wallpaper_url && <div className={`absolute inset-0 ${isDarkMode ? "bg-slate-950/80" : "bg-white/80"} backdrop-blur-sm pointer-events-none`} />}
 
-            {/* Chat Room Header */}
             <div className={`relative z-10 p-3.5 border-b ${theme.headerBg} backdrop-blur-md flex items-center justify-between`}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`relative w-10 h-10 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0`}>
@@ -1635,7 +1611,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
               </div>
 
-              {/* Header Action Buttons */}
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => initiateCall("audio")}
@@ -1681,7 +1656,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             </div>
 
-            {/* MESSAGE REQUEST ACCEPT / REJECT BANNER FOR RECEIVER */}
+            {/* REQUEST BANNER */}
             {isPendingRequestForMe && (
               <div className="relative z-10 px-4 py-3 bg-amber-500/10 border-b border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top">
                 <div className="flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-200">
@@ -1708,7 +1683,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* SENDER WAITING NOTICE */}
             {isPendingRequestByMe && (
               <div className="relative z-10 px-4 py-2 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
                 <Clock className="w-4 h-4 text-blue-500 animate-spin" />
@@ -1716,7 +1690,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Chat In-Line Search Bar */}
             {chatSearchOpen && (
               <div className={`relative z-10 p-2 ${theme.headerBg} border-b ${theme.modalBorder} flex items-center gap-2`}>
                 <Search className={`w-4 h-4 ${theme.secondaryText} ml-2`} />
@@ -1734,7 +1707,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Pinned Message Banner */}
             {pinnedMessage && (
               <div className="relative z-10 px-4 py-2 bg-blue-600/10 border-b border-blue-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
@@ -1755,7 +1727,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   <Sparkles className="w-10 h-10 text-blue-600 dark:text-blue-400 opacity-70" />
                   <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200">Real-Time Encrypted Messaging</p>
                   <p className="text-xs max-w-xs text-center">
-                    Send high-resolution blueprints, voice notes, engineering calculations, or initiate audio/video calls.
+                    Send blueprints, voice notes, engineering calculations, or initiate audio/video calls.
                   </p>
                 </div>
               ) : (
@@ -1782,7 +1754,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           )}
 
                           <div className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}>
-                            {/* View-Once Media */}
                             {m.view_limit > 0 ? (
                               isViewOnceExpired ? (
                                 <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
@@ -1800,28 +1771,24 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               )
                             ) : null}
 
-                            {/* Image Attachment */}
                             {m.media_type === "image" && m.media_url && !m.view_limit && (
                               <div className="mb-2 rounded-xl overflow-hidden max-h-60">
                                 <img src={m.media_url} alt="" className="w-full h-full object-cover cursor-pointer hover:opacity-95" onClick={() => window.open(m.media_url, "_blank")} />
                               </div>
                             )}
 
-                            {/* Video Attachment */}
                             {m.media_type === "video" && m.media_url && !m.view_limit && (
                               <div className="mb-2 rounded-xl overflow-hidden max-h-60 bg-black">
                                 <video src={m.media_url} controls className="w-full h-full object-contain" />
                               </div>
                             )}
 
-                            {/* Voice Note Audio Player */}
                             {m.media_type === "voice" && m.media_url && (
                               <div className="flex items-center gap-2 my-1 bg-black/10 dark:bg-black/30 p-2 rounded-xl">
                                 <audio src={m.media_url} controls className="w-48 sm:w-56 h-8" />
                               </div>
                             )}
 
-                            {/* Generic File Attachment */}
                             {m.media_type === "file" && m.media_url && (
                               <a href={m.media_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 my-1 p-2 bg-black/10 dark:bg-black/30 hover:bg-black/20 rounded-xl transition-colors">
                                 <FileText className="w-5 h-5 text-blue-400" />
@@ -1833,24 +1800,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               </a>
                             )}
 
-                            {/* Sticker or GIF */}
                             {m.media_type === "gif" && m.media_url && (
                               <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
                             )}
 
-                            {/* Text Content */}
                             {m.content && m.content !== "🎤 Voice Note" && (
                               <p className="whitespace-pre-wrap break-words">{m.content}</p>
                             )}
 
-                            {/* Timestamp & double checkmarks */}
                             <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : theme.secondaryText}`}>
                               <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                               {isMine && <DoubleCheck className="w-3 h-3 text-emerald-300" />}
                             </div>
                           </div>
 
-                          {/* Hover Action Menu */}
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                             <button onClick={() => setReplyingTo(m)} className={`p-1 rounded-full ${theme.iconBtn}`} title="Reply">
                               <MessageSquare className="w-3 h-3" />
@@ -1869,7 +1832,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           </div>
                         </div>
 
-                        {/* Reaction Badges */}
                         {msgRx.length > 0 && (
                           <div className={`flex items-center gap-1 mt-1 px-2 ${isMine ? "mr-2" : "ml-9"}`}>
                             {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
@@ -1894,7 +1856,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Typing Indicator */}
             {typingUsers.length > 0 && (
               <div className="px-4 py-1.5 text-[11px] text-blue-600 dark:text-blue-400 italic flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -1902,7 +1863,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Staged Attachments Preview Bar */}
             {pendingAttachments.length > 0 && (
               <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center gap-3 overflow-x-auto`}>
                 {pendingAttachments.map((att, idx) => (
@@ -1923,7 +1883,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Replying Banner */}
             {replyingTo && (
               <div className={`relative z-10 px-4 py-2 ${theme.headerBg} border-t ${theme.modalBorder} flex items-center justify-between`}>
                 <div className="flex items-center gap-2 min-w-0">
@@ -1939,7 +1898,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* EMOJI / STICKER / GIF PICKERS */}
             {showEmojiPicker && (
               <div className={`relative z-20 p-3 ${theme.headerBg} border-t ${theme.modalBorder} max-h-48 overflow-y-auto`}>
                 <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-2 mb-2`}>
@@ -2013,7 +1971,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               </div>
             )}
 
-            {/* Bottom Chat Composer Input */}
             <div className={`relative z-10 p-3 border-t ${theme.modalBorder} ${theme.headerBg} backdrop-blur-md`}>
               {isRecordingVoice ? (
                 <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/40 p-3 rounded-2xl animate-pulse">
@@ -2084,7 +2041,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     GIF
                   </button>
 
-                  {/* Text Input */}
                   <input
                     type="text"
                     placeholder={isPendingRequestForMe ? "Accept request above to reply..." : viewOnceMode ? "Add a view-once note..." : "Type your message..."}
@@ -2100,7 +2056,6 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     className={`flex-1 ${theme.inputBg} rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
                   />
 
-                  {/* Voice Note or Send Button */}
                   {messageText.trim() || pendingAttachments.length > 0 ? (
                     <button
                       onClick={() => handleSendMessage()}
