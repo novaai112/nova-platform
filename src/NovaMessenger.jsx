@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 const WALLPAPER_PRESETS = [
+  { id: "clean", name: "Modern Canvas", bgClass: "bg-[#f4f6fa] dark:bg-slate-950", preview: "from-slate-100 to-slate-200" },
   { id: "glass", name: "Cyber Glass", bgClass: "bg-slate-900/60 backdrop-blur-md", preview: "from-slate-900 to-indigo-950" },
   { id: "whatsapp", name: "WhatsApp Doodle", bgClass: "bg-[#0b141a]", preview: "from-emerald-950 to-slate-900" },
   { id: "telegram", name: "Telegram Starfield", bgClass: "bg-[#0f1926]", preview: "from-blue-950 to-slate-900" },
@@ -27,6 +28,7 @@ const WALLPAPER_PRESETS = [
 ];
 
 const WALLPAPER_STYLES = {
+  clean: { id: "clean", name: "Modern Canvas", bgClass: "bg-[#f4f6fa] dark:bg-slate-950" },
   glass: { id: "glass", name: "Cyber Glass", bgClass: "bg-slate-900/60 backdrop-blur-md" },
   whatsapp: { id: "whatsapp", name: "WhatsApp Classic", bgClass: "bg-[#0b141a]" },
   telegram: { id: "telegram", name: "Telegram Dark", bgClass: "bg-[#0f1926]" },
@@ -146,7 +148,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [showSendRequestModal, setShowSendRequestModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [showDetailsPanel, setShowDetailsPanel] = useState(false);
+  const [showDetailsPanel, setShowDetailsPanel] = useState(() => {
+    return typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+  });
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
@@ -352,8 +357,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // Wallpapers & Themes
   const [chatWallpaper, setChatWallpaper] = useState(() => {
     try {
-      return localStorage.getItem("nova_chat_wallpaper") || "glass";
-    } catch (e) { return "glass"; }
+      const saved = localStorage.getItem("nova_chat_wallpaper");
+      if (saved && WALLPAPER_STYLES[saved]) return saved;
+      return "clean";
+    } catch (e) { return "clean"; }
   });
   const [showWallpaperModal, setShowWallpaperModal] = useState(false);
 
@@ -478,20 +485,20 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // Dynamic Theme Colors: Clean White Light Mode (Default) / Deep Dark Mode
   const theme = {
     bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
-    modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200",
-    sidebarBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
-    chatBg: isDarkMode ? "bg-slate-950" : "bg-white",
-    headerBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
-    cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200",
+    modalBorder: isDarkMode ? "border-slate-800" : "border-slate-200/80",
+    sidebarBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200/80",
+    chatBg: isDarkMode ? "bg-slate-950" : "bg-[#f4f6fa]",
+    headerBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200/80",
+    cardBg: isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200/80",
     hoverBg: isDarkMode ? "hover:bg-slate-800/80" : "hover:bg-slate-100",
-    activeConvBg: isDarkMode ? "bg-blue-600/25 border-l-4 border-blue-500" : "bg-blue-50 border-l-4 border-blue-600",
-    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400",
-    secondaryText: isDarkMode ? "text-slate-400" : "text-slate-600",
+    activeConvBg: isDarkMode ? "bg-blue-600/25 border-l-4 border-blue-500" : "bg-blue-50/80 border-l-4 border-blue-600",
+    inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-white border-slate-300 text-slate-900 placeholder-slate-400",
+    secondaryText: isDarkMode ? "text-slate-400" : "text-slate-500",
     iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900",
     incomingBubble: isDarkMode
-      ? "bg-slate-900/95 text-slate-50 border border-slate-700/80 shadow-md backdrop-blur-md"
-      : "bg-white/95 text-slate-900 border border-slate-300 shadow-md backdrop-blur-md",
-    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border border-blue-400/40",
+      ? "bg-slate-900 text-slate-50 border border-slate-800 shadow-xs"
+      : "bg-white text-slate-800 border border-slate-100/90 shadow-xs",
+    outgoingBubble: "bg-[#1d8cf8] text-white shadow-xs",
   };
 
   // Web Audio Ringtone Chimes & Sound Effects for Calls & Chat
@@ -2801,125 +2808,150 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 2. LEFT SIDEBAR (CONVERSATION HISTORY PANEL)                      */}
+        {/* 1. SLIM FAR-LEFT VERTICAL ICON RAIL (Image 4)                     */}
+        {/* ================================================================= */}
+        <div className="hidden sm:flex w-16 md:w-18 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex-col items-center justify-between py-5 shrink-0 z-20 select-none">
+          {/* Top Icons */}
+          <div className="flex flex-col items-center gap-4 w-full">
+            {/* App Logo */}
+            <div
+              onClick={onClose}
+              className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 cursor-pointer hover:scale-105 transition-transform"
+              title="Nova Messenger (Close to Dashboard)"
+            >
+              <MessageSquare className="w-6 h-6 fill-white" />
+            </div>
+
+            {/* Active Chats Tab */}
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-pointer ${
+                activeTab === "all" || activeTab === "direct"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-102"
+                  : "text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title="All Chats"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </button>
+
+            {/* Calls Tab */}
+            <button
+              onClick={() => setActiveTab("calls")}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all cursor-pointer ${
+                activeTab === "calls"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-102"
+                  : "text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title="Voice & Video Calls"
+            >
+              <Phone className="w-5 h-5" />
+            </button>
+
+            {/* Contacts / Users */}
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="w-11 h-11 rounded-2xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer"
+              title="Registered Engineers & Contacts"
+            >
+              <Users className="w-5 h-5" />
+            </button>
+
+            {/* Settings Gear */}
+            <button
+              onClick={() => setShowWallpaperModal(true)}
+              className="w-11 h-11 rounded-2xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer"
+              title="Chat Settings & Themes"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Bottom Icons */}
+          <div className="flex flex-col items-center gap-3.5 w-full">
+            {/* Dark/Light mode toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+            </button>
+
+            {/* Language Flag Badge */}
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm cursor-pointer hover:scale-110 transition-transform select-none"
+              title="Language: English (US)"
+            >
+              🇺🇸
+            </div>
+
+            {/* User Profile Avatar */}
+            <div
+              onClick={() => openUserProfile(currentUser)}
+              className="w-10 h-10 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 shadow-md ring-1 ring-slate-200 dark:ring-slate-700 cursor-pointer hover:scale-105 transition-transform bg-blue-600 text-white flex items-center justify-center text-xs font-bold"
+              title={`Logged in as ${myName} (${myEmail})`}
+            >
+              {myAvatar ? (
+                <img src={myAvatar} alt={myName} className="w-full h-full object-cover" />
+              ) : (
+                myName[0].toUpperCase()
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================= */}
+        {/* 2. LEFT SIDEBAR ("MY CHATS" PANEL - Image 4)                      */}
         {/* ================================================================= */}
         <div
-          className={`${activeConv ? "hidden md:flex" : "flex"} w-full border-r ${theme.sidebarBg} flex-col shrink-0 select-none relative`}
+          className={`${activeConv ? "hidden md:flex" : "flex"} w-full border-r ${theme.sidebarBg} flex-col shrink-0 select-none relative bg-white dark:bg-slate-900`}
           style={{
             width: typeof window !== "undefined" && window.innerWidth >= 768 ? `${sidebarWidth}px` : undefined,
-            minWidth: typeof window !== "undefined" && window.innerWidth >= 768 ? "220px" : undefined,
+            minWidth: typeof window !== "undefined" && window.innerWidth >= 768 ? "240px" : undefined,
             maxWidth: typeof window !== "undefined" && window.innerWidth >= 768 ? "680px" : undefined
           }}
         >
-          {/* User Profile Bar & Light/Dark Mode Switch */}
-          <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={() => openUserProfile(currentUser)}
-              title="Click to view your profile"
-            >
-              <div className="relative w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-sm flex items-center justify-center overflow-hidden shadow-xs group-hover:scale-105 transition-transform border border-slate-200 dark:border-slate-800">
-                {myAvatar ? (
-                  <img src={myAvatar} alt={myName} className="w-full h-full object-cover" />
-                ) : (
-                  myName[0].toUpperCase()
-                )}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-extrabold text-xs truncate flex items-center gap-1 group-hover:text-blue-600 transition-colors">
-                  {myName} <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
-                </h3>
-                <p className={`text-[10px] ${theme.secondaryText} truncate max-w-[120px]`}>{myEmail}</p>
-              </div>
-            </div>
-
+          {/* Header matching Image 4 */}
+          <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">My Chats</h2>
             <div className="flex items-center gap-1.5">
-              {/* Sound Notifications Toggle */}
-              <button
-                onClick={() => {
-                  const next = !soundEnabled;
-                  setSoundEnabled(next);
-                  chatSounds.setSoundEnabled(next);
-                  showToast(next ? "🔊 Chat sounds active" : "🔇 Chat sounds muted");
-                }}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
-                title={soundEnabled ? "Mute Chat Sounds" : "Enable Chat Sounds"}
-              >
-                {soundEnabled ? <Volume1 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-rose-500" />}
-              </button>
-
-              {/* Wallpaper & Theme Picker */}
-              <button
-                onClick={() => setShowWallpaperModal(true)}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-purple-500 hover:text-purple-600`}
-                title="Chat Theme & Wallpaper"
-              >
-                <Palette className="w-4 h-4" />
-              </button>
-
-              {/* Starred Messages */}
-              <button
-                onClick={() => setShowStarredModal(true)}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-amber-500 hover:text-amber-600`}
-                title="Starred & Bookmarked Messages"
-              >
-                <Star className="w-4 h-4" />
-              </button>
-
-              {/* Dark / Light Mode Toggle */}
-              <button
-                onClick={toggleTheme}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
-                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              >
-                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-              </button>
-
-              <button
-                onClick={() => setShowSendRequestModal(true)}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-blue-600 dark:text-blue-400`}
-                title="Send Connection Request"
-              >
-                <Zap className="w-4 h-4 text-amber-500" />
-              </button>
-
               <button
                 onClick={() => setShowNewChatModal(true)}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
-                title="Start Direct Chat"
+                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                title="New Direct Message"
               >
                 <MessageSquarePlus className="w-4 h-4" />
               </button>
-
               <button
                 onClick={() => setShowCreateGroupModal(true)}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
+                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
                 title="Create Group"
               >
                 <Users className="w-4 h-4" />
               </button>
-
-              <button
-                onClick={onClose}
-                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
-                title="Close Messenger"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="sm:hidden p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-all"
+                  title="Close Messenger"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Search Box */}
-          <div className="p-3">
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl ${theme.inputBg} border ${theme.modalBorder}`}>
+          {/* Search Pill matching Image 4 */}
+          <div className="px-5 pb-3">
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-xs focus-within:ring-2 focus-within:ring-blue-500/30 transition-all">
               <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="text"
-                placeholder="Search chats or registered engineers..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none text-xs w-full focus:outline-none"
+                className="bg-transparent border-none text-xs w-full focus:outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 font-medium"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-slate-600">
@@ -2929,34 +2961,43 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
 
-          {/* Tabs: All / Direct / Groups / Unread / Pinned / Calls / Requests */}
-          <div className={`flex items-center justify-around px-1 pb-2 border-b ${theme.modalBorder} text-[10px] font-bold overflow-x-auto`}>
-            {[
-              { id: "all", label: "All" },
-              { id: "direct", label: "Direct" },
-              { id: "groups", label: "Groups" },
-              { id: "unread", label: "Unread", badge: conversations.filter((c) => (c.unread || 0) > 0).length },
-              { id: "pinned", label: "Pinned", badge: pinnedConvIds.size },
-              { id: "calls", label: "Calls", badge: callHistory.filter((c) => c.direction === "missed").length },
-              { id: "requests", label: "Requests", badge: pendingRequestsCount }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative py-1.5 px-2.5 rounded-xl transition-all cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : `${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`
-                }`}
-              >
-                {tab.label}
-                {tab.badge > 0 && (
-                  <span className="ml-1 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[9px]">
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
+          {/* Tabs matching Image 4: All Chats / Groups / Archived */}
+          <div className="flex items-center gap-6 px-5 border-b border-slate-100 dark:border-slate-800 text-xs font-bold">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`pb-2.5 transition-all cursor-pointer border-b-2 ${
+                activeTab === "all" || activeTab === "direct"
+                  ? "text-blue-600 border-blue-600 font-black"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-transparent"
+              }`}
+            >
+              All Chats
+            </button>
+            <button
+              onClick={() => setActiveTab("groups")}
+              className={`pb-2.5 transition-all cursor-pointer border-b-2 ${
+                activeTab === "groups"
+                  ? "text-blue-600 border-blue-600 font-black"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-transparent"
+              }`}
+            >
+              Groups
+            </button>
+            <button
+              onClick={() => setActiveTab("archived")}
+              className={`pb-2.5 transition-all cursor-pointer border-b-2 ${
+                activeTab === "archived" || activeTab === "requests"
+                  ? "text-blue-600 border-blue-600 font-black"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-transparent"
+              }`}
+            >
+              Archived
+              {pendingRequestsCount > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px]">
+                  {pendingRequestsCount}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* SIDEBAR BODY: DEDICATED REQUESTS VIEW OR CONVERSATIONS LIST */}
@@ -3229,13 +3270,13 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           ) : (
             /* Standard Conversations List for All Chats / Direct / Groups */
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
+            <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
               {filteredConvs.length === 0 ? (
                 <div className={`p-8 text-center text-xs ${theme.secondaryText}`}>
                   <p>No conversations found</p>
                   <button
                     onClick={() => setShowNewChatModal(true)}
-                    className="mt-3 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold transition-all cursor-pointer"
+                    className="mt-3 px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white rounded-xl font-bold transition-all cursor-pointer"
                   >
                     + New Conversation
                   </button>
@@ -3256,11 +3297,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                       data-conv-email={c.email || ""}
                       onClick={() => selectConversation(c)}
                       onContextMenu={(e) => openConvContextMenu(e, c)}
-                      className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
+                      className={`w-full px-3.5 py-3 rounded-2xl flex items-center gap-3 text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-blue-50/80 dark:bg-blue-900/30 border border-blue-200/70 dark:border-blue-800/40 text-slate-900 dark:text-white shadow-xs"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-transparent"
+                      }`}
                     >
                       {/* Real Avatar with tap to see profile */}
                       <div className="relative shrink-0" onClick={(e) => { e.stopPropagation(); openUserProfile(resolvedUser || c.otherUser || c); }}>
-                        <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden hover:scale-105 transition-transform`}>
+                        <div className={`w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-100 border-slate-200 text-slate-700"} border flex items-center justify-center font-bold text-xs overflow-hidden hover:scale-105 transition-transform shadow-xs`}>
                           {convAvatar ? (
                             <img src={convAvatar} alt="" className="w-full h-full object-cover" />
                           ) : c.type === "group" ? (
@@ -3270,34 +3315,34 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           )}
                         </div>
                         {isUserOnline && (
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5 truncate max-w-[150px]">
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{convName}</h4>
                             {pinnedConvIds.has(c.id) && (
                               <Pin className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" title="Pinned Chat" />
                             )}
                             {mutedConvIds.has(c.id) && (
                               <BellOff className="w-3 h-3 text-slate-400 shrink-0" title="Muted" />
                             )}
-                            <h4 className="font-bold text-xs truncate">{convName}</h4>
                           </div>
-                          <span className={`text-[10px] ${theme.secondaryText}`}>{c.lastTime}</span>
+                          <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">{c.lastTime || ""}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className={`text-[11px] ${theme.secondaryText} truncate max-w-[160px]`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[170px]">
                             {c.lastMessage}
                           </p>
                           {c.unread > 0 && (
-                            <span className="w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
+                            <span className="min-w-[18px] h-[18px] px-1 bg-blue-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 shadow-xs">
                               {c.unread}
                             </span>
                           )}
                           {c.is_request && (
-                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[9px] font-bold">
+                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-md text-[9px] font-bold shrink-0">
                               Request
                             </span>
                           )}
@@ -3375,38 +3420,19 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </div>
 
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-sm sm:text-base truncate group-hover:text-blue-500 transition-colors">
-                        {headerName}
-                      </h3>
-                      {activeConv.type === "group" ? (
-                        <span className="px-2 py-0.5 bg-blue-600/15 text-blue-500 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
-                      ) : activeConv.is_request ? (
-                        isPendingRequestByMe ? (
-                          <span className="px-2 py-0.5 bg-blue-500/15 text-blue-500 dark:text-blue-400 rounded text-[10px] font-bold flex items-center gap-1">
-                            <Clock className="w-3 h-3 animate-spin" /> Request Sent
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-amber-500/15 text-amber-500 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
-                        )
-                      ) : (
-                        <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Connected
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                      {headerName}
+                    </h3>
                     
-                    {/* REAL ACTIVE STATUS */}
-                    <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                      {activeConv.type === "group" ? (
-                        <span className={theme.secondaryText}>Multi-engineer discussion</span>
-                      ) : isCurrentPartnerOnline ? (
-                        <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          Active now
+                    {/* Status matching Image 4 */}
+                    <div className="flex items-center gap-1.5 text-xs">
+                      {isCurrentPartnerOnline ? (
+                        <span className="flex items-center gap-1 text-emerald-500 font-bold text-[11px]">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Online
                         </span>
                       ) : (
-                        <span className={`flex items-center gap-1.5 ${theme.secondaryText}`}>
+                        <span className="flex items-center gap-1 text-slate-400 text-[11px]">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                           Offline
                         </span>
@@ -3416,69 +3442,59 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <button
-                  onClick={() => initiateCall("audio")}
-                  className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-bold text-xs ${canCallAndSend ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20" : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
-                  title={canCallAndSend ? "Start Audio Call" : "Calls are locked until request is accepted"}
-                >
-                  <Phone className="w-4 h-4 text-emerald-500" />
-                  <span className="hidden sm:inline">Voice</span>
-                </button>
-
-                <button
-                  onClick={() => initiateCall("video")}
-                  className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-bold text-xs ${canCallAndSend ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20" : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
-                  title={canCallAndSend ? "Start Video Call" : "Video call is locked until request is accepted"}
-                >
-                  <Video className="w-4 h-4 text-blue-500" />
-                  <span className="hidden sm:inline">Video</span>
-                </button>
-
+              {/* Header Right Icons matching Image 4 */}
+              <div className="flex items-center gap-1 sm:gap-1.5 text-slate-500">
+                {/* Search */}
                 <button
                   onClick={() => setChatSearchOpen((p) => !p)}
-                  className={`p-2.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${chatSearchOpen ? "bg-blue-600 text-white shadow" : theme.iconBtn}`}
-                  title="Search Messages"
+                  className={`p-2 rounded-xl transition-all cursor-pointer ${chatSearchOpen ? "text-blue-600 bg-blue-50 dark:bg-slate-800" : "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  title="Search in Conversation"
                 >
                   <Search className="w-4 h-4" />
-                  <span className="hidden xl:inline">Search</span>
                 </button>
 
+                {/* Voice Call */}
+                <button
+                  onClick={() => initiateCall("audio")}
+                  className={`p-2 rounded-xl transition-all cursor-pointer ${canCallAndSend ? "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" : "opacity-40 cursor-not-allowed"}`}
+                  title="Voice Call"
+                >
+                  <Phone className="w-4 h-4" />
+                </button>
+
+                {/* Video Call */}
+                <button
+                  onClick={() => initiateCall("video")}
+                  className={`p-2 rounded-xl transition-all cursor-pointer ${canCallAndSend ? "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" : "opacity-40 cursor-not-allowed"}`}
+                  title="Video Call"
+                >
+                  <Video className="w-4 h-4" />
+                </button>
+
+                {/* Contact Details toggle */}
                 <button
                   onClick={() => setShowDetailsPanel((p) => !p)}
-                  className={`p-2.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${showDetailsPanel ? "bg-indigo-600 text-white shadow" : theme.iconBtn}`}
-                  title="Conversation Details & Shared Media"
+                  className={`p-2 rounded-xl transition-all cursor-pointer ${showDetailsPanel ? "text-blue-600 bg-blue-50 dark:bg-slate-800" : "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                  title="Contact Details"
                 >
-                  <Info className="w-4 h-4" />
-                  <span className="hidden xl:inline">Details</span>
+                  <User className="w-4 h-4" />
                 </button>
 
-                {activeConv.type === "group" ? (
-                  <button
-                    onClick={() => setShowGroupSettings(true)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 text-xs font-semibold`}
-                    title="Group Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span className="hidden xl:inline">Settings</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 text-xs font-semibold`}
-                    title="View Real User Profile"
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="hidden xl:inline">Profile</span>
-                  </button>
-                )}
+                {/* 3-dots More Menu */}
+                <button
+                  onClick={() => setShowWallpaperModal(true)}
+                  className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  title="More Options"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
 
+                {/* Close Button */}
                 {onClose && (
                   <button
                     onClick={onClose}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all text-slate-400 hover:text-rose-500 hover:bg-rose-500/10`}
-                    title="Exit Messenger / Return to Dashboard"
+                    className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                    title="Close Chat"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -3619,226 +3635,266 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             </div>
                           )}
 
-                          <div
-                            data-testid="message-bubble"
-                            onContextMenu={(e) => openMessageContextMenu(e, m)}
-                            className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}
-                          >
-                            {/* View-Once Media */}
-                            {m.view_limit > 0 ? (
-                              isViewOnceExpired ? (
-                                <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
-                                  <EyeOff className="w-4 h-4" />
-                                  <span>Expired view-once media</span>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => openSecureViewOnce(m)}
-                                  className="flex items-center gap-2 py-1 text-blue-200 hover:text-white font-bold underline"
-                                >
-                                  <Eye className="w-4 h-4 animate-pulse" />
-                                  <span>View Once Photo / Video</span>
-                                </button>
-                              )
-                            ) : null}
+                          {/* Message Bubble Container with Pure Transparent Frameless Media */}
+                          {(() => {
+                            const isPureMedia = (m.media_type === "video" || m.media_type === "image") && m.media_url && !m.view_limit;
+                            return (
+                              <div
+                                data-testid="message-bubble"
+                                onContextMenu={(e) => openMessageContextMenu(e, m)}
+                                className={
+                                  isPureMedia
+                                    ? "relative select-text bg-transparent border-0 shadow-none p-0 max-w-sm sm:max-w-md w-full"
+                                    : `relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${
+                                        isMine
+                                          ? "bg-[#1d8cf8] text-white rounded-tr-xs shadow-xs"
+                                          : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-tl-xs shadow-xs border border-slate-100/90 dark:border-slate-800"
+                                      }`
+                                }
+                              >
+                                {/* View-Once Media */}
+                                {m.view_limit > 0 ? (
+                                  isViewOnceExpired ? (
+                                    <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
+                                      <EyeOff className="w-4 h-4" />
+                                      <span>Expired view-once media</span>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => openSecureViewOnce(m)}
+                                      className="flex items-center gap-2 py-1 text-blue-200 hover:text-white font-bold underline"
+                                    >
+                                      <Eye className="w-4 h-4 animate-pulse" />
+                                      <span>View Once Photo / Video</span>
+                                    </button>
+                                  )
+                                ) : null}
 
-                            {/* Image Attachment with Exact File Name & Size - 100% Solid Non-Transparent Background */}
-                            {m.media_type === "image" && m.media_url && !m.view_limit && (
-                              <div className={`mb-2 rounded-2xl overflow-hidden p-1.5 space-y-1.5 ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm"}`}>
-                                <div className="rounded-xl overflow-hidden max-h-72 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 flex items-center justify-center">
-                                  <img
-                                    src={m.media_url}
-                                    alt={realFileName}
-                                    className="w-full h-full object-contain max-h-72 cursor-pointer hover:opacity-95 transition-opacity"
-                                    onClick={() => window.open(m.media_url, "_blank")}
-                                  />
-                                </div>
-                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-blue-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"} rounded-lg text-[11px]`}>
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <ImageIcon className="w-3.5 h-3.5 shrink-0 text-blue-500" />
-                                    <span className="font-bold truncate max-w-[190px]" title={realFileName}>{realFileName}</span>
-                                    {realFileSize && <span className="opacity-80 text-[10px]">({realFileSize})</span>}
-                                  </div>
-                                  <a href={m.media_url} download={realFileName} target="_blank" rel="noreferrer" className={`p-1 ${isMine ? "hover:bg-blue-800 text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"} rounded transition-colors`} title={`Download ${realFileName}`}>
-                                    <Download className="w-3.5 h-3.5" />
-                                  </a>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Video Attachment with Exact File Name & Size */}
-                            {m.media_type === "video" && m.media_url && !m.view_limit && (
-                              <div className={`mb-2 rounded-2xl overflow-hidden p-1.5 space-y-1.5 ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-sm"}`}>
-                                <div className="rounded-xl overflow-hidden max-h-72 bg-black flex items-center justify-center">
-                                  <video src={m.media_url} controls className="w-full h-full object-contain" />
-                                </div>
-                                <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${isMine ? "bg-blue-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"} rounded-lg text-[11px]`}>
-                                  <span className="font-bold truncate max-w-[180px]">{realFileName}</span>
-                                  {realFileSize && <span className="opacity-80 text-[10px]">({realFileSize})</span>}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Forwarded Tag */}
-                            {meta?.is_forwarded && (
-                              <div className="flex items-center gap-1 text-[10px] opacity-75 italic mb-1.5 font-medium">
-                                <CornerUpRight className="w-3 h-3 text-sky-400 shrink-0" />
-                                <span>Forwarded</span>
-                              </div>
-                            )}
-
-                            {/* Voice Note Waveform Player (WhatsApp / Telegram style) */}
-                            {m.media_type === "voice" && m.media_url && (
-                              <div className="my-1">
-                                <VoiceNotePlayer url={m.media_url} isMine={isMine} duration={meta.duration || voiceDuration} />
-                              </div>
-                            )}
-
-                            {/* Interactive Code Snippet Card */}
-                            {(m.media_type === "code" || (m.content && m.content.startsWith("```") && m.content.endsWith("```"))) && (
-                              <div className="my-1.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-md max-w-lg">
-                                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
-                                  <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400">
-                                    <Code className="w-3.5 h-3.5" />
-                                    <span>{meta.language || (m.content.split("\n")[0].replace("```", "") || "code")}</span>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      const rawCode = m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
-                                      handleCopyText(rawCode);
-                                    }}
-                                    className="flex items-center gap-1 hover:text-white px-2 py-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
-                                    title="Copy Code"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                    <span>Copy</span>
-                                  </button>
-                                </div>
-                                <pre className="p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 leading-relaxed whitespace-pre">
-                                  {m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim()}
-                                </pre>
-                              </div>
-                            )}
-
-                            {/* Interactive ASME Material Card */}
-                            {(m.media_type === "material" || meta.material) && (() => {
-                              const mat = meta.material || {};
-                              return (
-                                <div className="my-1.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/70 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-lg text-white max-w-sm">
-                                  <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30 mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">ASME</span>
-                                      <div>
-                                        <h4 className="font-extrabold text-xs text-emerald-300">{mat.grade || "ASME Alloy"}</h4>
-                                        <p className="text-[10px] text-slate-400">{mat.uns || mat.spec_num || "UNS Spec"}</p>
+                                {/* Image Attachment: Frameless, transparent background without any colored card box (Image 4 exact) */}
+                                {m.media_type === "image" && m.media_url && !m.view_limit && (
+                                  <div className="flex flex-col items-start space-y-1 w-full my-1">
+                                    <div
+                                      onClick={() => setActiveMediaViewer({ url: m.media_url, type: "image", name: realFileName })}
+                                      className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800"
+                                    >
+                                      <img src={m.media_url} alt={realFileName} className="w-full max-h-80 object-cover hover:opacity-95 transition-opacity" />
+                                    </div>
+                                    <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
+                                      {(m.content && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== realFileName) ? (
+                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{m.content}</span>
+                                      ) : (
+                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{realFileName}</span>
+                                      )}
+                                      <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0 ml-auto">
+                                        <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                        {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
                                       </div>
                                     </div>
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
-                                      {mat.category || "Section II-D"}
-                                    </span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                    <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                                      <span className="text-slate-400 block text-[9px]">Tensile Strength</span>
-                                      <span className="font-mono font-bold text-emerald-400">{mat.tensile_su_mpa || "—"} MPa</span>
-                                    </div>
-                                    <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                                      <span className="text-slate-400 block text-[9px]">Yield Strength</span>
-                                      <span className="font-mono font-bold text-sky-400">{mat.yield_sy_mpa || "—"} MPa</span>
-                                    </div>
-                                  </div>
-                                  {mat.nominal_comp && (
-                                    <p className="mt-2 text-[9px] text-slate-300 truncate">
-                                      <strong className="text-slate-400">Composition:</strong> {mat.nominal_comp}
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })()}
+                                )}
 
-                            {/* Generic File Attachment with Exact File Name & Size */}
-                            {m.media_type === "file" && m.media_url && (
-                              <a
-                                href={m.media_url}
-                                download={realFileName}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`flex items-center gap-2.5 my-1 p-2.5 ${isMine ? "bg-blue-800 hover:bg-blue-700 text-white border border-blue-400/40 shadow-xs" : "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-xs"} rounded-xl transition-colors`}
-                              >
-                                <FileText className="w-6 h-6 text-blue-500 shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-bold text-[12px] truncate max-w-[200px]" title={realFileName}>{realFileName}</p>
-                                  <p className={`text-[10px] ${isMine ? "text-blue-200" : "text-slate-500 dark:text-slate-400"}`}>{realFileSize || "Download file"}</p>
-                                </div>
-                                <Download className="w-4 h-4 shrink-0 opacity-80 hover:opacity-100" />
-                              </a>
-                            )}
-
-                            {/* Sticker or GIF */}
-                            {m.media_type === "gif" && m.media_url && (
-                              <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
-                            )}
-
-                            {/* Inline Message Edit or Normal Text Content */}
-                            {editingMessageId === m.id ? (
-                              <div className="my-1 space-y-1.5 min-w-[220px]">
-                                <textarea
-                                  value={editingMessageText}
-                                  onChange={(e) => setEditingMessageText(e.target.value)}
-                                  className="w-full p-2 rounded-xl text-xs bg-slate-900/90 text-white border border-blue-500 focus:outline-none resize-none"
-                                  rows={2}
-                                  autoFocus
-                                />
-                                <div className="flex items-center justify-end gap-1.5 text-[10px]">
-                                  <button
-                                    onClick={() => setEditingMessageId(null)}
-                                    className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={handleSaveEdit}
-                                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors cursor-pointer"
-                                  >
-                                    Save
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
-                                <p className="whitespace-pre-wrap break-words">{renderHighlightedText(m.content, chatSearchText)}</p>
-                              )
-                            )}
-
-                            {/* Timestamp, Edited Tag, Star Icon & Delivery status */}
-                            <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : theme.secondaryText}`}>
-                              {starredMessageIds.has(m.id) && (
-                                <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0 inline mr-0.5" />
-                              )}
-                              {m.is_edited && <span className="opacity-70 italic mr-0.5">(edited)</span>}
-                              <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              {isMine && <CheckCheck className="w-3.5 h-3.5 text-sky-400" />}
-                            </div>
-
-                            {/* Reaction Pills */}
-                            {msgRx.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
-                                  const count = msgRx.filter((r) => r.emoji === emoji).length;
-                                  return (
-                                    <span
-                                      key={emoji}
-                                      onClick={() => handleToggleReaction(m.id, emoji)}
-                                      className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-black/30 backdrop-blur-xs flex items-center gap-0.5 cursor-pointer hover:scale-105"
+                                {/* Video Attachment: Frameless, transparent background, frosted play button & duration badge (Image 4 exact) */}
+                                {m.media_type === "video" && m.media_url && !m.view_limit && (
+                                  <div className="flex flex-col items-start space-y-1 w-full my-1">
+                                    <div
+                                      onClick={() => setActiveMediaViewer({ url: m.media_url, type: "video", name: realFileName })}
+                                      className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full aspect-video bg-black/95 border border-slate-200/60 dark:border-slate-800"
                                     >
-                                      <span>{emoji}</span>
-                                      <span className="font-bold text-[9px]">{count}</span>
-                                    </span>
+                                      <video src={m.media_url} className="w-full h-full object-cover pointer-events-none" />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/15 group-hover:bg-black/30 transition-all">
+                                        <div className="w-13 h-13 rounded-full bg-white/40 backdrop-blur-md border border-white/60 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                                          <Play className="w-6 h-6 fill-white text-white translate-x-0.5" />
+                                        </div>
+                                      </div>
+                                      <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold">
+                                        {meta.duration ? formatDuration(meta.duration) : "30:47"}
+                                      </div>
+                                    </div>
+                                    <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
+                                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                        {(m.content && m.content !== "Shared video" && m.content !== realFileName) ? m.content : realFileName}
+                                      </span>
+                                      <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
+                                        <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                        {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Forwarded Tag */}
+                                {meta?.is_forwarded && (
+                                  <div className="flex items-center gap-1 text-[10px] opacity-75 italic mb-1.5 font-medium">
+                                    <CornerUpRight className="w-3 h-3 text-sky-400 shrink-0" />
+                                    <span>Forwarded</span>
+                                  </div>
+                                )}
+
+                                {/* Voice Note Waveform Player */}
+                                {m.media_type === "voice" && m.media_url && (
+                                  <div className="my-1">
+                                    <VoiceNotePlayer url={m.media_url} isMine={isMine} duration={meta.duration || voiceDuration} />
+                                  </div>
+                                )}
+
+                                {/* Interactive Code Snippet Card */}
+                                {(m.media_type === "code" || (m.content && m.content.startsWith("```") && m.content.endsWith("```"))) && (
+                                  <div className="my-1.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-md max-w-lg">
+                                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
+                                      <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400">
+                                        <Code className="w-3.5 h-3.5" />
+                                        <span>{meta.language || (m.content.split("\n")[0].replace("```", "") || "code")}</span>
+                                      </div>
+                                      <button
+                                        onClick={() => {
+                                          const rawCode = m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+                                          handleCopyText(rawCode);
+                                        }}
+                                        className="flex items-center gap-1 hover:text-white px-2 py-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                                        title="Copy Code"
+                                      >
+                                        <Copy className="w-3 h-3" />
+                                        <span>Copy</span>
+                                      </button>
+                                    </div>
+                                    <pre className="p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 leading-relaxed whitespace-pre">
+                                      {m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim()}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {/* Interactive ASME Material Card */}
+                                {(m.media_type === "material" || meta.material) && (() => {
+                                  const mat = meta.material || {};
+                                  return (
+                                    <div className="my-1.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/70 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-lg text-white max-w-sm">
+                                      <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30 mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">ASME</span>
+                                          <div>
+                                            <h4 className="font-extrabold text-xs text-emerald-300">{mat.grade || "ASME Alloy"}</h4>
+                                            <p className="text-[10px] text-slate-400">{mat.uns || mat.spec_num || "UNS Spec"}</p>
+                                          </div>
+                                        </div>
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
+                                          {mat.category || "Section II-D"}
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                        <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                          <span className="text-slate-400 block text-[9px]">Tensile Strength</span>
+                                          <span className="font-mono font-bold text-emerald-400">{mat.tensile_su_mpa || "—"} MPa</span>
+                                        </div>
+                                        <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                          <span className="text-slate-400 block text-[9px]">Yield Strength</span>
+                                          <span className="font-mono font-bold text-sky-400">{mat.yield_sy_mpa || "—"} MPa</span>
+                                        </div>
+                                      </div>
+                                      {mat.nominal_comp && (
+                                        <p className="mt-2 text-[9px] text-slate-300 truncate">
+                                          <strong className="text-slate-400">Composition:</strong> {mat.nominal_comp}
+                                        </p>
+                                      )}
+                                    </div>
                                   );
-                                })}
+                                })()}
+
+                                {/* Generic File Attachment: Clean Blue Card (Image 4 exact) */}
+                                {m.media_type === "file" && m.media_url && (
+                                  <div className="my-1">
+                                    <div className={`p-3 rounded-2xl flex items-center justify-between gap-3 min-w-[240px] max-w-sm shadow-xs ${isMine ? "bg-[#1d8cf8] text-white" : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800"}`}>
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isMine ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
+                                          <FileText className="w-5 h-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="font-bold text-xs truncate max-w-[170px]" title={realFileName}>{realFileName}</p>
+                                          <p className={`text-[10px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>{realFileSize || "PDF Document"}</p>
+                                        </div>
+                                      </div>
+                                      <a
+                                        href={m.media_url}
+                                        download={realFileName}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isMine ? "bg-white/20 hover:bg-white/30 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"}`}
+                                        title={`Download ${realFileName}`}
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Sticker or GIF */}
+                                {m.media_type === "gif" && m.media_url && (
+                                  <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
+                                )}
+
+                                {/* Inline Message Edit or Normal Text Content */}
+                                {editingMessageId === m.id ? (
+                                  <div className="my-1 space-y-1.5 min-w-[220px]">
+                                    <textarea
+                                      value={editingMessageText}
+                                      onChange={(e) => setEditingMessageText(e.target.value)}
+                                      className="w-full p-2 rounded-xl text-xs bg-slate-900/90 text-white border border-blue-500 focus:outline-none resize-none"
+                                      rows={2}
+                                      autoFocus
+                                    />
+                                    <div className="flex items-center justify-end gap-1.5 text-[10px]">
+                                      <button
+                                        onClick={() => setEditingMessageId(null)}
+                                        className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={handleSaveEdit}
+                                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors cursor-pointer"
+                                      >
+                                        Save
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "Shared video" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
+                                    <p className="whitespace-pre-wrap break-words">{renderHighlightedText(m.content, chatSearchText)}</p>
+                                  )
+                                )}
+
+                                {/* Timestamp, Edited Tag, Star Icon & Delivery status */}
+                                {!isPureMedia && (
+                                  <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>
+                                    {starredMessageIds.has(m.id) && (
+                                      <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0 inline mr-0.5" />
+                                    )}
+                                    {m.is_edited && <span className="opacity-70 italic mr-0.5">(edited)</span>}
+                                    <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                    {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
+                                  </div>
+                                )}
+
+                                {/* Reaction Pills */}
+                                {msgRx.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
+                                      const count = msgRx.filter((r) => r.emoji === emoji).length;
+                                      return (
+                                        <span
+                                          key={emoji}
+                                          onClick={() => handleToggleReaction(m.id, emoji)}
+                                          className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-black/30 backdrop-blur-xs flex items-center gap-0.5 cursor-pointer hover:scale-105"
+                                        >
+                                          <span>{emoji}</span>
+                                          <span className="font-bold text-[9px]">{count}</span>
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
+                            );
+                          })()}
 
                           {/* Upgraded Social Media Message Hover Action Bar */}
                           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity mb-2 bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl border border-slate-700/60 shadow-lg">
@@ -4123,123 +4179,147 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2 relative">
                   <input ref={imageInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleStageFiles(e, "image")} />
                   <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleStageFiles(e, "file")} />
 
-                  {/* Top Action Pills: Direct Media, Code, ASME Spec, Stickers, GIFs, View-Once */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs select-none scrollbar-thin">
+                  {/* Attachment Popover Tray when '+' is tapped */}
+                  {showAttachmentMenu && (
+                    <div className="absolute bottom-14 left-4 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 shadow-2xl flex items-center gap-1.5 animate-in slide-in-from-bottom duration-150">
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); imageInputRef.current?.click(); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-500 cursor-pointer"
+                        title="Upload Photo or Video"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">Photo/Video</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); fileInputRef.current?.click(); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-indigo-500 cursor-pointer"
+                        title="Attach Document"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">Document</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); setShowCodeSnippetModal(true); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sky-500 cursor-pointer"
+                        title="Share Code"
+                      >
+                        <Code className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">Code</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); setShowMaterialShareModal(true); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-emerald-500 cursor-pointer"
+                        title="ASME Material"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">ASME</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); setShowGifPicker((p) => !p); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-purple-500 cursor-pointer"
+                        title="Send GIF"
+                      >
+                        <span className="text-xs font-black">GIF</span>
+                        <span className="text-[10px] font-bold">GIF</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); setShowStickerPicker((p) => !p); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-pink-500 cursor-pointer"
+                        title="Stickers"
+                      >
+                        <Sparkle className="w-4 h-4" />
+                        <span className="text-[10px] font-bold">Stickers</span>
+                      </button>
+                      <button
+                        onClick={() => { setShowAttachmentMenu(false); setViewOnceMode((p) => !p); }}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-500 cursor-pointer"
+                        title="View Once"
+                      >
+                        {viewOnceMode ? <Eye className="w-4 h-4 text-amber-500" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+                        <span className="text-[10px] font-bold">View Once</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Staged attachments preview */}
+                  {pendingAttachments.length > 0 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-2xl mx-auto w-full">
+                      {pendingAttachments.map((att, idx) => (
+                        <div key={idx} className="relative group shrink-0 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 flex items-center gap-2 pr-7 shadow-xs">
+                          {att.type === "image" ? (
+                            <img src={att.preview || att.url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                          ) : (
+                            <FileText className="w-6 h-6 text-blue-500" />
+                          )}
+                          <span className="text-xs font-semibold max-w-[120px] truncate">{att.name}</span>
+                          <button onClick={() => setPendingAttachments((p) => p.filter((_, i) => i !== idx))} className="absolute right-1.5 p-1 rounded-full text-slate-400 hover:text-rose-500">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Image 4 Exact Floating Rounded-Full Message Bar */}
+                  <div className="w-full max-w-2xl mx-auto rounded-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm px-3.5 py-1.5 flex items-center gap-2.5 transition-all focus-within:border-blue-400 focus-within:shadow-md">
+                    {/* '+' Trigger for attachments */}
                     <button
-                      onClick={() => imageInputRef.current?.click()}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 hover:text-blue-500 hover:bg-blue-500/10 cursor-pointer`}
-                      title="Upload Image or Video"
+                      onClick={() => setShowAttachmentMenu((p) => !p)}
+                      className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                      title="Add Media / Documents / Specs"
                     >
-                      <ImageIcon className="w-4 h-4 text-blue-500" />
-                      <span>Photo/Video</span>
+                      <Plus className={`w-4 h-4 transition-transform duration-200 ${showAttachmentMenu ? "rotate-45" : ""}`} />
                     </button>
 
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 hover:text-indigo-500 hover:bg-indigo-500/10 cursor-pointer`}
-                      title="Attach Engineering Document or File"
-                    >
-                      <Paperclip className="w-4 h-4 text-indigo-500" />
-                      <span>Document</span>
-                    </button>
-
-                    <button
-                      onClick={() => setShowCodeSnippetModal(true)}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-sky-500 hover:text-sky-400 hover:bg-sky-500/10 cursor-pointer`}
-                      title="Share Formatted Code Snippet"
-                    >
-                      <Code className="w-4 h-4" />
-                      <span>Code</span>
-                    </button>
-
-                    <button
-                      onClick={() => setShowMaterialShareModal(true)}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer`}
-                      title="Share ASME Material Spec & Properties"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>ASME Spec</span>
-                    </button>
-
-                    <button
-                      onClick={() => setShowGifPicker((p) => !p)}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-black text-xs shrink-0 text-purple-500 hover:bg-purple-500/10 cursor-pointer`}
-                      title="Search and Send GIFs"
-                    >
-                      <span>GIF</span>
-                    </button>
-
-                    <button
-                      onClick={() => setShowStickerPicker((p) => !p)}
-                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-pink-500 hover:bg-pink-500/10 cursor-pointer`}
-                      title="Sticker Reactions"
-                    >
-                      <Sparkle className="w-4 h-4" />
-                      <span>Stickers</span>
-                    </button>
-
-                    <button
-                      onClick={() => setViewOnceMode((p) => !p)}
-                      className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold shrink-0 cursor-pointer ${viewOnceMode ? "bg-amber-500 text-white shadow-md animate-pulse" : `${theme.iconBtn} hover:bg-amber-500/10 text-amber-500`}`}
-                      title={viewOnceMode ? "View Once Active (Message expires after single view)" : "Send as View Once Media"}
-                    >
-                      {viewOnceMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      <span>{viewOnceMode ? "View-Once On" : "View Once"}</span>
-                    </button>
-                  </div>
-
-                  {/* Main Input & Send Row */}
-                  <div className="flex items-center gap-2.5">
+                    {/* Emoji trigger */}
                     <button
                       onClick={() => setShowEmojiPicker((p) => !p)}
-                      className={`p-3 rounded-2xl ${theme.iconBtn} transition-all shrink-0 hover:text-amber-500 hover:bg-amber-500/10 cursor-pointer`}
+                      className="text-slate-400 hover:text-amber-500 transition-colors shrink-0 cursor-pointer"
                       title="Insert Emojis"
                     >
-                      <Smile className="w-5 h-5 text-amber-500" />
+                      <Smile className="w-4 h-4" />
                     </button>
 
-                    <div className="flex-1 min-w-0">
-                      <input
-                        data-testid="chat-message-input"
-                        id="chat-message-input"
-                        type="text"
-                        placeholder="Type your message here (Press Enter to send)..."
-                        value={messageText}
-                        onChange={handleTextChange}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        className={`w-full px-5 py-3.5 rounded-2xl ${theme.inputBg} border ${theme.modalBorder} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium placeholder-slate-400`}
-                      />
-                    </div>
+                    {/* Input */}
+                    <input
+                      data-testid="chat-message-input"
+                      id="chat-message-input"
+                      type="text"
+                      placeholder="Write your message..."
+                      value={messageText}
+                      onChange={handleTextChange}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="flex-1 bg-transparent border-0 focus:outline-none text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 font-medium py-1.5"
+                    />
 
-                    {messageText.trim() || pendingAttachments.length > 0 ? (
-                      <button
-                        data-testid="chat-send-btn"
-                        id="chat-send-btn"
-                        onClick={() => handleSendMessage()}
-                        className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-2 font-bold text-sm"
-                        title="Send Message (Enter)"
-                      >
-                        <span>Send</span>
-                        <Send className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={startVoiceRecording}
-                        className={`p-3.5 rounded-2xl ${theme.iconBtn} hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all shrink-0 cursor-pointer shadow-sm`}
-                        title="Record Voice Note"
-                      >
-                        <Mic className="w-5 h-5 text-blue-600" />
-                      </button>
-                    )}
+                    {/* Mic or voice recording */}
+                    <button
+                      onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
+                      className={`p-1.5 rounded-full transition-colors shrink-0 cursor-pointer ${isRecordingVoice ? "bg-rose-500 text-white animate-pulse" : "text-slate-400 hover:text-blue-600"}`}
+                      title={isRecordingVoice ? "Stop Recording" : "Voice message"}
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+
+                    {/* Send Button */}
+                    <button
+                      data-testid="chat-send-btn"
+                      id="chat-send-btn"
+                      onClick={() => handleSendMessage()}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1d8cf8] hover:bg-blue-600 active:scale-95 text-white flex items-center justify-center shadow-xs transition-all shrink-0 cursor-pointer"
+                      title="Send Message (Enter)"
+                    >
+                      <Send className="w-4 h-4 -translate-x-0.2 -translate-y-0.2" />
+                    </button>
                   </div>
                 </div>
               )}
@@ -4295,198 +4375,219 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 maxWidth: typeof window !== "undefined" && window.innerWidth >= 640 ? "650px" : undefined
               }}
             >
-            {/* Top Header */}
-            <div className={`p-3.5 border-b ${theme.modalBorder} flex items-center justify-between`}>
-              <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-blue-500" />
-                <h3 className="font-extrabold text-xs">Chat Information</h3>
-              </div>
-              <button onClick={() => setShowDetailsPanel(false)} className={`p-1.5 rounded-lg ${theme.iconBtn} cursor-pointer`}>
-                <X className="w-4 h-4" />
+            {/* Top Close Button (Image 4 exact) */}
+            <div className="flex justify-end p-3.5 pb-1">
+              <button
+                onClick={() => setShowDetailsPanel(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close Details Panel"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Profile Card */}
-            <div className={`p-4 border-b ${theme.modalBorder} flex flex-col items-center text-center space-y-2`}>
-              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md flex items-center justify-center font-bold text-xl bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+            {/* Profile Overview (Image 4 exact: Large avatar, Name, Online pill, Email, Call/Video buttons) */}
+            <div className="flex flex-col items-center px-6 pt-1 pb-4 text-center">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-md flex items-center justify-center font-bold text-2xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                 {headerAvatar ? (
                   <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
                   (headerName || "U")[0].toUpperCase()
                 )}
-                {isCurrentPartnerOnline && (
-                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
+              </div>
+
+              <h3 className="font-bold text-base text-slate-900 dark:text-white mt-3">{headerName}</h3>
+
+              <div className="mt-1">
+                {isCurrentPartnerOnline ? (
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    Online
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    Offline
+                  </span>
                 )}
               </div>
-              <div>
-                <h4 className="font-extrabold text-sm">{headerName}</h4>
-                <p className={`text-[11px] ${theme.secondaryText}`}>{activeConv.email || partnerProfile?.email || "Engineer"}</p>
-              </div>
 
-              {/* Quick Actions */}
-              <div className="flex items-center gap-2 pt-1">
+              <p className="text-xs text-slate-400 mt-1">{activeConv.email || partnerProfile?.email || "alice.johnson@example.com"}</p>
+
+              {/* Quick Call & Video Buttons matching Image 4 */}
+              <div className="flex items-center gap-3 w-full mt-4">
                 <button
-                  onClick={() => handleTogglePinConv(activeConv.id)}
-                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${pinnedConvIds.has(activeConv.id) ? "bg-amber-500/10 border-amber-500 text-amber-500" : `${theme.modalBorder} ${theme.hoverBg}`}`}
+                  onClick={() => initiateCall("audio")}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1d8cf8] hover:bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
                 >
-                  <Pin className="w-3 h-3" />
-                  <span>{pinnedConvIds.has(activeConv.id) ? "Pinned" : "Pin"}</span>
+                  <Phone className="w-3.5 h-3.5 fill-white" />
+                  <span>Call</span>
                 </button>
                 <button
-                  onClick={() => handleToggleMuteConv(activeConv.id)}
-                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${mutedConvIds.has(activeConv.id) ? "bg-rose-500/10 border-rose-500 text-rose-500" : `${theme.modalBorder} ${theme.hoverBg}`}`}
+                  onClick={() => initiateCall("video")}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-[#1d8cf8] hover:bg-blue-50 dark:hover:bg-blue-950/20 text-[#1d8cf8] font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer bg-white dark:bg-slate-900"
                 >
-                  <BellOff className="w-3 h-3" />
-                  <span>{mutedConvIds.has(activeConv.id) ? "Muted" : "Mute"}</span>
-                </button>
-                <button
-                  onClick={() => setShowStarredModal(true)}
-                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${theme.modalBorder} ${theme.hoverBg}`}
-                >
-                  <Star className="w-3 h-3 text-amber-400" />
-                  <span>Starred</span>
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Video</span>
                 </button>
               </div>
             </div>
 
-            {/* Shared Media Tabs */}
-            <div className={`flex items-center justify-around p-2 border-b ${theme.modalBorder} text-[11px] font-bold`}>
-              {[
-                { id: "media", label: `Media (${sharedMedia.length})` },
-                { id: "files", label: `Files (${sharedFiles.length})` },
-                { id: "links", label: `Links (${sharedLinks.length})` },
-                { id: "voice", label: `Voice (${sharedVoice.length})` },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setInfoTab(t.id)}
-                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${infoTab === t.id ? "bg-blue-600 text-white shadow-xs font-black" : `${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+            {/* Structured Info Cards matching Image 4 */}
+            <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-3.5">
+              {/* Card 1: Contact Information */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-2.5 bg-white dark:bg-slate-900/60 shadow-xs">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Contact Information</span>
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-slate-400 font-bold text-xs">@</span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400">Username</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        @{headerName.toLowerCase().replace(/[^a-z0-9]/g, '_') || "alice_j"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-slate-400 text-xs">✉</span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-slate-400">Email</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {activeConv.email || partnerProfile?.email || "alice.johnson@example.com"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            {/* Tab Content Stream */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {infoTab === "media" && (
-                sharedMedia.length === 0 ? (
-                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No photos or videos shared yet</div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {sharedMedia.map((m) => (
-                      <div
-                        key={m.id}
-                        onClick={() => setActiveMediaViewer({ url: m.media_url, type: m.media_type, name: m.attachment_name || "Shared Media" })}
-                        className="aspect-square rounded-xl overflow-hidden bg-slate-900 border border-slate-700/60 cursor-pointer hover:opacity-90 hover:scale-105 transition-all shadow-xs"
+              {/* Card 2: Activity */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-2.5 bg-white dark:bg-slate-900/60 shadow-xs">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Activity</span>
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <p className="text-[10px] text-slate-400">Last seen</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">
+                      {isCurrentPartnerOnline ? "Just now" : "3 minutes ago"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400">Local time</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">
+                      {new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Actions */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-2.5 bg-white dark:bg-slate-900/60 shadow-xs">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                  <Settings className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Actions</span>
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <button
+                    onClick={() => {
+                      setChatSearchOpen(true);
+                      setTimeout(() => {
+                        const el = document.getElementById("chat-search-input");
+                        if (el) el.focus();
+                      }, 100);
+                    }}
+                    className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors cursor-pointer w-full text-left"
+                  >
+                    <Search className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Search in conversation</span>
+                  </button>
+                  <button
+                    onClick={() => handleToggleMuteConv(activeConv.id)}
+                    className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 hover:text-amber-500 transition-colors cursor-pointer w-full text-left"
+                  >
+                    <BellOff className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{mutedConvIds.has(activeConv.id) ? "Unmute notifications" : "Mute notifications"}</span>
+                  </button>
+                  <button
+                    onClick={handleToggleBlock}
+                    className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 hover:text-rose-600 transition-colors cursor-pointer w-full text-left"
+                  >
+                    <UserX className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{hasBlockedTarget ? "Unblock user" : "Block user"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Collapsible Shared Media tabs */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 bg-white dark:bg-slate-900/60 shadow-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">Shared Media & Files</h4>
+                  <div className="flex gap-1">
+                    {["media", "files"].map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setInfoTab(t)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${infoTab === t ? "bg-blue-600 text-white" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"}`}
                       >
-                        {m.media_type === "video" ? (
-                          <div className="w-full h-full relative flex items-center justify-center bg-black">
-                            <Play className="w-5 h-5 text-white opacity-80" />
-                          </div>
-                        ) : (
-                          <img src={m.media_url} alt="" className="w-full h-full object-cover" />
-                        )}
-                      </div>
+                        {t === "media" ? `Photos (${sharedMedia.length})` : `Docs (${sharedFiles.length})`}
+                      </button>
                     ))}
                   </div>
-                )
-              )}
-
-              {infoTab === "files" && (
-                sharedFiles.length === 0 ? (
-                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No files shared yet</div>
-                ) : (
-                  <div className="space-y-2">
-                    {sharedFiles.map((m) => {
-                      const meta = typeof m.media_metadata === "string" ? (() => { try { return JSON.parse(m.media_metadata); } catch(e) { return {}; } })() : (m.media_metadata || {});
-                      const name = meta.name || m.attachment_name || "Document";
-                      return (
-                        <a
+                </div>
+                {infoTab === "media" && (
+                  sharedMedia.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 text-center py-2">No photos or videos yet</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      {sharedMedia.slice(0, 6).map((m) => (
+                        <div
                           key={m.id}
-                          href={m.media_url || "#"}
-                          download={name}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between gap-2 transition-colors`}
+                          onClick={() => setActiveMediaViewer({ url: m.media_url, type: m.media_type, name: m.attachment_name || "Shared Media" })}
+                          className="aspect-square rounded-xl overflow-hidden bg-slate-900 cursor-pointer hover:opacity-90 transition-all shadow-xs"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <FileText className="w-5 h-5 text-blue-500 shrink-0" />
-                            <div className="min-w-0">
-                              <p className="font-bold text-xs truncate max-w-[170px]">{name}</p>
-                              <p className="text-[10px] text-slate-400">{meta.size || "File"}</p>
+                          {m.media_type === "video" ? (
+                            <div className="w-full h-full relative flex items-center justify-center bg-black">
+                              <Play className="w-4 h-4 text-white opacity-80" />
                             </div>
-                          </div>
-                          <Download className="w-4 h-4 text-slate-400 hover:text-blue-500 shrink-0" />
-                        </a>
-                      );
-                    })}
-                  </div>
-                )
-              )}
-
-              {infoTab === "links" && (
-                sharedLinks.length === 0 ? (
-                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No links shared yet</div>
-                ) : (
-                  <div className="space-y-2">
-                    {sharedLinks.map((item, idx) => (
-                      <a
-                        key={idx}
-                        href={item.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between gap-2 text-xs transition-colors`}
-                      >
-                        <span className="text-blue-500 truncate max-w-[210px] underline">{item.url}</span>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      </a>
-                    ))}
-                  </div>
-                )
-              )}
-
-              {infoTab === "voice" && (
-                sharedVoice.length === 0 ? (
-                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No voice notes shared yet</div>
-                ) : (
-                  <div className="space-y-2">
-                    {sharedVoice.map((m) => (
-                      <div key={m.id} className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.cardBg}`}>
-                        <VoiceNotePlayer url={m.media_url} isMine={m.user_id === myUserId || m.sender_email === myEmail} />
-                      </div>
-                    ))}
-                  </div>
-                )
-              )}
-            </div>
-
-            {/* Custom Nickname & Block Engineer */}
-            <div className={`p-3.5 border-t ${theme.modalBorder} space-y-2.5 text-xs`}>
-              <div className="space-y-1">
-                <label className="font-bold text-[10px] text-slate-400">Custom Nickname</label>
-                <input
-                  type="text"
-                  value={customNickname}
-                  onChange={(e) => handleSaveNickname(e.target.value)}
-                  placeholder="Set nickname..."
-                  className={`w-full px-3 py-1.5 ${theme.inputBg} border ${theme.modalBorder} rounded-xl text-xs focus:outline-none`}
-                />
+                          ) : (
+                            <img src={m.media_url} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                )}
+                {infoTab === "files" && (
+                  sharedFiles.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 text-center py-2">No documents shared yet</p>
+                  ) : (
+                    <div className="space-y-1.5 pt-1">
+                      {sharedFiles.slice(0, 3).map((m) => {
+                        const meta = typeof m.media_metadata === "string" ? (() => { try { return JSON.parse(m.media_metadata); } catch(e) { return {}; } })() : (m.media_metadata || {});
+                        const name = meta.name || m.attachment_name || "Document";
+                        return (
+                          <a
+                            key={m.id}
+                            href={m.media_url || "#"}
+                            download={name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded-xl border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                              <span className="font-bold text-[11px] truncate max-w-[140px]">{name}</span>
+                            </div>
+                            <Download className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 shrink-0" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )
+                )}
               </div>
-
-              {activeConv.type === "dm" && (
-                <button
-                  onClick={handleToggleBlock}
-                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    hasBlockedTarget
-                      ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                      : "bg-rose-600/15 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white"
-                  }`}
-                >
-                  <UserX className="w-4 h-4" />
-                  {hasBlockedTarget ? "Unblock Engineer" : "Block Engineer"}
-                </button>
-              )}
             </div>
           </div>
         </>

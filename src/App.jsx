@@ -199,8 +199,11 @@ export function parseRouteFromUrl() {
     if (rawPath === '/profile/edit') {
       return { view: 'profile', subType: 'tab', tab: 'info', modal: 'edit', path: rawPath };
     }
-    if (rawPath === '/profile/security' || rawPath === '/profile/change-password') {
+    if (rawPath === '/profile/security/change-password' || rawPath === '/profile/change-password') {
       return { view: 'profile', subType: 'tab', tab: 'security', modal: 'password', path: rawPath };
+    }
+    if (rawPath === '/profile/security') {
+      return { view: 'profile', subType: 'tab', tab: 'security', modal: null, path: rawPath };
     }
     if (rawPath.startsWith('/profile/')) {
       const tab = rawPath.replace('/profile/', '');
@@ -2967,37 +2970,50 @@ Always provide professional, precise, technically accurate, and helpful answers.
     </>
   );
   const renderInsightsModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeJobInsights()}></div>
-      <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_20px_60px_rgba(0,0,0,0.2)] animate-in zoom-in-95">
-        <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
-          <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
-            <Sparkles className="w-6 h-6" /> Executive Insights
+    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => closeJobInsights()}></div>
+      <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden relative z-10 border-t border-l border-white/80 shadow-[0_25px_70px_rgba(0,0,0,0.35)] animate-in zoom-in-95">
+        <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 backdrop-blur-md border-white/20">
+          <h3 className="flex items-center gap-3 text-xl font-black drop-shadow-sm">
+            <Sparkles className="w-6 h-6 text-amber-300" /> Executive AI Insights
           </h3>
-          <button onClick={() => closeJobInsights()} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+          <button
+            onClick={() => closeJobInsights()}
+            className="p-2 rounded-full bg-white/20 hover:bg-rose-600 hover:text-white transition-all text-white border border-white/30 cursor-pointer shadow-md"
+            title="Close AI Insights"
+          >
+            <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
         <div className="p-4 md:p-8 space-y-6">
-          <div className="mb-2">
-            <h4 className="mb-1 text-sm font-bold tracking-widest uppercase text-slate-500">Project</h4>
-            <p className="text-lg md:text-2xl font-extrabold text-slate-800">{selectedInsightJob?.name}</p>
-            <span className="inline-block px-3 py-1 mt-2 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{selectedInsightJob?.type}</span>
+          <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h4 className="mb-1 text-xs font-black tracking-widest uppercase text-slate-500">Project / Job</h4>
+              <p className="text-lg md:text-2xl font-black text-slate-900">{selectedInsightJob?.name || selectedInsightJob?.job_id_display || selectedInsightJob?.id}</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-blue-800 bg-blue-100 rounded-full border border-blue-200">
+              <Box className="w-3.5 h-3.5 text-blue-600" /> {selectedInsightJob?.type || 'FEA Simulation'}
+            </span>
           </div>
-          <div className="bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl p-4 md:p-8 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
+          <div className="bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl p-4 md:p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] min-h-[200px]">
             {isInsightLoading ? (
-              <div className="flex flex-col items-center justify-center h-full py-4 md:py-8 space-y-4 text-purple-600">
-                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
-                <p className="text-sm font-bold animate-pulse">Analyzing FEA Results...</p>
+              <div className="flex flex-col items-center justify-center h-full py-8 space-y-4 text-purple-600">
+                <Loader2 className="w-10 h-10 animate-spin" />
+                <p className="text-sm font-black animate-pulse">Analyzing FEA Results & Stress Metrics...</p>
               </div>
             ) : (
-              <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
+              <div className="text-sm font-semibold leading-relaxed whitespace-pre-wrap text-slate-800">
                 {insightResponse}
               </div>
             )}
           </div>
-          <div className="flex justify-end mt-4 md:mt-8">
-            <button onClick={() => closeJobInsights()} className="glass-btn-blue text-white px-4 md:px-8 py-3.5 rounded-xl font-bold shadow-md hover:scale-105 transition-transform">Close Insights</button>
+          <div className="flex justify-end gap-3 mt-4 md:mt-8">
+            <button
+              onClick={() => closeJobInsights()}
+              className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-black text-sm shadow-md hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <X className="w-4 h-4" /> Close Insights
+            </button>
           </div>
         </div>
       </div>
@@ -3654,18 +3670,18 @@ Always provide professional, precise, technically accurate, and helpful answers.
     };
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div
-          className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity duration-300"
+          className="absolute inset-0 bg-slate-950/65 backdrop-blur-md transition-opacity duration-300"
           onClick={() => closeJobDetails()}
         />
 
-        <div className="glass-card w-full max-w-2xl sm:max-w-3xl p-4 sm:p-9 z-10 animate-in zoom-in-95 space-y-6">
+        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-[0_25px_70px_rgba(0,0,0,0.25)] rounded-[2.5rem] w-full max-w-2xl sm:max-w-3xl p-5 sm:p-8 z-10 animate-in zoom-in-95 space-y-6">
 
           <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-lg font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0, 8)}</span>
-              <span className="px-3 py-1 text-xs font-extrabold text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full">
+              <span className="text-xl font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0, 8)}</span>
+              <span className="px-3.5 py-1 text-xs font-black text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full shadow-xs">
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
               {!isBatch && <AnimatedStatusBadge status={statusLabel} />}
@@ -3673,31 +3689,31 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
             <button
               onClick={() => closeJobDetails()}
-              title="Close"
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all shrink-0"
+              title="Close Job Details"
+              className="p-2.5 text-slate-600 hover:text-white bg-slate-100 hover:bg-rose-600 border border-slate-300 rounded-full transition-all shrink-0 cursor-pointer shadow-sm hover:scale-105"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 stroke-[2.5]" />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
-              <span className="font-black text-[#2563eb] text-sm mt-1 block">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="block text-[10px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
+              <span className="font-black text-[#2563eb] text-sm mt-1.5 block">{selectedJobDetails.job_id_display || selectedJobDetails.id}</span>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Type of Analysis</span>
-              <span className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5 mt-1">
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="block text-[10px] font-black uppercase text-slate-500 tracking-wider">Type of Analysis</span>
+              <span className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 mt-1.5">
                 <Box className="w-4 h-4 text-indigo-600" />
                 {selectedJobDetails.type || 'Nozzle Analysis'}
               </span>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <span className="block text-[11px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
-              <span className="font-bold text-slate-700 text-xs mt-1 block">
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl shadow-xs">
+              <span className="block text-[10px] font-black uppercase text-slate-500 tracking-wider">Submitted</span>
+              <span className="font-bold text-slate-800 text-xs mt-1.5 block">
                 {new Date(selectedJobDetails.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} at {new Date(selectedJobDetails.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -3854,51 +3870,6 @@ Always provide professional, precise, technically accurate, and helpful answers.
         </button>
       ) : (
         <div className="flex flex-wrap items-center gap-2.5 mt-4 md:mt-0 z-[60]">
-          <button
-            onClick={() => openSubmitJob('Nozzle Analysis')}
-            className="hidden sm:flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md hover:scale-105 transition-all cursor-pointer"
-            title="Submit a new FEA simulation job"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Submit Job</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setCurrentView('materials');
-              try { window.history.pushState({ view: 'materials' }, '', '/materials'); } catch (e) {}
-            }}
-            className="hidden md:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-            title="ASME Section II Part D Database"
-          >
-            <Database className="w-3.5 h-3.5 text-blue-600" />
-            <span>Materials</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setCurrentView('stress_strain');
-              try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
-            }}
-            className="hidden md:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-            title="Nonlinear Stress-Strain Curve Generator"
-          >
-            <LineChart className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Curves</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setCurrentView('chat');
-              try { window.history.pushState({ view: 'chat' }, '', '/chat'); } catch (e) {}
-            }}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-2.5 glass-input hover:bg-white/80 text-slate-700 rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-            title="Engineering Messenger & P2P Calls"
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Chat</span>
-          </button>
-
           <div className="relative">
             <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center p-2 pr-4 space-x-3 text-left transition-colors shadow-sm cursor-pointer glass-input hover:bg-white/70 rounded-2xl focus:outline-none border-white/80">
               <div className="bg-[#3C64D6] text-white w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md overflow-hidden border border-white/20">
@@ -4392,12 +4363,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
             <button
               onClick={() => {
-                consumeCredits('ASME Materials', 10, 'Free', () => {
-                  setCurrentView('materials');
-                  try { window.history.pushState({ view: 'materials' }, '', '/materials'); } catch (e) {}
-                });
+                window.open('https://asme-material.vercel.app/', '_blank', 'noopener,noreferrer');
               }}
-              className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25">
+              className="bg-blue-600 hover:bg-blue-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-blue-600/25 cursor-pointer">
               Open Database
             </button>
           </div> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(79,70,229,0.15)] transition-all">
@@ -4412,12 +4380,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
             <button
               onClick={() => {
-                consumeCredits('Stress-Strain Curve', 10, 'Free', () => {
-                  setCurrentView('stress_strain');
-                  try { window.history.pushState({ view: 'stress_strain' }, '', '/stress_strain'); } catch (e) {}
-                });
+                window.open('https://nova-analysis.vercel.app/curve.html', '_blank', 'noopener,noreferrer');
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25">
+              className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25 cursor-pointer">
               Open Generator
             </button>
           </div> <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
@@ -4716,9 +4681,8 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
           </div>
         )}
-        {isInsightsOpen && renderInsightsModal()}
-
         {isJobDetailsOpen && renderJobDetailsModal()}
+        {isInsightsOpen && renderInsightsModal()}
         {isAiModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeAiModal()}></div>
@@ -6586,7 +6550,17 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     <div className="text-xs text-slate-400 mt-0.5">Last changed recently</div>
                   </div>
                 </div>
-                <button onClick={() => setIsChangePasswordOpen(true)} className="px-4 py-2 border-2 border-[#2874f0] text-[#2874f0] text-sm font-bold rounded-lg hover:bg-[#e8f0fe] transition-all shrink-0">Change</button>
+                <button
+                  onClick={() => {
+                    setIsChangePasswordOpen(true);
+                    try {
+                      window.history.pushState({ view: 'profile', tab: 'security', modal: 'password' }, '', '/profile/security/change-password');
+                    } catch (e) {}
+                  }}
+                  className="px-4 py-2 border-2 border-[#2874f0] text-[#2874f0] text-sm font-bold rounded-lg hover:bg-[#e8f0fe] transition-all shrink-0 cursor-pointer"
+                >
+                  Change
+                </button>
               </div>
               <div className="flex items-center justify-between p-5 border border-slate-200 rounded-xl">
                 <div className="flex items-center gap-4">
