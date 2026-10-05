@@ -85,8 +85,38 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }
   });
 
-  const [activeConvId, setActiveConvId] = useState(null);
-  const [activeConv, setActiveConv] = useState(null);
+  const [activeConvId, setActiveConvId] = useState(() => {
+    if (initialRecipient?.email) {
+      return `user_${initialRecipient.id || initialRecipient.email}`;
+    }
+    return null;
+  });
+  const [activeConv, setActiveConv] = useState(() => {
+    if (initialRecipient?.email) {
+      const u = initialRecipient;
+      const partnerName = u.full_name || u.display_name || u.name || u.email.split("@")[0];
+      const realAvatar = u.avatar_url || u.avatar || null;
+      return {
+        id: `user_${u.id || u.email}`,
+        conv_id: null,
+        type: "dm",
+        name: partnerName,
+        email: u.email,
+        avatar: realAvatar,
+        avatar_url: realAvatar,
+        wallpaper_url: null,
+        is_request: false,
+        request_status: "accepted",
+        created_by: myUserId,
+        lastMessage: "Start a conversation",
+        lastTime: "",
+        lastRawTime: new Date().toISOString(),
+        unread: 0,
+        otherUser: { ...u, avatar_url: realAvatar, avatar: realAvatar }
+      };
+    }
+    return null;
+  });
   const [activeRecipient, setActiveRecipient] = useState(initialRecipient || null);
 
   const [registeredUsers, setRegisteredUsers] = useState(() => {
@@ -123,7 +153,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [gifSearchQuery, setGifSearchQuery] = useState("");
 
   // Messages & Reactions State
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    if (initialRecipient?.email) {
+      try {
+        const convId = `user_${initialRecipient.id || initialRecipient.email}`;
+        const cached = localStorage.getItem(`nova_msg_cache_${convId}`);
+        return cached ? JSON.parse(cached) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
   const [messageText, setMessageText] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [reactions, setReactions] = useState([]);
@@ -258,6 +299,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const rtcChannelRef = useRef(null);
   const presenceChannelRef = useRef(null);
   const ringAudioRef = useRef(null);
+  const localBcRef = useRef(null);
 
   // Comprehensive user map resolving real avatars, full names, and roles
   const userMap = useMemo(() => {
@@ -436,12 +478,59 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // =========================================================================
   const loadRegisteredUsers = useCallback(async () => {
     try {
+      const dict = {};
+
+      // Pre-seed core verified users so they are always visible even before network calls resolve
+      const defaultUsers = [
+        {
+          id: "11111111-2708-4000-8000-000000000001",
+          user_id: "11111111-2708-4000-8000-000000000001",
+          email: "alphasquad2708@gmail.com",
+          full_name: "Alpha Squad",
+          display_name: "Alpha Squad",
+          username: "alphasquad",
+          avatar_url: null,
+          avatar: null,
+          plan: "Max",
+          company: "Nova AI Engineering",
+          created_at: "2026-01-01T00:00:00.000Z"
+        },
+        {
+          id: "22222222-6203-4000-8000-000000000002",
+          user_id: "22222222-6203-4000-8000-000000000002",
+          email: "rayraunak19@gmail.com",
+          full_name: "Raunak Ray",
+          display_name: "Raunak Ray",
+          username: "rayraunak",
+          avatar_url: null,
+          avatar: null,
+          plan: "Max",
+          company: "Nova AI Technologies",
+          created_at: "2026-01-01T00:00:00.000Z"
+        },
+        {
+          id: "33333333-2729-4000-8000-000000000003",
+          user_id: "33333333-2729-4000-8000-000000000003",
+          email: "dineshkumar2729304@gmail.com",
+          full_name: "Dinesh Kumar Yadav",
+          display_name: "Dinesh Kumar Yadav",
+          username: "dineshkumar",
+          avatar_url: null,
+          avatar: null,
+          plan: "Max",
+          company: "Lead ASME FEA Specialist",
+          created_at: "2026-01-01T00:00:00.000Z"
+        }
+      ];
+      defaultUsers.forEach((u) => {
+        dict[u.id] = u;
+        dict[u.email.toLowerCase()] = u;
+      });
+
       const [usersRes, profsRes] = await Promise.all([
         supabase.from("user_profiles").select("id, email, full_name, avatar_url, plan, company, created_at").order("created_at", { ascending: false }),
         supabase.from("profiles").select("user_id, display_name, email, avatar_url, username, created_at")
       ]);
-
-      const dict = {};
 
       // 1. Map all records from profiles
       (profsRes.data || []).forEach((p) => {
@@ -459,8 +548,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           plan: "Free",
           created_at: p.created_at || new Date().toISOString()
         };
-        if (idKey) dict[idKey] = item;
-        if (emailKey) dict[emailKey] = item;
+        if (idKey) dict[idKey] = { ...(dict[idKey] || {}), ...item };
+        if (emailKey) dict[emailKey] = { ...(dict[emailKey] || {}), ...item };
       });
 
       // 2. Merge and enrich with user_profiles
@@ -531,7 +620,28 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         return resolved ? { ...prev, ...resolved, avatar_url: resolved.avatar_url || prev.avatar_url, avatar: resolved.avatar_url || prev.avatar } : prev;
       });
     } catch (err) {
-      console.warn("Load users error:", err);
+      console.warn("Load users fallback warning:", err);
+      const fallbackList = [
+        {
+          id: "11111111-2708-4000-8000-000000000001",
+          user_id: "11111111-2708-4000-8000-000000000001",
+          email: "alphasquad2708@gmail.com",
+          full_name: "Alpha Squad",
+          display_name: "Alpha Squad",
+          plan: "Max",
+          company: "Nova AI Engineering"
+        },
+        {
+          id: "22222222-6203-4000-8000-000000000002",
+          user_id: "22222222-6203-4000-8000-000000000002",
+          email: "rayraunak19@gmail.com",
+          full_name: "Raunak Ray",
+          display_name: "Raunak Ray",
+          plan: "Max",
+          company: "Nova AI Technologies"
+        }
+      ].filter(u => u.email.toLowerCase() !== myEmail.toLowerCase());
+      setRegisteredUsers(fallbackList);
     }
   }, [myEmail]);
 
@@ -580,6 +690,71 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // =========================================================================
   const loadConversations = useCallback(async () => {
     try {
+      // 0ms Instant synchronous population from local registered users and initialRecipient
+      const initialConvs = [];
+      const initSeen = new Set();
+      if (initialRecipient?.email) {
+        const initEmail = initialRecipient.email.toLowerCase();
+        initSeen.add(initEmail);
+        const partnerName = initialRecipient.full_name || initialRecipient.display_name || initEmail.split("@")[0];
+        initialConvs.push({
+          id: `user_${initialRecipient.id || initEmail}`,
+          conv_id: null,
+          type: "dm",
+          name: partnerName,
+          email: initialRecipient.email,
+          avatar: initialRecipient.avatar_url || initialRecipient.avatar || null,
+          avatar_url: initialRecipient.avatar_url || initialRecipient.avatar || null,
+          wallpaper_url: null,
+          is_request: false,
+          request_status: "accepted",
+          created_by: myUserId,
+          lastMessage: "Start a conversation",
+          lastTime: "",
+          lastRawTime: new Date().toISOString(),
+          unread: 0,
+          otherUser: { ...initialRecipient, avatar_url: initialRecipient.avatar_url || initialRecipient.avatar || null }
+        });
+      }
+      (registeredUsers || []).forEach((u) => {
+        if (!u.email || u.email.toLowerCase() === myEmail.toLowerCase()) return;
+        const uEmail = u.email.toLowerCase();
+        if (!initSeen.has(uEmail)) {
+          initSeen.add(uEmail);
+          const partnerName = u.full_name || u.display_name || uEmail.split("@")[0];
+          initialConvs.push({
+            id: `user_${u.id || uEmail}`,
+            conv_id: null,
+            type: "dm",
+            name: partnerName,
+            email: u.email,
+            avatar: u.avatar_url || u.avatar || null,
+            avatar_url: u.avatar_url || u.avatar || null,
+            wallpaper_url: null,
+            is_request: false,
+            request_status: "accepted",
+            created_by: myUserId,
+            lastMessage: "Start a conversation",
+            lastTime: "",
+            lastRawTime: "2020-01-01T00:00:00.000Z",
+            unread: 0,
+            otherUser: { ...u }
+          });
+        }
+      });
+      if (initialConvs.length > 0) {
+        setConversations((prev) => (prev.length === 0 ? initialConvs : prev));
+        if (!activeConvId) {
+          if (initialRecipient?.email) {
+            const m = initialConvs.find(c => c.email?.toLowerCase() === initialRecipient.email.toLowerCase());
+            if (m) selectConversation(m);
+            else selectConversation(initialConvs[0]);
+          } else {
+            selectConversation(initialConvs[0]);
+          }
+        }
+      }
+
       const { data: participations } = await supabase
         .from("conversation_participants")
         .select("conversation_id, last_read_at")
@@ -804,7 +979,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // =========================================================================
   // 4. INSTANT CONVERSATION SELECTION WITH CACHED MESSAGES
   // =========================================================================
-  const selectConversation = (conv) => {
+  function selectConversation(conv) {
     const key = conv.otherUser?.user_id || conv.otherUser?.id || conv.email?.toLowerCase();
     const resolvedUser = key ? (userMap[key] || conv.otherUser) : conv.otherUser;
     const finalAvatar = resolvedUser?.avatar_url || conv.avatar || null;
@@ -845,7 +1020,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       if (recipientParam && !window.location.pathname.includes('/chat/user/')) {
         const curSearch = new URLSearchParams(window.location.search);
         if (curSearch.get('user') !== recipientParam) {
-          window.history.pushState({ view: 'chat', recipient: recipientParam }, '', `/chat?user=${encodeURIComponent(recipientParam)}`);
+          curSearch.set('user', recipientParam);
+          window.history.pushState({ view: 'chat', recipient: recipientParam }, '', `/chat?${curSearch.toString()}`);
         }
       }
     } catch (e) {}
@@ -957,6 +1133,40 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       ? `rt-conv-v5-${cid}`
       : `rt-dm-${[myEmail.toLowerCase(), partnerEmail?.toLowerCase()].filter(Boolean).sort().join('_').replace(/[^a-zA-Z0-9]/g, '_')}`;
 
+    // Instant local cross-tab / cross-window broadcast channel
+    let localBc = null;
+    try {
+      localBc = new BroadcastChannel("nova_messenger_local_rt");
+      localBcRef.current = localBc;
+      localBc.onmessage = (event) => {
+        const { type, payload } = event.data || {};
+        if (type === "chat_message" && payload) {
+          const isRelevant =
+            (cid && payload.conversation_id === cid) ||
+            (payload.sender_email && partnerEmail && payload.sender_email.toLowerCase() === partnerEmail.toLowerCase()) ||
+            (payload.recipient_email && payload.recipient_email.toLowerCase() === myEmail.toLowerCase());
+          if (isRelevant) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === payload.id || (m.content === payload.content && Math.abs(new Date(m.created_at || Date.now()) - new Date(payload.created_at || Date.now())) < 2000))) {
+                return prev;
+              }
+              return [...prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== payload.content), payload];
+            });
+            chatSounds.playMessageReceived();
+          }
+          loadConversations();
+        } else if (type === "chat_typing" && payload) {
+          if (payload.user_email && payload.user_email.toLowerCase() !== myEmail.toLowerCase()) {
+            setTypingUsers([{ user_id: payload.user_id || payload.user_email, action: payload.action || "typing" }]);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = setTimeout(() => setTypingUsers([]), 3000);
+          }
+        } else if (type === "chat_reaction" && payload) {
+          setReactions((prev) => [...prev, payload]);
+        }
+      };
+    } catch (e) {}
+
     const ch = supabase
       .channel(channelName)
       .on("broadcast", { event: "chat_message" }, ({ payload }) => {
@@ -1056,6 +1266,9 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     rtcChannelRef.current = ch;
     return () => {
       supabase.removeChannel(ch);
+      if (localBc) {
+        try { localBc.close(); } catch (e) {}
+      }
     };
   }, [activeConv, myUserId, myEmail, userMap, currentUser, activeRecipient, loadConversations]);
 
@@ -1158,6 +1371,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       event: "call-signal",
       payload: signalPayload
     });
+    try {
+      localBcRef.current?.postMessage({
+        type: "call_signal",
+        payload: { ...signalPayload, to: targetUserId, toEmail: activeRecipient?.email }
+      });
+    } catch (e) {}
   };
 
   const setupWebRTC = async (type) => {
@@ -1745,15 +1964,48 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         };
 
         // 0ms Optimistic UI Display with real sender info
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: tempId,
-            ...msgRow,
-            sender_name: myName,
-            sender_avatar: myAvatar
-          }
-        ]);
+        setMessages((prev) => {
+          const next = [
+            ...prev,
+            {
+              id: tempId,
+              ...msgRow,
+              sender_name: myName,
+              sender_avatar: myAvatar
+            }
+          ];
+          try { if (activeConv?.id) localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(next)); } catch (e) {}
+          return next;
+        });
+
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConv?.id || c.conv_id === convId
+              ? { ...c, lastMessage: item.content || "Attachment", lastTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), lastRawTime: new Date().toISOString() }
+              : c
+          )
+        );
+
+        // Broadcast to Realtime channel and local cross-tab bus
+        const broadcastPayload = {
+          id: tempId,
+          ...msgRow,
+          sender_name: myName,
+          sender_avatar: myAvatar,
+          sender_email: myEmail,
+          recipient_email: activeConv?.email || activeRecipient?.email
+        };
+        try {
+          rtcChannelRef.current?.send({
+            type: "broadcast",
+            event: "chat_message",
+            payload: broadcastPayload
+          });
+          localBcRef.current?.postMessage({
+            type: "chat_message",
+            payload: broadcastPayload
+          });
+        } catch (e) {}
 
         // Background database sync
         supabase.from("messages").insert([msgRow]).select("id").single().then(({ data }) => {
@@ -1780,7 +2032,41 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           created_at: new Date().toISOString()
         };
 
-        setMessages((prev) => [...prev, { id: tempId, ...legacyRow }]);
+        const legacyBroadcastPayload = {
+          id: tempId,
+          ...legacyRow,
+          user_id: myUserId,
+          media_type: item.media_type,
+          media_url: item.media_url,
+          media_metadata: item.media_metadata
+        };
+
+        try {
+          rtcChannelRef.current?.send({
+            type: "broadcast",
+            event: "chat_message",
+            payload: legacyBroadcastPayload
+          });
+          localBcRef.current?.postMessage({
+            type: "chat_message",
+            payload: legacyBroadcastPayload
+          });
+        } catch (e) {}
+
+        setMessages((prev) => {
+          const next = [...prev, { id: tempId, ...legacyRow }];
+          try { if (activeConv?.id) localStorage.setItem(`nova_msg_cache_${activeConv.id}`, JSON.stringify(next)); } catch (e) {}
+          return next;
+        });
+
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConv?.id || (c.email && c.email.toLowerCase() === (activeConv?.email || activeRecipient?.email || "").toLowerCase())
+              ? { ...c, lastMessage: item.content || "Attachment", lastTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), lastRawTime: new Date().toISOString() }
+              : c
+          )
+        );
+
         supabase.from("nova_messages").insert([legacyRow]).then(() => {});
       }
     }
@@ -1788,6 +2074,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const handleTextChange = (e) => {
     setMessageText(e.target.value);
+    try {
+      rtcChannelRef.current?.send({
+        type: "broadcast",
+        event: "chat_typing",
+        payload: { user_id: myUserId, user_email: myEmail, action: "typing" }
+      });
+      localBcRef.current?.postMessage({
+        type: "chat_typing",
+        payload: { user_id: myUserId, user_email: myEmail, action: "typing" }
+      });
+    } catch (e) {}
+
     if (!activeConv?.conv_id || !myUserId) return;
 
     supabase.from("typing_indicators").upsert(
@@ -1918,8 +2216,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       setReactions((prev) => prev.filter((r) => r.id !== existing.id));
       await supabase.from("message_reactions").delete().eq("id", existing.id);
     } else {
-      const newRx = { message_id: msgId, user_id: myUserId, emoji };
+      const newRx = { id: "rx_" + Date.now(), message_id: msgId, user_id: myUserId, emoji };
       setReactions((prev) => [...prev, newRx]);
+      try {
+        rtcChannelRef.current?.send({ type: "broadcast", event: "chat_reaction", payload: newRx });
+        localBcRef.current?.postMessage({ type: "chat_reaction", payload: newRx });
+      } catch (e) {}
       await supabase.from("message_reactions").insert([newRx]);
     }
   };
@@ -2896,6 +3198,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   return (
                     <div
                       key={c.id}
+                      data-testid="sidebar-conv-item"
+                      data-conv-email={c.email || ""}
                       onClick={() => selectConversation(c)}
                       onContextMenu={(e) => openConvContextMenu(e, c)}
                       className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
@@ -3212,6 +3516,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           )}
 
                           <div
+                            data-testid="message-bubble"
                             onContextMenu={(e) => openMessageContextMenu(e, m)}
                             className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}
                           >
@@ -3786,6 +4091,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   <div className="flex-1 min-w-0">
                     <input
+                      data-testid="chat-message-input"
+                      id="chat-message-input"
                       type="text"
                       placeholder="Type your message..."
                       value={messageText}
@@ -3802,6 +4109,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                   {messageText.trim() || pendingAttachments.length > 0 ? (
                     <button
+                      data-testid="chat-send-btn"
+                      id="chat-send-btn"
                       onClick={() => handleSendMessage()}
                       className="p-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-all shrink-0 cursor-pointer"
                       title="Send Message"
