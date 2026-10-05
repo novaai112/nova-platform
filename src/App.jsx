@@ -1005,6 +1005,9 @@ export default function App() {
           fetchJobs();
           setCurrentView((prev) => {
             const route = parseRouteFromUrl();
+            if (route.view === 'login' || route.view === 'signup') {
+              return route.view;
+            }
             if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
               return route.view;
             }
@@ -1018,6 +1021,9 @@ export default function App() {
           if (recovered) {
             setCurrentView((prev) => {
               const route = parseRouteFromUrl();
+              if (route.view === 'login' || route.view === 'signup') {
+                return route.view;
+              }
               if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
                 return route.view;
               }

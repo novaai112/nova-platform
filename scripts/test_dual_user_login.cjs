@@ -115,6 +115,12 @@ async function run() {
   await tab1.ready;
   await tab1.send('Page.enable');
 
+  console.log('[USER 1] Resetting session for fresh login test...');
+  await tab1.evaluate(`(() => {
+    localStorage.removeItem('nova_user');
+    sessionStorage.clear();
+  })()`);
+
   console.log('[USER 1] Navigating to http://localhost:5173/login...');
   await tab1.send('Page.navigate', { url: 'http://localhost:5173/login' });
 
