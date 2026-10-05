@@ -64,15 +64,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const myAvatar = currentUser?.avatar || currentUser?.avatar_url || null;
   const myUserId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
 
-  // Light Mode (White background) by default; toggleable to Deep Dark Mode
+  // Light Mode (White background) by default matching Image 2; toggleable to Deep Dark Mode
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("nova_messenger_dark") === "true";
+    return localStorage.getItem("nova_messenger_dark_v2") === "true";
   });
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
       const next = !prev;
-      localStorage.setItem("nova_messenger_dark", String(next));
+      localStorage.setItem("nova_messenger_dark_v2", String(next));
       return next;
     });
   };
@@ -354,10 +354,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     };
   }, []);
 
-  // Wallpapers & Themes
+  // Wallpapers & Themes - Default to clean light canvas matching Image 2
   const [chatWallpaper, setChatWallpaper] = useState(() => {
     try {
-      const saved = localStorage.getItem("nova_chat_wallpaper");
+      const saved = localStorage.getItem("nova_chat_wallpaper_v2");
       if (saved && WALLPAPER_STYLES[saved]) return saved;
       return "clean";
     } catch (e) { return "clean"; }
@@ -1050,7 +1050,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     setActiveConv(enrichedConv);
     setActiveConvId(conv.id);
     setActiveRecipient(enrichedConv.otherUser || { name: finalName, display_name: finalName, email: conv.email, avatar: finalAvatar, avatar_url: finalAvatar });
-    setShowDetailsPanel(false);
+    setShowDetailsPanel(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
     setReplyingTo(null);
     setSearchQuery("");
 
@@ -2544,11 +2544,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-[250] bg-slate-950 flex flex-col w-full h-full overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[250] bg-[#edf1f5] dark:bg-slate-950 flex items-center justify-center p-0 md:p-3 overflow-hidden animate-in fade-in duration-200 select-none">
       <audio ref={remoteAudioRef} autoPlay />
 
-      {/* Main Messenger Container - Full Screen Desktop Canvas */}
-      <div className={`${theme.cardBg} ${theme.bg} w-full h-full flex overflow-hidden font-sans relative transition-colors duration-150 ${isDraggingSidebar || isDraggingDetails ? "cursor-col-resize select-none" : ""}`}>
+      {/* Main Messenger Container - Curved Application Window matching Image 2 */}
+      <div className={`${theme.cardBg} ${theme.bg} w-full h-full md:rounded-3xl overflow-hidden shadow-2xl border border-slate-200/90 dark:border-slate-800 flex font-sans relative transition-colors duration-150 ${isDraggingSidebar || isDraggingDetails ? "cursor-col-resize select-none" : ""}`}>
 
         {/* Toast Notification Banner */}
         {toastMessage && (
@@ -3619,12 +3619,12 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                           </div>
                         )}
 
-                        <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[70%]">
+                        <div className={`flex items-start gap-2 max-w-[85%] sm:max-w-[70%] ${isMine ? "flex-row-reverse" : "flex-row"}`}>
                           {/* Real Sender Avatar with Tap to inspect profile */}
                           {!isMine && (
                             <div
                               onClick={() => openUserProfile(sender)}
-                              className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                              className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 shadow-xs cursor-pointer hover:scale-110 transition-transform mt-0.5"
                               title={`View ${senderName}'s Profile`}
                             >
                               {senderAvatar ? (
@@ -3635,355 +3635,366 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             </div>
                           )}
 
-                          {/* Message Bubble Container with Pure Transparent Frameless Media */}
-                          {(() => {
-                            const isPureMedia = (m.media_type === "video" || m.media_type === "image") && m.media_url && !m.view_limit;
-                            return (
-                              <div
-                                data-testid="message-bubble"
-                                onContextMenu={(e) => openMessageContextMenu(e, m)}
-                                className={
-                                  isPureMedia
-                                    ? "relative select-text bg-transparent border-0 shadow-none p-0 max-w-sm sm:max-w-md w-full"
-                                    : `relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${
-                                        isMine
-                                          ? "bg-[#1d8cf8] text-white rounded-tr-xs shadow-xs"
-                                          : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-tl-xs shadow-xs border border-slate-100/90 dark:border-slate-800"
-                                      }`
-                                }
-                              >
-                                {/* View-Once Media */}
-                                {m.view_limit > 0 ? (
-                                  isViewOnceExpired ? (
-                                    <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
-                                      <EyeOff className="w-4 h-4" />
-                                      <span>Expired view-once media</span>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => openSecureViewOnce(m)}
-                                      className="flex items-center gap-2 py-1 text-blue-200 hover:text-white font-bold underline"
-                                    >
-                                      <Eye className="w-4 h-4 animate-pulse" />
-                                      <span>View Once Photo / Video</span>
-                                    </button>
-                                  )
-                                ) : null}
-
-                                {/* Image Attachment: Frameless, transparent background without any colored card box (Image 4 exact) */}
-                                {m.media_type === "image" && m.media_url && !m.view_limit && (
-                                  <div className="flex flex-col items-start space-y-1 w-full my-1">
-                                    <div
-                                      onClick={() => setActiveMediaViewer({ url: m.media_url, type: "image", name: realFileName })}
-                                      className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800"
-                                    >
-                                      <img src={m.media_url} alt={realFileName} className="w-full max-h-80 object-cover hover:opacity-95 transition-opacity" />
-                                    </div>
-                                    <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
-                                      {(m.content && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== realFileName) ? (
-                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{m.content}</span>
-                                      ) : (
-                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{realFileName}</span>
-                                      )}
-                                      <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0 ml-auto">
-                                        <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                                        {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
+                          <div className={`flex flex-col ${isMine ? "items-end" : "items-start"} min-w-0`}>
+                            {/* Message Bubble Container with Pure Transparent Frameless Media */}
+                            {(() => {
+                              const isPureMedia = (m.media_type === "video" || m.media_type === "image") && m.media_url && !m.view_limit;
+                              return (
+                                <div
+                                  data-testid="message-bubble"
+                                  onContextMenu={(e) => openMessageContextMenu(e, m)}
+                                  className={
+                                    isPureMedia
+                                      ? "relative select-text bg-transparent border-0 shadow-none p-0 max-w-sm sm:max-w-md w-full"
+                                      : `relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${
+                                          isMine
+                                            ? "bg-[#1d8cf8] text-white rounded-tr-xs shadow-xs"
+                                            : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-tl-xs shadow-xs border border-slate-100/90 dark:border-slate-800"
+                                        }`
+                                  }
+                                >
+                                  {/* View-Once Media */}
+                                  {m.view_limit > 0 ? (
+                                    isViewOnceExpired ? (
+                                      <div className="flex items-center gap-2 py-1 text-slate-400 font-bold">
+                                        <EyeOff className="w-4 h-4" />
+                                        <span>Expired view-once media</span>
                                       </div>
-                                    </div>
-                                  </div>
-                                )}
+                                    ) : (
+                                      <button
+                                        onClick={() => openSecureViewOnce(m)}
+                                        className="flex items-center gap-2 py-1 text-blue-200 hover:text-white font-bold underline"
+                                      >
+                                        <Eye className="w-4 h-4 animate-pulse" />
+                                        <span>View Once Photo / Video</span>
+                                      </button>
+                                    )
+                                  ) : null}
 
-                                {/* Video Attachment: Frameless, transparent background, frosted play button & duration badge (Image 4 exact) */}
-                                {m.media_type === "video" && m.media_url && !m.view_limit && (
-                                  <div className="flex flex-col items-start space-y-1 w-full my-1">
-                                    <div
-                                      onClick={() => setActiveMediaViewer({ url: m.media_url, type: "video", name: realFileName })}
-                                      className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full aspect-video bg-black/95 border border-slate-200/60 dark:border-slate-800"
-                                    >
-                                      <video src={m.media_url} className="w-full h-full object-cover pointer-events-none" />
-                                      <div className="absolute inset-0 flex items-center justify-center bg-black/15 group-hover:bg-black/30 transition-all">
-                                        <div className="w-13 h-13 rounded-full bg-white/40 backdrop-blur-md border border-white/60 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-                                          <Play className="w-6 h-6 fill-white text-white translate-x-0.5" />
+                                  {/* Image Attachment: Frameless, transparent background without any colored card box (Image 4 exact) */}
+                                  {m.media_type === "image" && m.media_url && !m.view_limit && (
+                                    <div className="flex flex-col items-start space-y-1 w-full my-1">
+                                      <div
+                                        onClick={() => setActiveMediaViewer({ url: m.media_url, type: "image", name: realFileName })}
+                                        className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full bg-transparent border border-slate-200/60"
+                                      >
+                                        <img src={m.media_url} alt={realFileName} className="w-full max-h-80 object-cover hover:opacity-95 transition-opacity" />
+                                      </div>
+                                      <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
+                                        {(m.content && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== realFileName) ? (
+                                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{m.content}</span>
+                                        ) : (
+                                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{realFileName}</span>
+                                        )}
+                                        <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0 ml-auto">
+                                          <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                          {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
                                         </div>
                                       </div>
-                                      <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold">
-                                        {meta.duration ? formatDuration(meta.duration) : "30:47"}
-                                      </div>
                                     </div>
-                                    <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
-                                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                                        {(m.content && m.content !== "Shared video" && m.content !== realFileName) ? m.content : realFileName}
-                                      </span>
-                                      <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
-                                        <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                                        {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
+                                  )}
 
-                                {/* Forwarded Tag */}
-                                {meta?.is_forwarded && (
-                                  <div className="flex items-center gap-1 text-[10px] opacity-75 italic mb-1.5 font-medium">
-                                    <CornerUpRight className="w-3 h-3 text-sky-400 shrink-0" />
-                                    <span>Forwarded</span>
-                                  </div>
-                                )}
-
-                                {/* Voice Note Waveform Player */}
-                                {m.media_type === "voice" && m.media_url && (
-                                  <div className="my-1">
-                                    <VoiceNotePlayer url={m.media_url} isMine={isMine} duration={meta.duration || voiceDuration} />
-                                  </div>
-                                )}
-
-                                {/* Interactive Code Snippet Card */}
-                                {(m.media_type === "code" || (m.content && m.content.startsWith("```") && m.content.endsWith("```"))) && (
-                                  <div className="my-1.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-md max-w-lg">
-                                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
-                                      <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400">
-                                        <Code className="w-3.5 h-3.5" />
-                                        <span>{meta.language || (m.content.split("\n")[0].replace("```", "") || "code")}</span>
-                                      </div>
-                                      <button
-                                        onClick={() => {
-                                          const rawCode = m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
-                                          handleCopyText(rawCode);
-                                        }}
-                                        className="flex items-center gap-1 hover:text-white px-2 py-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
-                                        title="Copy Code"
+                                  {/* Video Attachment: Frameless, transparent background, frosted play button & duration badge (Image 4 exact) */}
+                                  {m.media_type === "video" && m.media_url && !m.view_limit && (
+                                    <div className="flex flex-col items-start space-y-1 w-full my-1">
+                                      <div
+                                        onClick={() => setActiveMediaViewer({ url: m.media_url, type: "video", name: realFileName })}
+                                        className="relative rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer group w-full aspect-video bg-transparent border border-slate-200/60"
                                       >
-                                        <Copy className="w-3 h-3" />
-                                        <span>Copy</span>
-                                      </button>
-                                    </div>
-                                    <pre className="p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 leading-relaxed whitespace-pre">
-                                      {m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim()}
-                                    </pre>
-                                  </div>
-                                )}
-
-                                {/* Interactive ASME Material Card */}
-                                {(m.media_type === "material" || meta.material) && (() => {
-                                  const mat = meta.material || {};
-                                  return (
-                                    <div className="my-1.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/70 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-lg text-white max-w-sm">
-                                      <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30 mb-2">
-                                        <div className="flex items-center gap-2">
-                                          <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">ASME</span>
-                                          <div>
-                                            <h4 className="font-extrabold text-xs text-emerald-300">{mat.grade || "ASME Alloy"}</h4>
-                                            <p className="text-[10px] text-slate-400">{mat.uns || mat.spec_num || "UNS Spec"}</p>
+                                        <video src={m.media_url} className="w-full h-full object-cover pointer-events-none" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/25 transition-all">
+                                          <div className="w-13 h-13 rounded-full bg-white/50 backdrop-blur-md border border-white/70 flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                                            <Play className="w-6 h-6 fill-white text-white translate-x-0.5" />
                                           </div>
                                         </div>
-                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
-                                          {mat.category || "Section II-D"}
+                                        <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-900/70 backdrop-blur-xs text-white text-[11px] font-bold">
+                                          {meta.duration ? formatDuration(meta.duration) : "30:47"}
+                                        </div>
+                                      </div>
+                                      <div className="pt-1 px-1 flex items-center justify-between gap-3 w-full">
+                                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                          {(m.content && m.content !== "Shared video" && m.content !== realFileName) ? m.content : realFileName}
                                         </span>
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                        <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                                          <span className="text-slate-400 block text-[9px]">Tensile Strength</span>
-                                          <span className="font-mono font-bold text-emerald-400">{mat.tensile_su_mpa || "—"} MPa</span>
-                                        </div>
-                                        <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                                          <span className="text-slate-400 block text-[9px]">Yield Strength</span>
-                                          <span className="font-mono font-bold text-sky-400">{mat.yield_sy_mpa || "—"} MPa</span>
+                                        <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
+                                          <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                          {isMine && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
                                         </div>
                                       </div>
-                                      {mat.nominal_comp && (
-                                        <p className="mt-2 text-[9px] text-slate-300 truncate">
-                                          <strong className="text-slate-400">Composition:</strong> {mat.nominal_comp}
-                                        </p>
-                                      )}
                                     </div>
-                                  );
-                                })()}
+                                  )}
 
-                                {/* Generic File Attachment: Clean Blue Card (Image 4 exact) */}
-                                {m.media_type === "file" && m.media_url && (
-                                  <div className="my-1">
-                                    <div className={`p-3 rounded-2xl flex items-center justify-between gap-3 min-w-[240px] max-w-sm shadow-xs ${isMine ? "bg-[#1d8cf8] text-white" : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800"}`}>
-                                      <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isMine ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
-                                          <FileText className="w-5 h-5" />
+                                  {/* Forwarded Tag */}
+                                  {meta?.is_forwarded && (
+                                    <div className="flex items-center gap-1 text-[10px] opacity-75 italic mb-1.5 font-medium">
+                                      <CornerUpRight className="w-3 h-3 text-sky-400 shrink-0" />
+                                      <span>Forwarded</span>
+                                    </div>
+                                  )}
+
+                                  {/* Voice Note Waveform Player */}
+                                  {m.media_type === "voice" && m.media_url && (
+                                    <div className="my-1">
+                                      <VoiceNotePlayer url={m.media_url} isMine={isMine} duration={meta.duration || voiceDuration} />
+                                    </div>
+                                  )}
+
+                                  {/* Interactive Code Snippet Card - Clean Light Mode without Black background */}
+                                  {(m.media_type === "code" || (m.content && m.content.startsWith("```") && m.content.endsWith("```"))) && (
+                                    <div className="my-1.5 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm max-w-lg">
+                                      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-600 dark:text-slate-300 font-semibold">
+                                        <div className="flex items-center gap-1.5 font-mono text-blue-600 dark:text-blue-400">
+                                          <Code className="w-3.5 h-3.5" />
+                                          <span>{meta.language || (m.content.split("\n")[0].replace("```", "") || "code")}</span>
                                         </div>
-                                        <div className="min-w-0">
-                                          <p className="font-bold text-xs truncate max-w-[170px]" title={realFileName}>{realFileName}</p>
-                                          <p className={`text-[10px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>{realFileSize || "PDF Document"}</p>
-                                        </div>
-                                      </div>
-                                      <a
-                                        href={m.media_url}
-                                        download={realFileName}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isMine ? "bg-white/20 hover:bg-white/30 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"}`}
-                                        title={`Download ${realFileName}`}
-                                      >
-                                        <Download className="w-4 h-4" />
-                                      </a>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Sticker or GIF */}
-                                {m.media_type === "gif" && m.media_url && (
-                                  <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
-                                )}
-
-                                {/* Inline Message Edit or Normal Text Content */}
-                                {editingMessageId === m.id ? (
-                                  <div className="my-1 space-y-1.5 min-w-[220px]">
-                                    <textarea
-                                      value={editingMessageText}
-                                      onChange={(e) => setEditingMessageText(e.target.value)}
-                                      className="w-full p-2 rounded-xl text-xs bg-slate-900/90 text-white border border-blue-500 focus:outline-none resize-none"
-                                      rows={2}
-                                      autoFocus
-                                    />
-                                    <div className="flex items-center justify-end gap-1.5 text-[10px]">
-                                      <button
-                                        onClick={() => setEditingMessageId(null)}
-                                        className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
-                                      >
-                                        Cancel
-                                      </button>
-                                      <button
-                                        onClick={handleSaveEdit}
-                                        className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors cursor-pointer"
-                                      >
-                                        Save
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "Shared video" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
-                                    <p className="whitespace-pre-wrap break-words">{renderHighlightedText(m.content, chatSearchText)}</p>
-                                  )
-                                )}
-
-                                {/* Timestamp, Edited Tag, Star Icon & Delivery status */}
-                                {!isPureMedia && (
-                                  <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>
-                                    {starredMessageIds.has(m.id) && (
-                                      <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0 inline mr-0.5" />
-                                    )}
-                                    {m.is_edited && <span className="opacity-70 italic mr-0.5">(edited)</span>}
-                                    <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                                    {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
-                                  </div>
-                                )}
-
-                                {/* Reaction Pills */}
-                                {msgRx.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
-                                      const count = msgRx.filter((r) => r.emoji === emoji).length;
-                                      return (
-                                        <span
-                                          key={emoji}
-                                          onClick={() => handleToggleReaction(m.id, emoji)}
-                                          className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-black/30 backdrop-blur-xs flex items-center gap-0.5 cursor-pointer hover:scale-105"
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const rawCode = m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+                                            handleCopyText(rawCode);
+                                          }}
+                                          className="flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-white px-2 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                          title="Copy Code"
                                         >
-                                          <span>{emoji}</span>
-                                          <span className="font-bold text-[9px]">{count}</span>
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
+                                          <Copy className="w-3 h-3" />
+                                          <span>Copy</span>
+                                        </button>
+                                      </div>
+                                      <pre className="p-3 text-[11px] font-mono text-slate-800 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto max-h-60 leading-relaxed whitespace-pre">
+                                        {m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim()}
+                                      </pre>
+                                    </div>
+                                  )}
 
-                          {/* Upgraded Social Media Message Hover Action Bar */}
-                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity mb-2 bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl border border-slate-700/60 shadow-lg">
-                            {/* Emoji Reaction Selector */}
-                            <div className="relative group/em">
-                              <button className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`} title="React">
-                                <Smile className="w-3.5 h-3.5" />
-                              </button>
-                              <div className="absolute bottom-full left-0 mb-1 hidden group-hover/em:flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 rounded-full shadow-xl z-20">
-                                {EMOJI_REACTIONS.map((emoji) => (
+                                  {/* Interactive ASME Material Card */}
+                                  {(m.media_type === "material" || meta.material) && (() => {
+                                    const mat = meta.material || {};
+                                    return (
+                                      <div className="my-1.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/70 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-lg text-white max-w-sm">
+                                        <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30 mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">ASME</span>
+                                            <div>
+                                              <h4 className="font-extrabold text-xs text-emerald-300">{mat.grade || "ASME Alloy"}</h4>
+                                              <p className="text-[10px] text-slate-400">{mat.uns || mat.spec_num || "UNS Spec"}</p>
+                                            </div>
+                                          </div>
+                                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
+                                            {mat.category || "Section II-D"}
+                                          </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                          <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">Tensile Strength</span>
+                                            <span className="font-mono font-bold text-emerald-400">{mat.tensile_su_mpa || "—"} MPa</span>
+                                          </div>
+                                          <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">Yield Strength</span>
+                                            <span className="font-mono font-bold text-sky-400">{mat.yield_sy_mpa || "—"} MPa</span>
+                                          </div>
+                                        </div>
+                                        {mat.nominal_comp && (
+                                          <p className="mt-2 text-[9px] text-slate-300 truncate">
+                                            <strong className="text-slate-400">Composition:</strong> {mat.nominal_comp}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+
+                                  {/* Generic File Attachment: Clean Blue Card (Image 4 exact) */}
+                                  {m.media_type === "file" && m.media_url && (
+                                    <div className="my-1">
+                                      <div className={`p-3 rounded-2xl flex items-center justify-between gap-3 min-w-[240px] max-w-sm shadow-xs ${isMine ? "bg-[#1d8cf8] text-white" : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800"}`}>
+                                        <div className="flex items-center gap-3 min-w-0">
+                                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isMine ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"}`}>
+                                            <FileText className="w-5 h-5" />
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-xs truncate max-w-[170px]" title={realFileName}>{realFileName}</p>
+                                            <p className={`text-[10px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>{realFileSize || "PDF Document"}</p>
+                                          </div>
+                                        </div>
+                                        <a
+                                          href={m.media_url}
+                                          download={realFileName}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isMine ? "bg-white/20 hover:bg-white/30 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"}`}
+                                          title={`Download ${realFileName}`}
+                                        >
+                                          <Download className="w-4 h-4" />
+                                        </a>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Sticker or GIF */}
+                                  {m.media_type === "gif" && m.media_url && (
+                                    <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
+                                  )}
+
+                                  {/* Inline Message Edit or Normal Text Content */}
+                                  {editingMessageId === m.id ? (
+                                    <div className="my-1 space-y-1.5 min-w-[220px]">
+                                      <textarea
+                                        value={editingMessageText}
+                                        onChange={(e) => setEditingMessageText(e.target.value)}
+                                        className="w-full p-2 rounded-xl text-xs bg-slate-900/90 text-white border border-blue-500 focus:outline-none resize-none"
+                                        rows={2}
+                                        autoFocus
+                                      />
+                                      <div className="flex items-center justify-end gap-1.5 text-[10px]">
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingMessageId(null)}
+                                          className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={handleSaveEdit}
+                                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors cursor-pointer"
+                                        >
+                                          Save
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "Shared video" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
+                                      <p className="whitespace-pre-wrap break-words">{renderHighlightedText(m.content, chatSearchText)}</p>
+                                    )
+                                  )}
+
+                                  {/* Timestamp, Edited Tag, Star Icon & Delivery status */}
+                                  {!isPureMedia && (
+                                    <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : "text-slate-400"}`}>
+                                      {starredMessageIds.has(m.id) && (
+                                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0 inline mr-0.5" />
+                                      )}
+                                      {m.is_edited && <span className="opacity-70 italic mr-0.5">(edited)</span>}
+                                      <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                      {isMine && <CheckCheck className="w-3.5 h-3.5 text-white" />}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Reaction Pills & Actions Directly Below Message */}
+                            <div className={`flex flex-col ${isMine ? "items-end" : "items-start"} mt-1 px-1`}>
+                              {/* Reaction Pills */}
+                              {msgRx.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                  {Array.from(new Set(msgRx.map((r) => r.emoji))).map((emoji) => {
+                                    const count = msgRx.filter((r) => r.emoji === emoji).length;
+                                    return (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() => handleToggleReaction(m.id, emoji)}
+                                        className="px-2 py-0.5 rounded-full text-[11px] bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-xs flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                                      >
+                                        <span>{emoji}</span>
+                                        <span className="font-bold text-[10px] text-slate-500 dark:text-slate-400">{count}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Action Buttons Below Message: React, Reply, Copy, Star, Forward, Delete */}
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
+                                {/* React (Emoji Selector) */}
+                                <div className="relative group/em">
                                   <button
-                                    key={emoji}
-                                    onClick={() => handleToggleReaction(m.id, emoji)}
-                                    className="p-1 hover:scale-125 transition-transform text-sm cursor-pointer"
+                                    type="button"
+                                    className="p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                    title="React with Emoji"
                                   >
-                                    {emoji}
+                                    <Smile className="w-3.5 h-3.5" />
                                   </button>
-                                ))}
+                                  <div className="absolute bottom-full mb-1 left-0 hidden group-hover/em:flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1.5 rounded-full shadow-xl z-30">
+                                    {EMOJI_REACTIONS.map((emoji) => (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() => handleToggleReaction(m.id, emoji)}
+                                        className="p-1 hover:scale-125 transition-transform text-sm cursor-pointer"
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Reply */}
+                                <button
+                                  type="button"
+                                  onClick={() => setReplyingTo(m)}
+                                  className="p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-blue-600 transition-colors cursor-pointer"
+                                  title="Reply"
+                                >
+                                  <CornerUpLeft className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Copy Text */}
+                                {m.content && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(m.content)}
+                                    className="p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                    title="Copy Text"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+
+                                {/* Star */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleStar(m.id)}
+                                  className={`p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer ${starredMessageIds.has(m.id) ? "text-amber-400" : "hover:text-amber-400"}`}
+                                  title={starredMessageIds.has(m.id) ? "Unstar Message" : "Star Message"}
+                                >
+                                  <Star className={`w-3.5 h-3.5 ${starredMessageIds.has(m.id) ? "fill-amber-400" : ""}`} />
+                                </button>
+
+                                {/* Forward */}
+                                <button
+                                  type="button"
+                                  onClick={() => setForwardingMessage(m)}
+                                  className="p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                  title="Forward Message"
+                                >
+                                  <Share2 className="w-3.5 h-3.5" />
+                                </button>
+
+                                {/* Edit if mine */}
+                                {isMine && !m.media_url && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEdit(m)}
+                                    className="p-1 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800 hover:text-sky-500 transition-colors cursor-pointer"
+                                    title="Edit Message"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+
+                                {/* Delete if mine */}
+                                {isMine && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteMessage(m.id)}
+                                    className="p-1 rounded-md hover:bg-rose-100 dark:hover:bg-rose-950/40 hover:text-rose-500 transition-colors cursor-pointer"
+                                    title="Delete Message"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </div>
-
-                            {/* Reply with Quoting */}
-                            <button
-                              onClick={() => setReplyingTo(m)}
-                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
-                              title="Reply"
-                            >
-                              <CornerUpLeft className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Forward */}
-                            <button
-                              onClick={() => setForwardingMessage(m)}
-                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
-                              title="Forward Message"
-                            >
-                              <Share2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Star / Bookmark */}
-                            <button
-                              onClick={() => handleToggleStar(m.id)}
-                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10 ${starredMessageIds.has(m.id) ? "text-amber-400" : ""}`}
-                              title={starredMessageIds.has(m.id) ? "Unstar Message" : "Star Message"}
-                            >
-                              <Star className={`w-3.5 h-3.5 ${starredMessageIds.has(m.id) ? "fill-amber-400" : ""}`} />
-                            </button>
-
-                            {/* Copy Message Text */}
-                            {m.content && (
-                              <button
-                                onClick={() => handleCopyText(m.content)}
-                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
-                                title="Copy Text"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Edit (if own message and text-only) */}
-                            {isMine && !m.media_url && (
-                              <button
-                                onClick={() => handleStartEdit(m)}
-                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10 text-sky-400`}
-                                title="Edit Message"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Pin / Unpin */}
-                            <button
-                              onClick={() => handleTogglePin(m)}
-                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
-                              title={m.is_pinned ? "Unpin" : "Pin"}
-                            >
-                              <Pin className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Delete */}
-                            {isMine && (
-                              <button
-                                onClick={() => handleDeleteMessage(m.id)}
-                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-rose-500/20 text-rose-500 hover:text-rose-400`}
-                                title="Delete for Everyone"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -5198,7 +5209,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     key={wp.id}
                     onClick={() => {
                       setChatWallpaper(wp.id);
-                      localStorage.setItem("nova_chat_wallpaper", wp.id);
+                      localStorage.setItem("nova_chat_wallpaper_v2", wp.id);
                       showToast(`Theme switched to ${wp.name}`);
                     }}
                     className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-2 ${
