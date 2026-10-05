@@ -480,52 +480,18 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     try {
       const dict = {};
 
-      // Pre-seed core verified users so they are always visible even before network calls resolve
-      const defaultUsers = [
-        {
-          id: "11111111-2708-4000-8000-000000000001",
-          user_id: "11111111-2708-4000-8000-000000000001",
-          email: "alphasquad2708@gmail.com",
-          full_name: "Alpha Squad",
-          display_name: "Alpha Squad",
-          username: "alphasquad",
-          avatar_url: null,
-          avatar: null,
-          plan: "Max",
-          company: "Nova AI Engineering",
-          created_at: "2026-01-01T00:00:00.000Z"
-        },
-        {
-          id: "22222222-6203-4000-8000-000000000002",
-          user_id: "22222222-6203-4000-8000-000000000002",
-          email: "rayraunak19@gmail.com",
-          full_name: "Raunak Ray",
-          display_name: "Raunak Ray",
-          username: "rayraunak",
-          avatar_url: null,
-          avatar: null,
-          plan: "Max",
-          company: "Nova AI Technologies",
-          created_at: "2026-01-01T00:00:00.000Z"
-        },
-        {
-          id: "33333333-2729-4000-8000-000000000003",
-          user_id: "33333333-2729-4000-8000-000000000003",
-          email: "dineshkumar2729304@gmail.com",
-          full_name: "Dinesh Kumar Yadav",
-          display_name: "Dinesh Kumar Yadav",
-          username: "dineshkumar",
-          avatar_url: null,
-          avatar: null,
-          plan: "Max",
-          company: "Lead ASME FEA Specialist",
-          created_at: "2026-01-01T00:00:00.000Z"
+      // Load cached users first if available
+      try {
+        const cachedUsers = localStorage.getItem("nova_registered_users_cache");
+        if (cachedUsers) {
+          const parsed = JSON.parse(cachedUsers);
+          parsed.forEach((u) => {
+            if (u.id) dict[u.id] = u;
+            if (u.user_id) dict[u.user_id] = u;
+            if (u.email) dict[u.email.toLowerCase()] = u;
+          });
         }
-      ];
-      defaultUsers.forEach((u) => {
-        dict[u.id] = u;
-        dict[u.email.toLowerCase()] = u;
-      });
+      } catch (e) {}
 
       const [usersRes, profsRes] = await Promise.all([
         supabase.from("user_profiles").select("id, email, full_name, avatar_url, plan, company, created_at").order("created_at", { ascending: false }),
@@ -620,28 +586,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         return resolved ? { ...prev, ...resolved, avatar_url: resolved.avatar_url || prev.avatar_url, avatar: resolved.avatar_url || prev.avatar } : prev;
       });
     } catch (err) {
-      console.warn("Load users fallback warning:", err);
-      const fallbackList = [
-        {
-          id: "11111111-2708-4000-8000-000000000001",
-          user_id: "11111111-2708-4000-8000-000000000001",
-          email: "alphasquad2708@gmail.com",
-          full_name: "Alpha Squad",
-          display_name: "Alpha Squad",
-          plan: "Max",
-          company: "Nova AI Engineering"
-        },
-        {
-          id: "22222222-6203-4000-8000-000000000002",
-          user_id: "22222222-6203-4000-8000-000000000002",
-          email: "rayraunak19@gmail.com",
-          full_name: "Raunak Ray",
-          display_name: "Raunak Ray",
-          plan: "Max",
-          company: "Nova AI Technologies"
-        }
-      ].filter(u => u.email.toLowerCase() !== myEmail.toLowerCase());
-      setRegisteredUsers(fallbackList);
+      console.warn("Load users warning:", err);
+      try {
+        const cached = localStorage.getItem("nova_registered_users_cache");
+        if (cached) setRegisteredUsers(JSON.parse(cached));
+      } catch (e) {}
     }
   }, [myEmail]);
 
@@ -2490,11 +2439,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[250] bg-slate-950 flex flex-col w-full h-full overflow-hidden animate-in fade-in duration-200">
       <audio ref={remoteAudioRef} autoPlay />
 
-      {/* Main Messenger Container */}
-      <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-150`}>
+      {/* Main Messenger Container - Full Screen Desktop Canvas */}
+      <div className={`${theme.cardBg} ${theme.bg} w-full h-full flex overflow-hidden font-sans relative transition-colors duration-150`}>
 
         {/* Toast Notification Banner */}
         {toastMessage && (
@@ -2756,7 +2705,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* ================================================================= */}
         {/* 2. LEFT SIDEBAR                                                   */}
         {/* ================================================================= */}
-        <div className={`w-80 sm:w-96 border-r ${theme.sidebarBg} flex flex-col shrink-0 select-none`}>
+        <div className={`${activeConv ? "hidden md:flex" : "flex"} w-full md:w-80 lg:w-96 border-r ${theme.sidebarBg} flex-col shrink-0 select-none`}>
           {/* User Profile Bar & Light/Dark Mode Switch */}
           <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
             <div
@@ -3268,115 +3217,142 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             {activeConv.wallpaper_url && <div className={`absolute inset-0 ${isDarkMode ? "bg-slate-950/80" : "bg-white/80"} backdrop-blur-sm pointer-events-none`} />}
 
             {/* Chat Room Header with Clickable Real Profile & Real Active Status */}
-            <div className={`relative z-10 p-3.5 border-b ${theme.headerBg} backdrop-blur-md flex items-center justify-between`}>
-              <div
-                className="flex items-center gap-3 min-w-0 cursor-pointer group"
-                onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
-                title="Click to view full real profile"
-              >
-                <div className={`relative w-10 h-10 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-xs`}>
-                  {headerAvatar ? (
-                    <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
-                  ) : activeConv.type === "group" ? (
-                    <Users className="w-5 h-5 text-blue-500" />
-                  ) : (
-                    (headerName || "U")[0].toUpperCase()
-                  )}
-                  {isCurrentPartnerOnline && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
-                  )}
-                </div>
+            <div className={`relative z-10 px-4 sm:px-6 py-3.5 border-b ${theme.headerBg} backdrop-blur-md flex items-center justify-between`}>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {/* Back button for mobile to return to conversation list */}
+                <button
+                  onClick={() => { setActiveConv(null); setActiveConvId(null); }}
+                  className={`p-2 rounded-xl ${theme.iconBtn} md:hidden text-slate-400 hover:text-slate-100 shrink-0`}
+                  title="Back to conversations"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-sm truncate group-hover:text-blue-600 transition-colors">
-                      {headerName}
-                    </h3>
-                    {activeConv.type === "group" ? (
-                      <span className="px-2 py-0.5 bg-blue-600/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
-                    ) : activeConv.is_request ? (
-                      isPendingRequestByMe ? (
-                        <span className="px-2 py-0.5 bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold flex items-center gap-1">
-                          <Clock className="w-3 h-3 animate-spin" /> Request Sent
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
-                      )
+                <div
+                  className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                  onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
+                  title="Click to view full real profile"
+                >
+                  <div className={`relative w-11 h-11 rounded-full ${isDarkMode ? "bg-slate-800 border-slate-700 text-slate-200" : "bg-slate-200 border-slate-300 text-slate-700"} border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-xs`}>
+                    {headerAvatar ? (
+                      <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+                    ) : activeConv.type === "group" ? (
+                      <Users className="w-5 h-5 text-blue-500" />
                     ) : (
-                      <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Connected
-                      </span>
+                      (headerName || "U")[0].toUpperCase()
+                    )}
+                    {isCurrentPartnerOnline && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
                     )}
                   </div>
-                  
-                  {/* REAL ACTIVE STATUS */}
-                  <div className="flex items-center gap-1.5 text-[11px] mt-0.5">
-                    {activeConv.type === "group" ? (
-                      <span className={theme.secondaryText}>Multi-engineer discussion</span>
-                    ) : isCurrentPartnerOnline ? (
-                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Active now
-                      </span>
-                    ) : (
-                      <span className={`flex items-center gap-1.5 ${theme.secondaryText}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                        Offline
-                      </span>
-                    )}
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-sm sm:text-base truncate group-hover:text-blue-500 transition-colors">
+                        {headerName}
+                      </h3>
+                      {activeConv.type === "group" ? (
+                        <span className="px-2 py-0.5 bg-blue-600/15 text-blue-500 dark:text-blue-400 rounded text-[10px] font-bold">Group</span>
+                      ) : activeConv.is_request ? (
+                        isPendingRequestByMe ? (
+                          <span className="px-2 py-0.5 bg-blue-500/15 text-blue-500 dark:text-blue-400 rounded text-[10px] font-bold flex items-center gap-1">
+                            <Clock className="w-3 h-3 animate-spin" /> Request Sent
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-amber-500/15 text-amber-500 dark:text-amber-400 rounded text-[10px] font-bold">Pending Request</span>
+                        )
+                      ) : (
+                        <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Connected
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* REAL ACTIVE STATUS */}
+                    <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                      {activeConv.type === "group" ? (
+                        <span className={theme.secondaryText}>Multi-engineer discussion</span>
+                      ) : isCurrentPartnerOnline ? (
+                        <span className="flex items-center gap-1.5 text-emerald-500 font-bold">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          Active now
+                        </span>
+                      ) : (
+                        <span className={`flex items-center gap-1.5 ${theme.secondaryText}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          Offline
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => initiateCall("audio")}
-                  className={`p-2.5 rounded-xl transition-all ${canCallAndSend ? theme.iconBtn : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
+                  className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-bold text-xs ${canCallAndSend ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20" : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
                   title={canCallAndSend ? "Start Audio Call" : "Calls are locked until request is accepted"}
                 >
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-4 h-4 text-emerald-500" />
+                  <span className="hidden sm:inline">Voice</span>
                 </button>
 
                 <button
                   onClick={() => initiateCall("video")}
-                  className={`p-2.5 rounded-xl transition-all ${canCallAndSend ? theme.iconBtn : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
+                  className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 font-bold text-xs ${canCallAndSend ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20" : "opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400"}`}
                   title={canCallAndSend ? "Start Video Call" : "Video call is locked until request is accepted"}
                 >
-                  <Video className="w-4 h-4" />
+                  <Video className="w-4 h-4 text-blue-500" />
+                  <span className="hidden sm:inline">Video</span>
                 </button>
 
                 <button
                   onClick={() => setChatSearchOpen((p) => !p)}
-                  className={`p-2.5 rounded-xl transition-all ${chatSearchOpen ? "bg-blue-600 text-white" : theme.iconBtn}`}
+                  className={`p-2.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${chatSearchOpen ? "bg-blue-600 text-white shadow" : theme.iconBtn}`}
                   title="Search Messages"
                 >
                   <Search className="w-4 h-4" />
+                  <span className="hidden xl:inline">Search</span>
                 </button>
 
                 <button
                   onClick={() => setShowDetailsPanel((p) => !p)}
-                  className={`p-2.5 rounded-xl transition-all ${showDetailsPanel ? "bg-blue-600 text-white" : theme.iconBtn}`}
+                  className={`p-2.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${showDetailsPanel ? "bg-indigo-600 text-white shadow" : theme.iconBtn}`}
                   title="Conversation Details & Shared Media"
                 >
                   <Info className="w-4 h-4" />
+                  <span className="hidden xl:inline">Details</span>
                 </button>
 
                 {activeConv.type === "group" ? (
                   <button
                     onClick={() => setShowGroupSettings(true)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all`}
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 text-xs font-semibold`}
                     title="Group Settings"
                   >
                     <Settings className="w-4 h-4" />
+                    <span className="hidden xl:inline">Settings</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => openUserProfile(partnerProfile || activeRecipient || activeConv)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all`}
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 text-xs font-semibold`}
                     title="View Real User Profile"
                   >
                     <User className="w-4 h-4" />
+                    <span className="hidden xl:inline">Profile</span>
+                  </button>
+                )}
+
+                {onClose && (
+                  <button
+                    onClick={onClose}
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all text-slate-400 hover:text-rose-500 hover:bg-rose-500/10`}
+                    title="Exit Messenger / Return to Dashboard"
+                  >
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -4019,113 +3995,124 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2.5">
                   <input ref={imageInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleStageFiles(e, "image")} />
                   <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleStageFiles(e, "file")} />
 
-                  <button
-                    onClick={() => imageInputRef.current?.click()}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
-                    title="Upload Image/Video"
-                  >
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
+                  {/* Top Action Pills: Direct Media, Code, ASME Spec, Stickers, GIFs, View-Once */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs select-none scrollbar-thin">
+                    <button
+                      onClick={() => imageInputRef.current?.click()}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 hover:text-blue-500 hover:bg-blue-500/10 cursor-pointer`}
+                      title="Upload Image or Video"
+                    >
+                      <ImageIcon className="w-4 h-4 text-blue-500" />
+                      <span>Photo/Video</span>
+                    </button>
 
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
-                    title="Attach File/Document"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 hover:text-indigo-500 hover:bg-indigo-500/10 cursor-pointer`}
+                      title="Attach Engineering Document or File"
+                    >
+                      <Paperclip className="w-4 h-4 text-indigo-500" />
+                      <span>Document</span>
+                    </button>
 
-                  <button
-                    onClick={() => setViewOnceMode((p) => !p)}
-                    className={`p-2.5 rounded-xl transition-all shrink-0 ${viewOnceMode ? "bg-amber-500 text-white" : theme.iconBtn}`}
-                    title={viewOnceMode ? "View Once Enabled" : "Send as View Once"}
-                  >
-                    {viewOnceMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </button>
+                    <button
+                      onClick={() => setShowCodeSnippetModal(true)}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-sky-500 hover:text-sky-400 hover:bg-sky-500/10 cursor-pointer`}
+                      title="Share Formatted Code Snippet"
+                    >
+                      <Code className="w-4 h-4" />
+                      <span>Code</span>
+                    </button>
 
-                  <button
-                    onClick={() => setShowEmojiPicker((p) => !p)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
-                    title="Emojis"
-                  >
-                    <Smile className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={() => setShowMaterialShareModal(true)}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer`}
+                      title="Share ASME Material Spec & Properties"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>ASME Spec</span>
+                    </button>
 
-                  <button
-                    onClick={() => setShowStickerPicker((p) => !p)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0`}
-                    title="Stickers"
-                  >
-                    <Sparkle className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={() => setShowGifPicker((p) => !p)}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-black text-xs shrink-0 text-purple-500 hover:bg-purple-500/10 cursor-pointer`}
+                      title="Search and Send GIFs"
+                    >
+                      <span>GIF</span>
+                    </button>
 
-                  <button
-                    onClick={() => setShowGifPicker((p) => !p)}
-                    className={`px-2 py-1.5 rounded-xl ${theme.iconBtn} text-[11px] font-black transition-all shrink-0`}
-                    title="GIFs"
-                  >
-                    GIF
-                  </button>
+                    <button
+                      onClick={() => setShowStickerPicker((p) => !p)}
+                      className={`px-3 py-1.5 rounded-xl ${theme.iconBtn} transition-all flex items-center gap-1.5 font-bold shrink-0 text-pink-500 hover:bg-pink-500/10 cursor-pointer`}
+                      title="Sticker Reactions"
+                    >
+                      <Sparkle className="w-4 h-4" />
+                      <span>Stickers</span>
+                    </button>
 
-                  {/* Share Code Snippet */}
-                  <button
-                    onClick={() => setShowCodeSnippetModal(true)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0 text-sky-500 hover:text-sky-400`}
-                    title="Share Code Snippet"
-                  >
-                    <Code className="w-4 h-4" />
-                  </button>
-
-                  {/* Share ASME Material */}
-                  <button
-                    onClick={() => setShowMaterialShareModal(true)}
-                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0 text-emerald-500 hover:text-emerald-400`}
-                    title="Share ASME Material Spec"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    <input
-                      data-testid="chat-message-input"
-                      id="chat-message-input"
-                      type="text"
-                      placeholder="Type your message..."
-                      value={messageText}
-                      onChange={handleTextChange}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      className={`w-full px-4 py-2.5 rounded-2xl ${theme.inputBg} border ${theme.modalBorder} text-xs focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
+                    <button
+                      onClick={() => setViewOnceMode((p) => !p)}
+                      className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 font-bold shrink-0 cursor-pointer ${viewOnceMode ? "bg-amber-500 text-white shadow-md animate-pulse" : `${theme.iconBtn} hover:bg-amber-500/10 text-amber-500`}`}
+                      title={viewOnceMode ? "View Once Active (Message expires after single view)" : "Send as View Once Media"}
+                    >
+                      {viewOnceMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      <span>{viewOnceMode ? "View-Once On" : "View Once"}</span>
+                    </button>
                   </div>
 
-                  {messageText.trim() || pendingAttachments.length > 0 ? (
+                  {/* Main Input & Send Row */}
+                  <div className="flex items-center gap-2.5">
                     <button
-                      data-testid="chat-send-btn"
-                      id="chat-send-btn"
-                      onClick={() => handleSendMessage()}
-                      className="p-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105 transition-all shrink-0 cursor-pointer"
-                      title="Send Message"
+                      onClick={() => setShowEmojiPicker((p) => !p)}
+                      className={`p-3 rounded-2xl ${theme.iconBtn} transition-all shrink-0 hover:text-amber-500 hover:bg-amber-500/10 cursor-pointer`}
+                      title="Insert Emojis"
                     >
-                      <Send className="w-4 h-4" />
+                      <Smile className="w-5 h-5 text-amber-500" />
                     </button>
-                  ) : (
-                    <button
-                      onClick={startVoiceRecording}
-                      className={`p-2.5 rounded-2xl ${theme.iconBtn} hover:text-blue-600 transition-all shrink-0 cursor-pointer`}
-                      title="Record Voice Note"
-                    >
-                      <Mic className="w-4 h-4" />
-                    </button>
-                  )}
+
+                    <div className="flex-1 min-w-0">
+                      <input
+                        data-testid="chat-message-input"
+                        id="chat-message-input"
+                        type="text"
+                        placeholder="Type your message here (Press Enter to send)..."
+                        value={messageText}
+                        onChange={handleTextChange}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                        className={`w-full px-5 py-3.5 rounded-2xl ${theme.inputBg} border ${theme.modalBorder} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium placeholder-slate-400`}
+                      />
+                    </div>
+
+                    {messageText.trim() || pendingAttachments.length > 0 ? (
+                      <button
+                        data-testid="chat-send-btn"
+                        id="chat-send-btn"
+                        onClick={() => handleSendMessage()}
+                        className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-2 font-bold text-sm"
+                        title="Send Message (Enter)"
+                      >
+                        <span>Send</span>
+                        <Send className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={startVoiceRecording}
+                        className={`p-3.5 rounded-2xl ${theme.iconBtn} hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all shrink-0 cursor-pointer shadow-sm`}
+                        title="Record Voice Note"
+                      >
+                        <Mic className="w-5 h-5 text-blue-600" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

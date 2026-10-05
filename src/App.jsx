@@ -255,15 +255,23 @@ export function parseRouteFromUrl() {
     }
 
     const saved = localStorage.getItem('nova_last_view');
-    if (saved && ROUTE_VIEWS[saved]) {
+    if (saved && ROUTE_VIEWS[saved] && localStorage.getItem('nova_user')) {
       return { view: saved, path: ROUTE_VIEWS[saved] };
     }
   } catch (e) {}
-  return { view: 'landing', path: '/home' };
+  return { view: 'login', path: '/login' };
 }
 
 export function getInitialViewFromUrl() {
-  return parseRouteFromUrl().view || 'landing';
+  const route = parseRouteFromUrl();
+  if (['signup', 'forgot'].includes(route.view)) {
+    return route.view;
+  }
+  const saved = localStorage.getItem('nova_user');
+  if (!saved) {
+    return 'login';
+  }
+  return route.view || 'dashboard';
 }
 const CosmicLogo = ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
   <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -975,17 +983,14 @@ export default function App() {
         if (savedNovaUserStr) {
           const savedNovaUser = JSON.parse(savedNovaUserStr);
           if (savedNovaUser && savedNovaUser.email) {
-            const cleanEmail = savedNovaUser.email.trim().toLowerCase();
-            const isAlpha = cleanEmail.includes('alphasquad') || cleanEmail.includes('alpha');
-            const isRaunak = cleanEmail.includes('rayraunak') || cleanEmail.includes('raunak');
             const recoveredUser = {
-              id: savedNovaUser.id || (isAlpha ? '11111111-2708-4000-8000-000000000001' : isRaunak ? '22222222-6203-4000-8000-000000000002' : 'user_' + Date.now()),
+              id: savedNovaUser.id || ('user_' + Date.now()),
               email: savedNovaUser.email,
               user_metadata: {
-                full_name: savedNovaUser.name || (isAlpha ? 'Alpha Squad' : isRaunak ? 'Raunak Ray' : savedNovaUser.email.split('@')[0]),
+                full_name: savedNovaUser.name || savedNovaUser.email.split('@')[0],
                 is_approved: true
               },
-              created_at: '2026-01-01T00:00:00.000Z'
+              created_at: savedNovaUser.created_at || '2026-01-01T00:00:00.000Z'
             };
             setupUser(recoveredUser);
             fetchJobs();
@@ -1005,33 +1010,29 @@ export default function App() {
           fetchJobs();
           setCurrentView((prev) => {
             const route = parseRouteFromUrl();
-            if (route.view === 'login' || route.view === 'signup') {
-              return route.view;
-            }
-            if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
-              return route.view;
-            }
-            if (['landing', 'login', 'signup', 'forgot'].includes(prev)) {
+            if (['login', 'signup', 'forgot'].includes(route.view)) {
               return 'dashboard';
             }
-            return prev;
+            if (route.view) {
+              return route.view;
+            }
+            return 'dashboard';
           });
         } else {
           const recovered = restoreSavedUser();
           if (recovered) {
             setCurrentView((prev) => {
               const route = parseRouteFromUrl();
-              if (route.view === 'login' || route.view === 'signup') {
-                return route.view;
-              }
-              if (route.view && !['landing', 'login', 'signup', 'forgot'].includes(route.view)) {
-                return route.view;
-              }
-              if (['landing', 'login', 'signup', 'forgot'].includes(prev)) {
+              if (['login', 'signup', 'forgot'].includes(route.view)) {
                 return 'dashboard';
               }
-              return prev;
+              if (route.view) {
+                return route.view;
+              }
+              return 'dashboard';
             });
+          } else {
+            setCurrentView((prev) => (['signup', 'forgot'].includes(prev) ? prev : 'login'));
           }
         }
         setIsInitializing(false);
@@ -1057,7 +1058,7 @@ export default function App() {
             setIsLoggedIn(false);
             setCurrentUser({ id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "" });
             setJobs([]);
-            setCurrentView(prev => (['dashboard', 'profile'].includes(prev) ? 'login' : prev));
+            setCurrentView(prev => (['login', 'signup', 'forgot'].includes(prev) ? prev : 'login'));
           }
         }
       });
@@ -1068,8 +1069,18 @@ export default function App() {
     }
   }, []);
   useEffect(() => {
-    if (!isInitializing && !isLoggedIn && ['dashboard', 'profile'].includes(currentView)) {
-      setCurrentView('login');
+    if (!isInitializing && !isLoggedIn) {
+      if (!['login', 'signup', 'forgot'].includes(currentView)) {
+        setCurrentView('login');
+        try {
+          const targetPath = ROUTE_VIEWS[currentView] || window.location.pathname;
+          if (targetPath && targetPath !== '/' && targetPath !== '/login') {
+            window.history.replaceState({ view: 'login' }, '', `/login?redirect=${encodeURIComponent(targetPath)}`);
+          } else {
+            window.history.replaceState({ view: 'login' }, '', '/login');
+          }
+        } catch (e) {}
+      }
     }
   }, [currentView, isLoggedIn, isInitializing]);
   const checkApprovalStatus = async () => {
@@ -1822,8 +1833,8 @@ export default function App() {
     }
   }, [isLoggedIn, currentUser.isApproved]);
   function setupUser(user) {
-    const fullName = user.user_metadata?.full_name || (user.email === 'alphasquad2708@gmail.com' ? 'Alpha Squad' : user.email === 'rayraunak19@gmail.com' ? 'Raunak Ray' : user.email?.split('@')[0]) || "User";
-    const isSpecialUser = user.email === 'dineshkumar2729304@gmail.com' || user.email === 'alphasquad2708@gmail.com' || user.email === 'rayraunak19@gmail.com';
+    const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || "User";
+    const isSpecialUser = user.email === 'dineshkumar2729304@gmail.com' || user.email === 'analysis.ai.nova@gmail.com';
     let userPlan = isSpecialUser ? 'Max' : 'Free';
     let totalCredits = isSpecialUser ? 3000 : 100;
     const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
@@ -2139,61 +2150,27 @@ Always provide professional, precise, technically accurate, and helpful answers.
     setAuthErrors({});
     setIsAuthLoading(true);
 
-    const cleanEmail = loginEmail.trim().toLowerCase();
-    const isAlpha = (cleanEmail === 'alphasquad2708@gmail.com' || cleanEmail.includes('alphasquad')) && (loginPassword === 'Alpha@2708' || loginPassword.toLowerCase() === 'alpha@2708');
-    const isRaunak = (cleanEmail === 'rayraunak19@gmail.com' || cleanEmail.includes('rayraunak')) && (loginPassword === 'Raunak@6203' || loginPassword.toLowerCase() === 'raunak@6203');
-
-    if (isAlpha || isRaunak) {
-      const targetUser = {
-        id: isAlpha ? '11111111-2708-4000-8000-000000000001' : '22222222-6203-4000-8000-000000000002',
-        email: cleanEmail,
-        user_metadata: {
-          full_name: isAlpha ? 'Alpha Squad' : 'Raunak Ray',
-          is_approved: true
-        },
-        created_at: '2026-01-01T00:00:00.000Z'
-      };
-      setIsAuthLoading(false);
-      setupUser(targetUser);
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirect = urlParams.get('redirect') || urlParams.get('next');
-      if (redirect === 'chat' || redirect === '/chat' || window.location.pathname.includes('/chat')) {
-        setCurrentView('chat');
-        try { window.history.pushState({ view: 'chat' }, '', '/chat'); } catch (e) {}
-      } else {
-        setCurrentView('dashboard');
-      }
-      showNotification("Successfully logged in!");
-
-      if (supabase) {
-        supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword })
-          .catch(() => {})
-          .then((res) => {
-            if (res?.error) {
-              supabase.auth.signUp({
-                email: cleanEmail,
-                password: loginPassword,
-                options: { data: { full_name: targetUser.user_metadata.full_name } }
-              }).catch(() => {});
-            }
-          });
-      }
-      return;
-    }
-
     try {
+      const cleanEmail = loginEmail.trim().toLowerCase();
       const authPromise = supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email: cleanEmail,
         password: loginPassword,
       });
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout contacting auth server. Please check connection.")), 6000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Network timeout contacting auth server. Please check connection.")), 10000));
       const { data, error } = await Promise.race([authPromise, timeoutPromise]);
       setIsAuthLoading(false);
       if (error) {
         setAuthErrors({ password: error.message });
       } else {
         if (data?.user) setupUser(data.user);
-        setCurrentView('dashboard');
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || urlParams.get('next');
+        if (redirect === 'chat' || redirect === '/chat' || window.location.pathname.includes('/chat')) {
+          setCurrentView('chat');
+          try { window.history.pushState({ view: 'chat' }, '', '/chat'); } catch (e) {}
+        } else {
+          setCurrentView('dashboard');
+        }
         showNotification("Successfully logged in!");
       }
     } catch (err) {
@@ -5596,55 +5573,16 @@ Always provide professional, precise, technically accurate, and helpful answers.
   ];
 
   const renderChat = () => {
+    if (!currentUser || !currentUser.email) {
+      setCurrentView('login');
+      return null;
+    }
     const route = parseRouteFromUrl();
-    const urlParams = new URLSearchParams(window.location.search);
-    const asParam = urlParams.get('as') || urlParams.get('asUser') || urlParams.get('loginAs');
-    let effectiveUser = currentUser;
-    if (asParam) {
-      const email = asParam.toLowerCase();
-      const isAlpha = email.includes('alphasquad') || email.includes('alpha');
-      effectiveUser = {
-        ...currentUser,
-        email: email,
-        name: isAlpha ? "Alpha Squad" : "Raunak Ray",
-        id: isAlpha ? "11111111-2708-4000-8000-000000000001" : "22222222-6203-4000-8000-000000000002",
-        avatar: null,
-        plan: "Max"
-      };
-    } else if (!effectiveUser || !effectiveUser.email) {
-      try {
-        const savedNovaUserStr = localStorage.getItem('nova_user');
-        if (savedNovaUserStr) {
-          const parsed = JSON.parse(savedNovaUserStr);
-          if (parsed && parsed.email) {
-            const isAlpha = parsed.email.toLowerCase().includes('alphasquad') || parsed.email.toLowerCase().includes('alpha');
-            effectiveUser = {
-              ...currentUser,
-              email: parsed.email,
-              name: parsed.name || (isAlpha ? "Alpha Squad" : "Raunak Ray"),
-              id: parsed.id || (isAlpha ? "11111111-2708-4000-8000-000000000001" : "22222222-6203-4000-8000-000000000002"),
-              avatar: parsed.avatar || null,
-              plan: "Max"
-            };
-          }
-        }
-      } catch (e) {}
-    }
-
-    if (!effectiveUser || !effectiveUser.email) {
-      effectiveUser = {
-        id: "11111111-2708-4000-8000-000000000001",
-        email: "alphasquad2708@gmail.com",
-        name: "Alpha Squad",
-        avatar: null,
-        plan: "Max"
-      };
-    }
     const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : null;
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col w-full h-full overflow-hidden">
         <NovaMessenger
-          currentUser={effectiveUser}
+          currentUser={currentUser}
           initialRecipient={recipientParam}
           onClose={() => {
             setCurrentView('dashboard');
@@ -7459,17 +7397,22 @@ Always provide professional, precise, technically accurate, and helpful answers.
       {showSplash && renderSplash()}
       {!showSplash && (
         <>
-          {currentView === 'landing' && renderLanding()}
           {currentView === 'login' && renderLogin()}
           {currentView === 'signup' && renderSignup()}
           {currentView === 'forgot' && renderForgotPassword()}
-          {currentView === 'dashboard' && renderDashboard()}
-          {currentView === 'profile' && renderProfile()}
-          {currentView === 'nova_help' && renderNovaHelp()}
-          {currentView === 'nova_community' && renderNovaCommunity()}
-          {currentView === 'chat' && renderChat()}
-          {currentView === 'materials' && renderMaterials()}
-          {currentView === 'stress_strain' && renderStressStrain()}
+          {isLoggedIn && (
+            <>
+              {currentView === 'landing' && renderLanding()}
+              {currentView === 'dashboard' && renderDashboard()}
+              {currentView === 'profile' && renderProfile()}
+              {currentView === 'nova_help' && renderNovaHelp()}
+              {currentView === 'nova_community' && renderNovaCommunity()}
+              {currentView === 'chat' && renderChat()}
+              {currentView === 'materials' && renderMaterials()}
+              {currentView === 'stress_strain' && renderStressStrain()}
+            </>
+          )}
+          {!isLoggedIn && !['login', 'signup', 'forgot'].includes(currentView) && renderLogin()}
         </>
       )}
     </>
