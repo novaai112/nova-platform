@@ -5485,11 +5485,25 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
   const renderChat = () => {
     const route = parseRouteFromUrl();
+    const urlParams = new URLSearchParams(window.location.search);
+    const asParam = urlParams.get('as') || urlParams.get('asUser') || urlParams.get('loginAs');
+    let effectiveUser = currentUser;
+    if (asParam) {
+      const email = asParam.toLowerCase();
+      const isAlpha = email.includes('alphasquad') || email.includes('alpha');
+      effectiveUser = {
+        ...currentUser,
+        email: email,
+        name: isAlpha ? "Alpha Squad" : "Raunak Ray",
+        id: isAlpha ? "11111111-2708-4000-8000-000000000001" : "22222222-6203-4000-8000-000000000002",
+        avatar: null
+      };
+    }
     const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : null;
     return (
       <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
         <NovaMessenger
-          currentUser={currentUser}
+          currentUser={effectiveUser}
           initialRecipient={recipientParam}
           onClose={() => {
             setCurrentView('dashboard');

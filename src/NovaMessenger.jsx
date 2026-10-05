@@ -177,6 +177,39 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingMessageText, setEditingMessageText] = useState("");
 
+  // Desktop Windows-Style Context Menu & Chat Pinning/Muting
+  const [contextMenu, setContextMenu] = useState(null);
+  const [pinnedConvIds, setPinnedConvIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`nova_pinned_convs_${myUserId}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (e) { return new Set(); }
+  });
+  const [mutedConvIds, setMutedConvIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`nova_muted_convs_${myUserId}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (e) { return new Set(); }
+  });
+  const [messageInfoModal, setMessageInfoModal] = useState(null);
+
+  // 3-Panel Layout & Shared Media Information State
+  const [showChatInfoPanel, setShowChatInfoPanel] = useState(false);
+  const [infoTab, setInfoTab] = useState("media"); // "media" | "files" | "links" | "voice"
+  const [activeMediaViewer, setActiveMediaViewer] = useState(null);
+  const [isNetworkOnline, setIsNetworkOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => { setIsNetworkOnline(true); showToast("🟢 Connected to network"); };
+    const handleOffline = () => { setIsNetworkOnline(false); showToast("⚠️ Network offline - reconnecting..."); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   // Wallpapers & Themes
   const [chatWallpaper, setChatWallpaper] = useState(() => {
     try {
@@ -275,6 +308,33 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   );
   const canCallAndSend = !activeConv?.is_request || (!isPendingRequestForMe && !isPendingRequestByMe);
 
+  // Filtered Shared Media for 3-Panel Info View
+  const sharedMedia = useMemo(() => {
+    return (messages || []).filter((m) => !m.is_deleted && (m.media_type === "image" || m.media_type === "video" || (m.media_url && String(m.media_url).match(/\.(jpeg|jpg|gif|png|webp|mp4|webm)$/i))));
+  }, [messages]);
+
+  const sharedFiles = useMemo(() => {
+    return (messages || []).filter((m) => !m.is_deleted && (m.media_type === "file" || m.media_type === "code" || m.media_type === "material" || (m.media_url && !String(m.media_type).match(/(image|video|voice)/))));
+  }, [messages]);
+
+  const sharedVoice = useMemo(() => {
+    return (messages || []).filter((m) => !m.is_deleted && (m.media_type === "voice" || m.content === "🎤 Voice Note"));
+  }, [messages]);
+
+  const sharedLinks = useMemo(() => {
+    const list = [];
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    (messages || []).forEach((m) => {
+      if (m.content && !m.is_deleted) {
+        const matches = m.content.match(urlRegex);
+        if (matches) {
+          matches.forEach((url) => list.push({ url, created_at: m.created_at, sender_email: m.sender_email }));
+        }
+      }
+    });
+    return list;
+  }, [messages]);
+
   // Dynamic Theme Colors: Clean White Light Mode (Default) / Deep Dark Mode
   const theme = {
     bg: isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900",
@@ -288,8 +348,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     inputBg: isDarkMode ? "bg-slate-900 border-slate-800 text-white placeholder-slate-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400",
     secondaryText: isDarkMode ? "text-slate-400" : "text-slate-600",
     iconBtn: isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900",
-    incomingBubble: isDarkMode ? "bg-slate-900 text-slate-100 border border-slate-800 shadow-xs" : "bg-white text-slate-900 border border-slate-200 shadow-xs",
-    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm",
+    incomingBubble: isDarkMode
+      ? "bg-slate-900/95 text-slate-50 border border-slate-700/80 shadow-md backdrop-blur-md"
+      : "bg-white/95 text-slate-900 border border-slate-300 shadow-md backdrop-blur-md",
+    outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border border-blue-400/40",
   };
 
   // Web Audio Ringtone Chimes & Sound Effects for Calls & Chat
@@ -685,8 +747,37 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         }
       }
 
-      // Filter out any stale auto-requests that have no real database conversation ID
-      convList = convList.filter((c) => c.conv_id !== null || (initialRecipient && c.email?.toLowerCase() === initialRecipient.email?.toLowerCase()));
+      // Ensure all registered engineers are available to chat with
+      (registeredUsers || []).forEach((u) => {
+        if (!u.email || u.email.toLowerCase() === myEmail.toLowerCase()) return;
+        const uEmail = u.email.toLowerCase();
+        if (!seenEmails.has(uEmail)) {
+          seenEmails.add(uEmail);
+          const realAvatar = u.avatar_url || u.avatar || null;
+          const partnerName = u.full_name || u.display_name || uEmail.split("@")[0];
+          convList.push({
+            id: `user_${u.id || uEmail}`,
+            conv_id: null,
+            type: "dm",
+            name: partnerName,
+            email: u.email,
+            avatar: realAvatar,
+            avatar_url: realAvatar,
+            wallpaper_url: null,
+            is_request: false,
+            request_status: "accepted",
+            created_by: myUserId,
+            lastMessage: "Start a conversation",
+            lastTime: "",
+            lastRawTime: "2020-01-01T00:00:00.000Z",
+            unread: 0,
+            otherUser: { ...u, avatar_url: realAvatar, avatar: realAvatar }
+          });
+        }
+      });
+
+      // Keep all valid conversations
+      convList = convList.filter((c) => c.conv_id !== null || c.email || c.name);
 
       convList.sort((a, b) => (b.lastRawTime || "").localeCompare(a.lastRawTime || ""));
       setConversations(convList);
@@ -859,12 +950,38 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // 6. REALTIME DIRECT EVENT DISPATCHING (SUB-MILLISECOND UPDATE)
   // =========================================================================
   useEffect(() => {
-    if (!activeConv?.conv_id) return;
+    if (!activeConv) return;
     const cid = activeConv.conv_id;
+    const partnerEmail = activeConv.email || activeRecipient?.email;
+    const channelName = cid
+      ? `rt-conv-v5-${cid}`
+      : `rt-dm-${[myEmail.toLowerCase(), partnerEmail?.toLowerCase()].filter(Boolean).sort().join('_').replace(/[^a-zA-Z0-9]/g, '_')}`;
 
     const ch = supabase
-      .channel(`rt-conv-v5-${cid}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
+      .channel(channelName)
+      .on("broadcast", { event: "chat_message" }, ({ payload }) => {
+        if (!payload) return;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === payload.id || (m.content === payload.content && Math.abs(new Date(m.created_at || Date.now()) - new Date(payload.created_at || Date.now())) < 2000))) {
+            return prev;
+          }
+          return [...prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== payload.content), payload];
+        });
+        chatSounds.playMessageReceived();
+      })
+      .on("broadcast", { event: "chat_typing" }, ({ payload }) => {
+        if (!payload || payload.user_email === myEmail) return;
+        setTypingUsers([{ user_id: payload.user_id || payload.user_email, action: payload.action || "typing" }]);
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => setTypingUsers([]), 3000);
+      })
+      .on("broadcast", { event: "chat_reaction" }, ({ payload }) => {
+        if (!payload) return;
+        setReactions((prev) => [...prev, payload]);
+      });
+
+    if (cid) {
+      ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${cid}` }, (payload) => {
         const newMsg = payload.new;
         if (!newMsg) return;
         const senderInfo = userMap[newMsg.user_id] || (newMsg.user_id === myUserId ? currentUser : activeRecipient);
@@ -907,19 +1024,40 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
           .select("user_id, updated_at")
           .eq("conversation_id", cid)
           .gt("updated_at", new Date(Date.now() - 4000).toISOString());
-        setTypingUsers((data || []).map((t) => t.user_id).filter((id) => id !== myUserId));
-      })
-      .on("broadcast", { event: "request-accepted" }, () => {
-        setActiveConv((prev) => prev ? { ...prev, is_request: false, request_status: "accepted" } : null);
-        loadConversations();
-      })
-      .subscribe();
+        setTypingUsers((data || []).map((t) => ({ user_id: t.user_id, action: "typing" })).filter((t) => t.user_id !== myUserId));
+      });
+    }
+
+    // Direct / legacy message table changes
+    ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "nova_messages" }, (payload) => {
+      const newMsg = payload.new;
+      if (!newMsg) return;
+      const isForMe = newMsg.recipient_email?.toLowerCase() === myEmail.toLowerCase();
+      const isByMe = newMsg.sender_email?.toLowerCase() === myEmail.toLowerCase();
+      const matchesActive = (isForMe && newMsg.sender_email?.toLowerCase() === partnerEmail?.toLowerCase()) ||
+                            (isByMe && newMsg.recipient_email?.toLowerCase() === partnerEmail?.toLowerCase());
+
+      if (matchesActive) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id || (m.content === newMsg.content && Math.abs(new Date(m.created_at || Date.now()) - new Date(newMsg.created_at || Date.now())) < 2000))) {
+            return prev;
+          }
+          return [...prev.filter((m) => !String(m.id).startsWith("temp_") || m.content !== newMsg.content), newMsg];
+        });
+        if (isForMe) chatSounds.playMessageReceived();
+      }
+    })
+    .on("broadcast", { event: "request-accepted" }, () => {
+      setActiveConv((prev) => prev ? { ...prev, is_request: false, request_status: "accepted" } : null);
+      loadConversations();
+    })
+    .subscribe();
 
     rtcChannelRef.current = ch;
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [activeConv?.conv_id, myUserId, userMap, currentUser, activeRecipient, loadConversations]);
+  }, [activeConv, myUserId, myEmail, userMap, currentUser, activeRecipient, loadConversations]);
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -1448,6 +1586,93 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   };
 
   // =========================================================================
+  // WINDOWS-STYLE RIGHT-CLICK CONTEXT MENU & SHORTCUTS
+  // =========================================================================
+  const openMessageContextMenu = (e, msg) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const menuWidth = 230;
+    const menuHeight = 350;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
+    setContextMenu({ type: "message", x: Math.max(10, x), y: Math.max(10, y), message: msg });
+  };
+
+  const openConvContextMenu = (e, conv) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const menuWidth = 210;
+    const menuHeight = 220;
+    const x = Math.min(e.clientX, window.innerWidth - menuWidth - 10);
+    const y = Math.min(e.clientY, window.innerHeight - menuHeight - 10);
+    setContextMenu({ type: "conversation", x: Math.max(10, x), y: Math.max(10, y), conv });
+  };
+
+  const handleTogglePinConv = (convId) => {
+    setPinnedConvIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(convId)) {
+        next.delete(convId);
+        showToast("Conversation unpinned");
+      } else {
+        next.add(convId);
+        showToast("📌 Conversation pinned to top");
+      }
+      try {
+        localStorage.setItem(`nova_pinned_convs_${myUserId}`, JSON.stringify(Array.from(next)));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleToggleMuteConv = (convId) => {
+    setMutedConvIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(convId)) {
+        next.delete(convId);
+        showToast("🔔 Notifications enabled");
+      } else {
+        next.add(convId);
+        showToast("🔕 Conversation muted");
+      }
+      try {
+        localStorage.setItem(`nova_muted_convs_${myUserId}`, JSON.stringify(Array.from(next)));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // Keyboard Shortcuts & Global Click Listener
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (contextMenu) setContextMenu(null);
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setContextMenu(null);
+        setReplyingTo(null);
+        setEditingMessageId(null);
+        setShowWallpaperModal(false);
+        setShowStarredModal(false);
+        setForwardingMessage(null);
+        setShowCodeSnippetModal(false);
+        setShowMaterialShareModal(false);
+        setMessageInfoModal(null);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setChatSearchOpen(true);
+      }
+    };
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  // =========================================================================
   // 8. SEND MESSAGES & REAL FILE NAME ATTACHMENTS
   // =========================================================================
   const handleSendMessage = async (customContent = null, mediaType = "text", mediaUrl = null, mediaMeta = null) => {
@@ -1908,13 +2133,59 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const headerAvatar = partnerProfile?.avatar_url || partnerProfile?.avatar || activeConv?.avatar || null;
   const headerName = customNickname || partnerProfile?.full_name || partnerProfile?.display_name || activeConv?.name || "Engineer";
 
-  const filteredConvs = conversations.filter((c) => {
-    const matchSearch = (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (c.email || "").toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchSearch) return false;
-    if (activeTab === "direct") return c.type === "dm" && !c.is_request;
-    if (activeTab === "groups") return c.type === "group";
-    return true;
-  });
+  const filteredConvs = conversations
+    .filter((c) => {
+      const matchSearch = (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || (c.email || "").toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchSearch) return false;
+      if (activeTab === "direct") return c.type === "dm" && !c.is_request;
+      if (activeTab === "groups") return c.type === "group";
+      if (activeTab === "unread") return (c.unread || 0) > 0;
+      if (activeTab === "pinned") return pinnedConvIds.has(c.id);
+      return true;
+    })
+    .sort((a, b) => {
+      const aPinned = pinnedConvIds.has(a.id) ? 1 : 0;
+      const bPinned = pinnedConvIds.has(b.id) ? 1 : 0;
+      return bPinned - aPinned;
+    });
+
+  const renderMentionTags = (str, keyPrefix = 0) => {
+    if (typeof str !== "string" || !str.includes("@")) return str;
+    const parts = str.split(/(@[a-zA-Z0-9._-]+)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("@")) {
+        return (
+          <span key={`${keyPrefix}-${idx}`} className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const renderHighlightedText = (text, query) => {
+    if (!text) return text;
+    const cleanQuery = (query || "").trim();
+    if (cleanQuery) {
+      try {
+        const regex = new RegExp(`(${cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi");
+        const parts = text.split(regex);
+        return parts.map((part, i) =>
+          part.toLowerCase() === cleanQuery.toLowerCase() ? (
+            <mark key={i} className="bg-amber-400 text-slate-950 font-bold px-0.5 rounded shadow-xs">
+              {part}
+            </mark>
+          ) : (
+            renderMentionTags(part, i)
+          )
+        );
+      } catch (e) {
+        return renderMentionTags(text, 0);
+      }
+    }
+    return renderMentionTags(text, 0);
+  };
 
   return (
     <div className="fixed inset-0 z-[250] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
@@ -2302,12 +2573,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
 
-          {/* Tabs: All / Direct / Groups / Calls / Requests */}
-          <div className={`flex items-center justify-around px-2 pb-2 border-b ${theme.modalBorder} text-[11px] font-bold`}>
+          {/* Tabs: All / Direct / Groups / Unread / Pinned / Calls / Requests */}
+          <div className={`flex items-center justify-around px-1 pb-2 border-b ${theme.modalBorder} text-[10px] font-bold overflow-x-auto`}>
             {[
               { id: "all", label: "All" },
               { id: "direct", label: "Direct" },
               { id: "groups", label: "Groups" },
+              { id: "unread", label: "Unread", badge: conversations.filter((c) => (c.unread || 0) > 0).length },
+              { id: "pinned", label: "Pinned", badge: pinnedConvIds.size },
               { id: "calls", label: "Calls", badge: callHistory.filter((c) => c.direction === "missed").length },
               { id: "requests", label: "Requests", badge: pendingRequestsCount }
             ].map((tab) => (
@@ -2624,6 +2897,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     <div
                       key={c.id}
                       onClick={() => selectConversation(c)}
+                      onContextMenu={(e) => openConvContextMenu(e, c)}
                       className={`w-full p-3 flex items-center gap-3 text-left transition-colors cursor-pointer ${isSelected ? theme.activeConvBg : theme.hoverBg}`}
                     >
                       {/* Real Avatar with tap to see profile */}
@@ -2644,7 +2918,15 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-xs truncate max-w-[150px]">{convName}</h4>
+                          <div className="flex items-center gap-1.5 truncate max-w-[150px]">
+                            {pinnedConvIds.has(c.id) && (
+                              <Pin className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" title="Pinned Chat" />
+                            )}
+                            {mutedConvIds.has(c.id) && (
+                              <BellOff className="w-3 h-3 text-slate-400 shrink-0" title="Muted" />
+                            )}
+                            <h4 className="font-bold text-xs truncate">{convName}</h4>
+                          </div>
                           <span className={`text-[10px] ${theme.secondaryText}`}>{c.lastTime}</span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -2766,6 +3048,14 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   title="Search Messages"
                 >
                   <Search className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setShowDetailsPanel((p) => !p)}
+                  className={`p-2.5 rounded-xl transition-all ${showDetailsPanel ? "bg-blue-600 text-white" : theme.iconBtn}`}
+                  title="Conversation Details & Shared Media"
+                >
+                  <Info className="w-4 h-4" />
                 </button>
 
                 {activeConv.type === "group" ? (
@@ -2921,7 +3211,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             </div>
                           )}
 
-                          <div className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}>
+                          <div
+                            onContextMenu={(e) => openMessageContextMenu(e, m)}
+                            className={`relative px-4 py-2.5 rounded-2xl text-xs leading-relaxed select-text ${isMine ? theme.outgoingBubble + " rounded-br-xs" : theme.incomingBubble + " rounded-bl-xs"}`}
+                          >
                             {/* View-Once Media */}
                             {m.view_limit > 0 ? (
                               isViewOnceExpired ? (
@@ -3104,7 +3397,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               </div>
                             ) : (
                               m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
-                                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                                <p className="whitespace-pre-wrap break-words">{renderHighlightedText(m.content, chatSearchText)}</p>
                               )
                             )}
 
@@ -3548,40 +3841,190 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* 4. DETAILS PANEL                                                  */}
         {/* ================================================================= */}
         {showDetailsPanel && activeConv && (
-          <div className={`w-72 border-l ${theme.sidebarBg} flex flex-col p-4 space-y-4 animate-in slide-in-from-right`}>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-              <h4 className="font-bold text-xs">Chat Details</h4>
-              <button onClick={() => setShowDetailsPanel(false)}><X className="w-4 h-4" /></button>
+          <div className={`w-80 border-l ${theme.sidebarBg} flex flex-col shrink-0 select-none animate-in slide-in-from-right duration-200 z-20`}>
+            {/* Top Header */}
+            <div className={`p-3.5 border-b ${theme.modalBorder} flex items-center justify-between`}>
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-blue-500" />
+                <h3 className="font-extrabold text-xs">Chat Information</h3>
+              </div>
+              <button onClick={() => setShowDetailsPanel(false)} className={`p-1.5 rounded-lg ${theme.iconBtn} cursor-pointer`}>
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 font-bold text-xl flex items-center justify-center">
+            {/* Profile Card */}
+            <div className={`p-4 border-b ${theme.modalBorder} flex flex-col items-center text-center space-y-2`}>
+              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-500 shadow-md flex items-center justify-center font-bold text-xl bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                 {headerAvatar ? (
                   <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
                   (headerName || "U")[0].toUpperCase()
                 )}
+                {isCurrentPartnerOnline && (
+                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
+                )}
               </div>
-              <h3 className="font-extrabold text-sm">{headerName}</h3>
-              <p className={`text-xs ${theme.secondaryText}`}>{activeConv.email || "Multi-engineer room"}</p>
+              <div>
+                <h4 className="font-extrabold text-sm">{headerName}</h4>
+                <p className={`text-[11px] ${theme.secondaryText}`}>{activeConv.email || partnerProfile?.email || "Engineer"}</p>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => handleTogglePinConv(activeConv.id)}
+                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${pinnedConvIds.has(activeConv.id) ? "bg-amber-500/10 border-amber-500 text-amber-500" : `${theme.modalBorder} ${theme.hoverBg}`}`}
+                >
+                  <Pin className="w-3 h-3" />
+                  <span>{pinnedConvIds.has(activeConv.id) ? "Pinned" : "Pin"}</span>
+                </button>
+                <button
+                  onClick={() => handleToggleMuteConv(activeConv.id)}
+                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${mutedConvIds.has(activeConv.id) ? "bg-rose-500/10 border-rose-500 text-rose-500" : `${theme.modalBorder} ${theme.hoverBg}`}`}
+                >
+                  <BellOff className="w-3 h-3" />
+                  <span>{mutedConvIds.has(activeConv.id) ? "Muted" : "Mute"}</span>
+                </button>
+                <button
+                  onClick={() => setShowStarredModal(true)}
+                  className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${theme.modalBorder} ${theme.hoverBg}`}
+                >
+                  <Star className="w-3 h-3 text-amber-400" />
+                  <span>Starred</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <label className="font-bold text-[11px] text-slate-400">Custom Nickname</label>
-              <input
-                type="text"
-                value={customNickname}
-                onChange={(e) => handleSaveNickname(e.target.value)}
-                placeholder="Set nickname..."
-                className={`w-full px-3 py-2 ${theme.inputBg} rounded-xl text-xs focus:outline-none`}
-              />
+            {/* Shared Media Tabs */}
+            <div className={`flex items-center justify-around p-2 border-b ${theme.modalBorder} text-[11px] font-bold`}>
+              {[
+                { id: "media", label: `Media (${sharedMedia.length})` },
+                { id: "files", label: `Files (${sharedFiles.length})` },
+                { id: "links", label: `Links (${sharedLinks.length})` },
+                { id: "voice", label: `Voice (${sharedVoice.length})` },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setInfoTab(t.id)}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${infoTab === t.id ? "bg-blue-600 text-white shadow-xs font-black" : `${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`}`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
-            {activeConv.type === "dm" && (
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+            {/* Tab Content Stream */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {infoTab === "media" && (
+                sharedMedia.length === 0 ? (
+                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No photos or videos shared yet</div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {sharedMedia.map((m) => (
+                      <div
+                        key={m.id}
+                        onClick={() => setActiveMediaViewer({ url: m.media_url, type: m.media_type, name: m.attachment_name || "Shared Media" })}
+                        className="aspect-square rounded-xl overflow-hidden bg-slate-900 border border-slate-700/60 cursor-pointer hover:opacity-90 hover:scale-105 transition-all shadow-xs"
+                      >
+                        {m.media_type === "video" ? (
+                          <div className="w-full h-full relative flex items-center justify-center bg-black">
+                            <Play className="w-5 h-5 text-white opacity-80" />
+                          </div>
+                        ) : (
+                          <img src={m.media_url} alt="" className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {infoTab === "files" && (
+                sharedFiles.length === 0 ? (
+                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No files shared yet</div>
+                ) : (
+                  <div className="space-y-2">
+                    {sharedFiles.map((m) => {
+                      const meta = typeof m.media_metadata === "string" ? (() => { try { return JSON.parse(m.media_metadata); } catch(e) { return {}; } })() : (m.media_metadata || {});
+                      const name = meta.name || m.attachment_name || "Document";
+                      return (
+                        <a
+                          key={m.id}
+                          href={m.media_url || "#"}
+                          download={name}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between gap-2 transition-colors`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs truncate max-w-[170px]">{name}</p>
+                              <p className="text-[10px] text-slate-400">{meta.size || "File"}</p>
+                            </div>
+                          </div>
+                          <Download className="w-4 h-4 text-slate-400 hover:text-blue-500 shrink-0" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+
+              {infoTab === "links" && (
+                sharedLinks.length === 0 ? (
+                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No links shared yet</div>
+                ) : (
+                  <div className="space-y-2">
+                    {sharedLinks.map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between gap-2 text-xs transition-colors`}
+                      >
+                        <span className="text-blue-500 truncate max-w-[210px] underline">{item.url}</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {infoTab === "voice" && (
+                sharedVoice.length === 0 ? (
+                  <div className={`p-6 text-center text-xs ${theme.secondaryText}`}>No voice notes shared yet</div>
+                ) : (
+                  <div className="space-y-2">
+                    {sharedVoice.map((m) => (
+                      <div key={m.id} className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.cardBg}`}>
+                        <VoiceNotePlayer url={m.media_url} isMine={m.user_id === myUserId || m.sender_email === myEmail} />
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Custom Nickname & Block Engineer */}
+            <div className={`p-3.5 border-t ${theme.modalBorder} space-y-2.5 text-xs`}>
+              <div className="space-y-1">
+                <label className="font-bold text-[10px] text-slate-400">Custom Nickname</label>
+                <input
+                  type="text"
+                  value={customNickname}
+                  onChange={(e) => handleSaveNickname(e.target.value)}
+                  placeholder="Set nickname..."
+                  className={`w-full px-3 py-1.5 ${theme.inputBg} border ${theme.modalBorder} rounded-xl text-xs focus:outline-none`}
+                />
+              </div>
+
+              {activeConv.type === "dm" && (
                 <button
                   onClick={handleToggleBlock}
-                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     hasBlockedTarget
                       ? "bg-emerald-600 text-white hover:bg-emerald-500"
                       : "bg-rose-600/15 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white"
@@ -3590,8 +4033,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   <UserX className="w-4 h-4" />
                   {hasBlockedTarget ? "Unblock Engineer" : "Block Engineer"}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
@@ -4428,6 +4871,317 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 16. DESKTOP WINDOWS-STYLE RIGHT-CLICK CONTEXT MENU                */}
+        {/* ================================================================= */}
+        {contextMenu && (
+          <div
+            className="fixed z-[500] min-w-[210px] rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 shadow-2xl text-white py-1.5 px-1 animate-in fade-in zoom-in-95 duration-100 select-none"
+            style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {contextMenu.type === "message" && (() => {
+              const msg = contextMenu.message;
+              const isMine = msg.user_id === myUserId || msg.sender_email === myEmail;
+              const hasText = msg.content && typeof msg.content === "string" && msg.content.trim().length > 0;
+
+              return (
+                <div className="space-y-1 text-xs">
+                  {/* Quick Reactions Bar */}
+                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-800/80 mb-1">
+                    {["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          handleToggleReaction(msg.id, emoji);
+                          setContextMenu(null);
+                        }}
+                        className="hover:scale-130 transition-transform p-1 cursor-pointer text-sm"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Reply */}
+                  <button
+                    onClick={() => {
+                      setReplyingTo(msg);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <CornerUpLeft className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Reply</span>
+                  </button>
+
+                  {/* Forward */}
+                  <button
+                    onClick={() => {
+                      setForwardingMessage(msg);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Forward</span>
+                  </button>
+
+                  {/* Copy Text */}
+                  {hasText && (
+                    <button
+                      onClick={() => {
+                        handleCopyText(msg.content);
+                        setContextMenu(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Copy Text</span>
+                    </button>
+                  )}
+
+                  {/* Star / Unstar */}
+                  <button
+                    onClick={() => {
+                      handleToggleStar(msg.id);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <Star className={`w-3.5 h-3.5 text-amber-400 ${starredMessageIds.has(msg.id) ? "fill-amber-400" : ""}`} />
+                    <span>{starredMessageIds.has(msg.id) ? "Unstar Message" : "Star Message"}</span>
+                  </button>
+
+                  {/* Pin / Unpin */}
+                  <button
+                    onClick={() => {
+                      handleTogglePin(msg);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <Pin className="w-3.5 h-3.5 text-purple-400" />
+                    <span>{msg.is_pinned ? "Unpin from Chat" : "Pin to Chat"}</span>
+                  </button>
+
+                  {/* Edit (own text message) */}
+                  {isMine && !msg.media_url && (
+                    <button
+                      onClick={() => {
+                        handleStartEdit(msg);
+                        setContextMenu(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Edit Message</span>
+                    </button>
+                  )}
+
+                  {/* Message Info */}
+                  <button
+                    onClick={() => {
+                      setMessageInfoModal(msg);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium border-t border-slate-800/60 pt-1.5"
+                  >
+                    <Info className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Message Info</span>
+                  </button>
+
+                  {/* Delete (if mine) */}
+                  {isMine && (
+                    <button
+                      onClick={() => {
+                        handleDeleteMessage(msg.id);
+                        setContextMenu(null);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors text-left font-medium"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete for Everyone</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {contextMenu.type === "conversation" && (() => {
+              const c = contextMenu.conv;
+              const isPinned = pinnedConvIds.has(c.id);
+              const isMuted = mutedConvIds.has(c.id);
+
+              return (
+                <div className="space-y-1 text-xs">
+                  <button
+                    onClick={() => {
+                      selectConversation(c);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Open Conversation</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleTogglePinConv(c.id);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    <Pin className={`w-3.5 h-3.5 text-amber-400 ${isPinned ? "fill-amber-400" : ""}`} />
+                    <span>{isPinned ? "Unpin Chat from Top" : "Pin Chat to Top"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleToggleMuteConv(c.id);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium"
+                  >
+                    {isMuted ? <Bell className="w-3.5 h-3.5 text-emerald-400" /> : <BellOff className="w-3.5 h-3.5 text-slate-400" />}
+                    <span>{isMuted ? "Unmute Notifications" : "Mute Notifications"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const partner = c.otherUser || (c.email ? userMap[c.email.toLowerCase()] : null);
+                      if (partner) openUserProfile(partner);
+                      else showToast(`User: ${c.name || c.email}`);
+                      setContextMenu(null);
+                    }}
+                    className="w-full px-2.5 py-1.5 flex items-center gap-2.5 rounded-xl hover:bg-slate-800/80 transition-colors text-left font-medium border-t border-slate-800/60 pt-1.5"
+                  >
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    <span>View Profile</span>
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 17. MESSAGE INFO DIALOG (DETAILED DELIVERY, METRICS & TIMESTAMP)  */}
+        {/* ================================================================= */}
+        {messageInfoModal && (
+          <div className="fixed inset-0 z-[400] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-sm shadow-2xl p-5 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Info className="w-5 h-5 text-blue-500" />
+                  <h3 className="font-extrabold text-sm">Message Information</h3>
+                </div>
+                <button onClick={() => setMessageInfoModal(null)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400 font-bold">Status</span>
+                    <span className="flex items-center gap-1 text-emerald-500 font-extrabold">
+                      <CheckCheck className="w-3.5 h-3.5 text-sky-400" /> Delivered & Read
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400 font-bold">Sent At</span>
+                    <span className="font-mono text-slate-300">
+                      {new Date(messageInfoModal.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  {messageInfoModal.is_edited && (
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-slate-400 font-bold">Edited</span>
+                      <span className="text-amber-400 font-semibold">Yes</span>
+                    </div>
+                  )}
+                  {messageInfoModal.content && (
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-slate-400 font-bold">Length</span>
+                      <span className="text-slate-300 font-mono">
+                        {messageInfoModal.content.length} characters ({messageInfoModal.content.trim().split(/\s+/).length} words)
+                      </span>
+                    </div>
+                  )}
+                  {messageInfoModal.media_type && (
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-slate-400 font-bold">Attachment</span>
+                      <span className="text-sky-400 uppercase font-mono">{messageInfoModal.media_type}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950 text-slate-200 border border-slate-800 font-mono text-[11px] max-h-36 overflow-y-auto whitespace-pre-wrap">
+                  {messageInfoModal.content || "Media / attachment item"}
+                </div>
+
+                <button
+                  onClick={() => setMessageInfoModal(null)}
+                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-xs"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 18. ADVANCED FULLSCREEN MEDIA VIEWER                              */}
+        {/* ================================================================= */}
+        {activeMediaViewer && (
+          <div className="fixed inset-0 z-[600] bg-black/95 backdrop-blur-xl flex flex-col animate-in fade-in duration-150">
+            {/* Top Bar */}
+            <div className="p-4 flex items-center justify-between bg-black/40 border-b border-white/10 text-white">
+              <div className="flex items-center gap-2 min-w-0">
+                <ImageIcon className="w-5 h-5 text-blue-400" />
+                <span className="font-bold text-sm truncate max-w-sm">{activeMediaViewer.name || "Shared Media"}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {activeMediaViewer.url && (
+                  <a
+                    href={activeMediaViewer.url}
+                    download={activeMediaViewer.name || "media"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white"
+                    title="Download Media"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                )}
+                <button
+                  onClick={() => setActiveMediaViewer(null)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-rose-600 transition-colors text-white cursor-pointer"
+                  title="Close Media Viewer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Media Display Area */}
+            <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+              {activeMediaViewer.type === "video" || activeMediaViewer.url?.endsWith(".mp4") ? (
+                <video src={activeMediaViewer.url} controls autoPlay className="max-w-full max-h-full rounded-2xl shadow-2xl" />
+              ) : (
+                <img
+                  src={activeMediaViewer.url}
+                  alt={activeMediaViewer.name || "Media"}
+                  className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl select-none"
+                />
+              )}
             </div>
           </div>
         )}
