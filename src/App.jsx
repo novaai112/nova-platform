@@ -148,6 +148,12 @@ export const ROUTE_VIEWS = {
 export function parseRouteFromUrl() {
   try {
     const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    const isPublic = rawPath === '/login' || rawPath === '/signup' || rawPath === '/forgot';
+    const hasAuth = !!localStorage.getItem('nova_user');
+
+    if (!hasAuth && !isPublic) {
+      return { view: 'login', path: '/login' };
+    }
 
     // 1. Dashboard Sub-routes & Detail Pages
     if (rawPath.startsWith('/dashboard/job/') && rawPath.endsWith('/insights')) {
