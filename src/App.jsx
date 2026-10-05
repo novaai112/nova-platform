@@ -473,9 +473,14 @@ export default function App() {
   const [activeDocumentViewer, setActiveDocumentViewer] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState(() => {
     try {
-      const saved = localStorage.getItem('nova_payment_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) { return []; }
+      const savedUserStr = localStorage.getItem('nova_user');
+      const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+      if (savedUser && savedUser.email) {
+        const saved = localStorage.getItem(`nova_payment_history_${savedUser.email.toLowerCase()}`);
+        return saved ? JSON.parse(saved) : [];
+      }
+    } catch (e) { }
+    return [];
   });
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -1458,11 +1463,19 @@ export default function App() {
         } catch (e) { }
       }
 
-      // Save ALL purchases (plan + wizard) to paymentHistory — never to job status
-      const historyEntry = { ...invoiceData, savedAt: new Date().toISOString() };
+      // Save ALL purchases (plan + wizard) to paymentHistory — scoped strictly to current user
+      const userEmail = (currentUser?.email || '').toLowerCase();
+      const historyEntry = { ...invoiceData, customerEmail: userEmail, status: 'PAID', savedAt: new Date().toISOString() };
       setPaymentHistory(prev => {
-        const updated = [historyEntry, ...prev].slice(0, 20);
-        try { localStorage.setItem('nova_payment_history', JSON.stringify(updated)); } catch (e) { }
+        const filtered = prev.filter(p => {
+          const emailMatch = !p.customerEmail || p.customerEmail.toLowerCase() === userEmail;
+          const st = (p.status || '').toUpperCase();
+          return emailMatch && (st === 'PAID' || st === 'SUCCESS' || st === 'COMPLETED');
+        });
+        const updated = [historyEntry, ...filtered].slice(0, 20);
+        if (userEmail) {
+          try { localStorage.setItem(`nova_payment_history_${userEmail}`, JSON.stringify(updated)); } catch (e) { }
+        }
         return updated;
       });
 
@@ -1904,47 +1917,66 @@ export default function App() {
       }
     }).catch(err => console.warn('Supabase profile sync warning:', err));
 
+    const userEmail = (user.email || '').toLowerCase();
+    const userPaymentKey = `nova_payment_history_${userEmail}`;
+    try {
+      const cached = localStorage.getItem(userPaymentKey);
+      setPaymentHistory(cached ? JSON.parse(cached) : []);
+    } catch (e) {
+      setPaymentHistory([]);
+    }
+
     if (user.email && supabase) {
-      supabase.from('nova_orders').select('*').eq('user_email', user.email).order('created_at', { ascending: false }).then(({ data: ordersData, error: ordersErr }) => {
+      supabase.from('nova_orders').select('*').eq('user_email', userEmail).order('created_at', { ascending: false }).then(({ data: ordersData, error: ordersErr }) => {
         if (!ordersErr && ordersData && ordersData.length > 0) {
-          const loadedHistory = ordersData.map(order => {
-            const rd = order.receipt_data || {};
-            const amt = Number(order.amount || rd.amountInINR || 0);
-            const baseAmt = order.base_amount || rd.baseAmount || (amt ? Math.round(amt / 1.18) : 0);
-            const gstAmt = amt - baseAmt;
-            const cgst = (order.cgst !== undefined && order.cgst !== null) ? order.cgst : Math.round(gstAmt / 2);
-            const sgst = (order.sgst !== undefined && order.sgst !== null) ? order.sgst : (gstAmt - cgst);
-            return {
-              invoiceId: order.invoice_no || order.order_id || rd.invoiceId,
-              receiptNo: order.receipt_no || rd.receiptNo || (order.invoice_no ? String(order.invoice_no).replace('INV-', 'RCP-') : 'RCP-2026-000000'),
-              paymentId: order.transaction_id || rd.paymentId || 'PAY-RAZORPAY-16940220',
-              date: order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : (rd.date || 'Today'),
-              productName: order.plan_name || rd.productName || 'Nova Subscription',
-              productType: order.is_wizard ? 'wizard_purchase' : (rd.productType || 'credit_subscription'),
-              priceFormatted: '₹' + amt.toLocaleString('en-IN'),
-              amountInINR: amt,
-              baseAmount: baseAmt,
-              cgst,
-              sgst,
-              customerName: order.user_name || fullName || 'Dinesh Kumar',
-              customerEmail: order.user_email || user.email,
-              customerPhone: order.user_phone || 'Not Provided',
-              company: order.user_company || 'Nova AI Technologies',
-              term: order.billing_cycle || rd.term || 'License',
-              workstations: rd.workstations || 1,
-              gateway: order.payment_gateway || 'Razorpay (Live Verified)',
-              method: order.payment_method || 'UPI / Cards / NetBanking',
-              status: order.payment_status || order.status || 'PAID',
-              licenseKey: order.license_key || rd.licenseKey || '',
-              expiryDate: order.expiry_date || rd.expiryDate || '',
-              wbexFilename: order.wbex_filename || rd.wbexFilename || '',
-              savedAt: order.created_at
-            };
-          });
+          const loadedHistory = ordersData
+            .filter(order => {
+              const st = (order.payment_status || order.status || '').toUpperCase();
+              return st === 'PAID' || st === 'SUCCESS' || st === 'COMPLETED';
+            })
+            .map(order => {
+              const rd = order.receipt_data || {};
+              const amt = Number(order.amount || rd.amountInINR || 0);
+              const baseAmt = order.base_amount || rd.baseAmount || (amt ? Math.round(amt / 1.18) : 0);
+              const gstAmt = amt - baseAmt;
+              const cgst = (order.cgst !== undefined && order.cgst !== null) ? order.cgst : Math.round(gstAmt / 2);
+              const sgst = (order.sgst !== undefined && order.sgst !== null) ? order.sgst : (gstAmt - cgst);
+              return {
+                invoiceId: order.invoice_no || order.order_id || rd.invoiceId,
+                receiptNo: order.receipt_no || rd.receiptNo || (order.invoice_no ? String(order.invoice_no).replace('INV-', 'RCP-') : 'RCP-2026-000000'),
+                paymentId: order.transaction_id || rd.paymentId || 'PAY-RAZORPAY-16940220',
+                date: order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : (rd.date || 'Today'),
+                productName: order.plan_name || rd.productName || 'Nova Subscription',
+                productType: order.is_wizard ? 'wizard_purchase' : (rd.productType || 'credit_subscription'),
+                priceFormatted: '₹' + amt.toLocaleString('en-IN'),
+                amountInINR: amt,
+                baseAmount: baseAmt,
+                cgst,
+                sgst,
+                customerName: order.user_name || fullName || 'User',
+                customerEmail: order.user_email || user.email,
+                customerPhone: order.user_phone || 'Not Provided',
+                company: order.user_company || 'Nova AI Technologies',
+                term: order.billing_cycle || rd.term || 'License',
+                workstations: rd.workstations || 1,
+                gateway: order.payment_gateway || 'Razorpay (Live Verified)',
+                method: order.payment_method || 'UPI / Cards / NetBanking',
+                status: 'PAID',
+                licenseKey: order.license_key || rd.licenseKey || '',
+                expiryDate: order.expiry_date || rd.expiryDate || '',
+                wbexFilename: order.wbex_filename || rd.wbexFilename || '',
+                savedAt: order.created_at
+              };
+            });
           setPaymentHistory(loadedHistory);
-          try { localStorage.setItem('nova_payment_history', JSON.stringify(loadedHistory)); } catch (e) { }
+          try { localStorage.setItem(userPaymentKey, JSON.stringify(loadedHistory)); } catch (e) { }
+        } else {
+          setPaymentHistory([]);
+          try { localStorage.setItem(userPaymentKey, JSON.stringify([])); } catch (e) { }
         }
       }).catch(err => console.warn('Supabase orders load warning:', err));
+    } else {
+      setPaymentHistory([]);
     }
   };
   const PLAN_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
@@ -2210,8 +2242,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('nova_user');
+    setPaymentHistory([]);
     setIsDropdownOpen(false);
-    setCurrentView('landing');
+    setCurrentView('login');
     showNotification("Logged out successfully.", "info");
   };
   const handlePasswordChange = async (e) => {
@@ -6461,71 +6494,82 @@ Always provide professional, precise, technically accurate, and helpful answers.
               </div>
             )}
 
-            {/* ── Payment History ── show only if user has purchased a plan */}
-            {paymentHistory.length > 0 && (
-              <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                      <Receipt className="w-4 h-4 text-indigo-500" /> Payment History
-                    </h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Your recent plan purchases</p>
+            {/* ── Payment History ── show only if current user has successfully paid */}
+            {(() => {
+              const userSuccessfulPayments = paymentHistory.filter(entry => {
+                const emailMatch = !entry.customerEmail || entry.customerEmail.toLowerCase() === currentUser?.email?.toLowerCase();
+                const st = (entry.status || '').toUpperCase();
+                const statusMatch = st === 'PAID' || st === 'SUCCESS' || st === 'COMPLETED';
+                return emailMatch && statusMatch;
+              });
+
+              if (userSuccessfulPayments.length === 0) return null;
+
+              return (
+                <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-indigo-500" /> Payment History
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Your verified plan purchases</p>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                      {userSuccessfulPayments.length} Record{userSuccessfulPayments.length > 1 ? 's' : ''}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-                    {paymentHistory.length} Record{paymentHistory.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {paymentHistory.slice(0, 5).map((entry, idx) => {
-                    const planLabel = entry.productName?.includes('Max') ? 'Nova Max'
-                      : entry.productName?.includes('Pro') ? 'Nova Pro'
-                        : entry.productName?.includes('Basic') ? 'Nova Basic'
-                          : entry.productName || 'Nova Plan';
-                    return (
-                      <div key={idx} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                            <CheckCircle2 className="w-5 h-5 text-indigo-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-slate-900">{planLabel}</div>
-                            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-                              {entry.date}&nbsp;·&nbsp;
-                              <span className="text-emerald-600 font-bold">{entry.priceFormatted}</span>
+                  <div className="divide-y divide-slate-100">
+                    {userSuccessfulPayments.slice(0, 5).map((entry, idx) => {
+                      const planLabel = entry.productName?.includes('Max') ? 'Nova Max'
+                        : entry.productName?.includes('Pro') ? 'Nova Pro'
+                          : entry.productName?.includes('Basic') ? 'Nova Basic'
+                            : entry.productName || 'Nova Plan';
+                      return (
+                        <div key={idx} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                             </div>
-                            <div className="text-[10px] font-mono text-slate-400">{entry.invoiceId}</div>
+                            <div>
+                              <div className="text-sm font-bold text-slate-900">{planLabel}</div>
+                              <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                {entry.date}&nbsp;·&nbsp;
+                                <span className="text-emerald-600 font-bold">{entry.priceFormatted}</span>
+                              </div>
+                              <div className="text-[10px] font-mono text-slate-400">{entry.invoiceId}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">PAID</span>
+                            <button
+                              type="button"
+                              onClick={() => openDocumentModal(entry, 'invoice')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
+                              title="View Authentic Tax Invoice"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-indigo-600" /> View Invoice
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openDocumentModal(entry, 'receipt')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
+                              title="View Payment Receipt"
+                            >
+                              <Receipt className="w-3.5 h-3.5 text-indigo-600" /> View Receipt
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">PAID</span>
-                          <button
-                            type="button"
-                            onClick={() => openDocumentModal(entry, 'invoice')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
-                            title="View Authentic Tax Invoice"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-indigo-600" /> View Invoice
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openDocumentModal(entry, 'receipt')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 hover:border-indigo-300 shadow-sm transition-all cursor-pointer"
-                            title="View Payment Receipt"
-                          >
-                            <Receipt className="w-3.5 h-3.5 text-indigo-600" /> View Receipt
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {paymentHistory.length > 5 && (
-                  <div className="px-5 py-3 border-t border-slate-100 text-center">
-                    <span className="text-xs text-slate-400">Showing 5 of {paymentHistory.length} payments</span>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            )}
+                  {userSuccessfulPayments.length > 5 && (
+                    <div className="px-5 py-3 border-t border-slate-100 text-center">
+                      <span className="text-xs text-slate-400">Showing 5 of {userSuccessfulPayments.length} payments</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )} {profileTab === 'security' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">

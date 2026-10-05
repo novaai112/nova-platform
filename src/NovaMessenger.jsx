@@ -152,6 +152,104 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearchQuery, setGifSearchQuery] = useState("");
 
+  // ── RESIZABLE PANELS STATE & DRAG CONTROLS ─────────────────────────────────
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem("nova_messenger_sidebar_width");
+      const num = parseInt(saved, 10);
+      return !isNaN(num) && num >= 220 && num <= 750 ? num : 360;
+    } catch (e) {
+      return 360;
+    }
+  });
+
+  const [detailsWidth, setDetailsWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem("nova_messenger_details_width");
+      const num = parseInt(saved, 10);
+      return !isNaN(num) && num >= 240 && num <= 700 ? num : 340;
+    } catch (e) {
+      return 340;
+    }
+  });
+
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
+  const [isDraggingDetails, setIsDraggingDetails] = useState(false);
+
+  // Resize handler for Left Conversation History Panel
+  useEffect(() => {
+    if (!isDraggingSidebar) return;
+
+    const onMouseMove = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const maxAvailable = Math.max(300, window.innerWidth - (showDetailsPanel ? detailsWidth + 300 : 340));
+      const clamped = Math.max(220, Math.min(clientX, Math.min(680, maxAvailable)));
+      setSidebarWidth(clamped);
+    };
+
+    const onMouseUp = (e) => {
+      setIsDraggingSidebar(false);
+      const clientX = (e && e.changedTouches) ? e.changedTouches[0].clientX : (e ? e.clientX : null);
+      if (clientX !== null) {
+        const maxAvailable = Math.max(300, window.innerWidth - (showDetailsPanel ? detailsWidth + 300 : 340));
+        const clamped = Math.max(220, Math.min(clientX, Math.min(680, maxAvailable)));
+        try {
+          localStorage.setItem("nova_messenger_sidebar_width", String(clamped));
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("touchmove", onMouseMove);
+    window.addEventListener("touchend", onMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onMouseMove);
+      window.removeEventListener("touchend", onMouseUp);
+    };
+  }, [isDraggingSidebar, showDetailsPanel, detailsWidth]);
+
+  // Resize handler for Right Details Panel
+  useEffect(() => {
+    if (!isDraggingDetails) return;
+
+    const onMouseMove = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const fromRight = window.innerWidth - clientX;
+      const maxAvailable = Math.max(280, window.innerWidth - (sidebarWidth + 320));
+      const clamped = Math.max(240, Math.min(fromRight, Math.min(650, maxAvailable)));
+      setDetailsWidth(clamped);
+    };
+
+    const onMouseUp = (e) => {
+      setIsDraggingDetails(false);
+      const clientX = (e && e.changedTouches) ? e.changedTouches[0].clientX : (e ? e.clientX : null);
+      if (clientX !== null) {
+        const fromRight = window.innerWidth - clientX;
+        const maxAvailable = Math.max(280, window.innerWidth - (sidebarWidth + 320));
+        const clamped = Math.max(240, Math.min(fromRight, Math.min(650, maxAvailable)));
+        try {
+          localStorage.setItem("nova_messenger_details_width", String(clamped));
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("touchmove", onMouseMove);
+    window.addEventListener("touchend", onMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onMouseMove);
+      window.removeEventListener("touchend", onMouseUp);
+    };
+  }, [isDraggingDetails, sidebarWidth]);
+
   // Messages & Reactions State
   const [messages, setMessages] = useState(() => {
     if (initialRecipient?.email) {
@@ -2443,7 +2541,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       <audio ref={remoteAudioRef} autoPlay />
 
       {/* Main Messenger Container - Full Screen Desktop Canvas */}
-      <div className={`${theme.cardBg} ${theme.bg} w-full h-full flex overflow-hidden font-sans relative transition-colors duration-150`}>
+      <div className={`${theme.cardBg} ${theme.bg} w-full h-full flex overflow-hidden font-sans relative transition-colors duration-150 ${isDraggingSidebar || isDraggingDetails ? "cursor-col-resize select-none" : ""}`}>
 
         {/* Toast Notification Banner */}
         {toastMessage && (
@@ -2703,9 +2801,16 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 2. LEFT SIDEBAR                                                   */}
+        {/* 2. LEFT SIDEBAR (CONVERSATION HISTORY PANEL)                      */}
         {/* ================================================================= */}
-        <div className={`${activeConv ? "hidden md:flex" : "flex"} w-full md:w-80 lg:w-96 border-r ${theme.sidebarBg} flex-col shrink-0 select-none`}>
+        <div
+          className={`${activeConv ? "hidden md:flex" : "flex"} w-full border-r ${theme.sidebarBg} flex-col shrink-0 select-none relative`}
+          style={{
+            width: typeof window !== "undefined" && window.innerWidth >= 768 ? `${sidebarWidth}px` : undefined,
+            minWidth: typeof window !== "undefined" && window.innerWidth >= 768 ? "220px" : undefined,
+            maxWidth: typeof window !== "undefined" && window.innerWidth >= 768 ? "680px" : undefined
+          }}
+        >
           {/* User Profile Bar & Light/Dark Mode Switch */}
           <div className={`p-4 border-b ${theme.modalBorder} flex items-center justify-between`}>
             <div
@@ -3204,6 +3309,29 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               )}
             </div>
           )}
+        </div>
+
+        {/* ================================================================= */}
+        {/* RESIZE HANDLE: CONVERSATION HISTORY PANEL <-> CHAT ROOM           */}
+        {/* ================================================================= */}
+        <div
+          onMouseDown={(e) => { e.preventDefault(); setIsDraggingSidebar(true); }}
+          onTouchStart={() => setIsDraggingSidebar(true)}
+          onDoubleClick={() => {
+            setSidebarWidth(360);
+            try { localStorage.setItem("nova_messenger_sidebar_width", "360"); } catch (e) {}
+          }}
+          className={`hidden md:flex items-center justify-center w-2.5 -mr-1 z-40 cursor-col-resize select-none relative group transition-all shrink-0 ${
+            isDraggingSidebar
+              ? "bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.7)]"
+              : "hover:bg-blue-500/25 bg-slate-300/30 dark:bg-slate-800/50"
+          }`}
+          title="Drag to resize Conversation History & Chat (Double click to reset width)"
+        >
+          {/* Subtle grip indicator pill */}
+          <div className="flex flex-col items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+            <span className={`w-1 h-8 rounded-full transition-colors ${isDraggingSidebar ? "bg-white" : "bg-slate-400 group-hover:bg-blue-500"}`} />
+          </div>
         </div>
 
         {/* ================================================================= */}
@@ -4134,10 +4262,39 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         )}
 
         {/* ================================================================= */}
-        {/* 4. DETAILS PANEL                                                  */}
+        {/* 4. DETAILS PANEL & RESIZE HANDLE                                  */}
         {/* ================================================================= */}
         {showDetailsPanel && activeConv && (
-          <div className={`w-80 border-l ${theme.sidebarBg} flex flex-col shrink-0 select-none animate-in slide-in-from-right duration-200 z-20`}>
+          <>
+            {/* RESIZE HANDLE: CHAT ROOM <-> DETAILS PANEL */}
+            <div
+              onMouseDown={(e) => { e.preventDefault(); setIsDraggingDetails(true); }}
+              onTouchStart={() => setIsDraggingDetails(true)}
+              onDoubleClick={() => {
+                setDetailsWidth(340);
+                try { localStorage.setItem("nova_messenger_details_width", "340"); } catch (e) {}
+              }}
+              className={`flex items-center justify-center w-2.5 -ml-1 z-40 cursor-col-resize select-none relative group transition-all shrink-0 ${
+                isDraggingDetails
+                  ? "bg-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.7)]"
+                  : "hover:bg-indigo-500/25 bg-slate-300/30 dark:bg-slate-800/50"
+              }`}
+              title="Drag to resize Details Panel & Chat (Double click to reset width)"
+            >
+              {/* Subtle grip indicator pill */}
+              <div className="flex flex-col items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                <span className={`w-1 h-8 rounded-full transition-colors ${isDraggingDetails ? "bg-white" : "bg-slate-400 group-hover:bg-indigo-500"}`} />
+              </div>
+            </div>
+
+            <div
+              className={`border-l ${theme.sidebarBg} flex flex-col shrink-0 select-none animate-in slide-in-from-right duration-200 z-20 relative`}
+              style={{
+                width: typeof window !== "undefined" && window.innerWidth >= 640 ? `${detailsWidth}px` : "100%",
+                minWidth: typeof window !== "undefined" && window.innerWidth >= 640 ? "240px" : undefined,
+                maxWidth: typeof window !== "undefined" && window.innerWidth >= 640 ? "650px" : undefined
+              }}
+            >
             {/* Top Header */}
             <div className={`p-3.5 border-b ${theme.modalBorder} flex items-center justify-between`}>
               <div className="flex items-center gap-2">
@@ -4332,7 +4489,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               )}
             </div>
           </div>
-        )}
+        </>
+      )}
 
         {/* ================================================================= */}
         {/* 5. REAL USER PROFILE POPOVER MODAL (PROFILE TAP TO SEE)           */}
