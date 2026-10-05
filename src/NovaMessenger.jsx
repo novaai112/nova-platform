@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "./supabaseClient";
+import { chatSounds } from "./chatSounds";
+import VoiceNotePlayer from "./VoiceNotePlayer";
 import {
   Search, Send, Paperclip, Image as ImageIcon, Smile, MoreVertical,
   Phone, Video, Check, CheckCheck, User, ArrowLeft, X, Sparkles,
@@ -9,8 +11,29 @@ import {
   Hash, Radio, Settings, UserPlus, LogOut, MessageSquarePlus, UserX,
   ChevronRight, Play, Square, Info, Shield, ShieldAlert, Sparkle,
   PhoneIncoming, PhoneMissed, Clock, Edit2, Sun, Moon, Lock, Unlock,
-  CheckCheck as DoubleCheck, Zap, Award, ExternalLink, UserCheck
+  CheckCheck as DoubleCheck, Zap, Award, ExternalLink, UserCheck,
+  Maximize2, Minimize2, ScreenShare, ScreenShareOff, Share2, Star,
+  Copy, Code, Palette, Volume1, Bell, BellOff, PhoneOutgoing,
+  CornerUpLeft, CornerUpRight, ChevronUp, Pause
 } from "lucide-react";
+
+const WALLPAPER_PRESETS = [
+  { id: "glass", name: "Cyber Glass", bgClass: "bg-slate-900/60 backdrop-blur-md", preview: "from-slate-900 to-indigo-950" },
+  { id: "whatsapp", name: "WhatsApp Doodle", bgClass: "bg-[#0b141a]", preview: "from-emerald-950 to-slate-900" },
+  { id: "telegram", name: "Telegram Starfield", bgClass: "bg-[#0f1926]", preview: "from-blue-950 to-slate-900" },
+  { id: "instagram", name: "Instagram Sunset", bgClass: "bg-gradient-to-br from-slate-950 via-purple-950/50 to-pink-950/40", preview: "from-purple-900 via-pink-900 to-amber-900" },
+  { id: "stealth", name: "AMOLED Stealth", bgClass: "bg-black", preview: "from-black to-slate-950" },
+  { id: "emerald", name: "Emerald ASME", bgClass: "bg-gradient-to-b from-[#021814] to-[#042822]", preview: "from-emerald-950 to-teal-950" },
+];
+
+const WALLPAPER_STYLES = {
+  glass: { id: "glass", name: "Cyber Glass", bgClass: "bg-slate-900/60 backdrop-blur-md" },
+  whatsapp: { id: "whatsapp", name: "WhatsApp Classic", bgClass: "bg-[#0b141a]" },
+  telegram: { id: "telegram", name: "Telegram Dark", bgClass: "bg-[#0f1926]" },
+  instagram: { id: "instagram", name: "Instagram Glow", bgClass: "bg-gradient-to-br from-slate-950 via-purple-950/40 to-pink-950/30" },
+  stealth: { id: "stealth", name: "AMOLED Stealth", bgClass: "bg-black" },
+  emerald: { id: "emerald", name: "Emerald ASME", bgClass: "bg-gradient-to-b from-[#021814] to-[#042822]" },
+};
 
 const EMOJI_REACTIONS = ["❤️", "👍", "🔥", "😂", "🚀", "💡", "🎉", "👏"];
 
@@ -126,8 +149,54 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   const [isVideoCameraOn, setIsVideoCameraOn] = useState(true);
   const [isCallRecording, setIsCallRecording] = useState(false);
   const [showCallKeypad, setShowCallKeypad] = useState(false);
-  const [callKeypadTyped, setCallKeypadTyped] = useState("");
   const [videoUpgradeRequested, setVideoUpgradeRequested] = useState(false);
+  const [isCallMinimized, setIsCallMinimized] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => chatSounds.isSoundEnabled());
+
+  // Call History State
+  const [callHistory, setCallHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`nova_call_history_${myUserId}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+  const [callsFilter, setCallsFilter] = useState("all"); // "all" | "missed"
+
+  // Starred / Saved Messages State
+  const [starredMessageIds, setStarredMessageIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`nova_starred_msgs_${myUserId}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (e) { return new Set(); }
+  });
+  const [showStarredModal, setShowStarredModal] = useState(false);
+
+  // Message Actions: Forwarding & Editing
+  const [forwardingMessage, setForwardingMessage] = useState(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingMessageText, setEditingMessageText] = useState("");
+
+  // Wallpapers & Themes
+  const [chatWallpaper, setChatWallpaper] = useState(() => {
+    try {
+      return localStorage.getItem("nova_chat_wallpaper") || "glass";
+    } catch (e) { return "glass"; }
+  });
+  const [showWallpaperModal, setShowWallpaperModal] = useState(false);
+
+  // Rich Code Snippet & ASME Material Modals
+  const [showCodeSnippetModal, setShowCodeSnippetModal] = useState(false);
+  const [snippetCode, setSnippetCode] = useState("");
+  const [snippetLang, setSnippetLang] = useState("python");
+  const [showMaterialShareModal, setShowMaterialShareModal] = useState(false);
+
+  // Toast feedback notifications
+  const [toastMessage, setToastMessage] = useState(null);
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   // Group Create State
   const [newGroupName, setNewGroupName] = useState("");
@@ -223,38 +292,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     outgoingBubble: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm",
   };
 
-  // Web Audio Ringtone Chime for incoming & outgoing calls
+  // Web Audio Ringtone Chimes & Sound Effects for Calls & Chat
   const startRingTone = (isIncoming = false) => {
-    try {
-      stopRingTone();
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(isIncoming ? 523.25 : 440, ctx.currentTime);
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-
-      const interval = setInterval(() => {
-        if (!gain) return;
-        gain.gain.setValueAtTime(gain.gain.value > 0.01 ? 0.0001 : 0.08, ctx.currentTime);
-      }, isIncoming ? 1000 : 1800);
-
-      ringAudioRef.current = { ctx, osc, interval };
-    } catch (e) {}
+    if (isIncoming) {
+      chatSounds.startIncomingRing();
+    } else {
+      chatSounds.startOutgoingRing();
+    }
   };
 
   const stopRingTone = () => {
-    if (ringAudioRef.current) {
-      try {
-        clearInterval(ringAudioRef.current.interval);
-        ringAudioRef.current.osc?.stop();
-        ringAudioRef.current.ctx?.close();
-      } catch (e) {}
-      ringAudioRef.current = null;
-    }
+    chatSounds.stopRinging();
+  };
+
+  const toggleSoundEffects = () => {
+    const next = chatSounds.toggleSound();
+    setSoundEnabled(next);
+    showToast(next ? "🔊 Sound effects enabled" : "🔇 Sound effects muted");
   };
 
   // Helper to open real user profile modal with live database stats and deep URL
@@ -428,7 +482,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
   // =========================================================================
   useEffect(() => {
     if (!myEmail) return;
-    const channelName = `presence-chat-global-${myEmail.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    const channelName = "presence-chat-global-v1";
     const ch = supabase.channel(channelName, {
       config: { presence: { key: myEmail.toLowerCase() } },
     });
@@ -1079,9 +1133,17 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const acceptIncomingCall = async () => {
     stopRingTone();
+    chatSounds.playCallConnected();
     if (!incomingCallData) return;
     const type = incomingCallData.callType || "audio";
-    setActiveCall({ type, status: "connected", duration: 0 });
+    setActiveCall({
+      type,
+      status: "connected",
+      duration: 0,
+      caller: incomingCallData.callerName || "Engineer",
+      callerAvatar: userMap[incomingCallData.from]?.avatar_url || null,
+      from: incomingCallData.from
+    });
 
     try {
       const pc = await setupWebRTC(type);
@@ -1104,11 +1166,22 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
 
   const rejectIncomingCall = () => {
     stopRingTone();
+    chatSounds.playCallEnded();
     if (incomingCallData) {
       sendCallSignal(incomingCallData.from, {
         type: "reject-call",
         from: myUserId,
         to: incomingCallData.from
+      });
+      recordCallHistory({
+        id: `call_${Date.now()}`,
+        type: incomingCallData.callType || "audio",
+        direction: "missed",
+        callerName: incomingCallData.callerName || "Engineer",
+        callerAvatar: userMap[incomingCallData.from]?.avatar_url || null,
+        callerId: incomingCallData.from,
+        timestamp: new Date().toISOString(),
+        duration: 0
       });
     }
     endCallCleanup();
@@ -1122,9 +1195,21 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     }, 1000);
   };
 
+  const recordCallHistory = (entry) => {
+    setCallHistory((prev) => {
+      const updated = [entry, ...prev.slice(0, 49)];
+      try {
+        localStorage.setItem(`nova_call_history_${myUserId}`, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
   const endCall = () => {
     stopRingTone();
+    chatSounds.playCallEnded();
     if (isCallRecording) stopCallRecording();
+    if (isScreenSharing) stopScreenShare();
     if (callKeypadTyped && activeConv?.conv_id) {
       handleSendMessage(`📞 Call Keypad: ${callKeypadTyped}`);
     }
@@ -1141,6 +1226,17 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     if (activeConv?.conv_id) {
       supabase.from("calls").update({ status: "ended", ended_at: new Date().toISOString() }).eq("conversation_id", activeConv.conv_id);
     }
+
+    recordCallHistory({
+      id: `call_${Date.now()}`,
+      type: activeCall?.type || "audio",
+      direction: activeCall?.status === "incoming" ? "incoming" : "outgoing",
+      callerName: activeCall?.caller || headerName || "Engineer",
+      callerAvatar: activeCall?.callerAvatar || headerAvatar || null,
+      callerId: targetUserId,
+      timestamp: new Date().toISOString(),
+      duration: callDuration
+    });
 
     if (callDuration > 0) {
       handleSendMessage(`📞 Call ended • Duration: ${formatDuration(callDuration)}`);
@@ -1166,6 +1262,8 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     setShowCallKeypad(false);
     setCallKeypadTyped("");
     setVideoUpgradeRequested(false);
+    setIsCallMinimized(false);
+    setIsScreenSharing(false);
   };
 
   const toggleCallMute = () => {
@@ -1186,6 +1284,43 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
     } else {
       setIsVideoCameraOn((p) => !p);
     }
+  };
+
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      stopScreenShare();
+    } else {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        const sender = peerConnectionRef.current?.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) {
+          sender.replaceTrack(screenTrack);
+        }
+        if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
+        setIsScreenSharing(true);
+        showToast("🖥️ Screen sharing active");
+
+        screenTrack.onended = () => {
+          stopScreenShare();
+        };
+      } catch (err) {
+        console.warn("Screen share error:", err);
+      }
+    }
+  };
+
+  const stopScreenShare = () => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      const sender = peerConnectionRef.current?.getSenders().find((s) => s.track?.kind === "video");
+      if (sender && videoTrack) {
+        sender.replaceTrack(videoTrack);
+      }
+      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+    }
+    setIsScreenSharing(false);
+    showToast("Screen sharing stopped");
   };
 
   const startCallRecording = () => {
@@ -1216,6 +1351,100 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       callRecRef.current.stop();
       setIsCallRecording(false);
     }
+  };
+
+  // Message Actions Helpers (Star, Copy, Forward, Edit)
+  const handleToggleStar = (msgId) => {
+    setStarredMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) {
+        next.delete(msgId);
+        showToast("Message removed from Starred");
+      } else {
+        next.add(msgId);
+        showToast("⭐ Message saved to Starred");
+      }
+      try {
+        localStorage.setItem(`nova_starred_msgs_${myUserId}`, JSON.stringify(Array.from(next)));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleCopyText = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("📋 Copied to clipboard");
+    }).catch(() => {});
+  };
+
+  const handleStartEdit = (msg) => {
+    setEditingMessageId(msg.id);
+    setEditingMessageText(msg.content || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editingMessageText.trim()) return;
+    const newContent = editingMessageText.trim();
+    const targetId = editingMessageId;
+    setEditingMessageId(null);
+    setEditingMessageText("");
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === targetId ? { ...m, content: newContent, is_edited: true } : m
+      )
+    );
+
+    if (activeConv?.conv_id) {
+      await supabase
+        .from("messages")
+        .update({ content: newContent, is_edited: true, updated_at: new Date().toISOString() })
+        .eq("id", targetId);
+    }
+    showToast("Message updated");
+  };
+
+  const handleForwardMessage = async (targetConvOrUser) => {
+    if (!forwardingMessage || !targetConvOrUser) return;
+    const msg = forwardingMessage;
+    setForwardingMessage(null);
+
+    const targetConvId = targetConvOrUser.conv_id || targetConvOrUser.id;
+    if (activeConv && (activeConv.id === targetConvOrUser.id || activeConv.conv_id === targetConvId)) {
+      await handleSendMessage(msg.content, msg.media_type, msg.media_url, {
+        ...(msg.media_metadata || {}),
+        is_forwarded: true
+      });
+      showToast("Forwarded message successfully");
+      return;
+    }
+
+    selectConversation(targetConvOrUser);
+    setTimeout(async () => {
+      await handleSendMessage(msg.content, msg.media_type, msg.media_url, {
+        ...(msg.media_metadata || {}),
+        is_forwarded: true
+      });
+      showToast("Forwarded message successfully");
+    }, 150);
+  };
+
+  const handleSendCodeSnippet = () => {
+    if (!snippetCode.trim()) return;
+    const formatted = `\`\`\`${snippetLang}\n${snippetCode.trim()}\n\`\`\``;
+    handleSendMessage(formatted, "code", null, { language: snippetLang });
+    setSnippetCode("");
+    setShowCodeSnippetModal(false);
+    showToast("Code snippet shared");
+  };
+
+  const handleSendMaterialShare = (mat) => {
+    if (!mat) return;
+    const content = `🧪 ASME Material: ${mat.grade} (${mat.uns})\nCategory: ${mat.category} • Spec: Tensile ${mat.tensile_su_mpa} MPa, Yield ${mat.yield_sy_mpa} MPa`;
+    handleSendMessage(content, "material", null, { material: mat });
+    setShowMaterialShareModal(false);
+    showToast(`Shared ${mat.grade} to chat`);
   };
 
   // =========================================================================
@@ -1694,11 +1923,44 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
       {/* Main Messenger Container */}
       <div className={`${theme.cardBg} border ${theme.modalBorder} ${theme.bg} rounded-3xl shadow-2xl w-full max-w-6xl h-[88vh] flex overflow-hidden font-sans relative transition-colors duration-150`}>
 
+        {/* Toast Notification Banner */}
+        {toastMessage && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[350] bg-slate-900/95 text-white px-4 py-2 rounded-full shadow-2xl border border-blue-500/40 text-xs font-bold flex items-center gap-2 animate-in fade-in zoom-in-95 pointer-events-none">
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
         {/* ================================================================= */}
-        {/* 1. CALL SCREEN OVERLAY                                            */}
+        {/* 1. CALL SCREEN OVERLAY (FULL SCREEN OR MINIMIZED FLOATING PIP)    */}
         {/* ================================================================= */}
-        {activeCall && (
+        {activeCall && !isCallMinimized && (
           <div className="absolute inset-0 z-[100] bg-slate-950/98 flex flex-col items-center justify-between p-6 text-white animate-in zoom-in-95">
+            {/* Call Screen Top Bar */}
+            <div className="w-full flex items-center justify-between z-20">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>End-to-End Encrypted Call</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleSoundEffects}
+                  className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
+                  title={soundEnabled ? "Mute Call Sounds" : "Enable Call Sounds"}
+                >
+                  {soundEnabled ? <Volume1 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
+                </button>
+                <button
+                  onClick={() => setIsCallMinimized(true)}
+                  className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all flex items-center gap-1.5 text-xs font-bold"
+                  title="Minimize Call to Floating Window"
+                >
+                  <Minimize2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Minimize</span>
+                </button>
+              </div>
+            </div>
+
             {showCallKeypad && (
               <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center">
                 <button
@@ -1736,14 +1998,19 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             {activeCall.type === "video" && (
               <div className="absolute inset-0 bg-slate-900 overflow-hidden flex items-center justify-center">
                 <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                <div className="absolute bottom-28 right-6 w-32 h-44 bg-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-10">
+                <div className="absolute bottom-28 right-6 w-36 h-48 bg-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl z-10">
                   <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  {isScreenSharing && (
+                    <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                      <ScreenShare className="w-2.5 h-2.5" /> Screen
+                    </span>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Calling Status & Target HD Profile */}
-            <div className="relative z-10 flex flex-col items-center space-y-4 mt-8">
+            <div className="relative z-10 flex flex-col items-center space-y-4 mt-4">
               <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-blue-500 shadow-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-4xl font-extrabold">
                 {activeCall.status === "incoming" && activeCall.callerAvatar ? (
                   <img src={activeCall.callerAvatar} alt="" className="w-full h-full object-cover" />
@@ -1810,13 +2077,23 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </button>
 
                   {activeCall.type === "video" ? (
-                    <button
-                      onClick={toggleCallVideoCamera}
-                      className={`p-3.5 rounded-full transition-all ${!isVideoCameraOn ? "bg-amber-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
-                      title={isVideoCameraOn ? "Camera Off" : "Camera On"}
-                    >
-                      {!isVideoCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
-                    </button>
+                    <>
+                      <button
+                        onClick={toggleCallVideoCamera}
+                        className={`p-3.5 rounded-full transition-all ${!isVideoCameraOn ? "bg-amber-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                        title={isVideoCameraOn ? "Camera Off" : "Camera On"}
+                      >
+                        {!isVideoCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                      </button>
+
+                      <button
+                        onClick={toggleScreenShare}
+                        className={`p-3.5 rounded-full transition-all ${isScreenSharing ? "bg-emerald-600 text-white shadow-lg animate-pulse" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                        title={isScreenSharing ? "Stop Screen Share" : "Share Screen"}
+                      >
+                        {isScreenSharing ? <ScreenShareOff className="w-5 h-5" /> : <ScreenShare className="w-5 h-5" />}
+                      </button>
+                    </>
                   ) : (
                     <button
                       onClick={() => setShowCallKeypad(true)}
@@ -1844,6 +2121,61 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* FLOATING PICTURE-IN-PICTURE CALL WIDGET */}
+        {activeCall && isCallMinimized && (
+          <div className="fixed bottom-5 right-5 z-[300] bg-slate-950/95 backdrop-blur-xl border border-blue-500/60 rounded-2xl shadow-2xl p-3 flex items-center gap-3 text-white animate-in slide-in-from-bottom duration-200">
+            <div className="relative w-11 h-11 rounded-full overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 border-2 border-emerald-500 flex items-center justify-center shrink-0 font-bold">
+              {headerAvatar ? (
+                <img src={headerAvatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (activeCall.caller || headerName || "C")[0].toUpperCase()
+              )}
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" />
+            </div>
+            <div className="min-w-0 pr-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-extrabold text-xs truncate max-w-[120px]">{activeCall.caller || headerName}</span>
+              </div>
+              <p className="text-[10px] text-emerald-400 font-mono font-bold">
+                {activeCall.status === "connected" ? formatDuration(callDuration) : "Connecting..."} • {activeCall.type.toUpperCase()}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 border-l border-slate-700 pl-2">
+              <button
+                onClick={toggleCallMute}
+                className={`p-2 rounded-xl transition-colors ${isMicMuted ? "bg-rose-600 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                title={isMicMuted ? "Unmute" : "Mute"}
+              >
+                {isMicMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+              </button>
+              {activeCall.type === "video" && (
+                <button
+                  onClick={toggleCallVideoCamera}
+                  className={`p-2 rounded-xl transition-colors ${!isVideoCameraOn ? "bg-amber-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                  title={isVideoCameraOn ? "Camera Off" : "Camera On"}
+                >
+                  {!isVideoCameraOn ? <VideoOff className="w-3.5 h-3.5" /> : <Video className="w-3.5 h-3.5" />}
+                </button>
+              )}
+              <button
+                onClick={() => setIsCallMinimized(false)}
+                className="p-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                title="Maximize Call Window"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={endCall}
+                className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition-colors"
+                title="End Call"
+              >
+                <PhoneOff className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         )}
@@ -1876,6 +2208,38 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* Sound Notifications Toggle */}
+              <button
+                onClick={() => {
+                  const next = !soundEnabled;
+                  setSoundEnabled(next);
+                  chatSounds.setSoundEnabled(next);
+                  showToast(next ? "🔊 Chat sounds active" : "🔇 Chat sounds muted");
+                }}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all`}
+                title={soundEnabled ? "Mute Chat Sounds" : "Enable Chat Sounds"}
+              >
+                {soundEnabled ? <Volume1 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-rose-500" />}
+              </button>
+
+              {/* Wallpaper & Theme Picker */}
+              <button
+                onClick={() => setShowWallpaperModal(true)}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-purple-500 hover:text-purple-600`}
+                title="Chat Theme & Wallpaper"
+              >
+                <Palette className="w-4 h-4" />
+              </button>
+
+              {/* Starred Messages */}
+              <button
+                onClick={() => setShowStarredModal(true)}
+                className={`p-2 rounded-xl ${theme.iconBtn} transition-all text-amber-500 hover:text-amber-600`}
+                title="Starred & Bookmarked Messages"
+              >
+                <Star className="w-4 h-4" />
+              </button>
+
               {/* Dark / Light Mode Toggle */}
               <button
                 onClick={toggleTheme}
@@ -1938,18 +2302,19 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
             </div>
           </div>
 
-          {/* Tabs: All / Direct / Groups / Requests */}
-          <div className={`flex items-center justify-around px-3 pb-2 border-b ${theme.modalBorder} text-xs font-bold`}>
+          {/* Tabs: All / Direct / Groups / Calls / Requests */}
+          <div className={`flex items-center justify-around px-2 pb-2 border-b ${theme.modalBorder} text-[11px] font-bold`}>
             {[
-              { id: "all", label: "All Chats" },
+              { id: "all", label: "All" },
               { id: "direct", label: "Direct" },
               { id: "groups", label: "Groups" },
+              { id: "calls", label: "Calls", badge: callHistory.filter((c) => c.direction === "missed").length },
               { id: "requests", label: "Requests", badge: pendingRequestsCount }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                className={`relative py-1.5 px-2.5 rounded-xl transition-all cursor-pointer ${
                   activeTab === tab.id
                     ? "bg-blue-600 text-white shadow-xs"
                     : `${theme.secondaryText} hover:text-slate-900 dark:hover:text-white`
@@ -1957,7 +2322,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               >
                 {tab.label}
                 {tab.badge > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px]">
+                  <span className="ml-1 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[9px]">
                     {tab.badge}
                   </span>
                 )}
@@ -2119,6 +2484,120 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                 )}
               </div>
             </div>
+          ) : activeTab === "calls" ? (
+            /* Dedicated Calls Tab with All / Missed filters and 1-Click Callback */
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className={`p-2.5 border-b ${theme.modalBorder} flex items-center justify-between gap-1 bg-slate-50/50 dark:bg-slate-900/50`}>
+                <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-bold">
+                  <button
+                    onClick={() => setCallsFilter("all")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${callsFilter === "all" ? "bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-black" : "text-slate-600 dark:text-slate-400"}`}
+                  >
+                    All ({callHistory.length})
+                  </button>
+                  <button
+                    onClick={() => setCallsFilter("missed")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${callsFilter === "missed" ? "bg-white dark:bg-slate-700 shadow-xs text-rose-600 dark:text-rose-400 font-black" : "text-slate-600 dark:text-slate-400"}`}
+                  >
+                    Missed ({callHistory.filter((c) => c.direction === "missed").length})
+                  </button>
+                </div>
+                {callHistory.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setCallHistory([]);
+                      localStorage.removeItem(`nova_call_history_${myUserId}`);
+                      showToast("Call history cleared");
+                    }}
+                    className="text-[10px] text-slate-400 hover:text-rose-500 font-bold px-2 py-1 rounded hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  >
+                    Clear History
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
+                {(callsFilter === "missed" ? callHistory.filter((c) => c.direction === "missed") : callHistory).length === 0 ? (
+                  <div className={`p-8 text-center text-xs ${theme.secondaryText} space-y-2`}>
+                    <Phone className="w-10 h-10 mx-auto opacity-30 text-blue-500" />
+                    <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">No Calls Logged</p>
+                    <p className="text-[11px] max-w-xs mx-auto">
+                      All your incoming, outgoing, and missed audio/video calls will appear here with 1-click redial.
+                    </p>
+                  </div>
+                ) : (
+                  (callsFilter === "missed" ? callHistory.filter((c) => c.direction === "missed") : callHistory).map((c) => {
+                    const partner = c.callerId ? (userMap[c.callerId] || { id: c.callerId, full_name: c.callerName, avatar_url: c.callerAvatar }) : null;
+                    const isMissed = c.direction === "missed";
+                    const isIncoming = c.direction === "incoming";
+
+                    return (
+                      <div
+                        key={c.id}
+                        className="w-full p-3 flex items-center justify-between gap-2.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div
+                            onClick={() => partner && openUserProfile(partner)}
+                            className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 cursor-pointer hover:scale-105 transition-transform"
+                          >
+                            {c.callerAvatar ? (
+                              <img src={c.callerAvatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              (c.callerName || "E")[0].toUpperCase()
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-xs truncate">{c.callerName || "Engineer"}</h4>
+                            <div className="flex items-center gap-1.5 text-[10px] mt-0.5">
+                              {isMissed ? (
+                                <span className="flex items-center gap-1 text-rose-500 font-bold">
+                                  <PhoneMissed className="w-3 h-3" /> Missed
+                                </span>
+                              ) : isIncoming ? (
+                                <span className="flex items-center gap-1 text-emerald-500 font-bold">
+                                  <PhoneIncoming className="w-3 h-3" /> Incoming {c.duration > 0 ? `(${formatDuration(c.duration)})` : ""}
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-blue-500 font-bold">
+                                  <PhoneOutgoing className="w-3 h-3" /> Outgoing {c.duration > 0 ? `(${formatDuration(c.duration)})` : ""}
+                                </span>
+                              )}
+                              <span className="text-slate-400">•</span>
+                              <span className="text-slate-400">{c.timestamp ? new Date(c.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Quick 1-Click Callback Action Buttons */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              if (partner) initiateCallToUser(partner, "audio");
+                              else alert("Contact details unavailable for redial");
+                            }}
+                            className="p-2 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 text-emerald-600 hover:text-white transition-all cursor-pointer shadow-xs"
+                            title={`Call back ${c.callerName} (Audio)`}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (partner) initiateCallToUser(partner, "video");
+                              else alert("Contact details unavailable for redial");
+                            }}
+                            className="p-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white transition-all cursor-pointer shadow-xs"
+                            title={`Video call back ${c.callerName}`}
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           ) : (
             /* Standard Conversations List for All Chats / Direct / Groups */
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/40">
@@ -2196,7 +2675,10 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
         {/* 3. RIGHT MAIN CHAT ROOM                                          */}
         {/* ================================================================= */}
         {activeConv ? (
-          <div className={`flex-1 flex flex-col ${theme.chatBg} relative min-w-0`} style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
+          <div
+            className={`flex-1 flex flex-col ${WALLPAPER_STYLES[chatWallpaper]?.bgClass || theme.chatBg} relative min-w-0 transition-colors duration-300`}
+            style={activeConv.wallpaper_url ? { backgroundImage: `url(${activeConv.wallpaper_url})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+          >
             {activeConv.wallpaper_url && <div className={`absolute inset-0 ${isDarkMode ? "bg-slate-950/80" : "bg-white/80"} backdrop-blur-sm pointer-events-none`} />}
 
             {/* Chat Room Header with Clickable Real Profile & Real Active Status */}
@@ -2495,12 +2977,82 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               </div>
                             )}
 
-                            {/* Voice Note Audio Player */}
-                            {m.media_type === "voice" && m.media_url && (
-                              <div className={`flex items-center gap-2 my-1 p-2 rounded-xl ${isMine ? "bg-blue-800 text-white border border-blue-400/40 shadow-xs" : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-xs"}`}>
-                                <audio src={m.media_url} controls className="w-48 sm:w-56 h-8" />
+                            {/* Forwarded Tag */}
+                            {meta?.is_forwarded && (
+                              <div className="flex items-center gap-1 text-[10px] opacity-75 italic mb-1.5 font-medium">
+                                <CornerUpRight className="w-3 h-3 text-sky-400 shrink-0" />
+                                <span>Forwarded</span>
                               </div>
                             )}
+
+                            {/* Voice Note Waveform Player (WhatsApp / Telegram style) */}
+                            {m.media_type === "voice" && m.media_url && (
+                              <div className="my-1">
+                                <VoiceNotePlayer url={m.media_url} isMine={isMine} duration={meta.duration || voiceDuration} />
+                              </div>
+                            )}
+
+                            {/* Interactive Code Snippet Card */}
+                            {(m.media_type === "code" || (m.content && m.content.startsWith("```") && m.content.endsWith("```"))) && (
+                              <div className="my-1.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-md max-w-lg">
+                                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
+                                  <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400">
+                                    <Code className="w-3.5 h-3.5" />
+                                    <span>{meta.language || (m.content.split("\n")[0].replace("```", "") || "code")}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const rawCode = m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
+                                      handleCopyText(rawCode);
+                                    }}
+                                    className="flex items-center gap-1 hover:text-white px-2 py-0.5 rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Copy Code"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                    <span>Copy</span>
+                                  </button>
+                                </div>
+                                <pre className="p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60 leading-relaxed whitespace-pre">
+                                  {m.content.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim()}
+                                </pre>
+                              </div>
+                            )}
+
+                            {/* Interactive ASME Material Card */}
+                            {(m.media_type === "material" || meta.material) && (() => {
+                              const mat = meta.material || {};
+                              return (
+                                <div className="my-1.5 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/70 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-lg text-white max-w-sm">
+                                  <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30 mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">ASME</span>
+                                      <div>
+                                        <h4 className="font-extrabold text-xs text-emerald-300">{mat.grade || "ASME Alloy"}</h4>
+                                        <p className="text-[10px] text-slate-400">{mat.uns || mat.spec_num || "UNS Spec"}</p>
+                                      </div>
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
+                                      {mat.category || "Section II-D"}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                    <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                      <span className="text-slate-400 block text-[9px]">Tensile Strength</span>
+                                      <span className="font-mono font-bold text-emerald-400">{mat.tensile_su_mpa || "—"} MPa</span>
+                                    </div>
+                                    <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
+                                      <span className="text-slate-400 block text-[9px]">Yield Strength</span>
+                                      <span className="font-mono font-bold text-sky-400">{mat.yield_sy_mpa || "—"} MPa</span>
+                                    </div>
+                                  </div>
+                                  {mat.nominal_comp && (
+                                    <p className="mt-2 text-[9px] text-slate-300 truncate">
+                                      <strong className="text-slate-400">Composition:</strong> {mat.nominal_comp}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             {/* Generic File Attachment with Exact File Name & Size */}
                             {m.media_type === "file" && m.media_url && (
@@ -2525,15 +3077,45 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               <img src={m.media_url} alt="GIF" className="rounded-xl max-w-[200px] my-1" />
                             )}
 
-                            {/* Text Content (hiding generic 'Shared image' or file name repeat) */}
-                            {m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "📎 Attachment" && m.content !== realFileName && (
-                              <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                            {/* Inline Message Edit or Normal Text Content */}
+                            {editingMessageId === m.id ? (
+                              <div className="my-1 space-y-1.5 min-w-[220px]">
+                                <textarea
+                                  value={editingMessageText}
+                                  onChange={(e) => setEditingMessageText(e.target.value)}
+                                  className="w-full p-2 rounded-xl text-xs bg-slate-900/90 text-white border border-blue-500 focus:outline-none resize-none"
+                                  rows={2}
+                                  autoFocus
+                                />
+                                <div className="flex items-center justify-end gap-1.5 text-[10px]">
+                                  <button
+                                    onClick={() => setEditingMessageId(null)}
+                                    className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={handleSaveEdit}
+                                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors cursor-pointer"
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              m.content && m.content !== "🎤 Voice Note" && m.content !== "Shared image" && m.content !== "📷 Photo" && m.content !== "📎 Attachment" && m.content !== realFileName && !m.content.startsWith("```") && (
+                                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                              )
                             )}
 
-                            {/* Timestamp & Delivery status */}
+                            {/* Timestamp, Edited Tag, Star Icon & Delivery status */}
                             <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? "text-blue-100" : theme.secondaryText}`}>
+                              {starredMessageIds.has(m.id) && (
+                                <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0 inline mr-0.5" />
+                              )}
+                              {m.is_edited && <span className="opacity-70 italic mr-0.5">(edited)</span>}
                               <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              {isMine && <CheckCheck className="w-3 h-3 text-blue-200" />}
+                              {isMine && <CheckCheck className="w-3.5 h-3.5 text-sky-400" />}
                             </div>
 
                             {/* Reaction Pills */}
@@ -2556,10 +3138,11 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                             )}
                           </div>
 
-                          {/* Hover Action Bar */}
-                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity mb-2">
+                          {/* Upgraded Social Media Message Hover Action Bar */}
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity mb-2 bg-slate-900/80 backdrop-blur-md p-1 rounded-2xl border border-slate-700/60 shadow-lg">
+                            {/* Emoji Reaction Selector */}
                             <div className="relative group/em">
-                              <button className={`p-1.5 rounded-lg ${theme.iconBtn}`}>
+                              <button className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`} title="React">
                                 <Smile className="w-3.5 h-3.5" />
                               </button>
                               <div className="absolute bottom-full left-0 mb-1 hidden group-hover/em:flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 rounded-full shadow-xl z-20">
@@ -2567,7 +3150,7 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                                   <button
                                     key={emoji}
                                     onClick={() => handleToggleReaction(m.id, emoji)}
-                                    className="p-1 hover:scale-125 transition-transform text-sm"
+                                    className="p-1 hover:scale-125 transition-transform text-sm cursor-pointer"
                                   >
                                     {emoji}
                                   </button>
@@ -2575,27 +3158,70 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                               </div>
                             </div>
 
+                            {/* Reply with Quoting */}
                             <button
                               onClick={() => setReplyingTo(m)}
-                              className={`p-1.5 rounded-lg ${theme.iconBtn}`}
+                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
                               title="Reply"
                             >
-                              <MessageSquare className="w-3.5 h-3.5" />
+                              <CornerUpLeft className="w-3.5 h-3.5" />
                             </button>
 
+                            {/* Forward */}
+                            <button
+                              onClick={() => setForwardingMessage(m)}
+                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
+                              title="Forward Message"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Star / Bookmark */}
+                            <button
+                              onClick={() => handleToggleStar(m.id)}
+                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10 ${starredMessageIds.has(m.id) ? "text-amber-400" : ""}`}
+                              title={starredMessageIds.has(m.id) ? "Unstar Message" : "Star Message"}
+                            >
+                              <Star className={`w-3.5 h-3.5 ${starredMessageIds.has(m.id) ? "fill-amber-400" : ""}`} />
+                            </button>
+
+                            {/* Copy Message Text */}
+                            {m.content && (
+                              <button
+                                onClick={() => handleCopyText(m.content)}
+                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
+                                title="Copy Text"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Edit (if own message and text-only) */}
+                            {isMine && !m.media_url && (
+                              <button
+                                onClick={() => handleStartEdit(m)}
+                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10 text-sky-400`}
+                                title="Edit Message"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Pin / Unpin */}
                             <button
                               onClick={() => handleTogglePin(m)}
-                              className={`p-1.5 rounded-lg ${theme.iconBtn}`}
+                              className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-white/10`}
                               title={m.is_pinned ? "Unpin" : "Pin"}
                             >
                               <Pin className="w-3.5 h-3.5" />
                             </button>
 
+                            {/* Delete */}
                             {isMine && (
                               <button
                                 onClick={() => handleDeleteMessage(m.id)}
-                                className={`p-1.5 rounded-lg ${theme.iconBtn} text-rose-500 hover:text-rose-600`}
-                                title="Delete"
+                                className={`p-1.5 rounded-xl ${theme.iconBtn} hover:bg-rose-500/20 text-rose-500 hover:text-rose-400`}
+                                title="Delete for Everyone"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -2845,6 +3471,24 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
                     title="GIFs"
                   >
                     GIF
+                  </button>
+
+                  {/* Share Code Snippet */}
+                  <button
+                    onClick={() => setShowCodeSnippetModal(true)}
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0 text-sky-500 hover:text-sky-400`}
+                    title="Share Code Snippet"
+                  >
+                    <Code className="w-4 h-4" />
+                  </button>
+
+                  {/* Share ASME Material */}
+                  <button
+                    onClick={() => setShowMaterialShareModal(true)}
+                    className={`p-2.5 rounded-xl ${theme.iconBtn} transition-all shrink-0 text-emerald-500 hover:text-emerald-400`}
+                    title="Share ASME Material Spec"
+                  >
+                    <Sparkles className="w-4 h-4" />
                   </button>
 
                   <div className="flex-1 min-w-0">
@@ -3530,6 +4174,260 @@ export default function NovaMessenger({ currentUser, initialRecipient, onClose }
               ) : (
                 <video src={secureLightboxMsg.media_url} controls autoPlay className="max-h-[70vh] rounded-2xl" />
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 11. WALLPAPER & THEME PICKER MODAL                                */}
+        {/* ================================================================= */}
+        {showWallpaperModal && (
+          <div className="fixed inset-0 z-[350] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-purple-500" />
+                  <h3 className="font-extrabold text-base">Chat Theme & Wallpaper</h3>
+                </div>
+                <button onClick={() => setShowWallpaperModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className={`text-xs ${theme.secondaryText}`}>Select your preferred aesthetic inspired by social media messengers:</p>
+              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto p-1">
+                {WALLPAPER_PRESETS.map((wp) => (
+                  <div
+                    key={wp.id}
+                    onClick={() => {
+                      setChatWallpaper(wp.id);
+                      localStorage.setItem("nova_chat_wallpaper", wp.id);
+                      showToast(`Theme switched to ${wp.name}`);
+                    }}
+                    className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-2 ${
+                      chatWallpaper === wp.id ? "border-purple-500 bg-purple-500/10 shadow-lg scale-102" : "border-slate-300 dark:border-slate-800 hover:border-slate-400"
+                    }`}
+                  >
+                    <div className={`w-full h-16 rounded-xl bg-gradient-to-tr ${wp.preview} border border-white/10 shadow-inner flex items-center justify-center`}>
+                      {chatWallpaper === wp.id && <Check className="w-6 h-6 text-white bg-purple-600 rounded-full p-1 shadow-md" />}
+                    </div>
+                    <span className="font-bold text-xs">{wp.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 12. FORWARD MESSAGE MODAL                                         */}
+        {/* ================================================================= */}
+        {forwardingMessage && (
+          <div className="fixed inset-0 z-[350] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-blue-500" />
+                  <h3 className="font-extrabold text-base">Forward Message</h3>
+                </div>
+                <button onClick={() => setForwardingMessage(null)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Message preview snippet */}
+              <div className={`p-3 rounded-2xl border ${theme.modalBorder} ${theme.inputBg} text-xs italic text-slate-300 line-clamp-3`}>
+                {forwardingMessage.content || "Media Attachment"}
+              </div>
+
+              <p className="text-xs font-bold text-slate-400">Select Conversation to Forward to:</p>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {conversations.length === 0 ? (
+                  <p className="text-center py-4 text-xs text-slate-500">No active conversations</p>
+                ) : (
+                  conversations.map((c) => (
+                    <div
+                      key={c.id}
+                      className={`p-2.5 rounded-xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between transition-colors`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                          {c.avatar ? <img src={c.avatar} alt="" className="w-full h-full object-cover" /> : (c.name || "C")[0].toUpperCase()}
+                        </div>
+                        <div className="truncate text-xs font-bold">{c.name}</div>
+                      </div>
+                      <button
+                        onClick={() => handleForwardMessage(c)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Send className="w-3 h-3" /> Send
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 13. STARRED / BOOKMARKED MESSAGES MODAL                           */}
+        {/* ================================================================= */}
+        {showStarredModal && (
+          <div className="fixed inset-0 z-[350] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <h3 className="font-extrabold text-base">Starred & Saved Messages</h3>
+                </div>
+                <button onClick={() => setShowStarredModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                {messages.filter((m) => starredMessageIds.has(m.id)).length === 0 ? (
+                  <div className="text-center py-8 text-xs text-slate-400 space-y-2">
+                    <Star className="w-10 h-10 mx-auto text-amber-400/40" />
+                    <p className="font-bold text-slate-200">No starred messages yet</p>
+                    <p className="text-[11px] max-w-xs mx-auto">
+                      Hover over any message and click the star icon to bookmark important engineering notes, specs, or calculations.
+                    </p>
+                  </div>
+                ) : (
+                  messages.filter((m) => starredMessageIds.has(m.id)).map((m) => (
+                    <div key={m.id} className={`p-3 rounded-2xl border ${theme.modalBorder} ${theme.cardBg} space-y-2 shadow-xs`}>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-blue-400">{m.sender_name || (m.user_id === myUserId ? "You" : "Engineer")}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(m.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-xs text-slate-200 break-words">{m.content || "Media Attachment"}</p>
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+                        {m.content && (
+                          <button
+                            onClick={() => handleCopyText(m.content)}
+                            className="px-2 py-1 text-[11px] text-slate-400 hover:text-white rounded hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" /> Copy
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleToggleStar(m.id)}
+                          className="px-2 py-1 text-[11px] text-rose-400 hover:text-rose-300 rounded hover:bg-rose-500/10 flex items-center gap-1 cursor-pointer"
+                        >
+                          Unstar
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 14. SHARE CODE SNIPPET MODAL                                      */}
+        {/* ================================================================= */}
+        {showCodeSnippetModal && (
+          <div className="fixed inset-0 z-[350] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Code className="w-5 h-5 text-sky-500" />
+                  <h3 className="font-extrabold text-base">Share Code Snippet</h3>
+                </div>
+                <button onClick={() => setShowCodeSnippetModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Language</label>
+                  <select
+                    value={snippetLang}
+                    onChange={(e) => setSnippetLang(e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl text-xs ${theme.inputBg} border ${theme.modalBorder} focus:outline-none`}
+                  >
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript / React</option>
+                    <option value="rust">Rust</option>
+                    <option value="cpp">C++</option>
+                    <option value="sql">SQL / BigQuery</option>
+                    <option value="json">JSON</option>
+                    <option value="matlab">MATLAB</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Code / Script</label>
+                  <textarea
+                    rows={8}
+                    value={snippetCode}
+                    onChange={(e) => setSnippetCode(e.target.value)}
+                    placeholder="Paste engineering calculations, API calls, or scripts here..."
+                    className="w-full p-3 font-mono text-xs rounded-xl bg-slate-950 text-emerald-300 border border-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500 leading-relaxed"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSendCodeSnippet}
+                  disabled={!snippetCode.trim()}
+                  className="w-full py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Send Snippet to Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* 15. SHARE ASME MATERIAL MODAL                                     */}
+        {/* ================================================================= */}
+        {showMaterialShareModal && (
+          <div className="fixed inset-0 z-[350] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`${theme.cardBg} ${theme.bg} rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-4 border ${theme.modalBorder}`}>
+              <div className={`flex items-center justify-between border-b ${theme.modalBorder} pb-3`}>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-500" />
+                  <h3 className="font-extrabold text-base">Share ASME Material Specification</h3>
+                </div>
+                <button onClick={() => setShowMaterialShareModal(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className={`text-xs ${theme.secondaryText}`}>Select an ASME Section II certified material to share with live tensile/yield specs:</p>
+
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {[
+                  { grade: "SA-516 Gr. 70", uns: "K02700", category: "Carbon Steel", tensile_su_mpa: 485, yield_sy_mpa: 260, nominal_comp: "C-Mn-Si Carbon Steel" },
+                  { grade: "SA-240 Type 304", uns: "S30400", category: "Stainless Steel", tensile_su_mpa: 515, yield_sy_mpa: 205, nominal_comp: "18Cr-8Ni Austenitic" },
+                  { grade: "SA-240 Type 316L", uns: "S31603", category: "Stainless Steel", tensile_su_mpa: 485, yield_sy_mpa: 170, nominal_comp: "16Cr-12Ni-2Mo Low Carbon" },
+                  { grade: "SA-387 Gr. 11 Cl. 2", uns: "K11789", category: "Alloy Steel", tensile_su_mpa: 515, yield_sy_mpa: 310, nominal_comp: "1.25Cr-0.5Mo Pressure Vessel" },
+                  { grade: "SB-443 Inconel 625", uns: "N06625", category: "Nickel Alloy", tensile_su_mpa: 827, yield_sy_mpa: 414, nominal_comp: "Ni-Cr-Mo-Cb High Temp" },
+                  { grade: "SB-265 Titanium Gr. 2", uns: "R50400", category: "Titanium", tensile_su_mpa: 345, yield_sy_mpa: 275, nominal_comp: "Commercially Pure Ti" },
+                ].map((mat) => (
+                  <div
+                    key={mat.grade}
+                    onClick={() => handleSendMaterialShare(mat)}
+                    className={`p-3 rounded-2xl border ${theme.modalBorder} ${theme.hoverBg} flex items-center justify-between cursor-pointer transition-colors hover:border-emerald-500/50`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-xs text-emerald-400">{mat.grade}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">({mat.uns})</span>
+                      </div>
+                      <p className={`text-[10px] ${theme.secondaryText}`}>{mat.category} • Tensile: {mat.tensile_su_mpa} MPa, Yield: {mat.yield_sy_mpa} MPa</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-lg text-xs font-bold transition-colors">
+                      Share
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

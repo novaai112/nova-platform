@@ -5485,7 +5485,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
   const renderChat = () => {
     const route = parseRouteFromUrl();
-    const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : (chatRecipient || null);
+    const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : null;
     return (
       <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
         <NovaMessenger
