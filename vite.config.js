@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -137,4 +138,9 @@ function razorpayDevPlugin() {
 
 export default defineConfig({
   plugins: [react(), razorpayDevPlugin()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
 });
