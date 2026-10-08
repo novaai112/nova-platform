@@ -919,6 +919,87 @@ begin
   ) then
     alter publication supabase_realtime add table public.nova_messages;
   end if;
+
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'nova_community_messages'
+  ) then
+    alter publication supabase_realtime add table public.nova_community_messages;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'nova_user_activity_logs'
+  ) then
+    alter publication supabase_realtime add table public.nova_user_activity_logs;
+  end if;
 end;
 $$;
+
+-- ==============================================================================
+-- NOVA COMMUNITY ENHANCEMENTS: DEDUPLICATED POST VIEWS, ACTIVITY LOGS, MESSAGES
+-- ==============================================================================
+
+create table if not exists public.nova_community_post_views (
+  id uuid primary key default gen_random_uuid(),
+  post_id text not null,
+  user_email text not null,
+  viewed_at timestamptz not null default now(),
+  constraint nova_community_post_views_unique unique (post_id, user_email)
+);
+
+create index if not exists idx_post_views_post_id on public.nova_community_post_views(post_id);
+create index if not exists idx_post_views_user_email on public.nova_community_post_views(user_email);
+
+create table if not exists public.nova_user_activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_email text not null,
+  user_name text,
+  event_type text not null check (event_type in ('alert', 'transaction', 'community', 'security', 'login')),
+  title text not null,
+  description text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_user_activity_email on public.nova_user_activity_logs(user_email);
+create index if not exists idx_user_activity_type on public.nova_user_activity_logs(event_type);
+create index if not exists idx_user_activity_created_at on public.nova_user_activity_logs(created_at desc);
+
+create table if not exists public.nova_community_messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_email text not null,
+  sender_name text not null,
+  sender_avatar text,
+  recipient_email text not null,
+  recipient_name text not null,
+  recipient_avatar text,
+  subject text,
+  content text not null,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_comm_messages_sender on public.nova_community_messages(sender_email);
+create index if not exists idx_comm_messages_recipient on public.nova_community_messages(recipient_email);
+create index if not exists idx_comm_messages_created on public.nova_community_messages(created_at desc);
+
+alter table public.nova_community_posts
+  add column if not exists post_type text default 'Discussion',
+  add column if not exists post_status text default 'Unanswered',
+  add column if not exists last_active_at timestamptz default now();
+
+alter table public.user_profiles
+  add column if not exists role text default 'Member',
+  add column if not exists last_seen timestamptz default now();
+
+update public.user_profiles
+set role = 'Admin'
+where lower(email) = 'dineshkumar2729304@gmail.com';
+
+grant select, insert, update on public.nova_community_post_views to anon, authenticated;
+grant select, insert, update on public.nova_user_activity_logs to anon, authenticated;
+grant select, insert, update on public.nova_community_messages to anon, authenticated;
+
 

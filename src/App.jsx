@@ -112,7 +112,6 @@ import autoTable from 'jspdf-autotable';
 import './cube.css';
 import NovaHelpContent from './NovaHelpContent';
 import NovaCommunity from './NovaCommunity';
-import NovaMessenger from './NovaMessenger';
 
 export const VIEW_ROUTES = {
   '/': 'landing',
@@ -5407,6 +5406,26 @@ Always provide professional, precise, technically accurate, and helpful answers.
   };
 
   const renderNovaCommunity = () => {
+    const isStandaloneMode = () => {
+      try {
+        const p = window.location.pathname.toLowerCase();
+        return p.includes('/new-discussion') || p.includes('/ask-question') || p.includes('/discussion') || p.includes('/question') || p.includes('/edit/');
+      } catch (e) {
+        return false;
+      }
+    };
+
+    if (isStandaloneMode()) {
+      return (
+        <div className="min-h-screen bg-white font-sans text-slate-900">
+          <NovaCommunity
+            currentUser={currentUser}
+            onNavigateBack={() => setCurrentView('dashboard')}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
         <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
@@ -5415,7 +5434,6 @@ Always provide professional, precise, technically accurate, and helpful answers.
           <NovaCommunity
             currentUser={currentUser}
             onNavigateBack={() => setCurrentView('dashboard')}
-            onOpenChat={() => setCurrentView('chat')}
           />
         </div>
       </div>
@@ -5576,23 +5594,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
   ];
 
   const renderChat = () => {
-    if (!currentUser || !currentUser.email) {
-      setCurrentView('login');
-      return null;
-    }
-    const route = parseRouteFromUrl();
-    const recipientParam = route.recipient ? { email: route.recipient, id: route.recipient } : null;
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col w-full h-full overflow-hidden">
-        <NovaMessenger
+      <div className="min-h-screen bg-white font-sans text-slate-900">
+        <NovaCommunity
           currentUser={currentUser}
-          initialRecipient={recipientParam}
-          onClose={() => {
-            setCurrentView('dashboard');
-            try {
-              window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
-            } catch (e) {}
-          }}
+          onNavigateBack={() => setCurrentView('dashboard')}
         />
       </div>
     );
