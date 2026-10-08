@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowUp, List, Bookmark, Check } from 'lucide-react';
+import { ArrowUp, List } from 'lucide-react';
 
 export default function DocTOC({ sections = [], activeSectionId, onSelectSection }) {
   const [activeId, setActiveId] = useState(activeSectionId || (sections[0]?.id || ''));
@@ -10,7 +10,6 @@ export default function DocTOC({ sections = [], activeSectionId, onSelectSection
     }
   }, [activeSectionId]);
 
-  // Set up intersection observer for scroll spy
   useEffect(() => {
     const handleScroll = () => {
       const headingElements = sections.map(s => document.getElementById(s.id)).filter(Boolean);
@@ -50,23 +49,26 @@ export default function DocTOC({ sections = [], activeSectionId, onSelectSection
   if (!sections || sections.length === 0) return null;
 
   return (
-    <div className="space-y-4 text-xs font-sans">
-      <div className="flex items-center gap-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[11px] px-1">
-        <List className="w-3.5 h-3.5 text-blue-400" />
+    <div 
+      className="space-y-4 text-xs font-sans"
+      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
+    >
+      <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[11px] px-1">
+        <List className="w-3.5 h-3.5 text-blue-600" />
         <span>On This Page</span>
       </div>
 
-      <nav className="space-y-1 relative border-l border-white/10 pl-3">
+      <nav className="space-y-1 relative border-l border-slate-200 pl-3">
         {sections.map(section => {
           const isActive = activeId === section.id;
           return (
             <button
               key={section.id}
               onClick={() => handleClick(section.id)}
-              className={`block text-left w-full py-1.5 px-2 rounded-lg transition-all text-xs truncate ${
+              className={`block text-left w-full py-1.5 px-2.5 rounded-lg transition-all text-xs truncate ${
                 isActive
-                  ? 'text-blue-400 font-semibold bg-blue-500/10 border-l-2 border-blue-500 -ml-[13px] pl-3'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  ? 'text-blue-700 font-bold bg-blue-50 border-l-2 border-blue-600 -ml-[13px] pl-3.5'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 font-medium'
               }`}
             >
               {section.title.replace(/^[0-9]+\.\s*/, '')}
@@ -77,9 +79,9 @@ export default function DocTOC({ sections = [], activeSectionId, onSelectSection
 
       <button
         onClick={scrollToTop}
-        className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-200 transition-colors pt-2 px-1"
+        className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-800 transition-colors pt-2 px-1 font-semibold"
       >
-        <ArrowUp className="w-3 h-3" />
+        <ArrowUp className="w-3 h-3 text-slate-400" />
         <span>Back to top</span>
       </button>
     </div>

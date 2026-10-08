@@ -1,24 +1,27 @@
 import React from 'react';
-import { X, CheckCircle2, AlertCircle, Layers, ExternalLink } from 'lucide-react';
+import { X, CheckCircle2, Layers, ExternalLink } from 'lucide-react';
 import { CAPABILITY_MATRIX } from '../data/capabilityMatrixData.js';
 
 export default function CapabilityMatrixModal({ isOpen, onClose, onSelectArticle }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-5xl rounded-2xl border border-white/15 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
+      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
+    >
+      <div className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-400" />
-            <h3 className="text-sm font-semibold text-slate-100">
+            <Layers className="w-5 h-5 text-blue-600" />
+            <h3 className="text-sm font-bold text-slate-800">
               Nova Module Capability & Implementation Matrix
             </h3>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100"
           >
             <X className="w-5 h-5" />
           </button>
@@ -27,7 +30,7 @@ export default function CapabilityMatrixModal({ isOpen, onClose, onSelectArticle
         {/* Matrix Table Container */}
         <div className="flex-1 overflow-auto p-4">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="sticky top-0 bg-slate-950/95 backdrop-blur border-b border-white/10 z-10 text-slate-400 font-semibold uppercase tracking-wider">
+            <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 z-10 text-slate-700 font-bold uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-3">Module</th>
                 <th className="py-3 px-3">Governing Standard</th>
@@ -39,59 +42,59 @@ export default function CapabilityMatrixModal({ isOpen, onClose, onSelectArticle
                 <th className="py-3 px-3">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {CAPABILITY_MATRIX.map(row => (
-                <tr key={row.id} className="hover:bg-white/[0.03] transition-colors">
+                <tr key={row.id} className="hover:bg-blue-50/20 transition-colors">
                   {/* Module */}
                   <td className="py-3 px-3">
-                    <div className="font-semibold text-slate-200">{row.module}</div>
-                    <div className="text-[11px] text-slate-400">{row.problem}</div>
+                    <div className="font-bold text-slate-900">{row.module}</div>
+                    <div className="text-[11px] text-slate-500">{row.problem}</div>
                   </td>
 
                   {/* Standard */}
-                  <td className="py-3 px-3 font-mono text-[11px] text-blue-300">
+                  <td className="py-3 px-3 font-mono text-[11px] text-blue-700 font-semibold">
                     {row.standard}
                   </td>
 
                   {/* DBR */}
                   <td className="py-3 px-2 text-center">
                     {row.dbr ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-slate-300">—</span>
                     )}
                   </td>
 
                   {/* FEA */}
                   <td className="py-3 px-2 text-center">
                     {row.fea ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-slate-300">—</span>
                     )}
                   </td>
 
                   {/* CAD */}
                   <td className="py-3 px-2 text-center">
                     {row.cad ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-slate-300">—</span>
                     )}
                   </td>
 
                   {/* Report */}
                   <td className="py-3 px-2 text-center">
                     {row.report ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-slate-300">—</span>
                     )}
                   </td>
 
                   {/* Status Badge */}
                   <td className="py-3 px-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
                       {row.status}
                     </span>
                   </td>
@@ -104,7 +107,7 @@ export default function CapabilityMatrixModal({ isOpen, onClose, onSelectArticle
                           onSelectArticle(row.docSlug);
                           onClose();
                         }}
-                        className="text-blue-400 hover:text-blue-300 font-medium text-[11px] flex items-center gap-1 hover:underline"
+                        className="text-blue-600 hover:text-blue-800 font-bold text-[11px] flex items-center gap-1 hover:underline"
                       >
                         Docs <ExternalLink className="w-3 h-3" />
                       </button>
@@ -117,7 +120,7 @@ export default function CapabilityMatrixModal({ isOpen, onClose, onSelectArticle
         </div>
 
         {/* Footer */}
-        <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-mono">
           <span>All 10 Core Modules Verified Against ASME VIII-1/2, EJMA 11th, and WRC</span>
           <span>Version 2.4.0</span>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Image, X, ExternalLink, ShieldCheck, Filter, ZoomIn, Copy, Check } from 'lucide-react';
+import { Search, Image, X, ShieldCheck, ZoomIn, Copy, Check } from 'lucide-react';
 
 const ENGINEERING_IMAGE_LIBRARY = [
   {
@@ -106,26 +106,29 @@ export default function ImageSearchModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-4xl rounded-2xl border border-white/15 bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
+      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
+    >
+      <div className="w-full max-w-4xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="p-4 bg-white/5 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image className="w-5 h-5 text-blue-400" />
-            <h3 className="text-sm font-semibold text-slate-100">
+            <Image className="w-5 h-5 text-blue-600" />
+            <h3 className="text-sm font-bold text-slate-800">
               Engineering Schematic & Diagram Explorer
             </h3>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search & Category Filter */}
-        <div className="p-4 border-b border-white/10 bg-slate-950/60 flex flex-col sm:flex-row items-center gap-3">
+        <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -133,7 +136,7 @@ export default function ImageSearchModal({ isOpen, onClose }) {
               placeholder="Search engineering drawings, FEA plots, schematics... (e.g. Zick, crotch, gasket, pitch)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-white/10 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
 
@@ -142,10 +145,10 @@ export default function ImageSearchModal({ isOpen, onClose }) {
               <button
                 key={f}
                 onClick={() => setSelectedFilter(f)}
-                className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-colors ${
+                className={`px-3 py-1 rounded-lg whitespace-nowrap transition-all font-semibold ${
                   selectedFilter === f
-                    ? 'bg-blue-600 text-white font-medium'
-                    : 'bg-white/5 text-slate-400 hover:text-slate-200'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {f}
@@ -157,28 +160,28 @@ export default function ImageSearchModal({ isOpen, onClose }) {
         {/* Gallery Grid */}
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredImages.length === 0 ? (
-            <div className="col-span-2 py-16 text-center text-slate-500 text-xs">
+            <div className="col-span-2 py-16 text-center text-slate-400 text-xs">
               No technical schematics matching "{query}"
             </div>
           ) : (
             filteredImages.map(img => (
               <div
                 key={img.id}
-                className="rounded-xl border border-white/10 bg-slate-950/70 overflow-hidden flex flex-col group hover:border-blue-500/40 transition-all shadow-md"
+                className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col group hover:border-blue-400 transition-all shadow-2xs"
               >
                 {/* Visual Thumbnail */}
                 <div 
                   onClick={() => setSelectedImage(img)}
-                  className="h-44 bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center p-3 relative cursor-pointer border-b border-white/5 group-hover:from-slate-800 transition-colors"
+                  className="h-44 bg-slate-50 flex items-center justify-center p-3 relative cursor-pointer border-b border-slate-100 group-hover:bg-blue-50/20 transition-colors"
                 >
-                  <div className="text-center font-mono text-slate-400 text-xs space-y-1">
-                    <div className="text-blue-400 font-semibold">{img.module}</div>
+                  <div className="text-center font-mono text-slate-600 text-xs space-y-1">
+                    <div className="text-blue-700 font-bold">{img.module}</div>
                     <div className="text-[11px] text-slate-500">Vector Technical Schematic</div>
-                    <div className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/5 inline-block text-slate-300">
+                    <div className="text-[10px] px-2 py-0.5 rounded bg-white border border-slate-200 inline-block text-slate-700 font-semibold shadow-2xs">
                       {img.category}
                     </div>
                   </div>
-                  <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-blue-600 text-white shadow-lg">
+                  <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-blue-600 text-white shadow-xs">
                     <ZoomIn className="w-4 h-4" />
                   </div>
                 </div>
@@ -186,28 +189,28 @@ export default function ImageSearchModal({ isOpen, onClose }) {
                 {/* Details */}
                 <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2">
                   <div>
-                    <h4 className="text-xs font-semibold text-slate-200 leading-snug">
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug">
                       {img.title}
                     </h4>
-                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                       {img.description}
                     </p>
                   </div>
 
                   {/* Metadata & Actions */}
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-500">
-                    <span className="truncate mr-2 font-mono" title={img.source}>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                    <span className="truncate mr-2 font-mono font-medium" title={img.source}>
                       Source: {img.source}
                     </span>
                     <button
                       onClick={() => handleCopyCitation(img)}
                       title="Copy citation reference"
-                      className="flex items-center gap-1 text-slate-400 hover:text-blue-300 transition-colors p-1 rounded hover:bg-white/5 shrink-0"
+                      className="flex items-center gap-1 text-slate-500 hover:text-blue-700 transition-colors p-1 rounded hover:bg-slate-100 shrink-0 font-semibold"
                     >
                       {copiedId === img.id ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copied</span>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700">Copied</span>
                         </>
                       ) : (
                         <>
@@ -224,9 +227,9 @@ export default function ImageSearchModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> Verified Engineering Media Architecture
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-600 font-mono">
+          <span className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Verified Engineering Media Architecture
           </span>
           <span>Showing {filteredImages.length} Technical Schematics</span>
         </div>
@@ -234,32 +237,32 @@ export default function ImageSearchModal({ isOpen, onClose }) {
 
       {/* Lightbox Modal */}
       {selectedImage && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/90 animate-fadeIn">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-slate-900 p-6 space-y-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">
                 {selectedImage.title}
               </h3>
               <button 
                 onClick={() => setSelectedImage(null)}
-                className="p-1 rounded text-slate-400 hover:text-white"
+                className="p-1 rounded text-slate-400 hover:text-slate-800"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-8 bg-slate-950 rounded-xl border border-white/10 text-center font-mono text-slate-300 text-xs">
-              <div className="text-blue-400 text-base font-bold mb-2">{selectedImage.module}</div>
-              <p className="text-slate-400 max-w-lg mx-auto text-xs leading-relaxed">
+            <div className="p-8 bg-slate-50 rounded-xl border border-slate-200 text-center font-mono text-slate-700 text-xs">
+              <div className="text-blue-700 text-base font-bold mb-2">{selectedImage.module}</div>
+              <p className="text-slate-600 max-w-lg mx-auto text-xs leading-relaxed">
                 {selectedImage.description}
               </p>
-              <div className="mt-4 inline-block px-3 py-1 rounded bg-white/5 border border-white/10 text-slate-300 text-[11px]">
+              <div className="mt-4 inline-block px-3 py-1 rounded bg-white border border-slate-200 text-slate-700 text-[11px] font-semibold">
                 {selectedImage.source} • {selectedImage.license}
               </div>
             </div>
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedImage(null)}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs"
               >
                 Close Preview
               </button>
