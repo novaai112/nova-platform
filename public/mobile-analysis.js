@@ -1,8 +1,132 @@
 (() => {
   const isNozzle = /\/nozzle8\.html$/i.test(window.location.pathname);
-  const dashboardUrl = isNozzle ? 'https://nova-analysis.vercel.app/' : '/';
+  const dashboardUrl = '/dashboard';
   const materialUrl = 'https://asme-material.vercel.app/';
   const maxJobs = 300;
+  const supabaseUrl = 'https://oszozycwjqvsdnulmhrc.supabase.co';
+  const supabaseApiKey = 'sb_publishable__9U-1ChvByi89atLpq4Fqw_E4KeKi5S';
+
+  window.NOVA_ANALYSIS_CONFIG = {
+    apiUrl: `${supabaseUrl}/rest/v1/ansys_jobs`,
+    apiKey: supabaseApiKey
+  };
+
+  const getAccessToken = async (apiUrl, apiKey) => {
+    const projectRef = new URL(apiUrl).hostname.split('.')[0];
+    const storageKey = `sb-${projectRef}-auth-token`;
+    let storedSession;
+    try {
+      storedSession = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    } catch {
+      throw new Error('Your sign-in session is invalid. Return to the dashboard and sign in again.');
+    }
+
+    let session = storedSession?.currentSession || storedSession?.session || storedSession;
+    if (!session?.access_token) {
+      throw new Error('Your sign-in session has expired. Return to the dashboard and sign in again.');
+    }
+
+    if (session.expires_at && Number(session.expires_at) <= Date.now() / 1000 + 30) {
+      if (!session.refresh_token) {
+        throw new Error('Your sign-in session has expired. Return to the dashboard and sign in again.');
+      }
+
+      const refreshResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: apiKey },
+        body: JSON.stringify({ refresh_token: session.refresh_token })
+      });
+      const refreshText = await refreshResponse.text();
+      let refreshedSession;
+      try {
+        refreshedSession = refreshText ? JSON.parse(refreshText) : null;
+      } catch {
+        refreshedSession = null;
+      }
+      if (!refreshResponse.ok || !refreshedSession?.access_token) {
+        throw new Error('Your sign-in session could not be refreshed. Return to the dashboard and sign in again.');
+      }
+
+      if (storedSession.currentSession) storedSession.currentSession = refreshedSession;
+      else if (storedSession.session) storedSession.session = refreshedSession;
+      else storedSession = refreshedSession;
+      localStorage.setItem(storageKey, JSON.stringify(storedSession));
+      session = refreshedSession;
+    }
+
+    if (!session.user?.id) {
+      throw new Error('Your user identity is missing from the sign-in session. Return to the dashboard and sign in again.');
+    }
+    return { accessToken: session.access_token, userId: session.user.id };
+  };
+
+  const readSupabaseResponse = async response => {
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      responseData = null;
+    }
+    if (!response.ok) {
+      const detail = responseData?.message || responseData?.error || responseData?.hint || responseText;
+      throw new Error(detail || `Supabase rejected the job (${response.status}).`);
+    }
+    return responseData;
+  };
+
+  window.submitAnalysisJob = async (apiUrl, apiKey, job) => {
+    if (!apiUrl || !apiKey || !job || typeof job !== 'object') {
+      throw new Error('Analysis submission is missing its Supabase configuration or job data.');
+    }
+    const { accessToken, userId } = await getAccessToken(apiUrl, apiKey);
+    if (job.user_id && job.user_id !== userId) {
+      throw new Error('The signed-in user does not match this analysis job. Return to the dashboard and sign in again.');
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'return=representation'
+      },
+      body: JSON.stringify({ ...job, user_id: userId })
+    });
+    const responseData = await readSupabaseResponse(response);
+    const savedJob = Array.isArray(responseData) ? responseData[0] : responseData;
+    if (!savedJob?.id) {
+      throw new Error('Supabase accepted the request but did not return a saved job record.');
+    }
+    return savedJob;
+  };
+
+  window.updateAnalysisJob = async (jobId, updates, apiUrl = window.NOVA_ANALYSIS_CONFIG.apiUrl, apiKey = window.NOVA_ANALYSIS_CONFIG.apiKey) => {
+    if (!jobId || !updates || typeof updates !== 'object') {
+      throw new Error('Analysis update is missing its job ID or update data.');
+    }
+    const { accessToken } = await getAccessToken(apiUrl, apiKey);
+    const url = new URL(apiUrl);
+    url.searchParams.set('id', `eq.${jobId}`);
+    url.searchParams.set('select', 'id,status');
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'return=representation'
+      },
+      body: JSON.stringify(updates)
+    });
+    const responseData = await readSupabaseResponse(response);
+    const updatedJob = Array.isArray(responseData) ? responseData[0] : responseData;
+    if (!updatedJob?.id) {
+      throw new Error('Supabase did not confirm that the analysis job was updated.');
+    }
+    return updatedJob;
+  };
 
   const init = () => {
     const titleElement = document.querySelector('#main_title, .app-header h1, .glass-container h1, h1');
@@ -34,7 +158,7 @@
       </div>
       <nav class="mobile-analysis-job-tabs" aria-label="Analysis jobs"></nav>
     `;
-    shell.querySelector('.mobile-analysis-title').textContent = (titleElement?.textContent || document.title).replace(/\s+/g, ' ').trim();
+    shell.querySelector('.mobile-analysis-title').textContent = (titleElement?.dataset.mobileTitle || titleElement?.textContent || document.title).replace(/\s+/g, ' ').trim();
     const pageContainer = document.querySelector('.glass-container, .main-workspace, main');
     if (pageContainer) pageContainer.before(shell);
     else document.body.prepend(shell);
@@ -42,10 +166,18 @@
     const batchToggle = shell.querySelector('.mobile-analysis-batch-toggle');
     const batchCount = shell.querySelector('.mobile-analysis-count');
     const countInput = shell.querySelector('.mobile-analysis-count input');
-    const nozzleToggle = isNozzle ? document.querySelector('#batchToggle') : null;
-    const nozzleCount = isNozzle ? document.querySelector('#numAnalyses') : null;
+    const nativeToggle = document.querySelector('#batchToggle');
+    const nativeCount = document.querySelector('#numAnalyses');
+    const hasNativeBatchControls = Boolean(nativeToggle && nativeCount);
+    batchCount.closest('.mobile-analysis-batch-row').hidden = !hasNativeBatchControls;
+    if (hasNativeBatchControls && nativeCount.max) {
+      countInput.max = String(Math.min(maxJobs, Number(nativeCount.max) || maxJobs));
+    }
     const syncNozzleMax = () => {
-      if (nozzleCount) nozzleCount.max = String(window.innerWidth < 768 ? maxJobs : 20);
+      if (isNozzle && nativeCount) {
+        nativeCount.max = String(window.innerWidth < 768 ? maxJobs : 20);
+        countInput.max = nativeCount.max;
+      }
     };
     syncNozzleMax();
     window.addEventListener('resize', syncNozzleMax);
@@ -53,7 +185,7 @@
     const storedValues = new Map();
     let activeJob = 1;
     const batchEnabled = () => batchToggle.getAttribute('aria-checked') === 'true';
-    const jobCount = () => Math.max(1, Math.min(maxJobs, Number.parseInt(isNozzle ? nozzleCount?.value : countInput.value, 10) || 1));
+    const jobCount = () => Math.max(1, Math.min(Number(countInput.max) || maxJobs, Number.parseInt(countInput.value, 10) || 1));
     const getFormControls = () => [...document.querySelectorAll('input, select, textarea')].filter(control => (
       !control.closest('.mobile-analysis-shell, .mobile-analysis-material-modal, .modal-overlay') &&
       !['button', 'submit', 'reset'].includes(control.type)
@@ -85,7 +217,7 @@
         control.dispatchEvent(new Event('change', { bubbles: true }));
       });
     };
-    const updateNozzleBlocks = () => {
+    const updateAnalysisBlocks = () => {
       document.querySelectorAll('#forms-container > .analysis-block').forEach((block, index) => {
         block.hidden = batchEnabled() && index + 1 !== activeJob;
       });
@@ -96,7 +228,7 @@
       materialsCard?.querySelectorAll('.section-label').forEach(label => label.classList.add('mobile-material-subheading'));
     };
     const saveCurrent = () => {
-      if (batchEnabled() && !isNozzle) storedValues.set(activeJob, captureValues());
+      if (batchEnabled() && !hasNativeBatchControls) storedValues.set(activeJob, captureValues());
     };
     const createTabs = () => {
       tabs.hidden = !batchEnabled();
@@ -105,7 +237,7 @@
       tabs.replaceChildren();
       if (!batchEnabled()) {
         activeJob = 1;
-        updateNozzleBlocks();
+        updateAnalysisBlocks();
         return;
       }
       const total = jobCount();
@@ -119,38 +251,50 @@
         tab.addEventListener('click', () => selectJob(job));
         tabs.appendChild(tab);
       }
-      updateNozzleBlocks();
+      updateAnalysisBlocks();
       tabs.querySelector('.is-active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     };
     const selectJob = job => {
       if (job === activeJob) return;
       saveCurrent();
       activeJob = job;
-      if (isNozzle) {
-        updateNozzleBlocks();
+      if (hasNativeBatchControls) {
+        updateAnalysisBlocks();
       } else {
         restoreValues(storedValues.get(job) || storedValues.get(1));
       }
       createTabs();
     };
-    const syncNozzleControls = () => {
-      if (!isNozzle || !nozzleToggle || !nozzleCount) return;
-      const enabled = batchEnabled();
-      const batchChanged = nozzleToggle.checked !== enabled;
-      nozzleToggle.checked = enabled;
-      if (batchChanged) nozzleToggle.dispatchEvent(new Event('change', { bubbles: true }));
-      if (enabled && !batchChanged) {
-        nozzleCount.value = countInput.value;
-        nozzleCount.dispatchEvent(new Event('change', { bubbles: true }));
+    const syncNativeBatchControls = enabled => {
+      if (!hasNativeBatchControls) return;
+      const batchChanged = nativeToggle.checked !== enabled;
+      nativeToggle.checked = enabled;
+      if (batchChanged) nativeToggle.dispatchEvent(new Event('change', { bubbles: true }));
+      if (enabled && !batchChanged && nativeCount.value !== countInput.value) {
+        nativeCount.value = countInput.value;
+        nativeCount.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      countInput.value = nozzleCount.value;
+      countInput.value = nativeCount.value || '1';
+    };
+    const syncNozzleControls = () => {
+      if (!isNozzle || !nativeToggle || !nativeCount) return;
+      const enabled = batchEnabled();
+      const batchChanged = nativeToggle.checked !== enabled;
+      nativeToggle.checked = enabled;
+      if (batchChanged) nativeToggle.dispatchEvent(new Event('change', { bubbles: true }));
+      if (enabled && !batchChanged) {
+        nativeCount.value = countInput.value;
+        nativeCount.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      countInput.value = nativeCount.value;
     };
     batchToggle.addEventListener('click', () => {
       const enabled = !batchEnabled();
       batchToggle.setAttribute('aria-checked', String(enabled));
-      if (!isNozzle && enabled) storedValues.set(1, captureValues());
+      if (!hasNativeBatchControls && enabled) storedValues.set(1, captureValues());
       activeJob = 1;
-      syncNozzleControls();
+      if (isNozzle) syncNozzleControls();
+      else syncNativeBatchControls(enabled);
       createTabs();
     });
     batchToggle.addEventListener('keydown', event => {
@@ -161,26 +305,37 @@
     });
     countInput.addEventListener('input', () => {
       const count = Number.parseInt(countInput.value, 10);
-      if (count > maxJobs) countInput.value = String(maxJobs);
+      const maxCount = Number(countInput.max) || maxJobs;
+      if (count > maxCount) countInput.value = String(maxCount);
       if (count < 1) countInput.value = '1';
       if (activeJob > jobCount()) activeJob = jobCount();
-      syncNozzleControls();
+      if (isNozzle) syncNozzleControls();
+      else if (hasNativeBatchControls && nativeCount.value !== countInput.value) {
+        nativeCount.value = countInput.value;
+        nativeCount.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       createTabs();
     });
     countInput.addEventListener('change', () => {
       countInput.value = String(jobCount());
-      syncNozzleControls();
+      if (isNozzle) syncNozzleControls();
+      else if (hasNativeBatchControls && nativeCount.value !== countInput.value) {
+        nativeCount.value = countInput.value;
+        nativeCount.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       createTabs();
     });
+    if (hasNativeBatchControls) {
+      batchToggle.setAttribute('aria-checked', String(Boolean(nativeToggle.checked)));
+      countInput.value = nativeCount.value || '1';
+      batchCount.hidden = !nativeToggle.checked;
+    }
     if (isNozzle) {
-      batchToggle.setAttribute('aria-checked', String(Boolean(nozzleToggle?.checked)));
-      countInput.value = nozzleCount?.value || '1';
-      batchCount.hidden = !nozzleToggle?.checked;
       new MutationObserver(() => {
         createTabs();
         hideNozzleMaterialSubheadings();
       }).observe(document.querySelector('#forms-container') || document.body, { childList: true });
-    } else {
+    } else if (!hasNativeBatchControls) {
       document.addEventListener('input', saveCurrent, true);
       document.addEventListener('change', saveCurrent, true);
     }

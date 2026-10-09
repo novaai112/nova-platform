@@ -404,8 +404,8 @@
     </div>
 
     <script>
-        const API_URL = "https://opzfhsonosqqxometiou.supabase.co/rest/v1/ansys_jobs";
-        const API_KEY = "sb_publishable_tZ-Wulo5bNADs-w9dca3Vw_3CL1RNuo";
+        const API_URL = "https://oszozycwjqvsdnulmhrc.supabase.co/rest/v1/ansys_jobs";
+        const API_KEY = "sb_publishable__9U-1ChvByi89atLpq4Fqw_E4KeKi5S";
         
         let currentAnalysis = "pwht";
         let materialLibrary = [];
@@ -1228,10 +1228,7 @@
                 return;
             }
 
-            if (!isDinesh) {
-                const newCredits = Math.max(0, remainingCredits - 300);
-                localStorage.setItem(`nova_credits_${user.email}`, newCredits.toString());
-            }
+            
 
             const isBatch = document.getElementById('batchToggle').checked;
             const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
@@ -1277,26 +1274,15 @@
             };
 
             try {
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "apikey": API_KEY,
-                        "Authorization": `Bearer ${API_KEY}`,
-                        "Prefer": "return=representation"
-                    },
-                    body: JSON.stringify(newJob)
-                });
+                await window.submitAnalysisJob(API_URL, API_KEY, newJob);
                 
-                if(res.ok) {
-                    window.location.href = 'https://nova-analysis.vercel.app/';
-                } else {
-                    btn.innerText = "Failed";
-                    setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
-                }
-            } catch(e) {
-                btn.innerText = "Error";
-                setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+                window.location.href = '/dashboard';
+            } catch (error) {
+                console.error('Analysis job submission failed:', error);
+                btn.innerText = 'Failed';
+                alert(`Unable to save this analysis to the job queue: ${error.message}`);
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 

@@ -211,6 +211,10 @@
     display: none !important;
   }
 
+  .mobile-analysis-batch-row[hidden] {
+    display: none !important;
+  }
+
   .mobile-analysis-batch-row.is-batch-enabled {
     justify-content: space-between;
   }

@@ -152,6 +152,7 @@
         .upload-title { text-align: center; margin-bottom: 2.5rem; }
         .upload-title h2 { font-size: 1.5rem; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 0.5rem; color: var(--text-main); }
         .upload-title p { font-size: 0.95rem; font-weight: 500; color: var(--text-muted); margin-top: 0.5rem; }
+        .mobile-upload-caption { display: none; }
 
         .upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
 
@@ -229,7 +230,7 @@
 
     <div class="container">
         <div class="glass-panel header-card">
-            <h1>
+            <h1 data-mobile-title="Bellow Analysis">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 Step 2 - ANSYS FEA Input Documents
             </h1>
@@ -249,7 +250,7 @@
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.2-6.2-5.6-3-.3-5.9 1.3-7.3 4-1.2 2.5-1 6.5.5 8.8m8.7-1.6V21"/><path d="M16 16l-4-4-4 4"/></svg>
                     Upload Required Documents
                 </h2>
-                <p>All three PDF documents are required for ANSYS Workbench FEA analysis</p>
+                <p><span class="desktop-upload-caption">All three PDF documents are required for ANSYS Workbench FEA analysis</span><span class="mobile-upload-caption">Upload the three required PV Elite PDF reports to complete the Bellow analysis.</span></p>
             </div>
 
             <div class="upload-grid">
@@ -299,8 +300,8 @@
             </div>
         </div>
 
-        <div style="text-align: center;">
-            <a href="/" class="btn-dashboard">
+        <div class="dashboard-return" style="text-align: center;">
+            <a href="/dashboard" class="btn-dashboard">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Back to Dashboard
             </a>
@@ -463,6 +464,59 @@
             }
             // 3. Get User Auth Data
             const userData = JSON.parse(localStorage.getItem('nova_user') || '{}');
+            let jobName = prompt("Enter a Project Name for this Stress Analysis:", "Stress Analysis " + new Date().toLocaleTimeString());
+            jobName = jobName || "Bellows Stress Analysis";
+
+            const analysisPayload = [{
+                AnalysisType: 'bellow',
+                AnalysisID: 1,
+                ...step1Data
+            }];
+            const documents = [
+                { type: 'design', name: filesData.design.name, size: filesData.design.size },
+                { type: 'hydrostatic', name: filesData.hydro.name, size: filesData.hydro.size },
+                { type: 'operating', name: filesData.op.name, size: filesData.op.size }
+            ];
+            const geometryData = {
+                runs: analysisPayload,
+                inputMethod: step1Data.inputMethod || 'manual',
+                ui_code_edition: step1Data.codeEdition || '2025',
+                solver_job_id: localStorage.getItem('nova_job_id') || null,
+                fea_documents: documents
+            };
+
+            let supabaseJobId = localStorage.getItem('nova_supabase_job_id');
+            try {
+                const { apiUrl, apiKey } = window.NOVA_ANALYSIS_CONFIG || {};
+                if (supabaseJobId) {
+                    await window.updateAnalysisJob(supabaseJobId, {
+                        name: jobName || 'Bellow Stress Analysis',
+                        status: 'Pending',
+                        geometry_data: geometryData,
+                        json_payload: analysisPayload
+                    }, apiUrl, apiKey);
+                } else {
+                    const jobDisplayId = localStorage.getItem('nova_job_display_id') || `NV-${Math.floor(1000 + Math.random() * 9000)}`;
+                    const savedJob = await window.submitAnalysisJob(apiUrl, apiKey, {
+                        user_id: userData.id || null,
+                        job_id_display: jobDisplayId,
+                        name: jobName || 'Bellow Stress Analysis',
+                        type: 'Bellow Analysis',
+                        status: 'Pending',
+                        price: 6000,
+                        geometry_data: geometryData,
+                        json_payload: analysisPayload
+                    });
+                    supabaseJobId = savedJob.id;
+                    localStorage.setItem('nova_supabase_job_id', supabaseJobId);
+                    localStorage.setItem('nova_job_display_id', savedJob.job_id_display || jobDisplayId);
+                }
+            } catch (error) {
+                console.error('Unable to save Bellow FEA inputs to Supabase:', error);
+                document.getElementById('solvingModal').classList.remove('active');
+                alert(`Unable to save the Bellow analysis and uploaded-document details to Supabase: ${error.message}`);
+                return;
+            }
 
             // 4. Build FormData payload
             const formData = new FormData();
@@ -474,9 +528,7 @@
             if (savedJobId) {
                 formData.append('job_id', savedJobId);
             }
-            
-            let jobName = prompt("Enter a Project Name for this Stress Analysis:", "Stress Analysis " + new Date().toLocaleTimeString());
-            formData.append('job_name', jobName || "Bellows Stress Analysis");
+            formData.append('job_name', jobName);
 
             // 5. Attach the 3 Physical PDF Files
             formData.append('design_pdf', filesData.design);
@@ -490,24 +542,208 @@
                     body: formData
                 });
 
-                if (!response.ok) throw new Error((await response.json()).error || "Solver execution failed.");
+                if (!response.ok) {
+                    const responseText = await response.text();
+                    let errorData;
+                    try { errorData = responseText ? JSON.parse(responseText) : null; } catch { errorData = null; }
+                    throw new Error(errorData?.error || responseText || "Solver execution failed.");
+                }
+                const solverResult = await response.json();
+                if (supabaseJobId && solverResult.job_id) {
+                    try {
+                        await window.updateAnalysisJob(supabaseJobId, {
+                            geometry_data: { ...geometryData, fea_solver_job_id: solverResult.job_id }
+                        });
+                    } catch (error) {
+                        console.error('Unable to sync the Bellow FEA solver ID to Supabase:', error);
+                        document.getElementById('solve-desc').innerText = `Job queued successfully. Dashboard record is saved, but solver tracking could not be synced: ${error.message}`;
+                    }
+                }
 
         // UI success feedback
         document.getElementById('solve-title').innerText = "Job Queued Successfully!";
-        document.getElementById('solve-desc').innerText = "Redirecting to dashboard to track progress...";
+        if (!document.getElementById('solve-desc').innerText.startsWith('Job queued successfully.')) {
+            document.getElementById('solve-desc').innerText = "Redirecting to dashboard to track progress...";
+        }
         document.querySelector('.spinner').style.display = 'none';
         
         // REDIRECT TO DASHBOARD (Exactly like Step 1)
         setTimeout(() => { 
-            window.location.href = '/'; 
+            window.location.href = '/dashboard';
         }, 2000);
 
     } catch(e) {
+        if (supabaseJobId) {
+            try {
+                await window.updateAnalysisJob(supabaseJobId, {
+                    status: 'Failed',
+                    error_message: e.message
+                });
+            } catch (updateError) {
+                console.error('Unable to record the Bellow FEA submission error in Supabase:', updateError);
+            }
+        }
         alert("Error: " + e.message); 
         closeModal('solvingModal');
     }
 }
     </script>
     <script src="/mobile-analysis.js"></script>
+    <style>
+        @media (max-width: 767px) {
+            body {
+                display: block;
+                width: 100%;
+                min-width: 0;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding: 0;
+                overflow-x: hidden;
+            }
+
+            .ambient-orb {
+                display: none;
+            }
+
+            .container {
+                width: 100%;
+                min-width: 0;
+                max-width: none;
+                gap: 0.75rem;
+                margin: 0;
+                padding: 0.25rem 0.75rem 1.25rem;
+            }
+
+            .container > .header-card,
+            .container > .success-banner,
+            .container > .dashboard-return {
+                display: none;
+            }
+
+            .upload-section {
+                width: 100%;
+                min-width: 0;
+                padding: 0.65rem 0.25rem;
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                -webkit-backdrop-filter: none;
+                backdrop-filter: none;
+            }
+
+            .upload-title {
+                margin: 0.25rem 0 0.75rem;
+                text-align: left;
+            }
+
+            .upload-title h2 {
+                justify-content: flex-start;
+                gap: 0.55rem;
+                font-size: 1.05rem;
+                line-height: 1.3;
+            }
+
+            .upload-title h2 svg {
+                width: 1.35rem;
+                height: 1.35rem;
+            }
+
+            .upload-title p {
+                margin-top: 0.3rem;
+                font-size: 0.76rem;
+                line-height: 1.45;
+            }
+
+            .desktop-upload-caption {
+                display: none;
+            }
+
+            .mobile-upload-caption {
+                display: inline;
+            }
+
+            .upload-grid {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0;
+                margin-bottom: 0.8rem;
+            }
+
+            .upload-box {
+                width: 100%;
+                min-width: 0;
+                height: auto;
+                min-height: 0;
+                gap: 0.6rem;
+                padding: 0.85rem 0;
+                overflow: visible;
+                text-align: left;
+                background: transparent;
+                border: 0;
+                border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .upload-box:hover,
+            .upload-box.uploaded {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .box-header,
+            .box-header h3,
+            .box-header p {
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            .box-header h3 {
+                margin-bottom: 0.2rem;
+                font-size: 0.84rem;
+                line-height: 1.35;
+            }
+
+            .box-header p {
+                font-size: 0.72rem;
+                line-height: 1.4;
+            }
+
+            .btn-upload {
+                width: 100%;
+                min-height: 2.75rem;
+                margin-top: 0;
+                padding: 0.65rem 0.8rem;
+                font-size: 0.78rem;
+            }
+
+            .progress-container {
+                margin: 0.35rem 0 0.8rem;
+                padding: 0.85rem;
+                background: rgba(255, 255, 255, 0.42);
+                border: 0;
+                border-radius: 0.8rem;
+                box-shadow: none;
+            }
+
+            .progress-header {
+                margin-bottom: 0.55rem;
+                font-size: 0.78rem;
+            }
+
+            .submit-area {
+                width: 100%;
+            }
+
+            .btn-submit {
+                width: 100%;
+                min-height: 2.9rem;
+                padding: 0.7rem 0.85rem;
+                font-size: 0.84rem;
+                line-height: 1.25;
+                letter-spacing: 0;
+            }
+        }
+    </style>
 </body>
 </html>
