@@ -77,7 +77,7 @@ export default function NovaDocumentationCenter({ initialTopicId, onBackToDashbo
     const dx = event.changedTouches[0].clientX - start.x;
     const dy = event.changedTouches[0].clientY - start.y;
     if (Math.abs(dx) < 85 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
-    if (dx > 0) {
+    if (dx < 0) {
       if (nextArticle) setCurrentArticleId(nextArticle.id);
       else onMobileSwipeToProfile?.();
     } else if (prevArticle) {

@@ -844,10 +844,20 @@ export default function App() {
     } catch (e) {}
   };
 
+  const hasMobileModalOpen = Boolean(
+    mobilePopup || isMobileMenuOpen || isWizardDemoOpen || isWizardPricingOpen ||
+    isEditProfileOpen || isChangePasswordOpen || isSubmitJobOpen || isAiModalOpen ||
+    isInsightsOpen || isJobDetailsOpen || activeDocumentViewer || completedInvoice
+  );
+
   const handleMobileSwipeStart = (event) => {
+    if (window.innerWidth < 768 && hasMobileModalOpen) {
+      mobileSwipeStartRef.current = null;
+      return;
+    }
     if (event.touches.length !== 1) return;
     const target = event.target;
-    if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable="true"], .overflow-x-auto, .overflow-y-auto')) return;
+    if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable="true"], .overflow-x-auto, .overflow-y-auto, .nova-article-enter')) return;
     mobileSwipeStartRef.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
   };
 
@@ -858,11 +868,16 @@ export default function App() {
     const dx = event.changedTouches[0].clientX - start.x;
     const dy = event.changedTouches[0].clientY - start.y;
     if (Math.abs(dx) < 85 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
-    if (currentView === 'dashboard' && dx > 0) {
-      navigateMobileApp('nova_community', '/community');
-    } else if (currentView === 'nova_community') {
-      if (dx > 0) navigateMobileApp('nova_help', '/help');
-      else navigateMobileApp('dashboard', '/dashboard');
+    if (['profile', 'nova_community', 'nova_help'].includes(currentView)) {
+      const swipeSequence = [
+        { view: 'profile', path: '/profile' },
+        { view: 'nova_community', path: '/community' },
+        { view: 'nova_help', path: '/help' }
+      ];
+      const currentIndex = swipeSequence.findIndex(({ view }) => view === currentView);
+      const nextIndex = (currentIndex + (dx < 0 ? 1 : -1) + swipeSequence.length) % swipeSequence.length;
+      const destination = swipeSequence[nextIndex];
+      navigateMobileApp(destination.view, destination.path);
     }
   };
 
@@ -3797,7 +3812,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     return (
       <div className="job-details-overlay fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div
-          className="absolute inset-0 bg-slate-950/65 backdrop-blur-md transition-opacity duration-300"
+          className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => closeJobDetails()}
         />
 
@@ -7752,7 +7767,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
           {currentView === 'forgot' && renderForgotPassword()}
           {isLoggedIn && (
             <div
-              className="mobile-root-shell"
+              className={`mobile-root-shell${hasMobileModalOpen ? ' has-active-mobile-modal' : ''}`}
               onTouchStart={handleMobileSwipeStart}
               onTouchEnd={handleMobileSwipeEnd}
             >

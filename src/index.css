@@ -1009,6 +1009,15 @@ body,
     padding: 0 0 calc(4.75rem + env(safe-area-inset-bottom));
   }
 
+  .mobile-root-shell.has-active-mobile-modal .mobile-app-bar,
+  .mobile-root-shell.has-active-mobile-modal .mobile-bottom-navigation {
+    display: none !important;
+  }
+
+  .mobile-root-shell.has-active-mobile-modal .mobile-root-content {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .mobile-app-bar,
   .mobile-bottom-navigation {
     position: fixed;
@@ -2039,9 +2048,13 @@ body,
     overflow-y: auto;
     overscroll-behavior-y: contain;
     border-radius: 1.15rem;
+    border: 1px solid rgba(255, 255, 255, 0.76);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.9) 55%, rgba(250, 245, 255, 0.92));
+    -webkit-backdrop-filter: blur(24px) saturate(155%);
+    backdrop-filter: blur(24px) saturate(155%);
     gap: 0.75rem;
     -webkit-overflow-scrolling: touch;
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.32);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
   .job-details-header {
@@ -2051,8 +2064,8 @@ body,
     min-height: 2.8rem;
     margin: -0.8rem -0.8rem 0;
     padding: 0.6rem 0.8rem;
-    background: rgba(255, 255, 255, 0.97);
-    border-color: #e2e8f0;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(239, 246, 255, 0.94) 55%, rgba(250, 245, 255, 0.96));
+    border-color: rgba(255, 255, 255, 0.92);
     border-radius: 1.15rem 1.15rem 0 0;
   }
 
@@ -2079,6 +2092,10 @@ body,
     width: 2.25rem;
     height: 2.25rem;
     padding: 0.45rem;
+    border-color: rgba(255, 255, 255, 0.95);
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.62) 55%, rgba(233, 213, 255, 0.7));
+    color: #334155;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.13), inset 0 1px 1px rgba(255, 255, 255, 0.95);
   }
 
   .job-details-summary {
@@ -2112,18 +2129,20 @@ body,
     flex: 0 0 auto;
     padding: 0.45rem 0.7rem;
     color: #475569;
-    background: #f8fafc;
-    border: 1px solid #dbe3ed;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.5) 55%, rgba(233, 213, 255, 0.58));
+    border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 0.7rem;
     font: inherit;
     font-size: 0.68rem;
     font-weight: 750;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.95);
   }
 
   .job-details-run-tab.is-active {
     color: #fff;
-    background: #2563eb;
-    border-color: #2563eb;
+    background: linear-gradient(135deg, #2563eb, #6366f1 60%, #8b5cf6);
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 5px 14px rgba(79, 70, 229, 0.24);
   }
 
   .job-details-runs {
@@ -2135,7 +2154,9 @@ body,
     gap: 0.6rem;
     padding: 0.7rem;
     border-radius: 0.9rem;
-    background: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.88);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(239, 246, 255, 0.62) 55%, rgba(250, 245, 255, 0.68));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 4px 12px rgba(79, 70, 229, 0.06);
   }
 
   .job-details-run-heading {
@@ -2168,6 +2189,9 @@ body,
     gap: 0.2rem;
     padding: 0.4rem 0.15rem !important;
     border-radius: 0.65rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.96) !important;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.88), rgba(219, 234, 254, 0.48) 55%, rgba(233, 213, 255, 0.54));
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.96);
     font-size: 0.58rem !important;
     line-height: 0.75rem;
     text-align: center;
@@ -2178,6 +2202,31 @@ body,
     width: 0.95rem;
     height: 0.95rem;
     flex: 0 0 auto;
+    box-sizing: border-box;
+    padding: 0.12rem;
+    border-radius: 0.32rem;
+  }
+
+  .job-detail-action-input svg {
+    background: rgba(237, 233, 254, 0.92);
+  }
+
+  .job-detail-action-report svg {
+    background: rgba(220, 252, 231, 0.92);
+  }
+
+  .job-detail-action-insight svg {
+    background: rgba(243, 232, 255, 0.92);
+  }
+
+  .job-detail-action-analysis svg {
+    background: rgba(219, 234, 254, 0.92);
+  }
+
+  .job-detail-action[disabled] {
+    border-color: rgba(226, 232, 240, 0.92) !important;
+    background: rgba(248, 250, 252, 0.78);
+    box-shadow: none;
   }
 
   .job-details-run-card:not(.is-active) {
