@@ -1927,8 +1927,13 @@
                 return;
             }
 
-            
+            // Deduct credits locally
+            if (!isDinesh) {
+                const newCredits = Math.max(0, remainingCredits - 300);
+                localStorage.setItem(`nova_credits_${user.email}`, newCredits.toString());
+            }
 
+            // Build the Payload
             const isBatch = document.getElementById('batchToggle').checked;
             const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
             let payloadArr = [];
@@ -1955,7 +1960,6 @@
                     const hType = payload.Head_TYPE || document.getElementById(`Head_TYPE_${i}`)?.value || 'Ellipsoidal Head';
                     payload.Head_TYPE = hType;
                     
-
                     if (hType === 'Flat Head') {
                         if (payload.FH_H_THK !== undefined) payload.H_THK = payload.FH_H_THK;
                         if (payload.FH_S_H !== undefined) payload.S_H = payload.FH_S_H;
@@ -1994,9 +1998,7 @@
                     delete payload.PadDensity;
                 }
 
-                // ── Embed analysis type so Launcher.py can route correctly ──
                 payload.currentAnalysis = currentAnalysis;
-
                 payloadArr.push(payload);
             }
 
@@ -2021,7 +2023,7 @@
                 json_payload: payloadArr
             };
 
-            // Locate the user's active Supabase session token
+            // Secure Supabase Submission
             let token = null;
             const sbSession = localStorage.getItem('sb-oszozycwjqvsdnulmhrc-auth-token');
             if (sbSession) {
@@ -2031,7 +2033,6 @@
             }
 
             try {
-                // If no token is found in the browser, stop immediately
                 if (!token) {
                     throw new Error("Your sign-in session has expired. Please return to the dashboard and sign in again.");
                 }
@@ -2049,7 +2050,6 @@
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    // Catch RLS violations and translate them into a user-friendly expiration warning
                     if (errorData.message && errorData.message.includes("row-level security")) {
                          throw new Error("Your sign-in session has expired. Please return to the dashboard and sign in again.");
                     }
