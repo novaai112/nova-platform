@@ -3628,13 +3628,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
       showNotification('Failed to generate PDF. Please try again.', 'error', 'PDF Export');
     }
   };
-  const generateAndOpenReport = (job) => {
+  const generateAndOpenReport = (job, runIndex = null) => {
     if (!job) return;
-    if (job.report_url) {
+    if (job.report_url && runIndex === null) {
       window.open(job.report_url, '_blank');
       return;
     }
-    if (job.excel_file_url) {
+    if (job.excel_file_url && runIndex === null) {
       window.open(job.excel_file_url, '_blank');
       return;
     }
@@ -3646,6 +3646,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
       try { const p = JSON.parse(job.json_payload); if (Array.isArray(p)) runs = p; } catch (e) { }
     }
     if (!Array.isArray(runs) || runs.length === 0) runs = [geom];
+    if (runIndex !== null) runs = runs[runIndex] ? [runs[runIndex]] : [];
+    if (runs.length === 0) {
+      showNotification('No input data is available for this analysis report.', 'error', 'Report');
+      return;
+    }
     const reportHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3765,15 +3770,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
     };
 
     return (
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      <div className="job-details-overlay fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div
           className="absolute inset-0 bg-slate-950/65 backdrop-blur-md transition-opacity duration-300"
           onClick={() => closeJobDetails()}
         />
 
-        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-[0_25px_70px_rgba(0,0,0,0.25)] rounded-[2.5rem] w-full max-w-2xl sm:max-w-3xl p-5 sm:p-8 z-10 animate-in zoom-in-95 space-y-6">
+        <div className="job-details-dialog bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-[0_25px_70px_rgba(0,0,0,0.25)] rounded-[2.5rem] w-full max-w-2xl sm:max-w-3xl p-5 sm:p-8 z-10 animate-in zoom-in-95 space-y-6">
 
-          <div className="flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
+          <div className="job-details-header flex items-center justify-between gap-3 pb-5 border-b border-slate-200">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xl font-black text-slate-900 tracking-tight">{selectedJobDetails.job_id_display || selectedJobDetails.id.substring(0, 8)}</span>
               <span className="px-3.5 py-1 text-xs font-black text-[#2563eb] bg-blue-50 border border-blue-200 rounded-full shadow-xs">
@@ -3791,7 +3796,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="job-details-summary grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
 
             <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl shadow-xs">
               <span className="block text-[10px] font-black uppercase text-slate-500 tracking-wider">Job ID</span>
@@ -3847,7 +3852,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
+          <div className="job-details-runs pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
             {payloads.map((p, idx) => {
               const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
               const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
@@ -3856,14 +3861,14 @@ Always provide professional, precise, technically accurate, and helpful answers.
               const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
 
               return (
-                <div key={idx} className="flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                <div key={idx} className="job-details-run-card flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                   {isBatch && (
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <div className="job-details-run-heading flex items-center justify-between pb-2 border-b border-slate-200">
                       <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
                       <AnimatedStatusBadge status={pStatus} />
                     </div>
                   )}
-                  <div className="flex flex-col sm:flex-row items-center justify-start gap-3">
+                  <div className="job-details-run-actions flex flex-col sm:flex-row items-center justify-start gap-3">
                     <button
                       onClick={() => generateInputPDF(selectedJobDetails, idx)}
                       title="Download User Input Parameters PDF"
@@ -3886,7 +3891,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                       </a>
                     ) : isPSuccess ? (
                       <button
-                        onClick={() => generateAndOpenReport(selectedJobDetails)}
+                        onClick={() => generateAndOpenReport(selectedJobDetails, isBatch ? idx : null)}
                         title="View Analysis Report"
                         className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
                       >
@@ -4595,8 +4600,8 @@ Always provide professional, precise, technically accurate, and helpful answers.
             )}
           </div>
         ) : (
-          <div className="glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
+          <div className="dashboard-recent-jobs glass-panel rounded-[2rem] overflow-hidden border-t border-white/80">
+            <div className="dashboard-recent-jobs-header flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-5 border-b bg-white/40 backdrop-blur-md border-white/50">
               <div className="flex items-center gap-3">
                 <h3 className="flex items-center gap-3 text-lg font-extrabold text-slate-800 drop-shadow-sm"><FileText className="w-6 h-6 text-[#3C64D6]" /> Recent Jobs</h3>
                 <span className="text-xs font-bold text-slate-500 bg-white/60 px-2.5 py-1 rounded-full border border-slate-200/60">
@@ -4613,8 +4618,8 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </button>
               )}
             </div>
-            <div className="p-4 overflow-x-auto">
-              <table className="w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
+            <div className="dashboard-recent-jobs-table-wrap p-4 overflow-x-auto">
+              <table className="dashboard-jobs-table w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
                 <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
                   <tr>
                     <th className="w-12 px-4 py-2.5 text-center">
@@ -4639,9 +4644,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     const isJobFailed = job.status === 'Failed';
                     const isJobPending = job.status === 'Pending';
                     const isJobProcessing = !isJobSuccess && !isJobFailed && !isJobPending;
+                    const hasBatchReports = Array.isArray(job.report_urls) ? job.report_urls.some(Boolean) : Boolean(job.report_urls);
+                    const hasBatchResults = Array.isArray(job.result_urls) ? job.result_urls.some(Boolean) : Boolean(job.result_urls);
                     return (
-                      <tr key={job.id} className={`transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
-                        <td className="w-12 px-4 py-4 text-center first:rounded-l-xl">
+                      <tr key={job.id} className={`dashboard-job-row transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
+                        <td className="dashboard-job-select w-12 px-4 py-4 text-center first:rounded-l-xl" data-label="Select">
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded cursor-pointer accent-[#3C64D6]"
@@ -4650,23 +4657,23 @@ Always provide professional, precise, technically accurate, and helpful answers.
                             title="Select Job"
                           />
                         </td>
-                        <td className="px-4 md:px-6 py-4 font-black text-[#3C64D6]">
+                        <td className="dashboard-job-id px-4 md:px-6 py-4 font-black text-[#3C64D6]" data-label="Job ID">
                           {job.job_id_display || job.id.substring(0, 8)}
                         </td>
-                        <td className="px-4 md:px-6 py-4 font-semibold text-slate-700">
+                        <td className="dashboard-job-type px-4 md:px-6 py-4 font-semibold text-slate-700" data-label="Type">
                           <span className="inline-flex items-center gap-1.5">
                             <Box className="w-3.5 h-3.5 text-indigo-500" />
                             {job.type}
                           </span>
                         </td>
-                        <td className="px-4 md:px-6 py-4 font-medium text-slate-600 text-xs">
+                        <td className="dashboard-job-date px-4 md:px-6 py-4 font-medium text-slate-600 text-xs" data-label="Date & Time">
                           {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           <span className="block text-[11px] text-slate-400 font-semibold">
                             {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </td>
-                        <td className="px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                          <AnimatedStatusBadge status={job.status} /> {(job.report_url || isJobSuccess) && (
+                        <td className="dashboard-job-actions px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
+                          <AnimatedStatusBadge status={job.status} /> {(job.report_url || hasBatchReports || isJobSuccess) && (
                             job.report_url ? (
                               <a
                                 href={job.report_url}
@@ -4677,6 +4684,14 @@ Always provide professional, precise, technically accurate, and helpful answers.
                               >
                                 <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                               </a>
+                            ) : hasBatchReports ? (
+                              <button
+                                onClick={() => openJobDetails(job)}
+                                title="View available reports for each analysis"
+                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Reports
+                              </button>
                             ) : (
                               <button
                                 onClick={() => generateAndOpenReport(job)}
@@ -4686,7 +4701,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                                 <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
                               </button>
                             )
-                          )} {job.result_url && (
+                          )} {job.result_url ? (
                             <a
                               href={job.result_url}
                               target="_blank"
@@ -4696,7 +4711,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
                             >
                               <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
                             </a>
-                          )} <button
+                          ) : hasBatchResults ? (
+                            <button
+                              onClick={() => openJobDetails(job)}
+                              title="View full analysis ZIP files for each analysis"
+                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
+                            >
+                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis ZIPs
+                            </button>
+                          ) : null} <button
                             onClick={() => openJobDetails(job)}
                             title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
                             className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${job.status === 'Failed'

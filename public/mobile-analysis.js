@@ -170,17 +170,23 @@
     const nativeCount = document.querySelector('#numAnalyses');
     const hasNativeBatchControls = Boolean(nativeToggle && nativeCount);
     batchCount.closest('.mobile-analysis-batch-row').hidden = !hasNativeBatchControls;
-    if (hasNativeBatchControls && nativeCount.max) {
-      countInput.max = String(Math.min(maxJobs, Number(nativeCount.max) || maxJobs));
-    }
-    const syncNozzleMax = () => {
-      if (isNozzle && nativeCount) {
-        nativeCount.max = String(window.innerWidth < 768 ? maxJobs : 20);
-        countInput.max = nativeCount.max;
+    const maxBatchCount = () => window.innerWidth < 768 ? maxJobs : 20;
+    const syncNativeBatchMax = () => {
+      if (!hasNativeBatchControls) return;
+      const maxCount = maxBatchCount();
+      nativeCount.max = String(maxCount);
+      countInput.max = String(maxCount);
+      const nativeValue = Math.max(1, Number.parseInt(nativeCount.value, 10) || 1);
+      if (nativeValue > maxCount) {
+        nativeCount.value = String(maxCount);
+        nativeCount.dispatchEvent(new Event('change', { bubbles: true }));
       }
+      const mobileValue = Math.max(1, Number.parseInt(countInput.value, 10) || nativeValue);
+      countInput.value = String(Math.min(maxCount, mobileValue));
     };
-    syncNozzleMax();
-    window.addEventListener('resize', syncNozzleMax);
+    if (hasNativeBatchControls) countInput.value = nativeCount.value || '1';
+    syncNativeBatchMax();
+    window.addEventListener('resize', syncNativeBatchMax);
     const tabs = shell.querySelector('.mobile-analysis-job-tabs');
     const storedValues = new Map();
     let activeJob = 1;
