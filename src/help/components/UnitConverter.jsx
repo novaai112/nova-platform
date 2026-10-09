@@ -41,7 +41,6 @@ export default function UnitConverter() {
   return (
     <div 
       className="my-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {/* Header */}
       <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">

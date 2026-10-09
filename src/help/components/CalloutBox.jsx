@@ -104,7 +104,6 @@ export default function CalloutBox({ type = 'info', title, children, standardRef
   return (
     <div 
       className={`my-5 rounded-xl border ${current.border} ${current.bg} p-4.5 transition-all duration-200 shadow-sm`}
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       <div className="flex items-start gap-3">
         <div className={`mt-0.5 shrink-0 ${current.iconColor}`}>

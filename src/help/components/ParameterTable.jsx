@@ -34,7 +34,6 @@ export default function ParameterTable({ parameters = [], moduleName = '' }) {
     return (
       <div 
         className="p-6 text-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 text-sm"
-        style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
       >
         No parameter schema registered for this module.
       </div>
@@ -44,7 +43,6 @@ export default function ParameterTable({ parameters = [], moduleName = '' }) {
   return (
     <div 
       className="my-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {/* Controls Header */}
       <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/70">

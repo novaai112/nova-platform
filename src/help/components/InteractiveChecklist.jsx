@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Square, RefreshCw, Printer, ShieldCheck } from 'lucide-react';
+import { CheckSquare, Square, RefreshCw, ShieldCheck } from 'lucide-react';
 
 export default function InteractiveChecklist({ checklistId = 'default', title, items = [] }) {
   const storageKey = `nova_checklist_${checklistId}`;
@@ -42,7 +42,6 @@ export default function InteractiveChecklist({ checklistId = 'default', title, i
   return (
     <div 
       className="my-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {/* Header */}
       <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
@@ -64,12 +63,6 @@ export default function InteractiveChecklist({ checklistId = 'default', title, i
             className="px-3 py-1 text-xs rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1 font-semibold shadow-2xs"
           >
             <RefreshCw className="w-3 h-3" /> Reset
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="px-3 py-1 text-xs rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors flex items-center gap-1 font-bold shadow-2xs"
-          >
-            <Printer className="w-3 h-3" /> Print
           </button>
         </div>
       </div>

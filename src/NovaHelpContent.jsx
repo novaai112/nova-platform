@@ -5,7 +5,7 @@ import NovaDocumentationCenter from './help/NovaDocumentationCenter.jsx';
  * Nova Help Center Wrapper
  * Connects the App routing and state to the NovaDocumentationCenter platform.
  */
-export default function NovaHelpContent({ onNavigateBack }) {
+export default function NovaHelpContent({ onBackToDashboard, onMobileSwipeToCommunity, onMobileSwipeToProfile }) {
   // Extract and normalize initial topic from current URL path or search query
   const initialTopicId = useMemo(() => {
     try {
@@ -42,10 +42,12 @@ export default function NovaHelpContent({ onNavigateBack }) {
   }, []);
 
   return (
-    <div className="w-full min-h-screen -mt-2">
+    <div className="w-full min-h-screen">
       <NovaDocumentationCenter
         initialTopicId={initialTopicId}
-        onNavigateBack={onNavigateBack}
+        onBackToDashboard={onBackToDashboard}
+        onMobileSwipeToCommunity={onMobileSwipeToCommunity}
+        onMobileSwipeToProfile={onMobileSwipeToProfile}
       />
     </div>
   );

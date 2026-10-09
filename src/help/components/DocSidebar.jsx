@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { 
-  Search, 
   ChevronDown, 
   ChevronRight, 
-  Bookmark, 
   Layers, 
-  Command,
   X,
+  LayoutDashboard,
   Compass,
   Cpu,
   Activity,
-  FileText
+  FileText,
+  Target,
+  Waves,
+  CircleDot,
+  Thermometer,
+  Cylinder,
+  Flame,
+  Layers3,
+  Disc,
+  Anchor,
+  Box
 } from 'lucide-react';
 import { DOC_CATEGORIES, getArticleById } from '../data/docArticles.js';
 
@@ -22,14 +30,55 @@ const ICON_MAP = {
   FileText
 };
 
+const ARTICLE_ICON_MAP = {
+  'nozzle-analysis': Target,
+  'bellows-analysis': Waves,
+  'flange-analysis': CircleDot,
+  'local-pwht': Thermometer,
+  'saddle-analysis': Cylinder,
+  'hot-box-analysis': Flame,
+  'stiffener-analysis': Layers3,
+  'tubesheet-analysis': Disc,
+  'lug-analysis': Anchor,
+  'trunnion-analysis': Box
+};
+
+const SHORT_ARTICLE_TITLES = {
+  'getting-started': 'Start here',
+  'website-overview': 'Platform overview',
+  'dashboard-guide': 'Dashboard',
+  'navigation-guide': 'Navigation',
+  'units-conventions': 'Units & conventions',
+  'analysis-comparison': 'Analysis matrix',
+  'nozzle-analysis': 'Nozzle',
+  'bellows-analysis': 'Bellows',
+  'flange-analysis': 'Flange',
+  'local-pwht': 'PWHT',
+  'saddle-analysis': 'Saddle',
+  'hot-box-analysis': 'Hot box',
+  'stiffener-analysis': 'Stiffener',
+  'tubesheet-analysis': 'Tubesheet',
+  'lug-analysis': 'Lifting lug',
+  'trunnion-analysis': 'Trunnion',
+  'nova-website': 'Nova website',
+  'ansys-act-wizard': 'Ansys ACT',
+  'cad-ai': 'CAD generator',
+  'asme-materials': 'ASME materials',
+  'stress-strain': 'Stress-strain',
+  'results-reports': 'Reports',
+  'engineering-validation': 'Validation',
+  'standards-references': 'Standards',
+  'release-notes': 'Release notes',
+  'contact-support': 'Contact',
+  'analysis-input-guide': 'Input guide'
+};
+
 export default function DocSidebar({
   currentArticleId,
   onSelectArticle,
-  onOpenSearch,
-  bookmarks = [],
-  onToggleBookmark,
   isMobileOpen,
-  onCloseMobile
+  onCloseMobile,
+  onBackToDashboard
 }) {
   const [expandedCategories, setExpandedCategories] = useState(() => {
     try {
@@ -52,72 +101,22 @@ export default function DocSidebar({
 
   return (
     <aside
-      className={`fixed lg:sticky top-0 lg:top-16 z-40 lg:z-10 h-screen lg:h-[calc(100vh-4rem)] w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 shadow-xs ${
+      className={`fixed lg:sticky top-0 z-40 lg:z-10 h-screen w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 shadow-xs ${
         isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {/* Top Mobile Bar */}
       <div className="lg:hidden p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
-          Engineering Help Center
+          Nova Documentation
         </span>
         <button onClick={onCloseMobile} className="p-1 rounded text-slate-500 hover:text-slate-800">
           <X className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Global Quick Search Trigger */}
-      <div className="p-3 border-b border-slate-200 bg-slate-50/50">
-        <button
-          onClick={onOpenSearch}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-all group shadow-2xs"
-        >
-          <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-blue-600 group-hover:text-blue-700" />
-            <span className="font-medium">Search documentation...</span>
-          </div>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[10px] text-slate-500 border border-slate-200">
-            <Command className="w-2.5 h-2.5" /> K
-          </kbd>
-        </button>
-      </div>
-
       {/* Main Navigation Tree */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-4">
-        {/* Bookmarks Section */}
-        {bookmarks.length > 0 && (
-          <div className="space-y-1">
-            <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
-              <Bookmark className="w-3.5 h-3.5 fill-amber-400 text-amber-600" />
-              <span>Bookmarks ({bookmarks.length})</span>
-            </div>
-            <div className="space-y-0.5 pl-2">
-              {bookmarks.map(id => {
-                const art = getArticleById(id);
-                if (!art) return null;
-                const isSelected = currentArticleId === art.id;
-                return (
-                  <button
-                    key={art.id}
-                    onClick={() => {
-                      onSelectArticle(art.id);
-                      if (onCloseMobile) onCloseMobile();
-                    }}
-                    className={`block w-full text-left py-1.5 px-2.5 rounded-lg text-xs truncate transition-colors ${
-                      isSelected 
-                        ? 'bg-amber-100 text-amber-900 font-bold border border-amber-300 shadow-2xs' 
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium'
-                    }`}
-                  >
-                    ★ {art.title.replace(/:\s*.*$/, '')}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Categories */}
         {DOC_CATEGORIES.map(category => {
           const isExpanded = !!expandedCategories[category.id];
@@ -151,6 +150,7 @@ export default function DocSidebar({
                     const article = getArticleById(articleId);
                     if (!article) return null;
                     const isActive = currentArticleId === article.id || currentArticleId === article.slug;
+                    const ArticleIcon = ARTICLE_ICON_MAP[article.id] || FileText;
 
                     return (
                       <button
@@ -159,15 +159,20 @@ export default function DocSidebar({
                           onSelectArticle(article.id);
                           if (onCloseMobile) onCloseMobile();
                         }}
-                        className={`w-full text-left py-1.5 px-2.5 rounded-lg text-xs transition-all flex items-center justify-between group ${
+                        aria-current={isActive ? 'page' : undefined}
+                        title={article.title}
+                        className={`w-full text-left py-2 px-2.5 rounded-lg text-xs transition-all duration-200 flex items-center justify-between group ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200 shadow-2xs'
+                            ? 'nova-nav-active bg-blue-50 text-blue-800 font-bold border border-blue-200 shadow-sm'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium'
                         }`}
                       >
-                        <span className="truncate pr-1">{article.title.replace(/:\s*.*$/, '')}</span>
+                        <span className="flex min-w-0 items-center gap-2">
+                          <ArticleIcon className={`h-3.5 w-3.5 shrink-0 transition-colors ${isActive ? 'nova-nav-icon-active text-blue-700' : 'text-slate-400 group-hover:text-blue-600'}`} />
+                          <span className="truncate">{SHORT_ARTICLE_TITLES[article.id] || article.title.replace(/:\s*.*$/, '')}</span>
+                        </span>
                         {isActive && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                          <span className="nova-nav-indicator w-2 h-2 rounded-full bg-blue-600 shrink-0" />
                         )}
                       </button>
                     );
@@ -179,13 +184,15 @@ export default function DocSidebar({
         })}
       </nav>
 
-      {/* Footer System Status */}
-      <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-        <span className="flex items-center gap-1.5 font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>v2.4.0 Online</span>
-        </span>
-        <span>ASME BPVC 2023</span>
+      <div className="border-t border-slate-200 p-3">
+        <button
+          type="button"
+          onClick={onBackToDashboard}
+          className="nova-dashboard-link flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0 text-blue-700" />
+          <span>Back to Dashboard</span>
+        </button>
       </div>
     </aside>
   );

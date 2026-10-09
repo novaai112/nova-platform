@@ -169,19 +169,100 @@
         @media (max-width: 768px) {
             .nav-primary { flex-direction: column; gap: 1rem; padding: 1rem; align-items: stretch; }
             .nav-brand { justify-content: center; }
-            .nav-controls { justify-content: center; width: 100%; }
+            .nav-controls { justify-content: center; width: 100%; gap: 0.3rem; }
+            .nav-controls .btn-tab { flex: 1 1 0; min-width: 0; padding: 0.45rem 0.35rem; font-size: 0.72rem; line-height: 1rem; }
             .nav-secondary { flex-direction: column; gap: 1rem; padding: 1rem; }
             .main-workspace { padding: 1rem; }
             .dashboard-grid { grid-template-columns: 1fr; }
-            .form-group { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.8rem 1rem; }
-            .form-label { padding-right: 0; }
-            .input-control { flex: 1 1 100%; width: 100%; }
             .sticky-footer { padding: 0.75rem 1rem; }
             .btn-submit { width: 100%; max-width: 500px; padding: 0.85rem 1.5rem; }
             #forms-container { gap: 1.5rem; padding-bottom: 120px; }
+
+            .mat-popup-overlay {
+                align-items: stretch;
+                padding: max(0.4rem, env(safe-area-inset-top)) 0.4rem max(0.4rem, env(safe-area-inset-bottom));
+                overflow: hidden;
+            }
+            .mat-popup-container {
+                width: 100%;
+                max-width: none;
+                min-width: 0;
+                max-height: 100%;
+                margin: auto 0;
+                padding: 0.8rem 0.65rem;
+                border-radius: 14px;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+            .mat-popup-header {
+                gap: 0.4rem;
+                margin-bottom: 0.7rem;
+                padding-bottom: 0.6rem;
+            }
+            .mat-popup-title {
+                min-width: 0;
+                gap: 0.4rem;
+                font-size: 0.8rem;
+                letter-spacing: 0;
+                overflow-wrap: anywhere;
+            }
+            .mat-popup-title .mpbadge {
+                flex: 0 0 auto;
+                padding: 0.15rem 0.35rem;
+                font-size: 0.58rem;
+            }
+            .mat-popup-close {
+                width: 1.8rem;
+                height: 1.8rem;
+                flex: 0 0 auto;
+            }
+            .mat-tables-row {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0.65rem;
+                min-width: 0;
+            }
+            .mat-rect-card {
+                min-width: 0;
+                border-radius: 11px;
+            }
+            .mat-rect-header {
+                padding: 0.55rem 0.65rem;
+                font-size: 0.72rem;
+            }
+            .mat-tbl {
+                width: 100%;
+                table-layout: fixed;
+                font-size: 0.67rem;
+            }
+            .mat-tbl td {
+                padding: 0.35rem 0.45rem;
+                overflow-wrap: anywhere;
+            }
+            .mat-tbl .tl {
+                width: 42%;
+                line-height: 0.9rem;
+            }
+            .mat-tbl .tv {
+                width: 58%;
+                text-align: right;
+            }
+            .tiw {
+                min-width: 0;
+                max-width: 100%;
+            }
+            .ti {
+                min-width: 0;
+                padding: 0.3rem 0.4rem;
+                font-size: 0.72rem;
+            }
+            .tia {
+                padding-inline: 0.35rem;
+                font-size: 0.6rem;
+            }
         }
         @keyframes pulseOp { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
     </style>
+    <link rel="stylesheet" href="/mobile-analysis.css">
 </head>
 <body>
     <div class="ambient-orb orb-1"></div>
@@ -196,7 +277,7 @@
             </h1>
             <div class="nav-controls">
                 <button type="button" class="btn-tab active" id="btn-shell" onclick="switchAnalysis('shell')">Shell Nozzle</button>
-                <button type="button" class="btn-tab" id="btn-head" onclick="switchAnalysis('head')">Vessel Head</button>
+                <button type="button" class="btn-tab" id="btn-head" onclick="switchAnalysis('head')"><span class="head-label-desktop">Vessel Head</span><span class="head-label-mobile">Head Nozzle</span></button>
             </div>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <button class="btn-action" type="button" onclick="window.location.href='https://nova-analysis.vercel.app/'" title="Open NOVA Platform Dashboard">
@@ -2051,5 +2132,6 @@
             renderForms();
         };
     </script>
+    <script src="/mobile-analysis.js"></script>
 </body>
 </html>

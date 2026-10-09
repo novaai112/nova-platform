@@ -25,7 +25,6 @@ export default function FeedbackWidget({ articleId }) {
   return (
     <div 
       className="my-8 rounded-2xl border border-slate-200 bg-slate-50/70 p-6 text-center space-y-4 shadow-2xs"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {!voted ? (
         <div className="space-y-3">

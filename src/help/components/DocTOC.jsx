@@ -51,7 +51,6 @@ export default function DocTOC({ sections = [], activeSectionId, onSelectSection
   return (
     <div 
       className="space-y-4 text-xs font-sans"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[11px] px-1">
         <List className="w-3.5 h-3.5 text-blue-600" />

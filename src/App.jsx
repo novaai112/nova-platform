@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from './supabaseClient';
 import {
   Activity,
@@ -53,13 +54,16 @@ import {
   Hash,
   Heart,
   HelpCircle,
+  Home,
   Image,
   Landmark,
   Lightbulb,
   LineChart,
+  LayoutDashboard,
   Link,
   Loader2,
   Lock,
+  LogOut,
   Mail,
   Menu,
   MessageCircle,
@@ -466,6 +470,14 @@ export default function App() {
   const [selectedWizardForPricing, setSelectedWizardForPricing] = useState(null);
   const [isWizardPricingOpen, setIsWizardPricingOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobilePopup, setMobilePopup] = useState(null);
+  const [isMobileAiRecommender, setIsMobileAiRecommender] = useState(false);
+  const [mobileProfileSection, setMobileProfileSection] = useState(null);
+  const mobileSwipeStartRef = useRef(null);
+  const [isMobileAppBarHidden, setIsMobileAppBarHidden] = useState(false);
+  const profilePressTimerRef = useRef(null);
+  const suppressProfileClickRef = useRef(false);
+  const lastMobileScrollYRef = useRef(0);
 
   const [currentUser, setCurrentUser] = useState({
     id: null, name: "", email: "", initial: "", avatar: null, company: "", phone: "", joined: "", isApproved: false, plan: "Free", dailyCreditsTotal: 100, dailyCreditsRemaining: 100, isLifetimeMax: false
@@ -795,7 +807,56 @@ export default function App() {
     } catch (e) {}
   };
 
+  const navigateToDashboard = () => {
+    setCurrentView('dashboard');
+    try {
+      window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+    } catch (e) {}
+  };
+
+  const navigateToHelp = () => {
+    setCurrentView('nova_help');
+    try {
+      window.history.pushState({ view: 'nova_help' }, '', '/help');
+    } catch (e) {}
+  };
+
+  const navigateMobileApp = (view, path, tab) => {
+    setCurrentView(view);
+    if (view !== 'profile') setMobileProfileSection(null);
+    if (view === 'profile') {
+      setProfileTab(tab || 'info');
+      setMobileProfileSection(null);
+    } else if (tab) setProfileTab(tab);
+    try {
+      window.history.pushState({ view, tab }, '', path);
+    } catch (e) {}
+  };
+
+  const handleMobileSwipeStart = (event) => {
+    if (event.touches.length !== 1) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable="true"], .overflow-x-auto, .overflow-y-auto')) return;
+    mobileSwipeStartRef.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  };
+
+  const handleMobileSwipeEnd = (event) => {
+    const start = mobileSwipeStartRef.current;
+    mobileSwipeStartRef.current = null;
+    if (!start || event.changedTouches.length !== 1 || window.innerWidth >= 768) return;
+    const dx = event.changedTouches[0].clientX - start.x;
+    const dy = event.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) < 85 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+    if (currentView === 'dashboard' && dx > 0) {
+      navigateMobileApp('nova_community', '/community');
+    } else if (currentView === 'nova_community') {
+      if (dx > 0) navigateMobileApp('nova_help', '/help');
+      else navigateMobileApp('dashboard', '/dashboard');
+    }
+  };
+
   const openAiModal = () => {
+    setIsMobileAiRecommender(false);
     setIsAiModalOpen(true);
     try {
       window.history.pushState({ view: 'dashboard', modal: 'ai' }, '', '/dashboard/ai-recommender');
@@ -804,6 +865,10 @@ export default function App() {
 
   const closeAiModal = () => {
     setIsAiModalOpen(false);
+    if (isMobileAiRecommender) {
+      setIsMobileAiRecommender(false);
+      return;
+    }
     try {
       window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
     } catch (e) {}
@@ -854,6 +919,41 @@ export default function App() {
       }
     } catch (e) {}
   }, [currentView]);
+
+  useEffect(() => {
+    const handleMobileScroll = () => {
+      const currentY = window.scrollY;
+      const scrollingDown = currentY > lastMobileScrollYRef.current;
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      setIsMobileAppBarHidden(currentView === 'dashboard' && isMobile && currentY > 70 && scrollingDown);
+      lastMobileScrollYRef.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleMobileScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleMobileScroll);
+  }, [currentView]);
+
+  useEffect(() => {
+    const hasMobilePopup = mobilePopup !== null || (isAiModalOpen && isMobileAiRecommender);
+    if (!hasMobilePopup) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key !== 'Escape') return;
+      setMobilePopup(null);
+      if (isMobileAiRecommender) {
+        setIsAiModalOpen(false);
+        setIsMobileAiRecommender(false);
+      }
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobilePopup, isAiModalOpen, isMobileAiRecommender]);
 
   // Support Browser Back and Forward buttons seamlessly with detail pages
   useEffect(() => {
@@ -2809,18 +2909,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
       </a>
     </div>
   );
-  const renderAuthContainer = (children) => (
-    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-          <CheckCircle className="w-5 h-5" /> {notification.message}
-        </div>
-      )}
-      <button onClick={() => setCurrentView('landing')} className="absolute top-6 left-6 glass-panel px-4 py-2 rounded-full text-slate-700 hover:text-[#3C64D6] flex items-center gap-2 font-semibold transition-colors">
+  const renderAuthContainer = (children, pageClass = '') => (
+    <div className={`auth-page mobile-auth-page relative z-10 flex flex-col items-center justify-center min-h-screen p-4 pt-20 ${pageClass}`}>
+      <button onClick={() => setCurrentView('landing')} className="auth-home-link absolute top-6 left-6 glass-panel px-4 py-2 rounded-full text-slate-700 hover:text-[#3C64D6] flex items-center gap-2 font-semibold transition-colors">
         <ArrowRight className="w-4 h-4 rotate-180" /> Home
       </button>
 
-      <div className="max-w-md w-full glass-panel rounded-[2.5rem] shadow-[0_20px_60px_rgba(31,38,135,0.15)] p-10 relative overflow-hidden">
+      <div className="auth-card mobile-auth-card max-w-md w-full glass-panel rounded-[2.5rem] shadow-[0_20px_60px_rgba(31,38,135,0.15)] p-10 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/30 rounded-full filter blur-[40px]"></div>
         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400/30 rounded-full filter blur-[40px]"></div>
 
@@ -2829,7 +2924,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <CosmicLogo className="w-14 md:w-20 h-14 md:h-20 transition-transform duration-500 hover:scale-110 drop-shadow-md" />
           </div>
           <h1 className="text-xl md:text-3xl font-extrabold text-[#1E293B] tracking-tight">NOVA 1.0</h1>
-          <p className="text-sm font-semibold tracking-wider uppercase text-slate-600">Authentication</p>
+          <p className="auth-category text-sm font-semibold tracking-wider uppercase text-slate-600">Authentication</p>
         </div>
         <div className="relative z-10">
           {children}
@@ -2863,10 +2958,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
           {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-5 h-5" /></>}
         </button>
       </form>
-      <div className="mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
+      <div className="login-signup-prompt mt-4 md:mt-8 text-sm font-medium text-center text-slate-600">
         Don't have an account? <button onClick={() => setCurrentView('signup')} className="text-[#3C64D6] font-bold hover:underline ml-1">Sign up here</button>
       </div>
-    </>
+    </>,
+    'login-auth-page'
   );
   const renderSignup = () => renderAuthContainer(
     <>
@@ -3831,7 +3927,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     );
   };
   const DashboardHeader = ({ isProfile, customTitle }) => (
-    <div className="relative z-50 flex flex-col items-start justify-between p-4 md:p-6 mb-4 md:mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60">
+    <div className={`${!isProfile && !customTitle ? 'dashboard-header-card' : ''} ${customTitle === 'Nova Community' ? 'community-page-header' : ''} relative z-50 flex flex-col items-start justify-between p-4 md:p-6 mb-4 md:mb-8 border-t shadow-md glass-panel text-slate-800 rounded-3xl md:flex-row md:items-center border-white/60`}>
       <div className="flex items-center gap-4">
         <div className="items-center justify-center hidden p-3 transition-all border shadow-sm cursor-pointer sm:flex bg-white/40 border-white/50 rounded-2xl hover:bg-white/60 hover:scale-105" onClick={handleLogoClick}>
           <CosmicLogo className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -3903,12 +3999,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
     </div>
   );
   const renderDashboard = () => (
-    <div className="relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${notification.type === 'success' ? 'bg-emerald-600/90' : notification.type === 'info' ? 'bg-blue-600/90' : 'bg-slate-800/90'}`}>
-          <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
-        </div>
-      )}
+    <div className="nova-dashboard-root relative z-10 min-h-screen p-4 pt-24 font-sans text-slate-800 md:p-8">
       <div className="max-w-[1200px] mx-auto">
         <DashboardHeader isProfile={false} />
         {!currentUser.isApproved && (
@@ -3930,7 +4021,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </button>
           </div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10"> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
+        <div className="nova-dashboard-module-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1100px] mx-auto mb-10"> <div className="glass-panel border-indigo-500/20 bg-indigo-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(99,102,241,0.15)] transition-all">
           <div>
             <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
               {!canRunPlan('Basic') ? (
@@ -4384,7 +4475,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               className="bg-indigo-600 hover:bg-indigo-700 w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-indigo-600/25 cursor-pointer">
               Open Generator
             </button>
-          </div> <div className="glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
+          </div> <div className="dashboard-cad-ai-card glass-panel border-teal-500/20 bg-teal-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(20,184,166,0.15)] transition-all">
             <div>
               <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
                 {!canRunPlan('Max') ? (
@@ -4426,7 +4517,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <span className="text-[10px] bg-white/25 px-1.5 py-0.5 rounded-md font-extrabold uppercase">Max</span>
               </button>
             )}
-          </div> <div className="glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
+          </div> <div className="dashboard-ai-recommender-card glass-panel border-purple-500/20 bg-purple-50/40 rounded-[2rem] p-4 md:p-8 text-center shadow-sm flex flex-col justify-between hover:shadow-[0_8px_32px_rgba(168,85,247,0.15)] transition-all">
             <div>
               <div className="flex items-center justify-center gap-2 mb-3 min-h-[22px]">
                 <div className="h-5"></div>
@@ -4440,8 +4531,8 @@ Always provide professional, precise, technically accurate, and helpful answers.
               <Sparkles className="w-4 h-4" /> ✨ Smart Setup
             </button>
           </div>
-        </div><div className="glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
-          <div className="flex flex-col items-center justify-between gap-4 mb-4 md:mb-8 sm:flex-row">
+        </div><div className="dashboard-job-summary glass-panel rounded-[2rem] p-4 md:p-8 shadow-sm mb-4 md:mb-8">
+          <div className="dashboard-job-summary-heading flex flex-col items-center justify-between gap-4 mb-4 md:mb-8 sm:flex-row">
             <h2 className="text-lg md:text-2xl font-extrabold text-slate-800 drop-shadow-sm">Your Job Summary</h2>
             <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="glass-input text-[#3C64D6] text-sm rounded-xl px-5 py-2.5 outline-none font-bold cursor-pointer shadow-sm border-white/60 focus:ring-2 focus:ring-blue-500">
               <option value={`All Analysis (${jobs.length})`}>All Analysis ({jobs.length})</option>
@@ -4457,24 +4548,24 @@ Always provide professional, precise, technically accurate, and helpful answers.
               <option value="2D Axisymetric Tubesheet Analysis">2D Axisymetric Tubesheet Analysis</option>
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-            <div className="p-5 text-center border shadow-sm bg-emerald-500/20 border-emerald-500/30 backdrop-blur-md rounded-2xl">
+          <div className="dashboard-job-status-grid grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="dashboard-job-status-card p-5 text-center border shadow-sm bg-emerald-500/20 border-emerald-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-emerald-800">{stats.total}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-emerald-700 opacity-90">Total</div>
             </div>
-            <div className="p-5 text-center border shadow-sm bg-blue-500/20 border-blue-500/30 backdrop-blur-md rounded-2xl">
+            <div className="dashboard-job-status-card p-5 text-center border shadow-sm bg-blue-500/20 border-blue-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-blue-800">{stats.completed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-blue-700 opacity-90">Completed</div>
             </div>
-            <div className="p-5 text-center border shadow-sm bg-sky-500/20 border-sky-500/30 backdrop-blur-md rounded-2xl">
+            <div className="dashboard-job-status-card p-5 text-center border shadow-sm bg-sky-500/20 border-sky-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-sky-800">{stats.processing}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-sky-700 opacity-90">Processing</div>
             </div>
-            <div className="p-5 text-center border shadow-sm bg-orange-500/20 border-orange-500/30 backdrop-blur-md rounded-2xl">
+            <div className="dashboard-job-status-card p-5 text-center border shadow-sm bg-orange-500/20 border-orange-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-orange-800">{stats.pending}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-orange-700 opacity-90">Pending</div>
             </div>
-            <div className="p-5 text-center border shadow-sm bg-red-500/20 border-red-500/30 backdrop-blur-md rounded-2xl">
+            <div className="dashboard-job-status-card p-5 text-center border shadow-sm bg-red-500/20 border-red-500/30 backdrop-blur-md rounded-2xl">
               <div className="mb-1 text-xl md:text-3xl font-extrabold text-red-800">{stats.failed}</div>
               <div className="text-[11px] uppercase tracking-widest font-bold text-red-700 opacity-90">Failed</div>
             </div>
@@ -4682,53 +4773,6 @@ Always provide professional, precise, technically accurate, and helpful answers.
         )}
         {isJobDetailsOpen && renderJobDetailsModal()}
         {isInsightsOpen && renderInsightsModal()}
-        {isAiModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => closeAiModal()}></div>
-            <div className="glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80">
-              <div className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
-                <h3 className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
-                  <Sparkles className="w-6 h-6" /> AI Analysis Recommender
-                </h3>
-                <button onClick={() => closeAiModal()} className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
-                <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
-                  <p className="pl-1 mb-3 text-sm font-bold text-purple-900 drop-shadow-sm">Describe your engineering scenario below:</p>
-                  <textarea
-                    className="w-full h-20 md:h-32 p-4 text-sm font-medium resize-none glass-input rounded-xl focus:ring-purple-500/50"
-                    placeholder="E.g., I have a high-pressure steam pipe attached to a thin-walled cylindrical vessel. I need to know if the junction is safe."
-                    value={aiSetupPrompt}
-                    onChange={(e) => setAiSetupPrompt(e.target.value)}
-                  />
-                  <div className="flex justify-end mt-4">
-                    <button
-                      onClick={handleAiSetupSubmit}
-                      disabled={isAiSetupLoading || !aiSetupPrompt.trim()}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-4 md:px-6 rounded-xl flex items-center gap-2 transition-all hover:scale-[1.02] shadow-md"
-                    >
-                      {isAiSetupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                      {isAiSetupLoading ? "Analyzing..." : "Analyze Scenario"}
-                    </button>
-                  </div>
-                </div>
-                {aiSetupResponse && (
-                  <div className="p-4 md:p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
-                    <h4 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
-                      <Bot className="w-4 h-4" /> AI Recommendation
-                    </h4>
-                    <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">
-                      {aiSetupResponse}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -4747,7 +4791,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
         <div className="bg-white p-8 rounded-2xl shadow-xl text-center space-y-4">
           <h2 className="text-xl font-black">Ansys Wizard Products</h2>
           <p className="text-sm text-slate-500">Ansys ACT automation workflows are integrated into Nova Analysis.</p>
-          <button onClick={() => setCurrentView('dashboard')} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl">Go to Dashboard</button>
+          <button onClick={navigateToDashboard} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl">Go to Dashboard</button>
         </div>
       </div>
     );
@@ -5056,7 +5100,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </p>
               </div>
               <button
-                onClick={() => setCurrentView('dashboard')}
+                onClick={navigateToHelp}
                 className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline shrink-0"
               >
                 View Resource Guide →
@@ -5181,13 +5225,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </button>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
-                onClick={() => setCurrentView('dashboard')}
+                onClick={navigateToHelp}
                 className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-300 flex items-center justify-center gap-1.5"
               >
                 <BookOpen className="w-4 h-4 text-emerald-600" /> View 100% Daily Credits Guide
               </button>
               <button
-                onClick={() => setCurrentView('dashboard')}
+                onClick={navigateToDashboard}
                 className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs transition-all shadow-md hover:scale-105 flex items-center justify-center gap-1.5"
               >
                 Start Analysis on Dashboard →
@@ -5243,10 +5287,10 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <Lock className="w-3.5 h-3.5 text-indigo-600" /> Official Ansys ACT Deliverable
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                Ansys ACT Wizard (.WBEX) Provisioned & Ready
+                Ansys ACT Wizard Provisioned & Ready
               </h2>
               <p className="text-slate-600 text-xs sm:text-sm font-medium max-w-lg mx-auto">
-                Thank you for your commercial purchase. Your node-locked ACT Extension (.WBEX) binary and commercial activation key have been generated below for local Workbench installation.
+                Thank you for your commercial purchase. Your node-locked ACT extension binary and commercial activation key have been generated below for local Workbench installation.
               </p>
             </div> <div className="bg-indigo-50/80 border-2 border-indigo-200 rounded-3xl p-6 space-y-3 shadow-md">
               <div className="flex items-center justify-between">
@@ -5333,9 +5377,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                   <tr>
                     <td className="p-3.5 font-bold text-slate-900">
-                      <div>{receipt.plan}</div>
+                      <div>{String(receipt.plan || '').replace(/\s*\(\.WBEX\)/gi, '')}</div>
                       <div className="text-[10px] font-normal text-slate-500">
-                        Ansys ACT Binary (.WBEX) + Node-Locked Commercial License
+                        ACT Binary Package + Node-Locked Commercial License
                       </div>
                     </td>
                     <td className="p-3.5 font-mono font-bold text-indigo-700">
@@ -5381,7 +5425,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   <PlayCircle className="w-4 h-4 text-indigo-600" /> Watch Setup Tutorial
                 </button>
                 <button
-                  onClick={() => setCurrentView('dashboard')}
+                  onClick={navigateToDashboard}
                   className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs transition-all shadow-md hover:scale-105"
                 >
                   Return to Dashboard →
@@ -5395,12 +5439,17 @@ Always provide professional, precise, technically accurate, and helpful answers.
   };
   const renderNovaHelp = () => {
     return (
-      <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
-        <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
-          {/* Top Dashboard Header */}
-          <DashboardHeader isProfile={false} customTitle="Nova Help" />
-          <NovaHelpContent onNavigateBack={() => setCurrentView('dashboard')} />
-        </div>
+      <div className="relative z-10 min-h-screen bg-white font-sans text-slate-900">
+        <NovaHelpContent
+          onBackToDashboard={() => {
+            setCurrentView('dashboard');
+            try {
+              window.history.pushState({ view: 'dashboard' }, '', '/dashboard');
+            } catch (e) {}
+          }}
+          onMobileSwipeToCommunity={() => navigateMobileApp('nova_community', '/community')}
+          onMobileSwipeToProfile={() => navigateMobileApp('profile', '/profile')}
+        />
       </div>
     );
   };
@@ -5420,20 +5469,20 @@ Always provide professional, precise, technically accurate, and helpful answers.
         <div className="min-h-screen bg-white font-sans text-slate-900">
           <NovaCommunity
             currentUser={currentUser}
-            onNavigateBack={() => setCurrentView('dashboard')}
+            onNavigateBack={navigateToDashboard}
           />
         </div>
       );
     }
 
     return (
-      <div className="relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
+      <div className="mobile-community-page relative z-10 min-h-screen p-3 sm:p-6 pt-20 font-sans text-slate-900 bg-gradient-to-b from-slate-50 via-slate-100 to-slate-200">
         <div className="max-w-[1440px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-3">
           {/* Top Profile Header */}
           <DashboardHeader isProfile={false} customTitle="Nova Community" />
           <NovaCommunity
             currentUser={currentUser}
-            onNavigateBack={() => setCurrentView('dashboard')}
+            onNavigateBack={navigateToDashboard}
           />
         </div>
       </div>
@@ -5598,7 +5647,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       <div className="min-h-screen bg-white font-sans text-slate-900">
         <NovaCommunity
           currentUser={currentUser}
-          onNavigateBack={() => setCurrentView('dashboard')}
+          onNavigateBack={navigateToDashboard}
         />
       </div>
     );
@@ -5674,7 +5723,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+            <div className="materials-category-filter flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
               {['All', 'Carbon Steel', 'Austenitic Stainless', 'Low Alloy Steel', 'Nickel Alloy'].map(cat => (
                 <button
                   key={cat}
@@ -6148,16 +6197,35 @@ Always provide professional, precise, technically accurate, and helpful answers.
   };
 
   const renderProfile = () => {
+    const mobileJobCounts = jobs.reduce((counts, job) => {
+      const status = (job.status || '').toLowerCase();
+      if (status === 'completed' || status === 'success') counts.completed += 1;
+      else if (status === 'failed' || status === 'error') counts.failed += 1;
+      else if (status === 'pending' || status === 'queued' || status === 'waiting') counts.pending += 1;
+      return counts;
+    }, { completed: 0, pending: 0, failed: 0 });
+    const openMobileProfileSection = (tab, label) => {
+      handleProfileTabChange(tab);
+      setMobileProfileSection(label);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+    const mobileProfileItems = [
+      { label: 'Profile Info', icon: Settings, action: () => openMobileProfileSection('info', 'Profile Info') },
+      { label: 'My Orders & Jobs', icon: Receipt, action: () => openMobileProfileSection('orders', 'My Orders & Jobs') },
+      { label: 'Plan & Subscription', icon: Sparkles, action: () => openMobileProfileSection('subscription', 'Plan & Subscription') },
+      { label: 'Security Settings', icon: Lock, action: () => openMobileProfileSection('security', 'Security Settings') },
+      { label: 'Notifications', icon: Bell, action: () => openMobileProfileSection('notifications', 'Notifications') },
+      { label: 'Help & Support', icon: HelpCircle, action: () => openMobileProfileSection('help', 'Help & Support') },
+      { label: 'Ansys Wizard Product', icon: Package, action: () => openMobileProfileSection('wizard', 'Ansys Wizard Product') },
+      { label: 'Nova Community', icon: Users, action: () => openMobileProfileSection('community', 'Nova Community') },
+      { label: 'Nova Help', icon: BookOpen, action: () => openMobileProfileSection('nova_help', 'Nova Help') },
+    ];
     return (
-      <div className="relative z-10 min-h-screen font-sans text-slate-800 bg-[#f1f3f6]" style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
-        {notification && (
-          <div className={`fixed top-4 right-4 z-[200] px-5 py-3.5 rounded-xl shadow-2xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 text-sm border ${notification.type === 'success' ? 'bg-[#388e3c] border-[#2e7d32]' : notification.type === 'info' ? 'bg-[#1976d2] border-[#1565c0]' : 'bg-[#d32f2f] border-[#c62828]'}`}>
-            <CheckCircle className="w-4 h-4 shrink-0" /> {notification.message}
-          </div>
-        )} <div className="bg-[#2874f0] text-white sticky top-0 z-50 shadow-lg">
+      <div className={`mobile-profile-root relative z-10 min-h-screen font-sans text-slate-800 bg-[#f1f3f6]${mobileProfileSection ? ' is-detail' : ''}`} style={{ fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+        <div className="profile-desktop-header bg-[#2874f0] text-white sticky top-0 z-50 shadow-lg">
           <div className="max-w-[1280px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <button onClick={() => setCurrentView('dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold transition-colors">
+              <button onClick={navigateToDashboard} className="flex items-center gap-2 text-white/90 hover:text-white text-sm font-semibold transition-colors">
                 <ArrowRight className="w-4 h-4 rotate-180" /> Dashboard
               </button>
               <span className="text-white/40">/</span>
@@ -6172,7 +6240,97 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
           </div>
         </div>
-        <div className="max-w-[1280px] mx-auto px-3 sm:px-4 py-6 flex flex-col lg:flex-row gap-5 items-start"> <div className="w-full lg:w-[260px] shrink-0 space-y-3"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        {!mobileProfileSection ? (
+          <>
+            <header className="mobile-profile-header">
+              <button type="button" aria-label="Back to Dashboard" onClick={navigateToDashboard}>
+                <ArrowLeft aria-hidden="true" />
+                <span>Profile</span>
+              </button>
+              <button type="button" className="mobile-profile-notifications" aria-label="Open Activity and Alerts Log" onClick={() => setMobilePopup('alerts')}>
+                <Bell aria-hidden="true" />
+                {persistentNotifications.some((item) => !item.read) && <span />}
+              </button>
+            </header>
+            <section className="mobile-profile-overview" aria-label="Profile overview">
+          <div className="mobile-profile-cover" aria-hidden="true" />
+          <label
+            className="mobile-profile-avatar"
+            aria-label="Tap to change profile photo or press and hold to preview"
+            onPointerDown={startProfileLongPress}
+            onPointerUp={cancelProfileLongPress}
+            onPointerLeave={cancelProfileLongPress}
+            onPointerCancel={cancelProfileLongPress}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              cancelProfileLongPress();
+              suppressProfileClickRef.current = true;
+              setMobilePopup('profile-preview');
+            }}
+            onClick={(event) => {
+              if (suppressProfileClickRef.current) {
+                event.preventDefault();
+                suppressProfileClickRef.current = false;
+              }
+            }}
+          >
+            {currentUser.avatar
+              ? <img src={currentUser.avatar} alt="" />
+              : <span>{currentUser.initial || currentUser.name?.slice(0, 1) || 'N'}</span>}
+            <input type="file" accept="image/*" aria-label="Choose profile photo" onChange={handleImageUpload} />
+          </label>
+          <div className="mobile-profile-identity">
+            <h1>{currentUser.name}</h1>
+            <span className={currentUser.isApproved ? 'is-verified' : 'is-unverified'}>
+              {currentUser.isApproved ? <CheckCircle2 aria-hidden="true" /> : <X aria-hidden="true" />}
+              {currentUser.isApproved ? 'Verified' : 'Unverified'}
+            </span>
+            <p>{currentUser.plan || 'Free'} Plan</p>
+          </div>
+          <div className="mobile-profile-job-stats" aria-label="Analysis job summary">
+            {[
+              { label: 'Completed', value: mobileJobCounts.completed, kind: 'completed' },
+              { label: 'Pending', value: mobileJobCounts.pending, kind: 'pending' },
+              { label: 'Failed', value: mobileJobCounts.failed, kind: 'failed' },
+            ].map((item) => (
+              <div className={`mobile-profile-job-stat is-${item.kind}`} key={item.kind}>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+            </section>
+            <h2 className="mobile-profile-menu-heading">My Account</h2>
+            <nav className="mobile-profile-menu" aria-label="Profile sections">
+          {mobileProfileItems.map(({ label, icon: Icon, action }) => (
+            <button type="button" key={label} onClick={action}>
+              <span className="mobile-profile-menu-icon"><Icon aria-hidden="true" /></span>
+              <span>{label}</span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+          ))}
+          <button type="button" className="mobile-profile-signout" onClick={handleLogout}>
+            <span className="mobile-profile-menu-icon"><LogOut aria-hidden="true" /></span>
+            <span>Sign Out</span>
+            <ChevronRight aria-hidden="true" />
+          </button>
+            </nav>
+          </>
+        ) : (
+          <section className="mobile-profile-detail-page">
+            <header className="mobile-profile-detail-header">
+              <button type="button" aria-label="Back to profile" onClick={() => navigateMobileApp('profile', '/profile')}>
+                <ArrowLeft aria-hidden="true" />
+              </button>
+              <strong>{mobileProfileSection}</strong>
+              <button type="button" className="mobile-profile-notifications" aria-label="Open Activity and Alerts Log" onClick={() => setMobilePopup('alerts')}>
+                <Bell aria-hidden="true" />
+                {persistentNotifications.some((item) => !item.read) && <span />}
+              </button>
+            </header>
+          </section>
+        )}
+        <div className="max-w-[1280px] mx-auto px-3 sm:px-4 py-6 flex flex-col lg:flex-row gap-5 items-start"> <div className="profile-desktop-sidebar w-full lg:w-[260px] shrink-0 space-y-3"> <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <div className="flex items-center gap-4">
             <div className="relative group">
               <div className="w-16 h-16 rounded-full overflow-hidden bg-[#2874f0] flex items-center justify-center text-white text-2xl font-black border-4 border-white shadow-lg">
@@ -6192,7 +6350,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
 
             </div>
           </div>
-        </div> <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        </div> <div className="profile-tabs bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             {[
               { id: 'info', icon: <User className="w-4 h-4" />, label: 'Profile Information', color: 'text-[#2874f0]' },
               { id: 'orders', icon: <Receipt className="w-4 h-4" />, label: 'My Orders & Jobs', color: 'text-[#ff6161]' },
@@ -6227,7 +6385,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               Upgrade Plan →
             </button>
           </div>
-        </div> <div className="flex-1 min-w-0 space-y-4"> {profileTab === 'info' && (
+        </div> <div className="profile-desktop-content flex-1 min-w-0 space-y-4"> {profileTab === 'info' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <div>
@@ -6311,7 +6469,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4"><Receipt className="w-7 h-7 text-slate-400" /></div>
                 <h3 className="font-bold text-slate-700 mb-2">No orders yet</h3>
                 <p className="text-sm text-slate-400 mb-4">Submit your first FEA analysis from the Dashboard</p>
-                <button onClick={() => setCurrentView('dashboard')} className="px-5 py-2.5 bg-[#2874f0] text-white text-sm font-bold rounded-lg hover:bg-[#1a5dc9]">Go to Dashboard</button>
+                <button onClick={navigateToDashboard} className="px-5 py-2.5 bg-[#2874f0] text-white text-sm font-bold rounded-lg hover:bg-[#1a5dc9]">Go to Dashboard</button>
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
@@ -6389,7 +6547,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="subscription-plans-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {(() => {
                 const PLAN_TIER_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
                 const userCurrentTierRank = PLAN_TIER_RANKS[currentUser?.plan || 'Free'] ?? 0;
@@ -6404,7 +6562,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 return upgradeablePlans.map((plan) => {
                   const isCurrent = (currentUser?.plan || 'Free') === plan.name;
                   return (
-                    <div key={plan.name} className={`bg-white rounded-xl border-2 shadow-sm overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : plan.color} hover:shadow-md transition-all`}>
+                    <div key={plan.name} className={`subscription-plan-card bg-white rounded-xl border-2 shadow-sm overflow-hidden flex flex-col ${isCurrent ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : plan.color} hover:shadow-md transition-all`}>
                       {plan.badge && <div className="bg-[#fb641b] text-white text-[10px] font-black py-1 text-center tracking-wider">{plan.badge}</div>}
                       <div className="p-5 flex-1 flex flex-col">
                         <div className="flex items-center justify-between">
@@ -6490,13 +6648,13 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   </div>
                   <div className="divide-y divide-slate-100">
                     {userSuccessfulPayments.slice(0, 5).map((entry, idx) => {
-                      const planLabel = entry.productName?.includes('Max') ? 'Nova Max'
+                      const planLabel = (entry.productName?.includes('Max') ? 'Nova Max'
                         : entry.productName?.includes('Pro') ? 'Nova Pro'
                           : entry.productName?.includes('Basic') ? 'Nova Basic'
-                            : entry.productName || 'Nova Plan';
+                            : entry.productName || 'Nova Plan').replace(/\s*\(\.WBEX\)/gi, '');
                       return (
-                        <div key={idx} className="px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-3">
+                        <div key={idx} className="payment-history-row px-5 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                          <div className="payment-history-details flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
                               <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                             </div>
@@ -6509,7 +6667,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                               <div className="text-[10px] font-mono text-slate-400">{entry.invoiceId}</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="payment-history-actions flex items-center gap-2 shrink-0">
                             <span className="hidden sm:inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">PAID</span>
                             <button
                               type="button"
@@ -6791,7 +6949,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                         {itemIcon}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name}</h3>
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base">{item.name.replace(/\s*\(\.WBEX\)/gi, '')}</h3>
                         <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
                       </div>
                     </div>
@@ -6846,7 +7004,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </div>
               </div>
               <button
-                onClick={() => setCurrentView('nova_community')}
+                onClick={() => navigateMobileApp('nova_community', '/community')}
                 className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
               >
                 <Users className="w-5 h-5" /> Enter Nova Community
@@ -6878,7 +7036,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                 </div>
               </div>
               <button
-                onClick={() => setCurrentView('nova_help')}
+                onClick={() => navigateMobileApp('nova_help', '/help')}
                 className="px-8 py-3.5 bg-[#1565c0] hover:bg-[#0d47a1] text-white font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
               >
                 <BookOpen className="w-5 h-5" /> Access Help Center
@@ -6917,7 +7075,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
             <div className="bg-slate-900 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95 border border-slate-700">
               <div className="flex items-center justify-between px-6 py-4 bg-slate-800 text-white border-b border-slate-700">
                 <span className="flex items-center gap-3 font-bold text-lg">
-                  <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name} - Demo
+                  <PlayCircle className="w-5 h-5 text-[#2874f0]" /> {selectedWizardForDemo.name.replace(/\s*\(\.WBEX\)/gi, '')} - Demo
                 </span>
                 <button onClick={() => closeWizardDemo()} className="hover:bg-slate-700 p-1.5 rounded-full transition-colors">
                   <X className="w-5 h-5 text-slate-300" />
@@ -6966,30 +7124,30 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
           </div>
         )} {isWizardPricingOpen && selectedWizardForPricing && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+          <div className="wizard-pricing-overlay fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={() => closeWizardPricing()}></div>
-            <div className="bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
+            <div className="wizard-pricing-modal bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative z-10 animate-in zoom-in-95">
               <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
                 <span className="flex items-center gap-3 font-bold text-lg text-slate-900">
-                  <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]}
+                  <Package className="w-5 h-5 text-[#d84315]" /> Select Subscription - {(selectedWizardForPricing.shortName || selectedWizardForPricing.name.split(' Ansys')[0]).replace(/\s*\(\.WBEX\)/gi, '')}
                 </span>
                 <button onClick={() => closeWizardPricing()} className="hover:bg-slate-100 p-1.5 rounded-full transition-colors text-slate-500">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="p-6 bg-slate-50">
-                <div className="text-center mb-6">
+              <div className="wizard-pricing-content p-6 bg-slate-50">
+                <div className="wizard-pricing-intro text-center mb-6">
                   <h3 className="text-xl font-bold text-slate-900">Choose your licensing term</h3>
-                  <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name}</p>
+                  <p className="text-sm text-slate-500 mt-1">Unlock full access to {selectedWizardForPricing.name.replace(/\s*\(\.WBEX\)/gi, '')}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="wizard-pricing-grid grid grid-cols-1 md:grid-cols-3 gap-5">
                   {(selectedWizardForPricing.pricing || [
                     { term: '1 Month', price: '₹4,999', desc: 'Short-term access for single projects', workstations: 1, recommend: false },
                     { term: '3 Months', price: '₹12,499', desc: 'Ideal for extended engineering phases', workstations: 1, recommend: false },
                     { term: '6 Months', price: '₹19,999', desc: 'Best value for continuous usage', workstations: 2, recommend: true },
                   ]).map((plan, i) => {
                     return (
-                      <div key={i} className={`bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#d84315] shadow-md ring-4 ring-[#d84315]/10' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <div key={i} className={`wizard-pricing-card bg-white rounded-xl border-2 flex flex-col relative transition-all hover:shadow-lg ${plan.recommend ? 'border-[#d84315] shadow-md ring-4 ring-[#d84315]/10' : 'border-slate-200 hover:border-slate-300'}`}>
                         {plan.recommend && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d84315] text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
                             Recommended
@@ -6997,11 +7155,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
                         )}
                         <div className="p-5 flex-1 text-center flex flex-col justify-between">
                           <div>
-                            <div className="font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
-                            <div className="text-3xl font-black text-slate-900">{plan.price}</div>
+                            <div className="wizard-pricing-term font-bold text-slate-500 text-sm mb-2">{plan.term} License</div>
+                            <div className="wizard-pricing-price text-3xl font-black text-slate-900">{plan.price}</div>
                             <div className="text-[11px] text-slate-400 mt-1 mb-4">Includes 18% GST</div>
-                            <div className="text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
-                            <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
+                            <div className="wizard-pricing-description text-xs text-slate-600 font-medium mb-3">{plan.desc}</div>
+                            <div className="wizard-workstation-row flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-500 mb-5 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
                               <Monitor className="w-3.5 h-3.5 text-[#2874f0]" /> {plan.workstations} Workstation{plan.workstations > 1 ? 's' : ''}
                             </div>
                           </div>
@@ -7022,7 +7180,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
                                   }
                                 );
                               }}
-                              className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#d84315] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                              className={`wizard-pricing-select w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${plan.recommend ? 'bg-[#d84315] hover:bg-[#bf360c] text-white shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                             >
                               <CreditCard className="w-4 h-4" /> Select {plan.term}
                             </button>
@@ -7081,6 +7239,37 @@ Always provide professional, precise, technically accurate, and helpful answers.
         )}
       </div>
     );
+  };
+  const mobilePrimaryDestinations = [
+    { label: 'Dashboard', view: 'dashboard', path: '/dashboard', icon: Home },
+    { label: 'Nova Community', view: 'nova_community', path: '/community', icon: Users },
+    {
+      label: 'CAD AI',
+      icon: Sparkles,
+      action: () => consumeCredits('CAD AI', 75, 'Max', () => { window.location.href = 'https://swcad-ai.vercel.app/chat'; })
+    },
+    { label: 'Nova Help', view: 'nova_help', path: '/help', icon: BookOpen },
+    { label: 'Profile', view: 'profile', path: '/profile', icon: User }
+  ];
+  const startProfileLongPress = () => {
+    window.clearTimeout(profilePressTimerRef.current);
+    suppressProfileClickRef.current = false;
+    profilePressTimerRef.current = window.setTimeout(() => {
+      suppressProfileClickRef.current = true;
+      setMobilePopup('profile-preview');
+    }, 550);
+  };
+  const cancelProfileLongPress = () => window.clearTimeout(profilePressTimerRef.current);
+  const openProfileFromAvatar = () => {
+    if (suppressProfileClickRef.current) {
+      suppressProfileClickRef.current = false;
+      return;
+    }
+    navigateMobileApp('profile', '/profile');
+  };
+  const openMobileAiRecommender = () => {
+    setIsMobileAiRecommender(true);
+    setIsAiModalOpen(true);
   };
   return (
     <>
@@ -7181,11 +7370,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
         const docCustomerName = docData?.customerName || docData?.user_name || currentUser?.name || 'Dinesh Kumar';
         const docCustomerEmail = docData?.customerEmail || docData?.user_email || currentUser?.email || '';
 
-        const docProductName = docData?.productName || docData?.plan_name || 'Nova Max';
+        const docProductName = String(docData?.productName || docData?.plan_name || 'Nova Max').replace(/\s*\(\.WBEX\)/gi, '');
         const docTerm = docData?.term || docData?.billing_cycle || (String(docProductName).includes('Wizard') ? '6 Months License' : 'Monthly Subscription');
 
         return (
-          <div className="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-40 print:p-0 print:bg-white print:static animate-in fade-in">
+          <div className="fixed inset-0 z-[1200] bg-slate-900/80 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-6 print:p-0 print:bg-white print:static animate-in fade-in">
             <div className="max-w-[800px] w-full mx-auto flex flex-col items-center">
               {/* Top Control Bar (print-hidden) */}
               <div className="invoice-modal-bar w-full flex items-center justify-between gap-3 bg-white px-5 py-3 rounded-2xl shadow-xl border border-slate-200 mb-6 sticky top-2 z-20 print:hidden">
@@ -7431,19 +7620,208 @@ Always provide professional, precise, technically accurate, and helpful answers.
           {currentView === 'signup' && renderSignup()}
           {currentView === 'forgot' && renderForgotPassword()}
           {isLoggedIn && (
-            <>
-              {currentView === 'landing' && renderLanding()}
-              {currentView === 'dashboard' && renderDashboard()}
-              {currentView === 'profile' && renderProfile()}
-              {currentView === 'nova_help' && renderNovaHelp()}
-              {currentView === 'nova_community' && renderNovaCommunity()}
-              {currentView === 'chat' && renderChat()}
-              {currentView === 'materials' && renderMaterials()}
-              {currentView === 'stress_strain' && renderStressStrain()}
-            </>
+            <div
+              className="mobile-root-shell"
+              onTouchStart={handleMobileSwipeStart}
+              onTouchEnd={handleMobileSwipeEnd}
+            >
+              {currentView === 'dashboard' && <header className={`mobile-app-bar${isMobileAppBarHidden ? ' is-hidden' : ''}`} aria-label="Quick actions">
+                <button
+                  type="button"
+                  className="mobile-greeting-avatar"
+                  aria-label="Open profile; press and hold to preview profile picture"
+                  onPointerDown={startProfileLongPress}
+                  onPointerUp={cancelProfileLongPress}
+                  onPointerLeave={cancelProfileLongPress}
+                  onPointerCancel={cancelProfileLongPress}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    cancelProfileLongPress();
+                    suppressProfileClickRef.current = true;
+                    setMobilePopup('profile-preview');
+                  }}
+                  onClick={openProfileFromAvatar}
+                >
+                  {currentUser.avatar
+                    ? <img src={currentUser.avatar} alt="" />
+                    : <span>{currentUser.initial || currentUser.name?.slice(0, 1) || 'N'}</span>
+                  }
+                </button>
+                <div className="mobile-greeting-copy">
+                  <strong>{`${new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}, ${currentUser.name?.trim().split(/\s+/)[0] || 'there'}`}</strong>
+                  <span>Ready to get stronger today?</span>
+                </div>
+                <div className="mobile-quick-actions">
+                  <button
+                    type="button"
+                    className="mobile-quick-action mobile-notification-action"
+                    aria-label="Open Activity and Alerts Log"
+                    onClick={() => setMobilePopup('alerts')}
+                  >
+                    <Bell aria-hidden="true" />
+                    {persistentNotifications.some((item) => !item.read) && <span className="mobile-notification-dot" />}
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-quick-action mobile-ai-action"
+                    aria-label="Open AI Analysis Recommender"
+                    onClick={openMobileAiRecommender}
+                  >
+                    <Sparkles aria-hidden="true" />
+                  </button>
+                </div>
+              </header>}
+
+              <div className="mobile-root-content">
+                {currentView === 'landing' && renderLanding()}
+                {currentView === 'dashboard' && renderDashboard()}
+                {currentView === 'profile' && renderProfile()}
+                {currentView === 'nova_help' && renderNovaHelp()}
+                {currentView === 'nova_community' && renderNovaCommunity()}
+                {currentView === 'chat' && renderChat()}
+                {currentView === 'materials' && renderMaterials()}
+                {currentView === 'stress_strain' && renderStressStrain()}
+                {currentView === 'wizard_demo' && renderWizardDemo()}
+              </div>
+
+              <nav className="mobile-bottom-navigation" aria-label="Primary navigation">
+                {mobilePrimaryDestinations.map(({ label, view, path, tab, icon: Icon, action }) => (
+                  <button
+                    type="button"
+                    key={label}
+                    className={`mobile-bottom-link ${view && currentView === view ? 'is-active' : ''}`}
+                    aria-label={label}
+                    aria-current={view && currentView === view ? 'page' : undefined}
+                    onClick={action || (() => navigateMobileApp(view, path, tab))}
+                  >
+                    <span className="mobile-bottom-icon-wrap"><Icon aria-hidden="true" /></span>
+                  </button>
+                ))}
+              </nav>
+            </div>
           )}
           {!isLoggedIn && !['login', 'signup', 'forgot'].includes(currentView) && renderLogin()}
         </>
+      )}
+      {notification && typeof document !== 'undefined' && createPortal(
+        <div
+          className={`app-alert-toast fixed top-4 right-4 px-4 md:px-6 py-4 rounded-2xl shadow-xl text-white font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-4 backdrop-blur-md border border-white/20 ${currentView === 'profile' ? 'text-sm rounded-xl px-5 py-3.5 shadow-2xl border' : ''} ${notification.type === 'success' ? (currentView === 'profile' ? 'bg-[#388e3c] border-[#2e7d32]' : 'bg-emerald-600/90') : notification.type === 'info' ? (currentView === 'profile' ? 'bg-[#1976d2] border-[#1565c0]' : 'bg-blue-600/90') : (currentView === 'profile' ? 'bg-[#d32f2f] border-[#c62828]' : 'bg-slate-800/90')}`}
+          role="status"
+          aria-live="polite"
+        >
+          <CheckCircle className="w-5 h-5 shrink-0" /> {notification.message}
+        </div>,
+        document.body
+      )}
+      {isLoggedIn && mobilePopup && typeof document !== 'undefined' && createPortal(
+        <div className="mobile-quick-popup-layer">
+          <button
+            type="button"
+            className="mobile-quick-popup-backdrop"
+            aria-label="Close popup"
+            onClick={() => setMobilePopup(null)}
+          />
+          {mobilePopup === 'alerts' ? (
+            <section className="mobile-quick-popup-card mobile-alerts-card" role="dialog" aria-modal="true" aria-labelledby="mobile-alerts-title">
+              <header className="mobile-popup-heading">
+                <div className="mobile-popup-heading-icon mobile-popup-bell"><Bell aria-hidden="true" /></div>
+                <div>
+                  <h2 id="mobile-alerts-title">Activity &amp; Alerts Log</h2>
+                  <p>Recent activity and account updates</p>
+                </div>
+                <button type="button" className="mobile-popup-close" aria-label="Close alerts" onClick={() => setMobilePopup(null)}><X aria-hidden="true" /></button>
+              </header>
+              <div className="mobile-alert-list">
+                {persistentNotifications.length ? persistentNotifications.map((item) => (
+                  <article className="mobile-alert-item" key={item.id}>
+                    <span className={`mobile-alert-item-icon ${item.type === 'success' ? 'is-success' : item.type === 'error' ? 'is-error' : ''}`}>
+                      {item.type === 'success' ? <CheckCircle aria-hidden="true" /> : item.type === 'error' ? <AlertCircle aria-hidden="true" /> : <Bell aria-hidden="true" />}
+                    </span>
+                    <span className="mobile-alert-item-copy">
+                      <span className="mobile-alert-item-title">{item.title}</span>
+                      <span className="mobile-alert-item-message">{item.message}</span>
+                    </span>
+                    <time>{item.time || 'Today'}</time>
+                  </article>
+                )) : <p className="mobile-alert-empty">No alerts or notifications recorded yet.</p>}
+              </div>
+              {persistentNotifications.length > 0 && (
+                <button
+                  type="button"
+                  className="mobile-alert-clear"
+                  onClick={() => {
+                    setPersistentNotifications([]);
+                    try { localStorage.removeItem('nova_persistent_notifications'); } catch (error) { console.error('Unable to clear saved notifications.', error); }
+                    showNotification('Alert history cleared', 'info');
+                  }}
+                >
+                  Clear Log
+                </button>
+              )}
+            </section>
+          ) : (
+            <section className="mobile-profile-preview-card" role="dialog" aria-modal="true" aria-label={`${currentUser.name || 'User'} profile picture`}>
+              <button type="button" className="mobile-popup-close" aria-label="Close profile picture preview" onClick={() => setMobilePopup(null)}><X aria-hidden="true" /></button>
+              <div className="mobile-profile-preview-ring">
+                <div className="mobile-profile-preview-image">
+                  {currentUser.avatar
+                    ? <img src={currentUser.avatar} alt={`${currentUser.name || 'User'} profile`} />
+                    : <span>{currentUser.initial || currentUser.name?.slice(0, 1) || 'N'}</span>
+                  }
+                </div>
+              </div>
+              <strong>{currentUser.name || 'Nova User'}</strong>
+              <span>{currentUser.email}</span>
+            </section>
+          )}
+        </div>,
+        document.body
+      )}
+      {isLoggedIn && isAiModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="mobile-ai-modal-layer fixed inset-0 z-[1300] flex items-center justify-center p-4">
+          <button type="button" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" aria-label="Close AI Analysis Recommender" onClick={closeAiModal} />
+          <section className="mobile-ai-modal-card glass-panel w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 relative z-10 shadow-[0_20px_60px_rgba(0,0,0,0.2)] border-t border-l border-white/80" role="dialog" aria-modal="true" aria-labelledby="mobile-ai-title">
+            <header className="flex items-center justify-between p-4 md:p-6 text-white border-b bg-gradient-to-r from-purple-600/90 to-indigo-600/90 backdrop-blur-md border-white/20">
+              <h2 id="mobile-ai-title" className="flex items-center gap-3 text-xl font-extrabold drop-shadow-sm">
+                <Sparkles className="w-6 h-6" /> AI Analysis Recommender
+              </h2>
+              <button type="button" onClick={closeAiModal} aria-label="Close AI Analysis Recommender" className="hover:bg-white/20 p-1.5 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </header>
+            <div className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+              <div className="bg-white/40 border border-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
+                <p className="pl-1 mb-3 text-sm font-bold text-purple-900 drop-shadow-sm">Describe your engineering scenario below:</p>
+                <textarea
+                  className="w-full h-20 md:h-32 p-4 text-sm font-medium resize-none glass-input rounded-xl focus:ring-purple-500/50"
+                  placeholder="E.g., I have a high-pressure steam pipe attached to a thin-walled cylindrical vessel. I need to know if the junction is safe."
+                  value={aiSetupPrompt}
+                  onChange={(event) => setAiSetupPrompt(event.target.value)}
+                />
+                <div className="flex justify-end mt-4">
+                  <button
+                    type="button"
+                    onClick={handleAiSetupSubmit}
+                    disabled={isAiSetupLoading || !aiSetupPrompt.trim()}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold py-3 px-4 md:px-6 rounded-xl flex items-center gap-2 transition-all hover:scale-[1.02] shadow-md"
+                  >
+                    {isAiSetupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {isAiSetupLoading ? 'Analyzing...' : 'Analyze Scenario'}
+                  </button>
+                </div>
+              </div>
+              {aiSetupResponse && (
+                <div className="p-4 md:p-8 shadow-sm glass-panel border-purple-500/30 rounded-2xl animate-in fade-in slide-in-from-bottom-4 bg-white/60">
+                  <h3 className="flex items-center gap-2 mb-4 text-xs font-black tracking-widest text-purple-800 uppercase drop-shadow-sm">
+                    <Bot className="w-4 h-4" /> AI Recommendation
+                  </h3>
+                  <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap text-slate-800">{aiSetupResponse}</div>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>,
+        document.body
       )}
     </>
   );

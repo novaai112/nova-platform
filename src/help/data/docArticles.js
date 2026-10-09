@@ -15,12 +15,26 @@ import { SOFTWARE_ARTICLES } from './articles/softwareArticles.js';
 import { MATERIALS_ARTICLES } from './articles/materialsArticles.js';
 import { REFERENCE_ARTICLES } from './articles/referenceArticles.js';
 
+const ANALYSIS_INPUT_GUIDE_ARTICLE = {
+  id: 'analysis-input-guide',
+  slug: 'analysis-input-guide',
+  title: 'Analysis Input Guide: All HTML Form Parameters',
+  category: 'Reference & Standards',
+  discipline: 'All Analysis Modules',
+  difficulty: 'All levels',
+  type: 'Interactive Reference',
+  readingTime: 'Input reference',
+  summary: 'A searchable, source-linked reference to the labels, control names, units, options, and conditional inputs in all ten Nova analysis HTML forms.',
+  overview: 'This guide reads the actual controls from the ten pressure-equipment analysis HTML forms. It explains what each visible input is for and links back to the source form. Confirm values against the current project drawings, specifications, and engineering basis.'
+};
+
 export const DOC_ARTICLES = [
   ...GETTING_STARTED_ARTICLES,
   ...ANALYSIS_ARTICLES,
   ...SOFTWARE_ARTICLES,
   ...MATERIALS_ARTICLES,
-  ...REFERENCE_ARTICLES
+  ...REFERENCE_ARTICLES,
+  ANALYSIS_INPUT_GUIDE_ARTICLE
 ];
 
 /**
@@ -90,7 +104,8 @@ export const DOC_CATEGORIES = [
       'engineering-validation',
       'standards-references',
       'release-notes',
-      'contact-support'
+      'contact-support',
+      'analysis-input-guide'
     ]
   }
 ];

@@ -11,7 +11,6 @@ export default function TechnicalDepthToggle({ depth = 'engineer', onChange }) {
   return (
     <div 
       className="flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-xl"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {levels.map(lvl => {
         const IconComp = lvl.icon;

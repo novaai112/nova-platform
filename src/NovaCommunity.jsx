@@ -2257,7 +2257,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] font-sans text-slate-800 py-6 px-4 sm:px-8">
+    <div className="nova-community-root min-h-screen bg-[#fafbfc] font-sans text-slate-800 py-6 px-4 sm:px-8">
       {previewImage && <ImageViewerModal src={previewImage} onClose={() => setPreviewImage(null)} />}
 
       {/* 1. PRIVATE MESSAGE COMPOSER MODAL (MATCHING IMAGE 1) */}
@@ -2303,13 +2303,13 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
       )}
 
       {/* 4. MAIN COMMUNITY FORUM */}
-      <div className="max-w-[1380px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="nova-community-layout max-w-[1380px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* LEFT SIDEBAR */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="nova-community-sidebar lg:col-span-3 space-y-6">
           
           {/* "+ New Post" Button with Dropdown */}
-          <div ref={newPostMenuRef} className="relative">
+          <div ref={newPostMenuRef} className="community-sidebar-new-post relative">
             <button
               type="button"
               onClick={() => setShowNewPostMenu((p) => !p)}
@@ -2429,11 +2429,11 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
         </div>
 
         {/* RIGHT CONTENT FEED */}
-        <div className="lg:col-span-9 space-y-4">
+        <div className="nova-community-feed lg:col-span-9 space-y-4">
           
           {/* Top Filter Strip */}
-          <div className="flex items-center justify-between gap-4 py-2 border-b border-slate-200/80 flex-wrap">
-            <div className="flex items-center gap-4 flex-wrap text-xs sm:text-sm font-semibold">
+          <div className="community-post-toolbar flex items-center justify-between gap-4 py-2 border-b border-slate-200/80 flex-wrap">
+            <div className="community-toolbar-controls flex items-center gap-4 flex-wrap text-xs sm:text-sm font-semibold">
               
               {/* Content: All ▾ */}
               <div ref={contentRef} className="relative">
@@ -2442,7 +2442,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                   onClick={() => setShowContentMenu((p) => !p)}
                   className="flex items-center gap-1 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
                 >
-                  <span className="text-slate-400 font-normal">Content:</span>
+                  <span className="community-content-label text-slate-400 font-normal">Content:</span>
                   <span className="text-blue-600 font-bold">{contentFilter}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
                 </button>
@@ -2505,8 +2505,8 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
             {/* Filters Button (Opens Image 3 Modal) */}
             <button
               type="button"
+              className="community-filter-button flex items-center gap-1.5 px-4 py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-2xs relative"
               onClick={() => setShowFilterModal(true)}
-              className="flex items-center gap-1.5 px-4 py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer shadow-2xs relative"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>Filters</span>
@@ -2514,6 +2514,44 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                 <span className="w-2 h-2 rounded-full bg-blue-600 ml-1" />
               )}
             </button>
+
+            <div className="community-feed-new-post relative">
+              <button
+                type="button"
+                onClick={() => setShowNewPostMenu((p) => !p)}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-[#188bf6] px-3 py-1.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-blue-600"
+                aria-expanded={showNewPostMenu}
+              >
+                {showNewPostMenu ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                <span>New Post</span>
+              </button>
+              {showNewPostMenu && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetPageMode("discussion");
+                      setShowNewPostMenu(false);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-bold text-slate-800 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                    <span>New Discussion</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetPageMode("question");
+                      setShowNewPostMenu(false);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-bold text-slate-800 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    <HelpCircle className="h-4 w-4 text-amber-600" />
+                    <span>Ask a Question</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Active Filter Chips Strip */}
@@ -2574,7 +2612,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                 ))}
               </div>
             ) : filteredPosts.length === 0 ? (
-              <div className="py-16 text-center">
+              <div className="community-empty-state py-16 text-center">
                 <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
                   <MessageSquare className="w-8 h-8" />
                 </div>

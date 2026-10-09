@@ -11,7 +11,6 @@ export default function EngineeringDiagram({ type = 'nozzle', caption, title }) 
   return (
     <div 
       className="my-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-      style={{ fontFamily: "Calibri, 'Segoe UI', Candara, Optima, sans-serif" }}
     >
       {/* Schematic Header */}
       <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
