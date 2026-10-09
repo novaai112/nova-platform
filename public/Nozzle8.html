@@ -2021,19 +2021,18 @@
                 json_payload: payloadArr
             };
 
-            let token = user.access_token || user.token;
-            if (!token) {
+            // Automatically find the best token, defaulting to your API_KEY
+            let token = API_KEY; 
+            if (user && (user.access_token || user.token)) {
+                token = user.access_token || user.token;
+            } else {
                 const sbSession = localStorage.getItem('sb-oszozycwjqvsdnulmhrc-auth-token');
                 if (sbSession) {
-                    token = JSON.parse(sbSession).access_token;
+                    try { token = JSON.parse(sbSession).access_token; } catch(e) {}
                 }
             }
 
             try {
-                if (!token) {
-                    throw new Error("Missing secure session token. Please log in again.");
-                }
-
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
@@ -2056,6 +2055,7 @@
                 console.error('Analysis job submission failed:', error);
                 btn.innerText = 'Failed';
                 alert(`Unable to save this analysis: ${error.message}`);
+                
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
