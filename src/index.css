@@ -2276,6 +2276,10 @@ body,
   }
 }
 
+.community-post-action-label-mobile {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .mobile-root-shell:has(.community-profile-modal, .community-filter-modal, .community-comments-modal, .community-standalone-post) .mobile-app-bar,
   .mobile-root-shell:has(.community-profile-modal, .community-filter-modal, .community-comments-modal, .community-standalone-post) .mobile-bottom-navigation {
@@ -2309,6 +2313,46 @@ body,
   .community-standalone-post > div > .bg-white.border {
     padding: 1rem;
     border-radius: 1rem;
+  }
+
+  .community-post-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.35rem !important;
+    padding-top: 0.7rem;
+  }
+
+  .community-post-action {
+    display: flex;
+    min-width: 0;
+    min-height: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.4rem 0.15rem !important;
+    border-radius: 0.65rem !important;
+    font-size: 0.61rem !important;
+    line-height: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .community-post-action svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex: 0 0 auto;
+  }
+
+  .community-post-action-label-desktop {
+    display: none;
+  }
+
+  .community-post-action-label-mobile {
+    display: inline;
+  }
+
+  .community-post-submit {
+    box-shadow: 0 3px 9px rgba(24, 139, 246, 0.2);
   }
 
   .mobile-community-page .nova-community-root {

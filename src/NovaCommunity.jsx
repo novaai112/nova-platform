@@ -977,40 +977,48 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
           </div>
 
           {/* Action Buttons matching Image 2 */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 flex-wrap">
+          <div className="community-post-actions flex items-center justify-end gap-3 pt-4 border-t border-slate-100 flex-wrap">
             <button
               type="button"
               onClick={onBack}
-              className="px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
+              className="community-post-action px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveDraft}
-              className="px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              className="community-post-action px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              aria-label="Save Draft"
             >
               <Bookmark className="w-4 h-4 text-slate-500" />
-              <span>Save Draft</span>
+              <span className="community-post-action-label-desktop">Save Draft</span>
+              <span className="community-post-action-label-mobile">Draft</span>
             </button>
             <button
               type="button"
               onClick={() => setPreviewMode((p) => !p)}
-              className="px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              className="community-post-action px-5 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              aria-label="Preview post"
             >
               <Eye className="w-4 h-4 text-slate-500" />
-              <span>Preview</span>
+              <span className="community-post-action-label-desktop">Preview</span>
+              <span className="community-post-action-label-mobile">Preview</span>
             </button>
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-[#188bf6] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="community-post-action community-post-submit px-6 py-2.5 bg-[#188bf6] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              aria-label={editingPost ? "Save Changes" : isQuestion ? "Post Question" : "Post Discussion"}
             >
               {isSubmitting ? (
                 <span>Posting...</span>
               ) : (
-                <span>{editingPost ? "Save Changes" : isQuestion ? "Post Question" : "Post Discussion"}</span>
+                <>
+                  <span className="community-post-action-label-desktop">{editingPost ? "Save Changes" : isQuestion ? "Post Question" : "Post Discussion"}</span>
+                  <span className="community-post-action-label-mobile">{editingPost ? "Save" : "Post"}</span>
+                </>
               )}
             </button>
           </div>
@@ -1950,6 +1958,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
   const contentRef = useRef(null);
   const sortRef = useRef(null);
   const newPostMenuRef = useRef(null);
+  const feedNewPostMenuRef = useRef(null);
 
   // Update current user's last_seen in Supabase
   useEffect(() => {
@@ -2003,7 +2012,9 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
     const handleClickOutside = (e) => {
       if (contentRef.current && !contentRef.current.contains(e.target)) setShowContentMenu(false);
       if (sortRef.current && !sortRef.current.contains(e.target)) setShowSortMenu(false);
-      if (newPostMenuRef.current && !newPostMenuRef.current.contains(e.target)) setShowNewPostMenu(false);
+      const clickedSidebarMenu = newPostMenuRef.current?.contains(e.target);
+      const clickedFeedMenu = feedNewPostMenuRef.current?.contains(e.target);
+      if (!clickedSidebarMenu && !clickedFeedMenu) setShowNewPostMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -2626,7 +2637,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
               )}
             </button>
 
-            <div className="community-feed-new-post relative">
+            <div ref={feedNewPostMenuRef} className="community-feed-new-post relative">
               <button
                 type="button"
                 onClick={() => setShowNewPostMenu((p) => !p)}
