@@ -551,6 +551,90 @@ function ImageViewerModal({ src, onClose }) {
   );
 }
 
+function CommunityCommentsModal({ post, comments, isLoading, error, reply, onReplyChange, onReply, onClose }) {
+  return (
+    <div
+      className="community-comments-modal fixed inset-0 z-[1400] flex items-center justify-center p-4"
+      role="presentation"
+      onClick={onClose}
+    >
+      <section
+        className="community-comments-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="community-comments-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="community-comments-header">
+          <span className="community-modal-heading-icon"><MessageCircle aria-hidden="true" /></span>
+          <div className="community-comments-heading-copy">
+            <h2 id="community-comments-title">Comments</h2>
+            <p>{isLoading ? "Loading comments..." : `${comments.length} ${comments.length === 1 ? "comment" : "comments"} · ${post.title}`}</p>
+          </div>
+          <button type="button" className="community-modal-close" onClick={onClose} aria-label="Close comments">
+            <X aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="community-comments-list" aria-live="polite">
+          {isLoading ? (
+            <div className="community-comments-empty">
+              <span className="community-comments-empty-icon"><MessageCircle aria-hidden="true" /></span>
+              <strong>Loading comments</strong>
+              <span>Please wait a moment.</span>
+            </div>
+          ) : error ? (
+            <div className="community-comments-empty" role="alert">
+              <strong>Comments couldn’t be loaded</strong>
+              <span>Please close this window and try again.</span>
+            </div>
+          ) : comments.length ? comments.map((comment, index) => (
+            <article className="community-comment-card" key={comment.id || `${comment.created_at}-${index}`}>
+              <div className="community-comment-heading">
+                <span className="community-comment-avatar">
+                  {comment.user_avatar
+                    ? <img src={comment.user_avatar} alt="" />
+                    : getSafeInitial(comment.user_name)
+                  }
+                </span>
+                <strong>{comment.user_name || "Nova Engineer"}</strong>
+                <time>{formatDisplayDate(comment.created_at)}</time>
+              </div>
+              <p>{comment.comment}</p>
+            </article>
+          )) : (
+            <div className="community-comments-empty">
+              <span className="community-comments-empty-icon"><MessageCircle aria-hidden="true" /></span>
+              <strong>No comments yet</strong>
+              <span>Be the first to join the discussion.</span>
+            </div>
+          )}
+        </div>
+
+        <form
+          className="community-comments-reply"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onReply();
+          }}
+        >
+          <input
+            type="text"
+            value={reply}
+            onChange={(event) => onReplyChange(event.target.value)}
+            placeholder="Write a comment..."
+            aria-label="Write a comment"
+          />
+          <button type="submit" disabled={!reply.trim()} aria-label="Send comment">
+            <Send aria-hidden="true" />
+            <span>Send</span>
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 // 4. STANDALONE WEBPAGE FOR NEW POST / DISCUSSION / ASK QUESTION (MATCHING IMAGE 2 EXACTLY)
 // Removed Nova Community banner, pure clean white background, crisp image display
 function StandalonePostPage({ type = "question", editingPost = null, currentUser, onBack, onSave }) {
@@ -702,7 +786,7 @@ function StandalonePostPage({ type = "question", editingPost = null, currentUser
   };
 
   return (
-    <div className="fixed inset-0 z-[120] bg-white overflow-y-auto min-h-screen font-sans py-8 px-4 sm:px-8">
+    <div className="community-standalone-post fixed inset-0 z-[120] bg-white overflow-y-auto min-h-screen font-sans py-8 px-4 sm:px-8">
       {previewImage && <ImageViewerModal src={previewImage} onClose={() => setPreviewImage(null)} />}
 
       {/* Standalone View: 100% Pure White Background, NO Community banner matching Image 2 */}
@@ -1854,6 +1938,8 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
   // Interactive thread states
   const [expandedPostId, setExpandedPostId] = useState(initialComm.postId);
   const [commentsMap, setCommentsMap] = useState({});
+  const [commentsLoading, setCommentsLoading] = useState({});
+  const [commentsError, setCommentsError] = useState({});
   const [commentInputMap, setCommentInputMap] = useState({});
   const [likedPosts, setLikedPosts] = useState({});
   const [bookmarkedPosts, setBookmarkedPosts] = useState({});
@@ -1976,17 +2062,23 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
   };
 
   const fetchComments = async (postId) => {
+    setCommentsLoading((prev) => ({ ...prev, [postId]: true }));
+    setCommentsError((prev) => ({ ...prev, [postId]: false }));
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("nova_community_comments")
         .select("*")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
 
-      if (data) {
-        setCommentsMap((prev) => ({ ...prev, [postId]: data }));
-      }
-    } catch (e) {}
+      if (error) throw error;
+      setCommentsMap((prev) => ({ ...prev, [postId]: data || [] }));
+    } catch (error) {
+      console.warn("Community comments could not be loaded:", error);
+      setCommentsError((prev) => ({ ...prev, [postId]: true }));
+    } finally {
+      setCommentsLoading((prev) => ({ ...prev, [postId]: false }));
+    }
   };
 
   const handleToggleExpand = (postId) => {
@@ -2303,6 +2395,23 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
           }}
         />
       )}
+
+      {expandedPostId && window.innerWidth < 768 && (() => {
+        const activePost = posts.find((post) => post.id === expandedPostId);
+        if (!activePost) return null;
+        return (
+          <CommunityCommentsModal
+            post={activePost}
+            comments={commentsMap[activePost.id] || []}
+            isLoading={Boolean(commentsLoading[activePost.id])}
+            error={Boolean(commentsError[activePost.id])}
+            reply={commentInputMap[activePost.id] || ""}
+            onReplyChange={(value) => setCommentInputMap((prev) => ({ ...prev, [activePost.id]: value }))}
+            onReply={() => handleAddComment(activePost.id)}
+            onClose={() => handleToggleExpand(activePost.id)}
+          />
+        );
+      })()}
 
       {/* 4. MAIN COMMUNITY FORUM */}
       <div className="nova-community-layout max-w-[1380px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -2850,6 +2959,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                       <button
                         type="button"
                         onClick={() => handleToggleExpand(post.id)}
+                        aria-label={`View ${post.comments_count || 0} comments`}
                         className="flex items-center gap-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
