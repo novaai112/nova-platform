@@ -2023,25 +2023,39 @@
                 json_payload: payloadArr
             };
 
-            // Database Submission exactly as it was in your old code
+            // DYNAMIC TOKEN EXTRACTION FOR RLS
+            // This safely grabs the exact project ID from your API_URL (e.g. 'opzfhsonosqqxometiou')
+            const projectId = API_URL.split('https://')[1].split('.')[0];
+            const tokenKey = `sb-${projectId}-auth-token`;
+            
+            let token = API_KEY; // Fallback to public key just in case
+            const sbSession = localStorage.getItem(tokenKey);
+            
+            if (sbSession) {
+                try { token = JSON.parse(sbSession).access_token; } catch(e) {}
+            } else if (user && (user.access_token || user.token)) {
+                token = user.access_token || user.token;
+            }
+
+            // Database Submission
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'apikey': API_KEY,
-                        'Authorization': `Bearer ${API_KEY}`,
+                        'Authorization': `Bearer ${token}`,
                         'Prefer': 'return=representation'
                     },
                     body: JSON.stringify(newJob)
                 });
 
                 if (response.ok) {
-                    window.location.href = '/dashboard';
+                    window.location.href = 'https://nova-analysis.vercel.app/';
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     console.error("Database error:", errorData);
-                    btn.innerText = 'Failed';
+                    btn.innerText = 'FAILED';
                     setTimeout(() => { 
                         btn.innerText = originalText; 
                         btn.disabled = false; 
@@ -2049,7 +2063,7 @@
                 }
             } catch (error) {
                 console.error('Analysis job submission failed:', error);
-                btn.innerText = 'Error';
+                btn.innerText = 'FAILED';
                 setTimeout(() => { 
                     btn.innerText = originalText; 
                     btn.disabled = false; 
