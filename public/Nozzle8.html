@@ -2021,14 +2021,41 @@
                 json_payload: payloadArr
             };
 
+            let token = user.access_token || user.token;
+            if (!token) {
+                const sbSession = localStorage.getItem('sb-oszozycwjqvsdnulmhrc-auth-token');
+                if (sbSession) {
+                    token = JSON.parse(sbSession).access_token;
+                }
+            }
+
             try {
-                await window.submitAnalysisJob(API_URL, API_KEY, newJob);
-                
+                if (!token) {
+                    throw new Error("Missing secure session token. Please log in again.");
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': API_KEY,
+                        'Authorization': `Bearer ${token}`,
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(newJob)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || "Access denied by database security policy.");
+                }
+
                 window.location.href = '/dashboard';
+
             } catch (error) {
                 console.error('Analysis job submission failed:', error);
                 btn.innerText = 'Failed';
-                alert(`Unable to save this analysis to the job queue: ${error.message}`);
+                alert(`Unable to save this analysis: ${error.message}`);
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
