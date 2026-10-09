@@ -2,333 +2,257 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg">
     <title>NOVA Trunnion WRC Analysis</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #f0f4f8;
-            --bg-glow-1: #cbd5e1; 
-            --bg-glow-2: #93c5fd; 
-            --bg-glow-3: #c4b5fd; 
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.45) 100%);
-            --glass-card: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --glass-highlight: rgba(255, 255, 255, 1);
-            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.9), inset 0 -1px 2px rgba(0, 0, 0, 0.02);
-            --primary: #2563eb; 
-            --primary-hover: #1e40af; 
-            --text-main: #0f172a;
+            --bg-base: #f0f5fa;
+            --bg-glow-1: #bae6fd;
+            --bg-glow-2: #d1fae5;
+            --bg-glow-3: #fef08a;
+            --border-subtle: rgba(0, 0, 0, 0.05);
+            --border-highlight: rgba(255, 255, 255, 0.8);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #38bdf8;
+            --text-main: #1e293b;
             --text-muted: #64748b;
+            --text-dark: #0f172a;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(0, 0, 0, 0.1);
+            --input-focus-ring: rgba(59, 130, 246, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.55);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            cursor: default;
-        }
-        body {
-            min-height: 100vh;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            position: relative;
-            overflow-x: hidden;
-        }
-        .ambient-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(140px);
-            z-index: -1;
-            opacity: 0.8;
-            animation: float 20s infinite alternate ease-in-out;
-        }
-        .orb-1 { width: 65vw; height: 65vw; background: var(--bg-glow-1); top: -25vh; left: -15vw; }
-        .orb-2 { width: 55vw; height: 55vw; background: var(--bg-glow-2); bottom: -20vh; right: -10vw; animation-delay: -5s; }
-        .orb-3 { width: 45vw; height: 45vw; background: var(--bg-glow-3); top: 25vh; left: 25vw; animation-delay: -10s; opacity: 0.6; }
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(40px, 60px) scale(1.1); }
-            100% { transform: translate(-30px, 40px) scale(0.9); }
-        }
-        .glass-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(60px);
-            -webkit-backdrop-filter: blur(60px);
-            border: 1px solid var(--glass-border);
-            border-top: 1px solid var(--glass-highlight);
-            border-left: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 24px;
-            box-shadow: var(--glass-shadow);
-            width: 100%;
-            max-width: 1100px;
-            overflow: hidden;
-            position: relative;
-            margin-top: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
-        .glass-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -150%; width: 50%; height: 100%;
-            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-25deg);
-            animation: glass-sheen 12s infinite;
-            pointer-events: none;
-            z-index: 1;
-        }
-        @keyframes glass-sheen {
-            0% { left: -150%; }
-            15% { left: 200%; }
-            100% { left: 200%; }
-        }
-        .app-header {
-            padding: 1.25rem 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
-            position: relative;
-            z-index: 2;
-        }
-        .app-header h1 {
-            font-size: 1.15rem; font-weight: 800; letter-spacing: 2px;
-            text-transform: uppercase; color: var(--text-main);
-            text-shadow: none;
-        }
-        .btn-glass {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-top: 1px solid rgba(255, 255, 255, 1);
-            color: var(--text-main);
-            padding: 0.5rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 6px rgba(0,0,0,0.03);
-            position: relative;
-            z-index: 2;
-        }
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 1);
-            border-color: var(--primary);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(255,255,255,0.9);
-            transform: translateY(-2px);
-            color: var(--primary);
-        }
-        .form-body { 
-            padding: 2.5rem; 
-            position: relative; 
-            z-index: 2; 
-            width: 100%;
-            max-width: 950px; 
-            margin: 0 auto;   
-            display: flex;
-            flex-direction: column;
-            gap: 1.8rem; 
-        }
-        .section-wrapper { 
-            background: var(--glass-card);
-            border: 1px solid var(--glass-border);
-            border-top: 1px solid var(--glass-highlight);
-            border-radius: 16px;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.6);
-            backdrop-filter: blur(20px);
-        }
-        .col-title {
-            color: var(--text-main); font-weight: 800; font-size: 0.85rem;
-            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.5rem; 
-            display: flex; align-items: center; gap: 0.75rem; text-shadow: none;
-        }
-        .col-title::after {
-            content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, transparent 100%);
-        }
-        .badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 20px; height: 20px; border-radius: 5px; font-size: 0.7rem; font-weight: 800;
-            color: var(--primary); background: rgba(37, 99, 235, 0.12);
-            border: 1px solid rgba(37, 99, 235, 0.2);
-            box-shadow: none;
-        }
-        .fields-container {
-            display: grid;
-            gap: 1.5rem 1.8rem; 
-        }
-        .project-grid { grid-template-columns: repeat(3, 1fr); }
-        .geometry-grid { grid-template-columns: repeat(4, 1fr); }
-        .mesh-grid { grid-template-columns: repeat(3, 1fr); } 
-        .load-grid { grid-template-columns: repeat(2, 1fr); } 
-        .form-group { transition: all 0.3s ease; position: relative; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.15) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+        body { min-height: 100vh; min-height: 100dvh; background-color: var(--bg-base); color: var(--text-main); overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; position: relative; cursor: default; }
+        input[type="text"], input[type="number"] { cursor: text; }
+        button, select, .switch, .slider, .autocomplete-item, .close-modal, a { cursor: pointer; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }
+        input[type="number"] { -moz-appearance: textfield !important; appearance: none !important; }
+        .ambient-orb { position: fixed; border-radius: 50%; filter: blur(140px); z-index: -1; opacity: 0.85; animation: float 20s infinite alternate ease-in-out; pointer-events: none; }
+        .orb-1 { width: 60vw; height: 60vw; background: var(--bg-glow-1); top: -20vh; left: -10vw; }
+        .orb-2 { width: 50vw; height: 50vw; background: var(--bg-glow-2); bottom: -15vh; right: 0vw; animation-delay: -5s; }
+        .orb-3 { width: 40vw; height: 40vw; background: var(--bg-glow-3); top: 30vh; left: 30vw; animation-delay: -10s; opacity: 0.5; }
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(3%, 5%) scale(1.05); } 100% { transform: translate(-2%, 4%) scale(0.95); } }
+        
+        .top-navigation { position: relative; z-index: 100; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-bottom: 1px solid var(--border-subtle); display: flex; flex-direction: column; }
+        .nav-primary { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2.5rem; }
+        .nav-brand { font-size: 1.15rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; color: var(--text-dark); }
+        .nav-brand svg { color: var(--primary); filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.3)); }
+        .btn-action { background: rgba(255, 255, 255, 0.8); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 0.6rem 1.25rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+        .btn-action:hover { background: #ffffff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
+        .nav-secondary { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2.5rem; background: rgba(255, 255, 255, 0.3); border-top: 1px solid rgba(0, 0, 0, 0.03); }
+        .batch-group { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.15); transition: .3s ease; border-radius: 22px; border: 1px solid rgba(0,0,0,0.05); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: #ffffff; transition: .3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(18px); background-color: white; }
+        .batch-input-group { display: flex; align-items: center; gap: 0.5rem; transition: opacity 0.3s; }
+        .batch-input-group.hidden { display: none !important; }
+        .hidden { display: none !important; }
+        .batch-input-group input { width: 60px; padding: 0.3rem 0.5rem; text-align: center; }
+        .main-workspace { flex: 1 0 auto; width: 100%; padding: 2rem 2.5rem; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
+        #forms-container { width: 100%; max-width: 1800px; display: flex; flex-direction: column; gap: 3rem; padding-bottom: 140px; box-sizing: border-box; }
+        .analysis-block { display: flex; flex-direction: column; gap: 1rem; }
+        .block-header { font-size: 1rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem; }
+        .block-header span { background: rgba(59, 130, 246, 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; align-content: start; }
+        .glass-card { background: var(--glass-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-highlight); border-radius: 16px; display: flex; flex-direction: column; box-shadow: var(--glass-shadow); overflow: hidden; transition: all 0.3s ease; }
+        .glass-card:hover { border-color: rgba(255,255,255,1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06); }
+        .card-header { font-size: 0.85rem; font-weight: 700; color: var(--text-main); background: rgba(255,255,255,0.6); padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .card-header::before { content: ''; display: block; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; }
+        .card-body { padding: 0.5rem 0; display: flex; flex-direction: column; }
+        .section-label { font-size: 0.7rem; font-weight: 800; color: var(--primary); margin: 1rem 1.25rem 0.25rem 1.25rem; text-transform: uppercase; letter-spacing: 1px; }
+        .form-group { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.03); transition: background 0.2s; }
+        .form-group:hover { background: rgba(255,255,255,0.4); }
+        .form-group:last-child { border-bottom: none; }
         .form-group.hidden { display: none !important; }
-        .form-label {
-            display: block; font-size: 0.7rem; font-weight: 700;
-            color: var(--text-main); margin-bottom: 0.4rem; padding-left: 0.1rem; 
-            text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;
-        }
-        .glass-input, .glass-select {
-            width: 100%; 
-            height: 34px; 
-            padding: 0 0.8rem; 
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.12); 
-            border-top: 1px solid rgba(255, 255, 255, 1);
-            border-radius: 6px; 
-            font-size: 0.8rem; 
-            color: var(--text-main); 
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015); 
-            cursor: text; 
-            font-weight: 600;
-        }
-        .glass-select option { background: #ffffff; color: var(--text-main); font-size: 0.8rem; }
-        .glass-input:focus, .glass-select:focus {
-            outline: none; border-color: rgba(37, 99, 235, 0.7); background: #ffffff;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
-        .input-addon-group {
-            display: flex; align-items: center; 
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(0, 0, 0, 0.12); 
-            border-top: 1px solid rgba(255, 255, 255, 1);
-            border-radius: 6px; 
-            transition: all 0.3s ease; 
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.015);
-            height: 34px; 
-        }
-        .input-addon-group:focus-within { 
-            border-color: rgba(37, 99, 235, 0.7); 
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(37, 99, 235, 0.15); 
-            background: #ffffff; 
-        }
-        .input-addon-group .glass-input { 
-            border: none; background: transparent; box-shadow: none; border-radius: 0; height: 100%; 
-        }
-        .addon {
-            padding: 0 0.6rem; color: var(--text-muted); font-size: 0.75rem; font-weight: 800;
-            background: rgba(0, 0, 0, 0.03); border-left: 1px solid rgba(0, 0, 0, 0.1);
-            height: 100%; display: flex; align-items: center; white-space: nowrap;
-        }
-        .action-area {
-            margin-top: 1.5rem; 
-            display: flex; flex-direction: column; align-items: center;
-            width: 100%;
-        }
-        .btn-submit {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255, 255, 255, 0.8);
-            color: white; padding: 0.9rem 4rem; border-radius: 8px; font-weight: 800; font-size: 0.85rem;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255,255,255,0.4);
-            letter-spacing: 1.5px; backdrop-filter: blur(15px); text-transform: uppercase;
-        }
-        .btn-submit:hover {
-            transform: translateY(-2px); box-shadow: 0 15px 25px rgba(37, 99, 235, 0.35), inset 0 2px 2px rgba(255,255,255,0.5);
-            background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(30, 64, 175, 1) 100%);
-        }
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(10px);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
-        }
+        .form-label { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text-main); padding-right: 15px; }
+        .input-control { flex: 0 0 160px; position: relative; }
+        .glass-input, .glass-select { width: 100%; padding: 0.5rem 0.75rem; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-dark); transition: all 0.2s ease; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
+        .glass-select option { background: #ffffff; color: var(--text-dark); padding: 8px; }
+        .glass-input:focus, .glass-select:focus { border-color: var(--primary); background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring); }
+        .input-addon-group { display: flex; align-items: stretch; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px; transition: all 0.2s ease; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; }
+        .input-addon-group:focus-within { border-color: var(--primary); background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 0 0 3px var(--input-focus-ring); }
+        .input-addon-group .glass-input { border: none; background: transparent; box-shadow: none; border-radius: 0; padding-right: 4px; }
+        .addon { padding: 0 10px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; background: rgba(0, 0, 0, 0.02); display: flex; align-items: center; border-left: 1px solid rgba(0, 0, 0, 0.05); user-select: none; }
+        .autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000; display: none; max-height: 220px; overflow-y: auto; padding: 4px; }
+        .autocomplete-item { padding: 8px 12px; color: var(--text-dark); font-size: 0.85rem; border-radius: 6px; transition: all 0.1s; font-weight: 600; }
+        .autocomplete-item:hover { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+        
+        .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; padding: 1.1rem 2rem; padding-bottom: max(1.1rem, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border-top: 1px solid rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; box-shadow: 0 -8px 30px rgba(15, 23, 42, 0.08); }
+        .btn-submit { background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%); color: #ffffff; border: none; padding: 0.9rem 3.5rem; border-radius: 12px; font-weight: 700; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); text-transform: uppercase; letter-spacing: 1px; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, #60a5fa 0%, var(--primary) 100%); }
+        .btn-submit:active { transform: scale(0.98); }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 18, 40, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modern-box-wrapper {
-            position: relative;
-            width: 90%;
-            max-width: 400px;
+        .modal-box { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 18px; padding: 1.5rem; width: 92%; max-width: 520px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18); position: relative; animation: popupIn 0.3s ease both; }
+        .modal-header { font-size: 1.05rem; font-weight: 800; margin-bottom: 1.1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(0, 0, 0, 0.06); display: flex; align-items: center; justify-content: space-between; color: var(--text-dark); }
+        .close-modal { background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; }
+        .close-modal:hover { background: #ffffff; color: #ef4444; }
+        
+        .custom-mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 0.85rem; margin-bottom: 0.5rem; }
+        .custom-mat-field { display: flex; flex-direction: column; gap: 0.28rem; }
+        .custom-mat-label { font-size: 0.76rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+        .custom-mat-field .glass-input { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 0.82rem; padding: 0.42rem 0.65rem; width: 100%; box-sizing: border-box; }
+        .custom-mat-field .input-addon-group { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; width: 100%; display: flex; align-items: stretch; overflow: hidden; }
+        .custom-mat-field .input-addon-group .glass-input { font-size: 0.82rem; padding: 0.42rem 0.65rem; border: none; background: transparent; }
+        .custom-mat-field .addon { font-size: 0.7rem; padding: 0 8px; color: var(--text-muted); font-weight: 700; background: rgba(0,0,0,0.03); border-left: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; white-space: nowrap; }
+        .btn-edit-mat { background: var(--bg-glow-1); color: var(--primary); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
+        .btn-edit-mat:hover { background: var(--primary); color: white; }
+
+        .mat-popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9000; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 1.5rem;
+            box-sizing: border-box;
         }
-        .modern-box-wrapper::before {
-            content: "";
-            position: absolute;
-            inset: -4px;
-            border-radius: 28px;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #4f46e5 100%);
-            background-size: 200% 200%;
-            animation: gradientGlow 6s ease infinite;
-            filter: blur(15px);
-            opacity: 0.8;
-            z-index: 0;
-        }
-        @keyframes gradientGlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .modern-box {
-            position: relative;
-            background: rgba(15, 15, 15, 0.85); 
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
+        .mat-popup-overlay.active { opacity: 1; pointer-events: all; }
+        .mat-popup-container {
+            display: flex; flex-direction: column;
+            max-width: 1320px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
             border-radius: 24px;
-            padding: 50px 40px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            z-index: 1;
-            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.25);
+            padding: 2rem 2.4rem;
+            animation: popupIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            box-sizing: border-box;
         }
-        .modern-box h2 { font-size: 2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; letter-spacing: -1px; }
-        .modern-box p { font-size: 0.9rem; color: #a0a0a0; margin-bottom: 40px; font-weight: 600; }
-        .btn-modern {
-            display: inline-block; padding: 10px 30px; border-radius: 8px; background: #ffffff;
-            color: #000000; text-decoration: none; font-weight: 700; font-size: 0.85rem;
-            transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); cursor: pointer;
+        @keyframes popupIn { from { transform: scale(0.92) translateY(20px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+        .mat-popup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.4rem; padding-bottom: 1rem; border-bottom: 1.5px solid #f1f5f9; }
+        .mat-popup-title { font-size: 1.15rem; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; display: flex; align-items: center; gap: 12px; }
+        .mat-popup-title .mpbadge { font-size: 0.72rem; font-weight: 800; background: #eff6ff; color: #2563eb; padding: 3px 10px; border-radius: 20px; border: 1px solid #bfdbfe; }
+        .mat-popup-close { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; }
+        .mat-popup-close:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+        .mat-tables-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; align-items: stretch; }
+        .mat-rect-card { background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; }
+        .mat-rect-header { padding: 0.85rem 1.1rem; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; }
+        .mat-rect-header .rdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .rdot-flange { background: #2563eb; }
+        .rdot-bolt { background: #059669; }
+        .mat-tbl { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        .mat-tbl td { padding: 0.55rem 1.1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .mat-tbl tr:last-child td { border-bottom: none; }
+        .mat-tbl .tl { color: #334155; font-weight: 700; width: 45%; }
+        .mat-tbl .tv { color: #0f172a; font-weight: 800; text-align: right; }
+        .mat-tbl tr:hover td { background: #f8fafc; }
+        .tiw { display: inline-flex; align-items: stretch; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden; width: 100%; min-width: 135px; transition: all 0.2s ease; }
+        .tiw:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+        .ti { border: none; background: transparent; padding: 0.42rem 0.65rem; font-size: 0.88rem; font-weight: 800; color: #0f172a; width: 100%; outline: none; box-sizing: border-box; }
+        .tia { padding: 0 8px; font-size: 0.74rem; font-weight: 800; color: #475569; background: #f8fafc; border-left: 1.5px solid #cbd5e1; display: flex; align-items: center; white-space: nowrap; }
+        .btn-mat-popup { margin: 0.75rem 1.25rem 1rem; background: linear-gradient(135deg, rgba(59,130,246,0.11) 0%, rgba(59,130,246,0.05) 100%); border: 1px solid rgba(59,130,246,0.22); color: var(--primary); padding: 0.48rem 1rem; border-radius: 8px; font-size: 0.79rem; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: all 0.2s; width: calc(100% - 2.5rem); justify-content: center; }
+        .btn-mat-popup:hover { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.42); transform: translateY(-1px); }
+        .btn-mat-popup.thermal-mode { background: linear-gradient(135deg, rgba(245,158,11,0.13) 0%, rgba(59,130,246,0.07) 100%); border-color: rgba(245,158,11,0.32); color: #b45309; }
+
+        @media (max-width: 768px) {
+            .nav-primary { flex-direction: column; gap: 1rem; padding: 1rem; align-items: stretch; }
+            .nav-brand { justify-content: center; }
+            .nav-secondary { flex-direction: column; gap: 1rem; padding: 1rem; }
+            .main-workspace { padding: 1rem; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .sticky-footer { padding: 0.75rem 1rem; }
+            .btn-submit { width: 100%; max-width: 500px; padding: 0.85rem 1.5rem; }
+            #forms-container { gap: 1.5rem; padding-bottom: 120px; }
+
+            .mat-popup-overlay {
+                align-items: stretch;
+                padding: max(0.4rem, env(safe-area-inset-top)) 0.4rem max(0.4rem, env(safe-area-inset-bottom));
+                overflow: hidden;
+            }
+            .mat-popup-container {
+                width: 100%;
+                max-width: none;
+                min-width: 0;
+                max-height: 100%;
+                margin: auto 0;
+                padding: 0.8rem 0.65rem;
+                border-radius: 14px;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+            .mat-popup-header {
+                gap: 0.4rem;
+                margin-bottom: 0.7rem;
+                padding-bottom: 0.6rem;
+            }
+            .mat-popup-title {
+                min-width: 0;
+                gap: 0.4rem;
+                font-size: 0.8rem;
+                letter-spacing: 0;
+                overflow-wrap: anywhere;
+            }
+            .mat-popup-title .mpbadge {
+                flex: 0 0 auto;
+                padding: 0.15rem 0.35rem;
+                font-size: 0.58rem;
+            }
+            .mat-popup-close {
+                width: 1.8rem;
+                height: 1.8rem;
+                flex: 0 0 auto;
+            }
+            .mat-tables-row {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0.65rem;
+                min-width: 0;
+            }
+            .mat-rect-card {
+                min-width: 0;
+                border-radius: 11px;
+            }
+            .mat-rect-header {
+                padding: 0.55rem 0.65rem;
+                font-size: 0.72rem;
+            }
+            .mat-tbl {
+                width: 100%;
+                table-layout: fixed;
+                font-size: 0.67rem;
+            }
+            .mat-tbl td {
+                padding: 0.35rem 0.45rem;
+                overflow-wrap: anywhere;
+            }
+            .mat-tbl .tl {
+                width: 42%;
+                line-height: 0.9rem;
+            }
+            .mat-tbl .tv {
+                width: 58%;
+                text-align: right;
+            }
+            .tiw {
+                min-width: 0;
+                max-width: 100%;
+            }
+            .ti {
+                min-width: 0;
+                padding: 0.3rem 0.4rem;
+                font-size: 0.72rem;
+            }
+            .tia {
+                padding-inline: 0.35rem;
+                font-size: 0.6rem;
+            }
         }
-        .btn-modern:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3); background: #e0e0e0; }
-        .btn-modern:active { transform: scale(0.98); }
-        .autocomplete-list {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 1000;
-            overflow: hidden;
-            display: none;
-        }
-        .autocomplete-item {
-            padding: 12px 15px;
-            cursor: pointer;
-            color: var(--text-main);
-            font-size: 0.85rem;
-            font-weight: 700;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-        }
-        .autocomplete-item:last-child { border-bottom: none; }
-        .autocomplete-item:hover {
-            background: rgba(37, 99, 235, 0.1);
-            color: var(--primary);
-            padding-left: 20px;
-        }
-        @media (max-width: 900px) {
-            .geometry-grid { grid-template-columns: repeat(2, 1fr); }
-            .project-grid, .mesh-grid, .load-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            .geometry-grid, .project-grid, .mesh-grid, .load-grid { grid-template-columns: 1fr; }
-            .form-body { padding: 1.5rem; }
-        }
+        @keyframes pulseOp { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
     </style>
     <link rel="stylesheet" href="/mobile-analysis.css">
 </head>
@@ -337,226 +261,1191 @@
     <div class="ambient-orb orb-2"></div>
     <div class="ambient-orb orb-3"></div>
 
-    <div class="glass-container">
-        <header class="app-header">
-            <h1 id="main_title">NOVA TRUNNION WRC ANALYSIS</h1>
-            <a href="https://nova-analysis.vercel.app/" style="text-decoration: none;">
-                <button class="btn-glass" type="button">← Dashboard</button>
-            </a>
-        </header>
-
-        <form class="form-body" id="analysisForm" action="/" method="POST">
-            <input type="hidden" name="active_analysis" id="active_analysis" value="trunnion_wrc">
-
-            <div id="form-content" style="width: 100%; display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="top-navigation">
+        <div class="nav-primary">
+            <h1 class="nav-brand" id="main_title" style="cursor: pointer;" onclick="window.location.href='/'">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                NOVA Trunnion WRC Analysis
+            </h1>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn-action" type="button" onclick="window.location.href='https://nova-analysis.vercel.app/'" title="Open NOVA Platform Dashboard">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </button>
+                <button class="btn-action" type="button" onclick="window.open('https://asme-material.vercel.app/', '_blank')" title="Open ASME Material Database Explorer">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    See Material
+                </button>
             </div>
-
-            <div class="action-area">
-                <button class="btn-submit" type="button" onclick="showSolvingModal()">Solve in Ansys</button>
+        </div>
+        <div class="nav-secondary">
+            <div class="batch-group">
+                <span>Batch Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="batchToggle" onchange="toggleBatchMode()">
+                    <span class="slider"></span>
+                </label>
             </div>
-        </form>
-    </div>
-
-    <div class="modal-overlay" id="solvingModal">
-        <div class="modern-box-wrapper">
-            <div class="modern-box">
-                <p>Backend System in Development Phase</p>
-                <a href="https://nova-analysis.vercel.app/" class="btn-modern">Got it</a>
+            <div class="hidden batch-input-group" id="batchCountContainer">
+                <span style="font-size:0.8rem; color:var(--text-muted);">No of Analysis :</span>
+                <input type="number" class="glass-input" id="numAnalyses" value="1" min="1" max="20" onchange="renderForms()">
             </div>
         </div>
     </div>
 
+    <div class="main-workspace">
+        <form id="forms-container"></form>
+    </div>
+
+    <div class="sticky-footer">
+        <button class="btn-submit" type="button" onclick="submitAnalysis()">Solve Analysis</button>
+    </div>
+
+    <div class="modal-overlay" id="searchModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Job Repository</span>
+                <button class="close-modal" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+                <input type="text" id="searchInput" class="glass-input" placeholder="Job ID or License Key...">
+                <button class="btn-action" onclick="searchJobs()" style="background:var(--primary); color:white; border:none;">Search</button>
+            </div>
+            <div id="jobResults" style="max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="customMaterialModal" onclick="if(event.target===this)closeCustomMaterialModal()">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="customMaterialTitle" style="display:flex; align-items:center; gap:8px;">Custom Material Properties</span>
+                <button class="close-modal" onclick="closeCustomMaterialModal()">&times;</button>
+            </div>
+            <input type="hidden" id="customMaterialTargetPrefix">
+            <input type="hidden" id="customMaterialTargetIndex">
+            
+            <div class="custom-mat-grid">
+                <div class="custom-mat-field" style="grid-column: 1 / -1; margin-bottom: 0.2rem;">
+                    <label class="custom-mat-label">Material Name</label>
+                    <input type="text" class="glass-input" id="modalOtherName" placeholder="e.g. SA-516 Gr. 70">
+                </div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Young's Modulus</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYM" value="200000">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field">
+                    <label class="custom-mat-label">Poisson's Ratio</label>
+                    <input type="number" step="0.001" class="glass-input" id="modalPR" value="0.3">
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpAllowable">
+                    <label class="custom-mat-label">Allowable Stress (Table 5A)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalAllowable" value="138">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpYield">
+                    <label class="custom-mat-label">Yield Stress (Sy)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalYield" value="260">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpUTS">
+                    <label class="custom-mat-label">Ultimate Tensile (UTS)</label>
+                    <div class="input-addon-group">
+                        <input type="number" class="glass-input" id="modalUTS" value="485">
+                        <span class="addon">MPa</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpConductivity">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Conductivity</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" class="glass-input" id="modalConductivity" value="48">
+                        <span class="addon" style="color:#b45309;">W/m·°C</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpThermalExp">
+                    <label class="custom-mat-label" style="color:#b45309;">Thermal Expansion (CTE)</label>
+                    <div class="input-addon-group" style="border-color:rgba(245,158,11,0.35);">
+                        <input type="number" step="0.1" class="glass-input" id="modalThermalExp" value="12">
+                        <span class="addon" style="color:#b45309;">×10⁻⁶/°C</span>
+                    </div>
+                </div>
+
+                <div class="custom-mat-field" id="modalGrpDensity">
+                    <label class="custom-mat-label" style="color:#2563eb;">Density</label>
+                    <div class="input-addon-group" style="border-color:rgba(59,130,246,0.35);">
+                        <input type="number" class="glass-input" id="modalDensity" value="7850">
+                        <span class="addon" style="color:#2563eb;">kg/m³</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.06);">
+                <button class="btn-action" type="button" onclick="closeCustomMaterialModal()" style="padding:0.45rem 1.2rem; font-size:0.82rem;">Cancel</button>
+                <button class="btn-action" type="button" onclick="saveCustomMaterial()" style="background:var(--primary); color:white; border:none; padding:0.45rem 1.6rem; font-size:0.82rem; font-weight:700;">Save &amp; Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mat-popup-overlay" id="matTablePopup" onclick="if(event.target===this)closeMatTablePopup()">
+        <div class="mat-popup-container" id="matTableContainer">
+        </div>
+    </div>
+
     <script>
-        const appData = {
-            "trunnion_wrc": [
-                {
-                    title: "1. Project",
-                    gridClass: "project-grid",
-                    fields: [
-                        { name: "shell_mat", label: "Shell Material Name:", type: "text", value: "SA-516 70" },
-                        { name: "trunnion_mat", label: "Trunnion Material Name:", type: "text", value: "SA-106 B" },
-                        { name: "d_temp", label: "Design Temp.:", type: "number", value: "200", unit: "°C" },
-                        { name: "dyn_impact", label: "Dynamic Impact Factor:", type: "number", value: "1.5" },
-                        { name: "bail_ring_mat", label: "Bail/Ring Material Name:", type: "text", value: "SA-36" }
-                    ]
-                },
-                {
-                    title: "2. Geometry",
-                    gridClass: "geometry-grid",
-                    fields: [
-                        { name: "shell_id", label: "Shell ID:", type: "number", value: "2000", unit: "mm" },
-                        { name: "shell_thk", label: "Shell THK:", type: "number", value: "20", unit: "mm" },
-                        { name: "cut_len", label: "Model Cut Length:", type: "number", value: "1500", unit: "mm" },
-                        { name: "re_pad", label: "Reinforcing Pad:", type: "select", options: ["True", "False"], value: "True" },
-                        { name: "pad_od", label: "Pad OD:", type: "number", value: "500", unit: "mm", dependsOn: "re_pad", showIf: ["True"] },
-                        { name: "pad_thk", label: "Pad THK:", type: "number", value: "20", unit: "mm", dependsOn: "re_pad", showIf: ["True"] },
-                        { name: "trunnion_od", label: "Trunnion OD:", type: "number", value: "300", unit: "mm" },
-                        { name: "trunnion_thk", label: "Trunnion THK:", type: "number", value: "15", unit: "mm" },
-                        { name: "proj_len", label: "Projection Length:", type: "number", value: "250", unit: "mm" },
-                        { name: "ring_od", label: "Ring OD:", type: "number", value: "400", unit: "mm" },
-                        { name: "ring_thk", label: "Ring THK:", type: "number", value: "20", unit: "mm" },
-                        { name: "bail_width", label: "Bail Width:", type: "number", value: "150", unit: "mm" },
-                        { name: "bail_height", label: "Bail Overall High:", type: "number", value: "300", unit: "mm" },
-                        { name: "top_hole_dia", label: "Top Lifting Hole Dia:", type: "number", value: "50", unit: "mm" }
-                    ]
-                },
-                {
-                    title: "3. Meshing",
-                    gridClass: "mesh-grid",
-                    fields: [
-                        { name: "global_mesh", label: "Global Body Sizing:", type: "number", value: "50", unit: "mm" },
-                        { name: "fric_contact", label: "Bail to Trunnion Frictional Contact:", type: "number", value: "0.2" },
-                        { name: "weld_refine", label: "Weld Toe Refinement:", type: "number", value: "5", unit: "mm" }
-                    ]
-                },
-                {
-                    title: "4. BCs & Loads",
-                    gridClass: "load-grid",
-                    fields: [
-                        { name: "lifting_load", label: "Lifting Load:", type: "number", value: "100000", unit: "N" },
-                        { name: "pull_angle", label: "Pull Angle:", type: "number", value: "30", unit: "deg" }
-                    ]
-                }
-            ]
-        };
+        const API_URL = "https://opzfhsonosqqxometiou.supabase.co/rest/v1/ansys_jobs";
+        const API_KEY = "sb_publishable_tZ-Wulo5bNADs-w9dca3Vw_3CL1RNuo";
+        
+        let currentAnalysis = "trunnion_wrc";
+        let materialLibrary = [];
 
-        function parseLabelAndUnit(rawLabel) {
-            const match = rawLabel.match(/(.*)\(([^)]+)\):?$/);
-            if (match) {
-                return { label: match[1].trim(), unit: match[2].trim() };
+        function toggleBatchMode() {
+            const isBatch = document.getElementById('batchToggle').checked;
+            const container = document.getElementById('batchCountContainer');
+            if(isBatch) {
+                container.classList.remove('hidden');
+                document.getElementById('numAnalyses').value = 2;
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('numAnalyses').value = 1;
             }
-            return { label: rawLabel.replace(':', '').trim(), unit: null };
+            renderForms();
         }
 
-        function generateFieldHTML(f) {
-            if (!f) return '';
-            let labelText = f.label;
-            let unitText = f.unit || null;
-            if (!unitText) {
-                const parsed = parseLabelAndUnit(f.label);
-                labelText = parsed.label;
-                unitText = parsed.unit;
-            }
-            const dependsAttr = f.dependsOn ? `data-depends-on="${f.dependsOn}" data-show-if="${f.showIf.join(',')}"` : '';
-            let html = `<div class="form-group" style="position: relative;" ${dependsAttr}>
-                            <label class="form-label">${labelText}</label>`;
-            if (f.type === 'select') {
-                const onChange = f.name === 're_pad' ? 'onchange="evaluateDependencies()"' : '';
-                html += `<select class="glass-select" name="${f.name}" id="${f.name}" ${onChange}>`;
-                f.options.forEach(opt => {
-                    const isSelected = opt === f.value ? 'selected' : '';
-                    html += `<option value="${opt}" ${isSelected}>${opt}</option>`;
-                });
-                html += `</select>`;
-            } 
-            else {
-                const isMatName = f.name.includes("mat");
-                const matEvents = isMatName ? `autocomplete="off" oninput="handleMaterialSearch(this)"` : '';
-                if (unitText) {
-                    html += `<div class="input-addon-group">
-                                <input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>
-                                <span class="addon">${unitText}</span>
-                             </div>`;
-                } else {
-                    html += `<input type="${f.type}" step="any" class="glass-input" name="${f.name}" id="${f.name}" value="${f.value}" ${matEvents}>`;
-                }
-            }
-            html += `</div>`;
-            return html;
+        function getTrunnionFormTemplate(i, isBatch) {
+            return `
+            <div class="analysis-block" id="block_${i}">
+                ${isBatch ? `<div class="block-header"><span>Trunnion WRC Analysis : ${i}</span></div>` : ''}
+                <div class="dashboard-grid">
+
+                    <div class="glass-card project-grid">
+                        <div class="card-header">1. Project</div>
+                        <div class="card-body">
+                            <div class="form-group" id="grp_File_Path_${i}">
+                                <label class="form-label">Analysis Folder</label>
+                                <div class="input-control"><input type="text" class="glass-input" name="File_Path_${i}" id="File_Path_${i}" value="D:\\Test\\Trunnion_${i}"></div>
+                            </div>
+                            
+                            <div class="form-group" id="grp_shell_mat_${i}">
+                                <label class="form-label">Shell Material Name:</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="shell_mat_${i}" id="shell_mat_${i}" value="SA-516 70" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="hidden form-group" id="grp_Shell_OtherName_${i}"><input type="hidden" name="Shell_OtherName_${i}" id="Shell_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="hidden form-group" id="grp_Shell_YM_${i}"><input type="hidden" name="Shell_YM_${i}" id="Shell_YM_${i}" value="200000"></div>
+                            <div class="hidden form-group" id="grp_Shell_PR_${i}"><input type="hidden" name="Shell_PR_${i}" id="Shell_PR_${i}" value="0.3"></div>
+                            <div class="hidden form-group" id="grp_Shell_Allowable_${i}"><input type="hidden" name="Shell_Allowable_${i}" id="Shell_Allowable_${i}" value="138"></div>
+                            <div class="hidden form-group" id="grp_Shell_Yield_${i}"><input type="hidden" name="Shell_Yield_${i}" id="Shell_Yield_${i}" value="260"></div>
+                            <div class="hidden form-group" id="grp_Shell_UTS_${i}"><input type="hidden" name="Shell_UTS_${i}" id="Shell_UTS_${i}" value="485"></div>
+
+                            <div class="form-group" id="grp_trunnion_mat_${i}">
+                                <label class="form-label">Trunnion Material Name:</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="trunnion_mat_${i}" id="trunnion_mat_${i}" value="SA-106 B" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="hidden form-group" id="grp_Trunnion_OtherName_${i}"><input type="hidden" name="Trunnion_OtherName_${i}" id="Trunnion_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="hidden form-group" id="grp_Trunnion_YM_${i}"><input type="hidden" name="Trunnion_YM_${i}" id="Trunnion_YM_${i}" value="200000"></div>
+                            <div class="hidden form-group" id="grp_Trunnion_PR_${i}"><input type="hidden" name="Trunnion_PR_${i}" id="Trunnion_PR_${i}" value="0.3"></div>
+                            <div class="hidden form-group" id="grp_Trunnion_Allowable_${i}"><input type="hidden" name="Trunnion_Allowable_${i}" id="Trunnion_Allowable_${i}" value="138"></div>
+                            <div class="hidden form-group" id="grp_Trunnion_Yield_${i}"><input type="hidden" name="Trunnion_Yield_${i}" id="Trunnion_Yield_${i}" value="260"></div>
+                            <div class="hidden form-group" id="grp_Trunnion_UTS_${i}"><input type="hidden" name="Trunnion_UTS_${i}" id="Trunnion_UTS_${i}" value="485"></div>
+
+                            <div class="form-group" id="grp_bail_ring_mat_${i}">
+                                <label class="form-label">Bail/Ring Material Name:</label>
+                                <div class="input-control">
+                                    <input type="text" class="glass-input" name="bail_ring_mat_${i}" id="bail_ring_mat_${i}" value="SA-36" autocomplete="off" oninput="searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)" onchange="evaluateDependencies(${i})">
+                                </div>
+                            </div>
+                            <div class="hidden form-group" id="grp_Bail_OtherName_${i}"><input type="hidden" name="Bail_OtherName_${i}" id="Bail_OtherName_${i}" value="Custom_Material"></div>
+                            <div class="hidden form-group" id="grp_Bail_YM_${i}"><input type="hidden" name="Bail_YM_${i}" id="Bail_YM_${i}" value="200000"></div>
+                            <div class="hidden form-group" id="grp_Bail_PR_${i}"><input type="hidden" name="Bail_PR_${i}" id="Bail_PR_${i}" value="0.3"></div>
+                            <div class="hidden form-group" id="grp_Bail_Allowable_${i}"><input type="hidden" name="Bail_Allowable_${i}" id="Bail_Allowable_${i}" value="138"></div>
+                            <div class="hidden form-group" id="grp_Bail_Yield_${i}"><input type="hidden" name="Bail_Yield_${i}" id="Bail_Yield_${i}" value="260"></div>
+                            <div class="hidden form-group" id="grp_Bail_UTS_${i}"><input type="hidden" name="Bail_UTS_${i}" id="Bail_UTS_${i}" value="485"></div>
+
+                            <div class="form-group" id="grp_d_temp_${i}">
+                                <label class="form-label">Design Temp.:</label>
+                                <div class="input-control">
+                                    <div class="input-addon-group"><input type="number" class="glass-input" name="d_temp_${i}" id="d_temp_${i}" value="200" onchange="recalculateAllMaterials(${i})"><span class="addon">°C</span></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="grp_dyn_impact_${i}">
+                                <label class="form-label">Dynamic Impact Factor:</label>
+                                <div class="input-control">
+                                    <input type="number" step="0.1" class="glass-input" name="dyn_impact_${i}" id="dyn_impact_${i}" value="1.5">
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-mat-popup" id="btn_matpopup_${i}" onclick="openMatTablePopup(${i})">
+                                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                View Material Properties
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card geometry-grid">
+                        <div class="card-header">2. Geometry</div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Shell ID:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="shell_id_${i}" id="shell_id_${i}" value="2000"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Shell THK:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="shell_thk_${i}" id="shell_thk_${i}" value="20"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Model Cut Length:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="cut_len_${i}" id="cut_len_${i}" value="1500"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Reinforcing Pad:</label>
+                                <div class="input-control">
+                                    <select class="glass-select" name="re_pad_${i}" id="re_pad_${i}" onchange="evaluateDependencies(${i})">
+                                        <option value="True">True</option>
+                                        <option value="False">False</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="hidden form-group" id="grp_pad_od_${i}">
+                                <label class="form-label">Pad OD:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="pad_od_${i}" id="pad_od_${i}" value="500"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="hidden form-group" id="grp_pad_thk_${i}">
+                                <label class="form-label">Pad THK:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="pad_thk_${i}" id="pad_thk_${i}" value="20"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Trunnion OD:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="trunnion_od_${i}" id="trunnion_od_${i}" value="300"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Trunnion THK:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="trunnion_thk_${i}" id="trunnion_thk_${i}" value="15"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Projection Length:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="proj_len_${i}" id="proj_len_${i}" value="250"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ring OD:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ring_od_${i}" id="ring_od_${i}" value="400"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ring THK:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="ring_thk_${i}" id="ring_thk_${i}" value="20"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bail Width:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="bail_width_${i}" id="bail_width_${i}" value="150"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bail Overall High:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="bail_height_${i}" id="bail_height_${i}" value="300"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Top Lifting Hole Dia:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="top_hole_dia_${i}" id="top_hole_dia_${i}" value="50"><span class="addon">mm</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card mesh-grid">
+                        <div class="card-header">3. Meshing</div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Global Body Sizing:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="global_mesh_${i}" id="global_mesh_${i}" value="50"><span class="addon">mm</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Bail to Trunnion Frictional Contact:</label>
+                                <div class="input-control"><input type="number" step="0.1" class="glass-input" name="fric_contact_${i}" id="fric_contact_${i}" value="0.2"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Weld Toe Refinement:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="weld_refine_${i}" id="weld_refine_${i}" value="5"><span class="addon">mm</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card load-grid">
+                        <div class="card-header">4. BCs & Loads</div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Lifting Load:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="lifting_load_${i}" id="lifting_load_${i}" value="100000"><span class="addon">N</span></div></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Pull Angle:</label>
+                                <div class="input-control"><div class="input-addon-group"><input type="number" class="glass-input" name="pull_angle_${i}" id="pull_angle_${i}" value="30"><span class="addon">deg</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            `;
         }
 
-        function renderForm() {
-            const contentDiv = document.getElementById('form-content');
-            contentDiv.innerHTML = '';
-            const sections = appData["trunnion_wrc"];
-            sections.forEach(sec => {
-                const wrapper = document.createElement('div');
-                wrapper.className = `section-wrapper`;
-                const titleMatch = sec.title.match(/^(\d+)\.\s*(.*)/);
-                const badgeNum = titleMatch ? titleMatch[1] : '?';
-                const cleanTitle = titleMatch ? titleMatch[2] : sec.title;
-                let html = `<div class="col-title"><span class="badge">${badgeNum}</span> ${cleanTitle}</div>`;
-                html += `<div class="fields-container ${sec.gridClass}">`;
-                html += sec.fields.map(f => generateFieldHTML(f)).join('');
-                html += `</div>`;
-                wrapper.innerHTML = html;
-                contentDiv.appendChild(wrapper);
+        function renderForms() {
+            const container = document.getElementById('forms-container');
+            const num = parseInt(document.getElementById('numAnalyses').value) || 1;
+            const isBatch = document.getElementById('batchToggle').checked;
+            const total = isBatch ? num : 1;
+            
+            let html = '';
+            for(let i=1; i<=total; i++) {
+                html += getTrunnionFormTemplate(i, isBatch);
+            }
+            container.innerHTML = html;
+            
+            for(let i=1; i<=total; i++) {
+                evaluateDependencies(i);
+            }
+        }
+
+        function toggleVisibility(id, show) {
+            const el = document.getElementById(id);
+            if(el) {
+                if(show) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        }
+
+        function evaluateDependencies(i) {
+            const rePad = document.getElementById(`re_pad_${i}`)?.value || 'True';
+            
+            toggleVisibility(`grp_pad_od_${i}`, rePad === 'True');
+            toggleVisibility(`grp_pad_thk_${i}`, rePad === 'True');
+
+
+            const prefixToFieldMap = { 'Shell': 'shell_mat', 'Trunnion': 'trunnion_mat', 'Bail': 'bail_ring_mat' };
+            const prefixes = ['Shell', 'Trunnion', 'Bail'];
+            prefixes.forEach(prefix => {
+                const fieldName = prefixToFieldMap[prefix];
+                const matInput = document.getElementById(`${fieldName}_${i}`);
+                if(!matInput) return;
+                const matName = matInput.value.toLowerCase().trim();
+                const isOther = matName === 'other material';
+                
+                let btn = document.getElementById(`btnEdit_${prefix}_${i}`);
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.id = `btnEdit_${prefix}_${i}`;
+                    btn.type = 'button';
+                    btn.className = 'btn-edit-mat';
+                    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px; vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit Props';
+                    const matInputCtrl = matInput.parentElement;
+                    matInputCtrl.appendChild(btn);
+                }
+                btn.onclick = () => openCustomMaterialModal(prefix, i);
+                btn.style.display = isOther ? 'inline-block' : 'none';
             });
-            evaluateDependencies();
+
+            recalculateAllMaterials(i);
         }
 
-        function evaluateDependencies() {
-            document.querySelectorAll('.form-group[data-depends-on]').forEach(group => {
-                const targetName = group.getAttribute('data-depends-on');
-                const showConditions = group.getAttribute('data-show-if').split(',');
-                const masterInput = document.querySelector(`[name="${targetName}"]`);
-                if (masterInput) {
-                    if (showConditions.includes(masterInput.value)) {
-                        group.classList.remove('hidden');
-                    } else {
-                        group.classList.add('hidden');
+        function openMatTablePopup(i) {
+            const showYield = true;
+            const showUTS = true;
+            const showAllowable = true;
+
+            const prefixes = ['Shell', 'Trunnion', 'Bail'];
+            const dotCls = { Shell: 'rdot-flange', Trunnion: 'rdot-bolt', Bail: 'rdot-pad' };
+
+            function ensureHidden(id, defVal) {
+                let el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type='hidden'; el.name=id; el.id=id; el.value=defVal;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
+            prefixes.forEach(p => {
+                ensureHidden(`${p}_Conductivity_${i}`, '48');
+                ensureHidden(`${p}_ThermalExp_${i}`, '12');
+                ensureHidden(`${p}_Density_${i}`, '7850');
+            });
+
+            const matCardsHtml = prefixes.map(prefix => {
+                const mapField = prefix === 'Shell' ? 'shell_mat' : (prefix === 'Trunnion' ? 'trunnion_mat' : 'bail_ring_mat');
+                const matName  = document.getElementById(`${mapField}_${i}`)?.value || '—';
+                const isCustom = matName.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+                const ymEl = document.getElementById(`${prefix}_YM_${i}`);
+                const ym = ymEl ? ymEl.value : '200000';
+                const prEl = document.getElementById(`${prefix}_PR_${i}`);
+                const pr = prEl ? prEl.value : '0.3';
+                const allowEl = document.getElementById(`${prefix}_Allowable_${i}`);
+                const allow = allowEl ? allowEl.value : '138';
+                const yldEl = document.getElementById(`${prefix}_Yield_${i}`);
+                const yld = yldEl ? yldEl.value : '260';
+                const utsEl = document.getElementById(`${prefix}_UTS_${i}`);
+                const uts = utsEl ? utsEl.value : '485';
+                const condEl = document.getElementById(`${prefix}_Conductivity_${i}`);
+                const cond = condEl ? condEl.value : '48';
+                const cteEl = document.getElementById(`${prefix}_ThermalExp_${i}`);
+                const cte = cteEl ? cteEl.value : '12';
+                const densEl = document.getElementById(`${prefix}_Density_${i}`);
+                const dens = densEl ? densEl.value : (isCustom ? '0' : '7850');
+
+                let rows = `
+                <tr><td class="tl">Young's Modulus</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}YM_${i}" value="${ym}" onchange="syncPop('${prefix}_YM',${i},'pop_${prefix}YM_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>
+                <tr><td class="tl">Poisson's Ratio</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" step="0.001" id="pop_${prefix}PR_${i}" value="${pr}" onchange="syncPop('${prefix}_PR',${i},'pop_${prefix}PR_${i}')"></div>
+                </td></tr>`;
+
+                if (showAllowable) rows += `
+                <tr><td class="tl">Allowable Stress</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}All_${i}" value="${allow}" onchange="syncPop('${prefix}_Allowable',${i},'pop_${prefix}All_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showYield) rows += `
+                <tr><td class="tl">Yield Stress</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}Yld_${i}" value="${yld}" onchange="syncPop('${prefix}_Yield',${i},'pop_${prefix}Yld_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (showUTS) rows += `
+                <tr><td class="tl">Ultimate Tensile (UTS)</td><td class="tv">
+                    <div class="tiw"><input type="number" class="ti" id="pop_${prefix}UTS_${i}" value="${uts}" onchange="syncPop('${prefix}_UTS',${i},'pop_${prefix}UTS_${i}')"><span class="tia">MPa</span></div>
+                </td></tr>`;
+
+                if (parseFloat(dens) > 0 && !isCustom) {
+                    rows += `
+                <tr style="background:rgba(59,130,246,0.03);"><td class="tl" style="color:#2563eb;">Density</td><td class="tv">
+                    <div class="tiw" style="border-color:rgba(59,130,246,0.3);"><input type="number" class="ti" id="pop_${prefix}Dens_${i}" value="${dens}" onchange="syncPop('${prefix}_Density',${i},'pop_${prefix}Dens_${i}')"><span class="tia" style="color:#2563eb;">kg/m³</span></div>
+                </td></tr>`;
+                }
+
+                const labelText = prefix;
+                const headerStyles = {
+                    Shell: 'background:#eff6ff; color:#1e40af; border-bottom:1.5px solid #dbeafe;',
+                    Trunnion: 'background:#ecfdf5; color:#065f46; border-bottom:1.5px solid #d1fae5;',
+                    Bail: 'background:#f5f3ff; color:#6b21a8; border-bottom:1.5px solid #ede9fe;'
+                };
+                const matBg  = isCustom ? '#fef3c7' : '#f8fafc';
+                const popMatInputId = `pop_${prefix}_Material_${i}`;
+                const matLbl = `<div style="position:relative;" class="input-control"><input type="text" id="${popMatInputId}" class="ti" style="font-weight:900; color:${isCustom ? '#b45309' : '#0f172a'}; width:100%; background:transparent; border:none; outline:none; font-size:0.95rem; padding:0;" value="${matName}" autocomplete="off" oninput="syncPopMatName('${prefix}', ${i}, this.value); searchMaterial(this, ${i})" onblur="setTimeout(()=>closeLists(),200)"></div>`;
+                
+                let notFoundText = `<div id="warn_${prefix}_${i}" style="color:#ef4444; font-size:0.75rem; font-weight:700; margin-top:6px; line-height:1.2; display:${(isCustom && matName.trim() !== '' && matName.toLowerCase().trim() !== 'other material' && matName.trim() !== '—') ? 'block' : 'none'};">⚠️ "<span id="warn_name_${prefix}_${i}">${matName}</span>" is not in Database. Required to fill.</div>`;
+
+                return `<div class="mat-rect-card">
+                    <div class="mat-rect-header" style="${headerStyles[prefix] || ''}">
+                        <span class="rdot ${dotCls[prefix]}"></span>
+                        <span class="rh-label">${labelText}</span>
+                    </div>
+                    <div style="padding:0;">
+                        <div id="mat_bg_${prefix}_${i}" style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:800;background:${matBg};border-bottom:1px solid #e2e8f0;">${matLbl}${notFoundText}</div>
+                        <table class="mat-tbl"><tbody>${rows}</tbody></table>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const tDes = document.getElementById(`d_temp_${i}`)?.value || '—';
+            const dynImp = document.getElementById(`dyn_impact_${i}`)?.value || '1.5';
+
+            const infoCard = `<div class="mat-rect-card">
+                <div class="mat-rect-header" style="background:#eef2ff; color:#3730a3; border-bottom:1.5px solid #e0e7ff;">
+                    <span class="rdot" style="background:#4f46e5;"></span>
+                    <span class="rh-label" style="color:#3730a3;">Analysis Info</span>
+                </div>
+                <div style="padding:0;">
+                    <div style="padding:0.5rem 1.1rem;font-size:0.86rem;font-weight:900;color:#0f172a;background:#f8fafc;border-bottom:1px solid #e2e8f0;">Execution Parameters</div>
+                    <table class="mat-tbl"><tbody>
+                    <tr><td class="tl">Configuration</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">Trunnion WRC Analysis</td></tr>
+                    <tr><td class="tl">Design Temp</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${tDes} °C</td></tr>
+                    <tr><td class="tl">Dynamic Impact</td><td class="tv" style="font-size:0.84rem;font-weight:800;color:#0f172a;">${dynImp}</td></tr>
+                    </tbody></table>
+                </div>
+            </div>`;
+
+            const badge = 'Trunnion WRC Analysis';
+            document.getElementById('matTableContainer').innerHTML = `
+                <div class="mat-popup-header">
+                    <div class="mat-popup-title">Material Properties <span class="mpbadge">${badge}</span></div>
+                    <div style="display:flex; align-items:center; gap: 8px;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #475569;">Design Temp (°C):</label>
+                        <input type="number" id="pop_d_temp_${i}" class="glass-input" style="width: 80px; padding: 4px 8px;" value="${tDes}" onchange="syncDesignTemp(${i}, this.value)">
+                        <button class="mat-popup-close" onclick="closeMatTablePopup()" style="margin-left: 10px;">&#10005;</button>
+                    </div>
+                </div>
+                <div class="mat-tables-row">${matCardsHtml}${infoCard}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1.5px solid #f1f5f9;flex-wrap:wrap;gap:1rem;">
+                    <span style="font-size:0.82rem;font-weight:700;color:#059669;display:flex;align-items:center;gap:6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        Real-time properties sync directly with ASME material.json &amp; ANSYS solver
+                    </span>
+                    <button onclick="validateAndCloseMatPopup(${i})" style="background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);color:white;border:none;padding:0.65rem 2.4rem;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s;">Done</button>
+                </div>`;
+
+            document.getElementById('matTablePopup').classList.add('active');
+        }
+
+        function closeMatTablePopup() {
+            document.getElementById('matTablePopup').classList.remove('active');
+        }
+
+        function syncPopMatName(prefix, i, val) {
+            const mapField = prefix === 'Shell' ? 'shell_mat' : (prefix === 'Trunnion' ? 'trunnion_mat' : 'bail_ring_mat');
+            const el = document.getElementById(`${mapField}_${i}`);
+            if (el) el.value = val;
+            
+            const hiddenEl = document.getElementById(`${prefix}_OtherName_${i}`);
+            if(hiddenEl) hiddenEl.value = val;
+
+            recalculateAllMaterials(i);
+
+            const isCustom = val.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === val.toLowerCase().trim());
+            const warnDiv = document.getElementById(`warn_${prefix}_${i}`);
+            const warnSpan = document.getElementById(`warn_name_${prefix}_${i}`);
+            const bgDiv = document.getElementById(`mat_bg_${prefix}_${i}`);
+            const inputEl = document.getElementById(`pop_${prefix}_Material_${i}`);
+
+            if (warnDiv && warnSpan && bgDiv && inputEl) {
+                if (isCustom && val.trim() !== '' && val.toLowerCase().trim() !== 'other material' && val.trim() !== '—') {
+                    warnSpan.innerText = val;
+                    warnDiv.style.display = 'block';
+                    bgDiv.style.background = '#fef3c7';
+                    inputEl.style.color = '#b45309';
+                } else {
+                    warnDiv.style.display = 'none';
+                    bgDiv.style.background = isCustom ? '#fef3c7' : '#f8fafc';
+                    inputEl.style.color = isCustom ? '#b45309' : '#0f172a';
+                }
+            }
+        }
+
+        function syncDesignTemp(i, val) {
+            const el = document.getElementById(`d_temp_${i}`);
+            if(el) el.value = val;
+            recalculateAllMaterials(i);
+            openMatTablePopup(i);
+        }
+
+        function validateAndCloseMatPopup(i) {
+            const prefixes = ['Shell', 'Trunnion', 'Bail'];
+            
+            let hasError = false;
+            let errorMsg = "Required to fill this material is not in Database:\n";
+
+            for (let prefix of prefixes) {
+                const mapField = prefix === 'Shell' ? 'shell_mat' : (prefix === 'Trunnion' ? 'trunnion_mat' : 'bail_ring_mat');
+                const matName = document.getElementById(`${mapField}_${i}`)?.value || '';
+                const isCustom = matName.toLowerCase().trim() === 'other material' || !materialLibrary.some(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+
+                if (isCustom) {
+                    const fields = [
+                        { id: `pop_${prefix}YM_${i}`, name: "Young's Modulus", required: true },
+                        { id: `pop_${prefix}PR_${i}`, name: "Poisson's Ratio", required: true },
+                        { id: `pop_${prefix}All_${i}`, name: "Allowable Stress", required: true },
+                        { id: `pop_${prefix}Yld_${i}`, name: "Yield Stress", required: true },
+                        { id: `pop_${prefix}UTS_${i}`, name: "Ultimate Tensile Stress", required: true },
+                        { id: `pop_${prefix}Cond_${i}`, name: "Thermal Conductivity", required: false },
+                        { id: `pop_${prefix}CTE_${i}`, name: "Thermal Expansion (CTE)", required: false },
+                        { id: `pop_${prefix}Dens_${i}`, name: "Density", required: true }
+                    ];
+
+                    let missing = [];
+                    for (let f of fields) {
+                        if (!f.required) continue;
+                        const el = document.getElementById(f.id);
+                        if (el) {
+                            if (!el.value) {
+                                missing.push(f.name);
+                                el.style.borderBottom = '2px solid #ef4444';
+                                el.parentElement.style.borderColor = '#ef4444';
+                            } else {
+                                el.style.borderBottom = 'none';
+                                el.parentElement.style.borderColor = '';
+                            }
+                        }
+                    }
+
+                    if (missing.length > 0) {
+                        hasError = true;
+                        errorMsg += `\n- ${prefix} (${matName || 'Custom'}): missing ${missing.join(', ')}`;
                     }
                 }
-            });
-        }
-
-        function showSolvingModal() {
-            document.getElementById('solvingModal').classList.add('active');
-        }
-
-        let materialNamesList = [];
-
-        fetch('/material.json')
-            .then(res => res.json())
-            .then(data => {
-                materialNamesList = data.map(mat => mat.Name);
-            })
-            .catch(err => console.error("Could not load material.json", err));
-
-        function handleMaterialSearch(inputElem) {
-            let formGroup = inputElem.closest('.form-group');
-            let suggestionBox = formGroup.querySelector('.autocomplete-list');
-            if (!suggestionBox) {
-                suggestionBox = document.createElement('div');
-                suggestionBox.className = 'autocomplete-list';
-                formGroup.appendChild(suggestionBox);
             }
-            const query = inputElem.value.toLowerCase().replace(/[\s\-_]/g, "");
-            if (!query) {
-                suggestionBox.style.display = 'none';
+
+            if (hasError) {
+                alert(errorMsg);
+            } else {
+                closeMatTablePopup();
+            }
+        }
+
+        function syncPop(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const el  = document.getElementById(`${fieldBase}_${i}`);
+            if (el) el.value = val;
+        }
+
+        function syncThermal(fieldBase, i, popId) {
+            const val = document.getElementById(popId)?.value;
+            const hid = `${fieldBase}_${i}`;
+            let el = document.getElementById(hid);
+            if (!el) {
+                el = document.createElement('input');
+                el.type='hidden'; el.name=hid; el.id=hid;
+                document.getElementById(`block_${i}`).appendChild(el);
+            }
+            el.value = val;
+        }
+
+        function openCustomMaterialModal(prefix, index) {
+            document.getElementById('customMaterialTitle').innerText = `${prefix} Custom Material Properties`;
+            document.getElementById('customMaterialTargetPrefix').value = prefix;
+            document.getElementById('customMaterialTargetIndex').value = index;
+
+            document.getElementById('modalOtherName').value = document.getElementById(`${prefix}_OtherName_${index}`)?.value || 'Custom_Material';
+            document.getElementById('modalYM').value = document.getElementById(`${prefix}_YM_${index}`)?.value || '200000';
+            document.getElementById('modalPR').value = document.getElementById(`${prefix}_PR_${index}`)?.value || '0.3';
+            document.getElementById('modalAllowable').value = document.getElementById(`${prefix}_Allowable_${index}`)?.value || '138';
+            document.getElementById('modalYield').value = document.getElementById(`${prefix}_Yield_${index}`)?.value || '260';
+            document.getElementById('modalUTS').value = document.getElementById(`${prefix}_UTS_${index}`)?.value || '485';
+            document.getElementById('modalConductivity').value = document.getElementById(`${prefix}_Conductivity_${index}`)?.value || '48';
+            document.getElementById('modalThermalExp').value = document.getElementById(`${prefix}_ThermalExp_${index}`)?.value || '12';
+            document.getElementById('modalDensity').value = document.getElementById(`${prefix}_Density_${index}`)?.value || '7850';
+
+            document.getElementById('modalGrpAllowable').style.display = 'flex';
+            document.getElementById('modalGrpYield').style.display = 'flex';
+            document.getElementById('modalGrpUTS').style.display = 'flex';
+            document.getElementById('modalGrpConductivity').style.display = 'none';
+            document.getElementById('modalGrpThermalExp').style.display = 'none';
+            document.getElementById('modalGrpDensity').style.display = 'flex';
+
+            document.getElementById('customMaterialModal').classList.add('active');
+        }
+
+        function closeCustomMaterialModal() {
+            document.getElementById('customMaterialModal').classList.remove('active');
+        }
+
+        function saveCustomMaterial() {
+            const prefix = document.getElementById('customMaterialTargetPrefix').value;
+            const index = document.getElementById('customMaterialTargetIndex').value;
+            
+            function setOrMakeHidden(name, val) {
+                let el = document.getElementById(name);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden'; el.name = name; el.id = name;
+                    const blk = document.getElementById(`block_${index}`);
+                    if (blk) blk.appendChild(el);
+                }
+                el.value = val;
+            }
+
+            setOrMakeHidden(`${prefix}_OtherName_${index}`, document.getElementById('modalOtherName').value);
+            setOrMakeHidden(`${prefix}_YM_${index}`, document.getElementById('modalYM').value);
+            setOrMakeHidden(`${prefix}_PR_${index}`, document.getElementById('modalPR').value);
+            setOrMakeHidden(`${prefix}_Allowable_${index}`, document.getElementById('modalAllowable').value);
+            setOrMakeHidden(`${prefix}_Yield_${index}`, document.getElementById('modalYield').value);
+            setOrMakeHidden(`${prefix}_UTS_${index}`, document.getElementById('modalUTS').value);
+            setOrMakeHidden(`${prefix}_Conductivity_${index}`, document.getElementById('modalConductivity').value);
+            setOrMakeHidden(`${prefix}_ThermalExp_${index}`, document.getElementById('modalThermalExp').value);
+            setOrMakeHidden(`${prefix}_Density_${index}`, document.getElementById('modalDensity').value);
+            
+            closeCustomMaterialModal();
+        }
+
+        async function fetchMaterialData() {
+            try {
+                let res = await fetch('/material.json');
+                if(!res.ok) res = await fetch('material.json');
+                if(res.ok) {
+                    materialLibrary = await res.json();
+                    const num = parseInt(document.getElementById('numAnalyses')?.value) || 1;
+                    for (let i = 1; i <= num; i++) {
+                        recalculateAllMaterials(i);
+                    }
+                }
+            } catch (e) {
+                console.log("No local material.json found or fetch error.");
+            }
+        }
+
+        function searchMaterial(inputEl, i) {
+            let control = inputEl.closest('.input-control');
+            let list = control.querySelector('.autocomplete-list');
+            if(!list) {
+                list = document.createElement('div');
+                list.className = 'autocomplete-list';
+                control.appendChild(list);
+            }
+            
+            const q = inputEl.value.toLowerCase().replace(/[\s\-_]/g, "");
+            if(!q) { list.style.display = 'none'; return; }
+            
+            let matches = materialLibrary.filter(m => m.Name && m.Name.toLowerCase().replace(/[\s\-_]/g, "").includes(q)).slice(0, 5);
+            
+            if ("other material".includes(q)) {
+                matches.push({ Name: "other material" });
+            }
+
+            if(matches.length > 0) {
+                list.innerHTML = matches.map(m => `<div class="autocomplete-item" onmousedown="selectMaterial('${m.Name}', '${inputEl.id}', ${i})">${m.Name}</div>`).join('');
+                list.style.display = 'block';
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function selectMaterial(matName, inputId, i) {
+            const el = document.getElementById(inputId);
+            if(el) el.value = matName;
+            closeLists();
+            
+            let mainInputId = inputId;
+            let isPopup = false;
+            if (inputId.startsWith('pop_')) {
+                mainInputId = inputId.replace('pop_', '');
+                const mainEl = document.getElementById(mainInputId);
+                if (mainEl) mainEl.value = matName;
+                isPopup = true;
+            }
+
+            if(matName !== "other material") {
+                autoFillProperties(matName, mainInputId, i);
+                evaluateDependencies(i);
+                if (isPopup) openMatTablePopup(i);
+            } else {
+                evaluateDependencies(i);
+                
+                let prefix = "";
+                if (mainInputId.includes("shell_mat") || mainInputId.includes("Shell")) prefix = "Shell";
+                else if (mainInputId.includes("trunnion_mat") || mainInputId.includes("Trunnion")) prefix = "Trunnion";
+                else if (mainInputId.includes("bail_ring_mat") || mainInputId.includes("Bail")) prefix = "Bail";
+                
+                if (!isPopup) {
+                    if(prefix) openCustomMaterialModal(prefix, i);
+                } else {
+                    openMatTablePopup(i);
+                }
+            }
+        }
+
+        function closeLists() {
+            document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display = 'none');
+        }
+
+        function interpolateGeneric(temps, vals, targetTemp) {
+            if(!temps || !vals || temps.length === 0) return null;
+            if(targetTemp <= temps[0]) return vals[0];
+            if(targetTemp >= temps[temps.length-1]) return vals[vals.length-1];
+            for(let j=0; j<temps.length-1; j++) {
+                if(targetTemp >= temps[j] && targetTemp <= temps[j+1]) {
+                    const t1 = temps[j], t2 = temps[j+1];
+                    const v1 = vals[j], v2 = vals[j+1];
+                    return v1 + ((targetTemp - t1) / (t2 - t1)) * (v2 - v1);
+                }
+            }
+            return null;
+        }
+
+        function autoFillProperties(matName, inputId, i) {
+            let prefix = "";
+            if (inputId.includes("shell_mat") || inputId.includes("Shell")) prefix = "Shell";
+            else if (inputId.includes("trunnion_mat") || inputId.includes("Trunnion")) prefix = "Trunnion";
+            else if (inputId.includes("bail_ring_mat") || inputId.includes("Bail")) prefix = "Bail";
+            if (!prefix) return;
+
+            function ensureElement(name, def) {
+                let el = document.getElementById(name);
+                if (!el) {
+                    el = document.createElement('input');
+                    el.type = 'hidden'; el.name = name; el.id = name; el.value = def;
+                    const blk = document.getElementById(`block_${i}`);
+                    if (blk) blk.appendChild(el);
+                }
+                return el;
+            }
+
+            const allowEl = ensureElement(`${prefix}_Allowable_${i}`, '138');
+            const yieldEl = ensureElement(`${prefix}_Yield_${i}`, '260');
+            const utsEl = ensureElement(`${prefix}_UTS_${i}`, '485');
+            const ymEl = ensureElement(`${prefix}_YM_${i}`, '200000');
+            const prEl = ensureElement(`${prefix}_PR_${i}`, '0.3');
+            const condEl = ensureElement(`${prefix}_Conductivity_${i}`, '48');
+            const cteEl = ensureElement(`${prefix}_ThermalExp_${i}`, '12');
+            const densityEl = ensureElement(`${prefix}_Density_${i}`, '7850');
+
+            const isCustom = !matName || matName.toLowerCase().trim() === 'other material';
+            const mat = isCustom ? null : materialLibrary.find(m => m.Name && m.Name.toLowerCase().trim() === matName.toLowerCase().trim());
+            
+            if (!mat) {
+                allowEl.value = "";
+                yieldEl.value = "";
+                utsEl.value = "";
+                ymEl.value = "";
+                prEl.value = "";
+                condEl.value = "";
+                cteEl.value = "";
+                densityEl.value = "";
+
+                const popAll = document.getElementById(`pop_${prefix}All_${i}`);
+                if (popAll) popAll.value = "";
+                const popYld = document.getElementById(`pop_${prefix}Yld_${i}`);
+                if (popYld) popYld.value = "";
+                const popUTS = document.getElementById(`pop_${prefix}UTS_${i}`);
+                if (popUTS) popUTS.value = "";
+                const popYM = document.getElementById(`pop_${prefix}YM_${i}`);
+                if (popYM) popYM.value = "";
+                const popPR = document.getElementById(`pop_${prefix}PR_${i}`);
+                if (popPR) popPR.value = "";
+                const popCond = document.getElementById(`pop_${prefix}Cond_${i}`);
+                if (popCond) popCond.value = "";
+                const popCTE = document.getElementById(`pop_${prefix}CTE_${i}`);
+                if (popCTE) popCTE.value = "";
+                const popDens = document.getElementById(`pop_${prefix}Dens_${i}`);
+                if (popDens) popDens.value = "";
                 return;
             }
-            const matches = materialNamesList.filter(name => 
-                name.toLowerCase().replace(/[\s\-_]/g, "").includes(query)
-            ).slice(0, 2); 
-            if (matches.length > 0) {
-                suggestionBox.innerHTML = matches.map(match => 
-                    `<div class="autocomplete-item" onclick="selectMaterial('${match}', '${inputElem.id}')">
-                        <span style="font-size:14px; margin-right:8px; opacity:0.6;">🔩</span> ${match}
-                    </div>`
-                ).join('');
-                suggestionBox.style.display = 'block';
-            } else {
-                suggestionBox.style.display = 'none';
+
+            const temp = parseFloat(document.getElementById(`d_temp_${i}`)?.value) || 20;
+            const phys = mat.PhysicalProperties || mat.Properties || {};
+            const mech = mat.MechanicalProperties || {};
+
+            if (mech.AllowableStress && allowEl) {
+                let aData = mech.AllowableStress;
+                let val = interpolateGeneric(aData.Temperature?.Values, aData.Stress?.Values, temp);
+                if (val !== null) {
+                    allowEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}All_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            if (yieldEl) {
+                let val = null;
+                if (mech.Yield_Stress) {
+                    let yData = mech.Yield_Stress;
+                    let yVals = yData.YieldStrength ? yData.YieldStrength.Values : (yData.TensileStrength ? yData.TensileStrength.Values : null);
+                    val = interpolateGeneric(yData.Temperature?.Values, yVals, temp);
+                } else if (mech.MinimumYieldStrength) {
+                    val = mech.MinimumYieldStrength.Value;
+                }
+                if (val !== null) {
+                    yieldEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}Yld_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            if (utsEl) {
+                let val = null;
+                let uData = mech.TensileStrength_TableU;
+                if (Array.isArray(uData)) uData = uData[0];
+                if (uData && uData.Temperature && uData.TensileStrength) {
+                    val = interpolateGeneric(uData.Temperature.Values, uData.TensileStrength.Values, temp);
+                } else if (mech.MinimumTensileStrength) {
+                    val = mech.MinimumTensileStrength.Value;
+                }
+                if (val !== null) {
+                    utsEl.value = val.toFixed(1);
+                    const pop = document.getElementById(`pop_${prefix}UTS_${i}`);
+                    if (pop) pop.value = val.toFixed(1);
+                }
+            }
+
+            if (phys.IsotropicElasticity) {
+                const iso = phys.IsotropicElasticity;
+                const tVals = iso.Temperature?.Values;
+                const eVals = iso.YoungsModulus?.Values;
+                const prVals = iso.PoissonsRatio?.Values;
+
+                if (tVals && eVals) {
+                    let eVal = interpolateGeneric(tVals, eVals, temp);
+                    if (eVal !== null) {
+                        if (eVal < 1000) eVal = eVal * 1000.0;
+                        if (ymEl) ymEl.value = Math.round(eVal);
+                        const popYm = document.getElementById(`pop_${prefix}YM_${i}`);
+                        if (popYm) popYm.value = Math.round(eVal);
+                    }
+                }
+                if (tVals && prVals) {
+                    let prVal = interpolateGeneric(tVals, prVals, temp);
+                    if (prVal !== null) {
+                        if (prEl) prEl.value = prVal.toFixed(3);
+                        const popPr = document.getElementById(`pop_${prefix}PR_${i}`);
+                        if (popPr) popPr.value = prVal.toFixed(3);
+                    }
+                }
+            }
+
+            if (phys.ThermalConductivity) {
+                const tc = phys.ThermalConductivity;
+                let kVal = null;
+                if (tc.Temperature && (tc.ThermalConductivity || tc.Conductivity)) {
+                    const cVals = tc.ThermalConductivity ? tc.ThermalConductivity.Values : tc.Conductivity.Values;
+                    kVal = interpolateGeneric(tc.Temperature.Values, cVals, temp);
+                } else if (tc.Value !== undefined) {
+                    kVal = tc.Value;
+                }
+                if (kVal !== null) {
+                    if (condEl) condEl.value = kVal.toFixed(1);
+                    const popCond = document.getElementById(`pop_${prefix}Cond_${i}`);
+                    if (popCond) popCond.value = kVal.toFixed(1);
+                }
+            }
+
+            const cteObj = phys.CoefficientOfThermalExpansion || phys.ThermalExpansion;
+            if (cteObj) {
+                let cteVal = null;
+                if (cteObj.Temperature && (cteObj.CTE || cteObj.ThermalExpansion || cteObj.Values)) {
+                    const cVals = cteObj.CTE ? cteObj.CTE.Values : (cteObj.ThermalExpansion ? cteObj.ThermalExpansion.Values : cteObj.Values);
+                    cteVal = interpolateGeneric(cteObj.Temperature.Values, cVals, temp);
+                } else if (cteObj.Value !== undefined) {
+                    cteVal = cteObj.Value;
+                }
+                if (cteVal !== null) {
+                    if (cteVal < 0.001) cteVal = cteVal * 1e6;
+                    if (cteEl) cteEl.value = cteVal.toFixed(2);
+                    const popCte = document.getElementById(`pop_${prefix}CTE_${i}`);
+                    if (popCte) popCte.value = cteVal.toFixed(2);
+                }
+            }
+
+            if (phys.Density && phys.Density.Value) {
+                const dens = parseFloat(phys.Density.Value) || 7850;
+                if (densityEl) densityEl.value = dens;
+                const popDens = document.getElementById(`pop_${prefix}Dens_${i}`);
+                if (popDens) popDens.value = dens;
+            } else if (densityEl) {
+                densityEl.value = 0;
             }
         }
 
-        function selectMaterial(name, inputId) {
-            const inputElem = document.getElementById(inputId);
-            if (inputElem) {
-                inputElem.value = name;
-                const suggestionBox = inputElem.closest('.form-group').querySelector('.autocomplete-list');
-                if (suggestionBox) suggestionBox.style.display = 'none';
+        function recalculateAllMaterials(i) {
+            const shellMat = document.getElementById(`shell_mat_${i}`)?.value;
+            const trunnionMat = document.getElementById(`trunnion_mat_${i}`)?.value;
+            const bailMat = document.getElementById(`bail_ring_mat_${i}`)?.value;
+
+            if(shellMat) autoFillProperties(shellMat, `shell_mat_${i}`, i);
+            if(trunnionMat) autoFillProperties(trunnionMat, `trunnion_mat_${i}`, i);
+            if(bailMat) autoFillProperties(bailMat, `bail_ring_mat_${i}`, i);
+        }
+
+        async function submitAnalysis() {
+            const btn = document.querySelector('.btn-submit');
+            const originalText = btn.innerText;
+            btn.innerText = "Deploying...";
+            btn.disabled = true;
+
+            const userStr = localStorage.getItem('nova_user');
+            if (!userStr) {
+                alert("Authentication Error: Please log in from the dashboard first.");
+                window.location.href = '/'; 
+                return;
+            }
+            
+            const user = JSON.parse(userStr);
+
+            const isDinesh = user.email === 'dineshkumar2729304@gmail.com';
+            let userPlan = isDinesh ? 'Max' : 'Free';
+            let remainingCredits = isDinesh ? 3000 : 100;
+
+            const savedSub = localStorage.getItem(`nova_sub_${user.email}`);
+            if (savedSub && !isDinesh) {
+                try {
+                    const parsed = JSON.parse(savedSub);
+                    userPlan = parsed.plan || 'Free';
+                } catch(e){}
+            }
+
+            const savedCredits = localStorage.getItem(`nova_credits_${user.email}`);
+            if (savedCredits !== null && !isDinesh) {
+                remainingCredits = parseInt(savedCredits, 10);
+            }
+
+            const PLAN_RANKS = { 'Free': 0, 'Basic': 1, 'Pro': 2, 'Max': 3 };
+            const requiredRank = PLAN_RANKS['Basic'];
+            const userRank = PLAN_RANKS[userPlan] || 0;
+
+            if (!isDinesh && userRank < requiredRank) {
+                alert("⚡ Plan Upgrade Required!\n\nTrunnion WRC Analysis requires a Basic Plan (700 Daily Credits) or higher.\nYour current tier is " + userPlan + " Plan.\n\nRedirecting to Upgrade & Subscription...");
+                window.location.href = '/?upgrade=Basic';
+                return;
+            }
+
+            if (!isDinesh && remainingCredits < 300) {
+                alert("⚡ Insufficient Daily Credits!\n\nTrunnion WRC Analysis requires 300 credits, but you have " + remainingCredits + " credits remaining today.\n\nRedirecting to Upgrade for higher daily limits...");
+                window.location.href = '/?upgrade=Basic';
+                return;
+            }
+
+            if (!isDinesh) {
+                const newCredits = Math.max(0, remainingCredits - 300);
+                localStorage.setItem(`nova_credits_${user.email}`, newCredits.toString());
+            }
+
+            const isBatch = document.getElementById('batchToggle').checked;
+            const total = isBatch ? (parseInt(document.getElementById('numAnalyses').value) || 1) : 1;
+            let payloadArr = [];
+
+            for(let i=1; i<=total; i++) {
+                const payload = { 
+                    AnalysisType: "trunnion_wrc", 
+                    AnalysisID: i 
+                };
+                const block = document.getElementById(`block_${i}`);
+                if(!block) continue;
+                
+                block.querySelectorAll('input, select').forEach(el => {
+                    const isCustomField = el.name && (el.name.includes("OtherName") || el.name.includes("YM") || el.name.includes("PR") || el.name.includes("Allowable") || el.name.includes("Yield") || el.name.includes("UTS") || el.name.includes("Conductivity") || el.name.includes("ThermalExp") || el.name.includes("Density"));
+                    
+                    if (el.name && (isCustomField || !el.closest('.hidden') || el.type === 'hidden')) {
+                        let cleanName = el.name.replace(`_${i}`, '');
+                        payload[cleanName] = el.type === 'number' ? parseFloat(el.value) || 0 : el.value;
+                    }
+                });
+
+                payload.currentAnalysis = "trunnion_wrc";
+                payloadArr.push(payload);
+            }
+
+            const jobName = payloadArr[0].File_Path ? payloadArr[0].File_Path.split('\\').pop() : 'Trunnion WRC Analysis';
+            const jobIdDisplay = "NV-" + Math.floor(1000 + Math.random() * 9000);
+            
+            const newJob = {
+                user_id: user.id,
+                job_id_display: jobIdDisplay,
+                name: jobName,
+                type: 'Trunnion WRC Analysis',
+                status: 'Pending',
+                price: 6000,
+                geometry_data: {
+                    runs: payloadArr,
+                    inputMethod: 'manual',
+                    ui_code_edition: '2025'
+                },
+                json_payload: payloadArr
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": API_KEY,
+                        "Authorization": `Bearer ${API_KEY}`,
+                        "Prefer": "return=representation"
+                    },
+                    body: JSON.stringify(newJob)
+                });
+                
+                if(res.ok) {
+                    window.location.href = 'https://nova-analysis.vercel.app/';
+                } else {
+                    btn.innerText = "Failed";
+                    setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
+                }
+            } catch(e) {
+                btn.innerText = "Error";
+                setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 2000);
             }
         }
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.form-group')) {
-                document.querySelectorAll('.autocomplete-list').forEach(box => box.style.display = 'none');
-            }
-        });
+        function openSearchModal() { document.getElementById('searchModal').classList.add('active'); }
+        function closeSearchModal() { document.getElementById('searchModal').classList.remove('active'); }
+        
+        let _pollTimer = null;
 
-        renderForm();
+        async function searchJobs() {
+            if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
+            const query = document.getElementById('searchInput').value.trim();
+            const results = document.getElementById('jobResults');
+            if(!query) return;
+            results.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Searching registry...</p>';
+            
+            try {
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(query);
+                const filter = isUUID ? `id.eq.${query}` : `job_id_display.ilike.${query}*`;
+                const res = await fetch(`${API_URL}?select=id,job_id_display,status,created_at,download_url,log&${filter}&order=created_at.desc`, {
+                    headers: { "apikey": API_KEY, "Authorization": `Bearer ${API_KEY}` }
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.length === 0) { results.innerHTML = '<p style="color:#f59e0b; font-size:0.85rem;">No records found.</p>'; return; }
+                    
+                    let hasActive = false;
+                    results.innerHTML = data.map(j => {
+                        const st = (j.status || 'Pending').toLowerCase();
+                        const stLabel = (j.status || 'Pending').toUpperCase();
+                        if (st === 'pending' || st === 'running') hasActive = true;
+
+                        const statusColor = st === 'completed' ? '#10b981' :
+                                           st === 'failed'    ? '#ef4444' :
+                                           st === 'running'   ? '#3b82f6' : '#f59e0b';
+                        const pulse = (st === 'running') ? 'animation:pulseOp 1.2s infinite;' : '';
+
+                        let dlBtn = j.download_url
+                            ? `<a href="${j.download_url}" target="_blank"
+                                  style="margin-top:8px;padding:5px 12px;background:#10b981;color:white;
+                                         border-radius:6px;text-decoration:none;font-size:0.8rem;
+                                         font-weight:700;display:inline-block;">⬇ Download Result</a>`
+                            : '';
+
+                        let logSnippet = '';
+                        if (j.log && (st === 'running' || st === 'failed')) {
+                            const lines = j.log.split('\n').filter(Boolean);
+                            const last3 = lines.slice(-3).join('<br>');
+                            logSnippet = `<div style="margin-top:8px;padding:6px 8px;background:#f1f5f9;
+                                                font-size:0.75rem;font-family:monospace;border-radius:6px;
+                                                color:#334155;max-height:60px;overflow:hidden;">${last3}</div>`;
+                        }
+
+                        return `<div style="background:rgba(255,255,255,0.7);padding:12px 14px;
+                                            border-radius:8px;margin-bottom:10px;
+                                            border:1px solid rgba(0,0,0,0.06);">
+                                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <div style="font-family:monospace;color:var(--text-muted);font-size:0.82rem;">
+                                        ${j.job_id_display || j.id.substring(0,8)}
+                                    </div>
+                                    <div style="font-weight:800;font-size:0.78rem;letter-spacing:1px;
+                                                color:${statusColor};${pulse}">${stLabel}</div>
+                                  </div>
+                                  ${logSnippet}
+                                  ${dlBtn}
+                                </div>`;
+                    }).join('');
+
+                    if (hasActive) {
+                        _pollTimer = setTimeout(searchJobs, 5000);
+                    }
+
+                } else {
+                    results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Error retrieving data.</p>';
+                }
+            } catch(e) {
+                results.innerHTML = '<p style="color:#ef4444; font-size:0.85rem;">Connection error.</p>';
+            }
+        }
+
+        window.onload = () => {
+            fetchMaterialData();
+            renderForms();
+        };
     </script>
     <script src="/mobile-analysis.js"></script>
 </body>
