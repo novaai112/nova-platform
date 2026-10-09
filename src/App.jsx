@@ -681,6 +681,9 @@ export default function App() {
   const [activeProductFilter, setActiveProductFilter] = useState('All');
   const [demoActiveTab, setDemoActiveTab] = useState('overview');
   const [selectedJobIds, setSelectedJobIds] = useState([]);
+  const [isJobSelectionMode, setIsJobSelectionMode] = useState(false);
+  const jobSelectionPressTimer = useRef(null);
+  const detailSwipeStart = useRef(null);
   const [isDeletingJobs, setIsDeletingJobs] = useState(false);
   const [jobFilter, setJobFilter] = useState('All Analysis');
   const [notification, setNotification] = useState(null);
@@ -718,6 +721,14 @@ export default function App() {
   const [stressMaterialId, setStressMaterialId] = useState("sa-516-gr-70");
   const [stressTempC, setStressTempC] = useState(20);
   const [stressCurveMode, setStressCurveMode] = useState("true_stress_strain");
+
+  useEffect(() => {
+    if (isJobDetailsOpen && window.innerWidth < 768) {
+      document.querySelector('.job-details-run-tab.is-active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeDetailRun, isJobDetailsOpen]);
+
+  useEffect(() => () => window.clearTimeout(jobSelectionPressTimer.current), []);
 
   const openJobDetails = (job) => {
     setSelectedJobDetails(job);
@@ -2566,6 +2577,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
       }
       showNotification(`${selectedJobIds.length} job(s) deleted successfully.`, "success");
       setSelectedJobIds([]);
+      setIsJobSelectionMode(false);
     } catch (err) {
       console.error("Bulk delete error:", err);
       showNotification("Failed to delete selected jobs: " + err.message, "error");
@@ -2588,6 +2600,19 @@ Always provide professional, precise, technically accurate, and helpful answers.
     setSelectedJobIds(prev =>
       prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]
     );
+  };
+  const startJobSelectionPress = (jobId, event) => {
+    if (event.target.closest('button, a, input, select, textarea')) return;
+    window.clearTimeout(jobSelectionPressTimer.current);
+    jobSelectionPressTimer.current = window.setTimeout(() => {
+      setIsJobSelectionMode(true);
+      setSelectedJobIds(prev => prev.includes(jobId) ? prev : [...prev, jobId]);
+      jobSelectionPressTimer.current = null;
+    }, 550);
+  };
+  const endJobSelectionPress = () => {
+    window.clearTimeout(jobSelectionPressTimer.current);
+    jobSelectionPressTimer.current = null;
   };
   const stats = {
     total: filteredJobs.length,
@@ -3852,7 +3877,41 @@ Always provide professional, precise, technically accurate, and helpful answers.
             </div>
           )}
 
-          <div className="job-details-runs pt-4 border-t border-slate-200 flex flex-col gap-4 w-full">
+          {isBatch && (
+            <nav className="job-details-run-tabs" aria-label="Analysis runs">
+              {payloads.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={`job-details-run-tab${activeDetailRun === index ? ' is-active' : ''}`}
+                  aria-pressed={activeDetailRun === index}
+                  onClick={() => setActiveDetailRun(index)}
+                >
+                  Job {index + 1}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          <div
+            className="job-details-runs pt-4 border-t border-slate-200 flex flex-col gap-4 w-full"
+            onTouchStart={(event) => {
+              detailSwipeStart.current = null;
+              if (event.target.closest('button, a, input, select, textarea')) return;
+              if (event.touches.length === 1) {
+                detailSwipeStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+              }
+            }}
+            onTouchEnd={(event) => {
+              const start = detailSwipeStart.current;
+              detailSwipeStart.current = null;
+              if (window.innerWidth >= 768 || !isBatch || !start || event.changedTouches.length !== 1) return;
+              const deltaX = event.changedTouches[0].clientX - start.x;
+              const deltaY = event.changedTouches[0].clientY - start.y;
+              if (Math.abs(deltaX) < 55 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+              setActiveDetailRun(index => Math.max(0, Math.min(payloads.length - 1, index + (deltaX < 0 ? 1 : -1))));
+            }}
+          >
             {payloads.map((p, idx) => {
               const pStatus = isBatch ? getBatchItem(selectedJobDetails.statuses, idx, statusLabel) : statusLabel;
               const pReportUrl = isBatch ? getBatchItem(selectedJobDetails.report_urls, idx, selectedJobDetails.report_url) : selectedJobDetails.report_url;
@@ -3861,7 +3920,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               const labelSuffix = isBatch ? ` Analysis ${idx + 1}` : '';
 
               return (
-                <div key={idx} className="job-details-run-card flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                <div key={idx} className={`job-details-run-card flex flex-col gap-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl${activeDetailRun === idx ? ' is-active' : ''}`}>
                   {isBatch && (
                     <div className="job-details-run-heading flex items-center justify-between pb-2 border-b border-slate-200">
                       <span className="text-xs font-bold text-slate-700">Analysis {idx + 1} {p.Head_TYPE ? '(Vessel Head)' : '(Shell Nozzle)'}</span>
@@ -3872,10 +3931,11 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     <button
                       onClick={() => generateInputPDF(selectedJobDetails, idx)}
                       title="Download User Input Parameters PDF"
-                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
+                      className="job-detail-action job-detail-action-input glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-violet-800 hover:scale-105 flex items-center gap-2 transition-all"
                     >
                       <FileText className="w-3.5 h-3.5 text-violet-600" />
-                      Input Parameters PDF{labelSuffix}
+                      <span className="job-detail-label-mobile">Input</span>
+                      <span className="job-detail-label-desktop">Input Parameters PDF{labelSuffix}</span>
                     </button>
 
                     {pReportUrl ? (
@@ -3884,42 +3944,54 @@ Always provide professional, precise, technically accurate, and helpful answers.
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Download MS Word FEA Report (.docx)"
-                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        className="job-detail-action job-detail-action-report glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
                       >
                         <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                        View Report{labelSuffix}
+                        <span className="job-detail-label-mobile">Report</span>
+                        <span className="job-detail-label-desktop">View Report{labelSuffix}</span>
                       </a>
                     ) : isPSuccess ? (
                       <button
                         onClick={() => generateAndOpenReport(selectedJobDetails, isBatch ? idx : null)}
                         title="View Analysis Report"
-                        className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
+                        className="job-detail-action job-detail-action-report glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-emerald-800 hover:scale-105 flex items-center gap-2 transition-all"
                       >
                         <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                        View Report{labelSuffix}
+                        <span className="job-detail-label-mobile">Report</span>
+                        <span className="job-detail-label-desktop">View Report{labelSuffix}</span>
                       </button>
-                    ) : null}
+                    ) : (
+                      <button type="button" disabled title="Report is not available yet" className="job-detail-action job-detail-action-report glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-slate-400 flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5" /><span className="job-detail-label-mobile">Report</span><span className="job-detail-label-desktop">Report unavailable</span>
+                      </button>
+                    )}
 
                     <button
                       onClick={() => openJobInsights(selectedJobDetails)}
                       title="Generate Executive AI Analysis Insights"
-                      className="glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-purple-800 hover:scale-105 flex items-center gap-2 transition-all border border-purple-200"
+                      className="job-detail-action job-detail-action-insight glass-card w-full sm:w-auto justify-center px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black text-purple-800 hover:scale-105 flex items-center gap-2 transition-all border border-purple-200"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                      AI Insights
+                      <span className="job-detail-label-mobile">Insight</span>
+                      <span className="job-detail-label-desktop">AI Insights</span>
                     </button>
 
-                    {pResultUrl && (
+                    {pResultUrl ? (
                       <a
                         href={pResultUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Download complete ANSYS simulation archive"
-                        className="glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
+                        className="job-detail-action job-detail-action-analysis glass-card w-full sm:w-auto justify-center text-blue-900 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black transition-all hover:scale-105 flex items-center gap-2"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        Full Analysis{labelSuffix} (.zip)
+                        <span className="job-detail-label-mobile">Analysis</span>
+                        <span className="job-detail-label-desktop">Full Analysis{labelSuffix} (.zip)</span>
                       </a>
+                    ) : (
+                      <button type="button" disabled title="Full analysis ZIP is not available yet" className="job-detail-action job-detail-action-analysis glass-card w-full sm:w-auto justify-center text-slate-400 px-3 py-2 sm:px-4 sm:py-2.5 text-[10px] sm:text-[11px] font-black flex items-center gap-2">
+                        <Download className="w-3.5 h-3.5" /><span className="job-detail-label-mobile">Analysis</span><span className="job-detail-label-desktop">Full Analysis unavailable</span>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -4608,6 +4680,17 @@ Always provide professional, precise, technically accurate, and helpful answers.
                   {filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'}
                 </span>
               </div>
+              {isJobSelectionMode && (
+                <button
+                  onClick={() => {
+                    setIsJobSelectionMode(false);
+                    setSelectedJobIds([]);
+                  }}
+                  className="dashboard-selection-done px-3 py-2 text-xs font-bold text-slate-600 bg-white/80 border border-slate-200 rounded-xl"
+                >
+                  Done
+                </button>
+              )}
               {selectedJobIds.length > 0 && (
                 <button
                   onClick={handleDeleteSelectedJobs}
@@ -4619,7 +4702,7 @@ Always provide professional, precise, technically accurate, and helpful answers.
               )}
             </div>
             <div className="dashboard-recent-jobs-table-wrap p-4 overflow-x-auto">
-              <table className="dashboard-jobs-table w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2">
+              <table className={`dashboard-jobs-table w-full text-sm text-left border-separate text-slate-700 border-spacing-y-2${isJobSelectionMode ? ' is-selecting' : ''}`}>
                 <thead className="text-slate-500 font-bold uppercase tracking-wider text-[11px] px-4">
                   <tr>
                     <th className="w-12 px-4 py-2.5 text-center">
@@ -4647,7 +4730,15 @@ Always provide professional, precise, technically accurate, and helpful answers.
                     const hasBatchReports = Array.isArray(job.report_urls) ? job.report_urls.some(Boolean) : Boolean(job.report_urls);
                     const hasBatchResults = Array.isArray(job.result_urls) ? job.result_urls.some(Boolean) : Boolean(job.result_urls);
                     return (
-                      <tr key={job.id} className={`dashboard-job-row transition-colors shadow-sm rounded-xl ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}>
+                      <tr
+                        key={job.id}
+                        className={`dashboard-job-row transition-colors shadow-sm rounded-xl${isSelected ? ' is-selected' : ''} ${isSelected ? 'bg-blue-50/80 border border-blue-200' : 'bg-white/40 hover:bg-white/70'}`}
+                        onTouchStart={(event) => startJobSelectionPress(job.id, event)}
+                        onTouchEnd={endJobSelectionPress}
+                        onTouchMove={endJobSelectionPress}
+                        onTouchCancel={endJobSelectionPress}
+                        onContextMenu={(event) => event.preventDefault()}
+                      >
                         <td className="dashboard-job-select w-12 px-4 py-4 text-center first:rounded-l-xl" data-label="Select">
                           <input
                             type="checkbox"
@@ -4658,7 +4749,9 @@ Always provide professional, precise, technically accurate, and helpful answers.
                           />
                         </td>
                         <td className="dashboard-job-id px-4 md:px-6 py-4 font-black text-[#3C64D6]" data-label="Job ID">
+                          <span className="dashboard-job-id-value">
                           {job.job_id_display || job.id.substring(0, 8)}
+                          </span>
                         </td>
                         <td className="dashboard-job-type px-4 md:px-6 py-4 font-semibold text-slate-700" data-label="Type">
                           <span className="inline-flex items-center gap-1.5">
@@ -4667,73 +4760,88 @@ Always provide professional, precise, technically accurate, and helpful answers.
                           </span>
                         </td>
                         <td className="dashboard-job-date px-4 md:px-6 py-4 font-medium text-slate-600 text-xs" data-label="Date & Time">
+                          <span className="dashboard-job-date-value">
                           {new Date(job.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          <span className="block text-[11px] text-slate-400 font-semibold">
+                          <span className="dashboard-job-time block text-[11px] text-slate-400 font-semibold">
                             {new Date(job.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                           </span>
                         </td>
                         <td className="dashboard-job-actions px-4 md:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 last:rounded-r-xl">
-                          <AnimatedStatusBadge status={job.status} /> {(job.report_url || hasBatchReports || isJobSuccess) && (
+                          <span className="dashboard-job-status"><AnimatedStatusBadge status={job.status} /></span>
+                          {(job.report_url || hasBatchReports || isJobSuccess) && (
                             job.report_url ? (
                               <a
                                 href={job.report_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="Download MS Word FEA Report (.docx)"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
+                                className="dashboard-job-report glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                               >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /><span>Report</span>
                               </a>
                             ) : hasBatchReports ? (
                               <button
                                 onClick={() => openJobDetails(job)}
                                 title="View available reports for each analysis"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
+                                className="dashboard-job-report glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                               >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Reports
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /><span>Report</span>
                               </button>
                             ) : (
                               <button
                                 onClick={() => generateAndOpenReport(job)}
                                 title="Download / View Analysis Report"
-                                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
+                                className="dashboard-job-report glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-emerald-700 hover:bg-emerald-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-emerald-300"
                               >
-                                <FileText className="w-3.5 h-3.5 text-emerald-600" /> Report
+                                <FileText className="w-3.5 h-3.5 text-emerald-600" /><span>Report</span>
                               </button>
                             )
-                          )} {job.result_url ? (
+                          )}
+                          {!job.report_url && !hasBatchReports && !isJobSuccess && (
+                            <button type="button" disabled title="Report is not available yet" className="dashboard-job-report mobile-job-action-placeholder">
+                              <FileText className="w-3.5 h-3.5" /><span>Report</span>
+                            </button>
+                          )}
+                          {job.result_url ? (
                             <a
                               href={job.result_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Download Full Analysis ZIP Archive"
-                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
+                              className="dashboard-job-zip glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
                             >
-                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis (.zip)
+                              <Download className="w-3.5 h-3.5 text-blue-600" /><span className="dashboard-action-short-label">Analysis</span><span className="dashboard-action-full-label">Full Analysis (.zip)</span>
                             </a>
                           ) : hasBatchResults ? (
                             <button
                               onClick={() => openJobDetails(job)}
                               title="View full analysis ZIP files for each analysis"
-                              className="glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
+                              className="dashboard-job-zip glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold text-blue-700 hover:bg-blue-50 transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm border border-blue-300"
                             >
-                              <Download className="w-3.5 h-3.5 text-blue-600" /> Full Analysis ZIPs
+                              <Download className="w-3.5 h-3.5 text-blue-600" /><span className="dashboard-action-short-label">Analysis</span><span className="dashboard-action-full-label">Full Analysis ZIPs</span>
                             </button>
-                          ) : null} <button
+                          ) : (
+                            <button type="button" disabled title="Full analysis ZIP is not available yet" className="dashboard-job-zip mobile-job-action-placeholder">
+                              <Download className="w-3.5 h-3.5" /><span>Analysis</span>
+                            </button>
+                          )}
+                          <button
                             onClick={() => openJobDetails(job)}
                             title={job.status === 'Failed' ? 'View Failure Error Log & Details' : 'View Input Parameters & Details'}
-                            className={`glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${job.status === 'Failed'
+                            className={`dashboard-job-details glass-panel px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all hover:scale-105 flex items-center gap-1.5 shadow-sm ${job.status === 'Failed'
                                 ? 'text-red-700 hover:bg-red-50/80 border border-red-300'
                                 : 'text-slate-700 hover:bg-white/80 border border-slate-300'
                               }`}
                           >
                             {job.status === 'Failed' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />}
-                            Details
-                          </button> <button
+                            <span>Details</span>
+                          </button>
+                          <button
                             onClick={(e) => handleDeleteJob(job.id, e)}
                             disabled={isDeletingJobs}
                             title="Delete Job"
-                            className="p-1.5 text-red-600 transition-all border border-red-200 hover:bg-red-50 rounded-lg shadow-sm hover:scale-105 disabled:opacity-50 bg-white"
+                            className="dashboard-job-delete p-1.5 text-red-600 transition-all border border-red-200 hover:bg-red-50 rounded-lg shadow-sm hover:scale-105 disabled:opacity-50 bg-white"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

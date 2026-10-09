@@ -1804,6 +1804,13 @@ body,
     font-size: 0.68rem;
   }
 
+  .dashboard-recent-jobs-header > .dashboard-selection-done {
+    min-height: 2.25rem;
+    margin-left: auto;
+    color: #334155;
+    background: #fff;
+  }
+
   .dashboard-recent-jobs-table-wrap {
     padding: 0.65rem !important;
     overflow: visible;
@@ -1829,32 +1836,57 @@ body,
     display: grid;
     width: 100%;
     min-width: 0;
-    grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 1fr) auto 2.25rem;
     grid-template-areas:
-      "select job type"
-      "select date date"
-      "actions actions actions";
-    gap: 0.25rem 0.55rem;
+      "job status delete"
+      "date date date"
+      "report zip details";
+    gap: 0.35rem 0.45rem;
     padding: 0.55rem;
     overflow: hidden;
     border: 1px solid rgba(203, 213, 225, 0.72);
     border-radius: 0.9rem;
     background: rgba(255, 255, 255, 0.88);
     box-shadow: 0 5px 14px rgba(15, 23, 42, 0.045);
+    touch-action: pan-y;
+  }
+
+  .dashboard-job-row.is-selected {
+    border-color: #93c5fd;
+    background: #eff6ff;
   }
 
   .dashboard-job-row > td {
+    display: contents;
+  }
+
+  .dashboard-job-select {
+    display: none !important;
+  }
+
+  .dashboard-jobs-table.is-selecting .dashboard-job-row {
+    grid-template-columns: 1.65rem minmax(0, 1fr) auto 2.25rem;
+    grid-template-areas:
+      "select job status delete"
+      "select date date date"
+      "select report zip details";
+  }
+
+  .dashboard-jobs-table.is-selecting .dashboard-job-select {
+    display: block !important;
+    grid-area: select;
+    align-self: center;
+    padding: 0.2rem !important;
+  }
+
+  .dashboard-job-row > .dashboard-job-id,
+  .dashboard-job-row > .dashboard-job-type,
+  .dashboard-job-row > .dashboard-job-date {
     display: block;
     min-width: 0;
     padding: 0.35rem 0.2rem;
     overflow-wrap: anywhere;
     border: 0;
-  }
-
-  .dashboard-job-select {
-    grid-area: select;
-    align-self: center;
-    padding: 0.2rem !important;
   }
 
   .dashboard-job-select input {
@@ -1865,98 +1897,126 @@ body,
   .dashboard-job-id {
     grid-area: job;
     align-self: center;
+    padding: 0.35rem 0.2rem !important;
     font-size: 0.88rem;
     line-height: 1.15rem;
   }
 
-  .dashboard-job-id::before,
-  .dashboard-job-type::before {
+  .dashboard-job-id::before {
     display: block;
-    margin-bottom: 0.12rem;
+    margin-bottom: 0.1rem;
     color: #64748b;
-    font-size: 0.55rem;
+    content: "Job ID";
+    font-size: 0.53rem;
     font-weight: 800;
     letter-spacing: 0.06em;
-    line-height: 0.75rem;
+    line-height: 0.72rem;
     text-transform: uppercase;
-    content: attr(data-label);
   }
 
   .dashboard-job-type {
-    grid-area: type;
-    align-self: center;
-    font-size: 0.75rem;
-    line-height: 1rem;
+    display: none !important;
   }
 
   .dashboard-job-date {
     grid-area: date;
-    display: flex !important;
-    align-items: baseline;
-    gap: 0.35rem;
-    padding-top: 0.15rem !important;
+    padding: 0.1rem 0.2rem 0.25rem !important;
     color: #64748b;
     font-size: 0.68rem !important;
     line-height: 0.95rem;
   }
 
-  .dashboard-job-date::before {
-    flex: 0 0 auto;
-    color: #94a3b8;
-    content: attr(data-label);
-    font-size: 0.58rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  .dashboard-job-date-value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem;
   }
 
-  .dashboard-job-date > span {
+  .dashboard-job-time {
     display: inline !important;
+    color: #64748b !important;
     font-size: inherit !important;
   }
 
+  .dashboard-job-status {
+    grid-area: status;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .dashboard-job-delete {
+    grid-area: delete;
+    display: inline-flex !important;
+    width: 2.25rem;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem !important;
+    border-radius: 0.65rem !important;
+  }
+
   .dashboard-job-actions {
-    grid-area: actions;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: stretch;
-    justify-items: stretch;
-    gap: 0.45rem !important;
-    padding: 0.6rem 0.1rem 0.1rem !important;
-    border-top: 1px solid #e8edf4 !important;
+    display: contents !important;
   }
 
-  .dashboard-job-actions > :first-child {
-    grid-column: 1 / -1;
-    justify-self: start;
-    width: max-content;
-    max-width: 100%;
-    margin-bottom: 0.05rem;
+  .dashboard-job-report {
+    grid-area: report;
   }
 
-  .dashboard-job-actions > a,
-  .dashboard-job-actions > button {
+  .dashboard-job-zip {
+    grid-area: zip;
+  }
+
+  .dashboard-job-details {
+    grid-area: details;
+  }
+
+  .dashboard-job-report,
+  .dashboard-job-zip,
+  .dashboard-job-details {
     display: inline-flex;
     width: 100%;
     min-width: 0;
-    min-height: 2.45rem;
+    min-height: 2.3rem;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    padding: 0.5rem 0.38rem !important;
+    gap: 0.25rem;
+    padding: 0.4rem 0.25rem !important;
     border-radius: 0.65rem !important;
-    font-size: 0.68rem !important;
-    line-height: 0.9rem;
+    font-size: 0.62rem !important;
+    line-height: 0.8rem;
     text-align: center;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
   }
 
-  .dashboard-job-actions > button:last-child {
-    grid-column: 2;
-    justify-self: end;
-    width: 2.45rem;
-    padding: 0.5rem !important;
+  .mobile-job-action-placeholder {
+    display: inline-flex !important;
+    color: #94a3b8 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+  }
+
+  .dashboard-action-short-label,
+  .job-detail-label-mobile {
+    display: inline;
+  }
+
+  .dashboard-action-full-label,
+  .job-detail-label-desktop {
+    display: none;
+  }
+
+  .dashboard-job-report svg,
+  .dashboard-job-zip svg,
+  .dashboard-job-details svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    flex: 0 0 auto;
   }
 
   .job-details-overlay {
@@ -2020,9 +2080,44 @@ body,
     font-size: 0.7rem;
   }
 
-  .job-details-summary > div {
-    padding: 0.75rem 0.8rem;
-    border-radius: 0.85rem;
+  .job-details-summary {
+    display: none !important;
+  }
+
+  .job-details-run-tabs {
+    display: flex;
+    max-width: 100%;
+    gap: 0.4rem;
+    margin: -0.2rem 0 -0.15rem;
+    padding: 0.15rem 0 0.45rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .job-details-run-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .job-details-run-tab {
+    min-width: 3.7rem;
+    min-height: 2.15rem;
+    flex: 0 0 auto;
+    padding: 0.45rem 0.7rem;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #dbe3ed;
+    border-radius: 0.7rem;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 750;
+  }
+
+  .job-details-run-tab.is-active {
+    color: #fff;
+    background: #2563eb;
+    border-color: #2563eb;
   }
 
   .job-details-runs {
@@ -2049,27 +2144,58 @@ body,
   }
 
   .job-details-run-actions {
+    display: grid !important;
     width: 100%;
     align-items: stretch;
-    gap: 0.45rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
   }
 
-  .job-details-run-actions > a,
-  .job-details-run-actions > button {
+  .job-detail-action {
     display: inline-flex;
     width: 100%;
     min-width: 0;
-    min-height: 2.55rem;
+    min-height: 2.7rem;
     align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    padding: 0.55rem 0.65rem !important;
-    border-radius: 0.75rem !important;
-    font-size: 0.69rem !important;
-    line-height: 0.95rem;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.4rem 0.15rem !important;
+    border-radius: 0.65rem !important;
+    font-size: 0.58rem !important;
+    line-height: 0.75rem;
     text-align: center;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+  }
+
+  .job-detail-action svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex: 0 0 auto;
+  }
+
+  .job-details-run-card:not(.is-active) {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .job-details-run-tabs {
+    display: none;
+  }
+
+  .mobile-job-action-placeholder,
+  .dashboard-action-short-label,
+  .job-detail-label-mobile {
+    display: none !important;
+  }
+
+  .job-detail-label-desktop {
+    display: inline;
+  }
+
+  .job-detail-action[disabled] {
+    display: none !important;
   }
 }
 
