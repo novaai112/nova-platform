@@ -1005,15 +1005,16 @@ function FilterPostsModal({
   );
 
   return (
-    <div className="fixed inset-0 z-[250] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden font-sans">
+    <div className="community-filter-modal fixed inset-0 z-[250] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+      <div className="community-filter-dialog bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden font-sans">
         
         {/* Header matching Image 3 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-900">Filter Posts</h2>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><span className="community-modal-heading-icon"><SlidersHorizontal aria-hidden="true" /></span>Filter Posts</h2>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="community-modal-close p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            aria-label="Close filters"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1651,19 +1652,20 @@ function RealUserProfileModal({
   }, [activeTab, userEmail, userProfile.created_at]);
 
   return (
-    <div className="fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden font-sans relative max-h-[92vh] flex flex-col">
+    <div className="community-profile-modal fixed inset-0 z-[260] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+      <div className="community-profile-dialog bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden font-sans relative max-h-[92vh] flex flex-col">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all z-10 cursor-pointer"
+          className="community-modal-close absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all z-10 cursor-pointer"
+          aria-label="Close profile"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Tab Header */}
-        <div className="flex border-b border-slate-100 px-6 pt-5 bg-white">
+        <div className="community-profile-tabs flex border-b border-slate-100 px-6 pt-5 bg-white">
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
@@ -2763,7 +2765,8 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                     </p>
 
                     {/* Meta Row with Deduplicated Views & Roles */}
-                    <div className="flex items-center gap-2.5 text-xs text-slate-500 flex-wrap">
+                    <div className="community-post-meta flex flex-col items-start gap-1.5 text-xs text-slate-500">
+                      <div className="community-post-meta-main flex items-center gap-2.5 flex-wrap">
                       
                       {/* Author Avatar */}
                       <button
@@ -2823,8 +2826,10 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                         </button>
                       </span>
 
-                      {/* Author Role Badge */}
-                      <RoleBadge role={authorRole} />
+                      </div>
+                      <div className="community-post-meta-stats flex items-center gap-2.5 text-xs text-slate-500 flex-wrap">
+                        {/* Author Role Badge */}
+                        <RoleBadge role={authorRole} />
 
                       {/* Deduplicated Views Count (1 view per user per post) */}
                       <span className="flex items-center gap-1 text-slate-400" title="1 unique view per user">
@@ -2855,6 +2860,7 @@ export default function NovaCommunity({ currentUser, onNavigateBack }) {
                       <span className="text-slate-400 text-[11px] ml-auto">
                         {formatDisplayDate(post.created_at)}
                       </span>
+                      </div>
                     </div>
 
                     {/* EXPANDED THREAD VIEW WITH WHITE BACKGROUND & FULL IMAGES */}

@@ -2277,6 +2277,216 @@ body,
 }
 
 @media (max-width: 767px) {
+  .mobile-root-shell:has(.community-profile-modal, .community-filter-modal) .mobile-app-bar,
+  .mobile-root-shell:has(.community-profile-modal, .community-filter-modal) .mobile-bottom-navigation {
+    display: none !important;
+  }
+
+  .mobile-root-shell:has(.community-profile-modal, .community-filter-modal) .mobile-root-content {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-community-page .nova-community-root {
+    padding-top: 0.35rem !important;
+  }
+
+  .community-post-meta {
+    width: 100%;
+    gap: 0.35rem !important;
+  }
+
+  .community-post-meta-main,
+  .community-post-meta-stats {
+    width: 100%;
+    gap: 0.35rem !important;
+  }
+
+  .community-post-meta-main {
+    flex-wrap: wrap;
+    font-size: 0.64rem;
+    line-height: 1rem;
+  }
+
+  .community-post-meta-main > span:last-child {
+    min-width: 0;
+  }
+
+  .community-post-meta-main > span:nth-child(2) {
+    max-width: 8.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .community-post-meta-stats {
+    min-height: 1.25rem;
+    flex-wrap: nowrap;
+    font-size: 0.62rem;
+  }
+
+  .community-post-meta-stats > span:first-child {
+    flex: 0 0 auto;
+    padding: 0.12rem 0.38rem;
+    font-size: 0.53rem;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+  }
+
+  .community-post-meta-stats > span:not(:first-child),
+  .community-post-meta-stats > button {
+    flex: 0 0 auto;
+    gap: 0.16rem;
+  }
+
+  .community-post-meta-stats > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    margin-left: auto;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .community-post-meta-stats svg {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
+
+  .community-filter-modal,
+  .community-profile-modal,
+  .wizard-demo-overlay {
+    background: rgba(15, 23, 42, 0.38) !important;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  .community-filter-dialog,
+  .community-profile-dialog {
+    border: 1px solid rgba(255, 255, 255, 0.76) !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.9) 55%, rgba(250, 245, 255, 0.92)) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(155%);
+    backdrop-filter: blur(24px) saturate(155%);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .community-filter-dialog {
+    max-height: min(88dvh, 42rem);
+    overflow-y: auto;
+    border-radius: 1.35rem !important;
+  }
+
+  .community-filter-dialog > div:first-child,
+  .community-profile-tabs {
+    border-color: rgba(255, 255, 255, 0.92) !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.83) 55%, rgba(250, 245, 255, 0.9)) !important;
+  }
+
+  .community-modal-heading-icon {
+    display: inline-grid;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.94);
+    border-radius: 0.7rem;
+    background: linear-gradient(140deg, #eff6ff, #ede9fe);
+    color: #2563eb;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  .community-modal-heading-icon svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .community-modal-close {
+    display: inline-grid;
+    width: 2.1rem;
+    height: 2.1rem;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    border-radius: 50% !important;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.62) 55%, rgba(233, 213, 255, 0.7)) !important;
+    color: #334155 !important;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.13), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  }
+
+  .community-profile-dialog {
+    max-height: min(88dvh, 44rem) !important;
+    border-radius: 1.35rem !important;
+  }
+
+  .community-profile-tabs {
+    gap: 0.6rem;
+    padding: 0.85rem 3.1rem 0 0.9rem !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .community-profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .community-profile-tabs > button {
+    flex: 0 0 auto;
+    margin-right: 0 !important;
+    padding-bottom: 0.65rem;
+    font-size: 0.68rem !important;
+    white-space: nowrap;
+  }
+
+  .community-profile-dialog > div:last-child {
+    padding: 1.1rem !important;
+  }
+
+  .wizard-demo-dialog {
+    max-height: min(88dvh, 48rem);
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.76) !important;
+    border-radius: 1.35rem !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.9) 55%, rgba(250, 245, 255, 0.92)) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(155%);
+    backdrop-filter: blur(24px) saturate(155%);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .wizard-demo-header {
+    gap: 0.55rem;
+    padding: 0.75rem 0.85rem !important;
+    border-color: rgba(255, 255, 255, 0.92) !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.88) 55%, rgba(250, 245, 255, 0.93)) !important;
+    color: #0f172a !important;
+  }
+
+  .wizard-demo-header > span {
+    min-width: 0;
+    font-size: 0.78rem !important;
+    line-height: 1.1rem;
+  }
+
+  .wizard-demo-header > button {
+    display: inline-grid;
+    width: 2.1rem;
+    height: 2.1rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.62) 55%, rgba(233, 213, 255, 0.7));
+    color: #334155;
+    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.13);
+  }
+
+  .wizard-demo-header > button svg {
+    color: #334155 !important;
+  }
+
+  .wizard-demo-dialog > div:last-child {
+    border-color: rgba(255, 255, 255, 0.92) !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.83) 55%, rgba(250, 245, 255, 0.9)) !important;
+    color: #334155 !important;
+  }
+
   .mobile-root-shell:has(.wizard-pricing-overlay) .mobile-bottom-navigation {
     display: none !important;
   }

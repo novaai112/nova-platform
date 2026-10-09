@@ -107,14 +107,6 @@ export default function NovaDocumentationCenter({ initialTopicId, onBackToDashbo
     >
       {/* Main Container Layout */}
       <div className="flex-1 max-w-[1600px] w-full mx-auto flex items-start">
-        <button
-          onClick={() => setMobileSidebarOpen(true)}
-          className="fixed bottom-5 left-5 z-30 lg:hidden p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
         {/* Left Sticky Sidebar */}
         <DocSidebar
           currentArticleId={article.id}
@@ -131,6 +123,17 @@ export default function NovaDocumentationCenter({ initialTopicId, onBackToDashbo
           onTouchStart={handleArticleTouchStart}
           onTouchEnd={handleArticleTouchEnd}
         >
+          <div className="nova-mobile-doc-heading">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="nova-mobile-doc-menu"
+              aria-label="Open documentation menu"
+            >
+              <Menu aria-hidden="true" />
+            </button>
+            <span>{activeMobileCategory.title}</span>
+          </div>
           <nav className="nova-mobile-category-filter" aria-label="Documentation categories">
             <div className="nova-mobile-category-row">
               {DOC_CATEGORIES.map(category => (

@@ -8,6 +8,10 @@
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
 }
 
+.nova-mobile-doc-heading {
+  display: none;
+}
+
 .nova-article-enter {
   animation: nova-article-enter 280ms ease-out both;
 }
@@ -132,6 +136,36 @@
 
   .nova-docs .nova-mobile-scroll-top {
     display: inline-flex;
+  }
+
+  .nova-mobile-doc-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0 0 0.65rem;
+    color: #0f172a;
+    font-size: 0.88rem;
+    font-weight: 750;
+  }
+
+  .nova-mobile-doc-menu {
+    display: inline-flex;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+  }
+
+  .nova-mobile-doc-menu svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 2.5;
   }
 
   .nova-mobile-category-filter {
